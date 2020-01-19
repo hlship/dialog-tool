@@ -28,20 +28,30 @@ as other things.
 ```
 {:output-format :z8
  :name "monty-haul"
- :story-sources ["src/monty-haul.dg"]
- :debug-sources ["/usr/local/share/dialog-if/stddebug.dg"]
- :library-sources ["/usr/local/share/dialog-if/stdlib.dg"]}
+ :story-sources ["src/*.dg"]
+ :debug-sources ["debug/*.dg"
+                 /usr/local/share/dialog-if/stddebug.dg"]
+ :library-sources ["lib/*.dg"
+                   "/usr/local/share/dialog-if/stdlib.dg"]}
 ```                   
 
-`dgt` uses three sets of sources; the `:debug-sources` are only used
-when running the game interactively in `dgdebug`.
+`dgt` uses three sets of sources.
+For each, you may specify any number of inidividual files, or _glob matches_.
+You should be careful with glob matches, as Dialog can be sensitive to the order in which
+source files are loaded.
+
+* :story-sources story specific files
+* :debug-sources used by the `debug` and `build --test` commands
+* :library-sources additional libraries, including the standard library
+
+You may omit :debug-sources or :library-sources; the default `stddebug.dg` and `stdlib.dg` will be
+supplied.
 
 You may specify a numeric `:seed` value, used to initialize the random number
-generator. 
+generator.
 
 When `:seed` is omitted when running tests, a default seed value, based on a hash
 of the path to the test input script, is supplied.
-
 
 ## Write / Run / Test Loop
 
@@ -64,7 +74,7 @@ Once blessed, the blessed tests' output is saved with extension `.out`.
 
 The `@save` command does a good job of saving just the input
 to the game; although `dgdebug` has additional commands (prefixed
-with `@`) and the ability to evalute predicates, these
+with `@`) and the ability to evaluate predicates, these
 inputs are *not* saved to the input transcript file, which is
 very convienient.
 
@@ -84,7 +94,6 @@ Download the `dgt` script and place it on your `$PATH`.
 - Version numbers at start of game transcripts are problematic
   and perhaps can be editted out by `dgt` to prevent false
   failures
-- Add all sources files in a directory as a single entry
 - Packaging as a zblorb
 - Build along with a website, etc.
 - Setup a brew formula

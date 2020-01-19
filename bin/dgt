@@ -11,6 +11,7 @@
    [joker.string :as str]
    [joker.filepath :as f]
    [joker.time :as t]
+   [joker.better-cond :as b]
    [net.lewisship.multi :as multi :refer [defcommand]]))
 
 (def failures-path "out/failures.edn")
@@ -61,8 +62,12 @@
   
   (let [build-data (-> "dialog.edn"
                        slurp
-                       read-string)]
-    (merge default-build-data build-data)))
+                       read-string)
+        merged (merge default-build-data build-data)]
+    (reduce (fn [m k]
+              (update m k #(mapcat f/glob %)))
+            merged
+            [:story-sources :debug-sources :library-sources])))
 
 ;; Commands
 
