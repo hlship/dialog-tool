@@ -1,0 +1,304 @@
+#!/usr/bin/env joker
+
+;; dgt - Dialog Tool
+
+(ns-sources
+ {"net.lewisship.multi" {:url "https://raw.githubusercontent.com/hlship/multi/v1.1.0/src/net/lewisship/multi.joke"}})
+
+(ns dgt
+  (:require
+   [joker.os :as os]
+   [joker.string :as str]
+   [joker.filepath :as f]
+   [joker.time :as t]
+   [net.lewisship.multi :as multi :refer [defcommand]]))
+
+(def failures-path "out/failures.edn")
+
+(def csi "\u001b[")
+(def reset-font (str csi "m")) 
+(def red-font (str csi "31m"))
+(def green-font (str csi "32m"))
+
+(def default-build-data
+  {:output-format :z8
+   :name (f/base (joker.os/cwd))
+   :debug-sources ["/usr/local/share/dialog-if/stddebug.dg"]
+   :library-sources ["/usr/local/share/dialog-if/stdlib.dg"]})
+
+;; Utilities
+(defn fail
+  [msg]
+  (println-err msg)
+  (os/exit -1))
+
+(defn check-result
+  [label result]
+  (when-not (:success result)
+    (fail (str label " failed: " (:err-msg result) \n (:err result))))
+  result)
+
+(defn mkdirs
+  "Recursively create a directory, if it doesn't already exist."
+  [path]
+  (check-result "mkdirs"
+                (os/sh "mkdir" "-p" path)))
+
+(defn rm
+  [path]  
+  (when (os/exists? path)
+    (check-result "Remove" 
+                  (os/sh "rm" path))))
+
+;; Commands library
+
+;; DGT Commands
+
+(defn read-build-file
+  []
+  (when-not (os/exists? "dialog.edn")
+    (fail "No dialog.edn file in current directory."))
+  
+  (let [build-data (-> "dialog.edn"
+                       slurp
+                       read-string)]
+    (merge default-build-data build-data)))
+
+;; Commands
+
+(defn extract-sources
+  [build-data for-release?]
+  (let [{:keys [story-sources
+                debug-sources
+                library-sources]} build-data]
+    (reduce into []
+            [story-sources
+             (when-not for-release?
+               debug-sources)
+             library-sources])))
+
+(defn do-build
+  [build-data options]
+  (let [{:keys [output-format]
+         output-name :name} build-data
+        {:keys [release debug verbose]
+         :or {:release true
+              :debug false
+              :verbose true}} options
+        output-dir (str "out/"
+                        (if release "release" "test"))
+        output-path (str output-dir
+                         "/"
+                         output-name
+                         "."
+                         (name output-format))
+        sources (extract-sources build-data release)
+        args (into (cond-> ["--format" (name output-format)
+                            "--output" output-path]
+                     verbose (conj "--verbose"))
+                   sources)]
+    (mkdirs output-dir)
+    (when debug
+      (apply println "dialogc" args))
+    (check-result "Compile" 
+                  (os/exec "dialogc"
+                           {:stdout *out*
+                            :stderr *err*
+                            :args args}))
+    output-path))
+
+(defcommand build
+  "Builds a compiled version of the story"
+  [debug ["-d" "--debug" "Print out the dialogc command to be executed"]
+   testing ["-t" "--testing" "Compile for testing, including debug sources"]
+   verbose ["-v" "--verbose" "Enable additional compiler output"]]
+  (let [output (do-build (read-build-file) {:debug debug
+                                            :release (not testing)
+                                            :verbose verbose})]
+    (println "Wrote file" output)))
+
+(defcommand clean
+  "Cleans output"
+  []
+  (check-result "Delete"
+                (os/sh "rm" "-rf" "out")))
+
+(defn find-test-paths
+  []
+  (let [result (os/sh "find" "tests" "-name" "*.txt")]
+    (check-result "Find" result)  
+    (->> result 
+         :out
+         str/trim
+         str/split-lines
+         (map str/trim))))
+
+(defn overrides-for-test
+  [test-path]
+  (let [[dir _] (f/split test-path)
+        override-path (f/join dir "overrides.edn")]
+    (when (os/exists? override-path)
+      (-> override-path slurp read-string))))
+
+(defn execute-test
+  "Executes a single test; the test path is a file containing a transcript
+  to feed into the game.
+  
+  Returns nil on success and a failure map on failure."
+  [build-data test-name test-path]
+  (let [overrides (overrides-for-test test-path)
+        build-data' (merge build-data overrides)
+        sources (extract-sources build-data' false)
+        test-input (->> test-path
+                        slurp
+                        str/split-lines
+                        (remove str/blank?)
+                        ;; Allow Dialog-style comments in the source transcript
+                        (remove #(str/starts-with? % "%%"))
+                        (str/join \newline))
+        seed (get build-data' :seed (hash test-path))
+        args (into ["--quit" 
+                    "--width" "80" ;; Good for comparing test output
+                    "-L"
+                    "--seed" (str seed)]
+                   sources)
+        result (check-result "Test Execution"
+                             (os/exec "dgdebug" {:args args
+                                                 :stdin test-input}))
+        actual-output (:out result)
+        blessed-path (str "tests/" test-name ".out")
+        expected-output (when (os/exists? blessed-path)
+                          (slurp blessed-path))
+        passed? (= actual-output expected-output)]
+    (when-not passed?
+      (let [output-path (str "out/failed-tests/" test-name ".out")
+            [output-dir _] (f/split output-path)]
+        (mkdirs output-dir)
+        (spit output-path actual-output)
+        {:test-name test-name
+         :output-path output-path
+         :blessed-path blessed-path}))))
+
+(defn write-failures 
+  [failures]
+  (spit failures-path
+        (with-out-str (pprint failures))))
+
+(defn bless-test
+  "Show diff for test, ask user to bless.
+
+  If user approves, replace blessed file with output file, and return true.
+
+  Otherwise, return false."
+  [failure-map]
+  (let [{:keys [test-name output-path blessed-path]} failure-map]
+    ;; Its goint to fail (with 1) because the files are not the same
+    (os/exec "colordiff" {:args ["-N" "-y" "-W" "170"
+                                 "--left-column"
+                                 blessed-path output-path]
+                          :stdout *out*
+                          :stderr *err*})
+    (println)
+    (loop []
+      (print (str "Bless " test-name " differences (" green-font "right column" reset-font ")? [yN] "))
+      (let [input (read-line)]
+        (cond
+          (= input "y")
+          (do
+            (check-result "Move file" (os/sh "mv" "-f" output-path blessed-path))
+            true)
+
+          (or (= input "")
+              (= input "n"))
+          false
+
+          :else
+          (do
+            (println (str red-font "Enter 'y' or 'n' (or hit enter)" reset-font))
+            (recur)))))))
+
+(defn do-bless
+  [failures]
+  (let [f (fn [failures failure-map]
+            (if (bless-test failure-map)
+              failures
+              (conj failures failure-map)))
+        failures' (reduce f [] failures)]
+    (if (seq failures')
+      (write-failures failures')
+      (rm failures-path))))
+
+(defcommand ^{:command-name "test"} run-tests
+  "Runs tests, capturing output, summarizing failures.
+
+  Any failures are recorded, for use by the bless command."
+  [bless ["-b" "--bless" "Immediately bless changes if there are failures"]]
+  (let [build-data (read-build-file)
+        paths (find-test-paths)
+        test-names (->> paths
+                        (map #(str/replace % "tests/" ""))
+                        (map #(str/replace % #"\.txt" ""))
+                        sort)
+        test-tuples (map vector test-names paths)
+        max-width (apply max (map count test-names))
+        f (fn [failures [test-name test-path]]
+            (print (str/pad-left test-name " " max-width) "... ")
+            (let [start-time (t/now)
+                  failure (execute-test build-data test-name test-path)
+                  elapsed (str/pad-left
+                           (t/string (t/since start-time))
+                           " " 18)]
+              (if failure
+                (do
+                  (println (str red-font "X" reset-font) elapsed)
+                  (conj failures failure))
+                (do
+                  (println (str green-font \u2713 reset-font) elapsed)
+                  failures))))
+        failures (reduce f [] test-tuples)]
+    (mkdirs "out")
+    (if (seq failures)
+      (do
+        (println (str "\n" red-font (count failures) " failures" reset-font))
+        (if bless
+          (do-bless failures)
+          (write-failures failures)))
+      (do
+        (println (str "\n" green-font "OK" reset-font))
+        (rm failures-path)))))
+
+(defcommand bless
+  "Review failed tests and bless those where the change is acceptable"
+  []
+  (when-not (os/exists? failures-path)
+    (fail "No failed tests to bless"))
+  (-> failures-path
+      slurp
+      read-string
+      do-bless))
+
+(defcommand debug
+  "Runs the game in the Dialog debugger"
+  [overrides-path ["-o" "--overrides PATH" "Path to overrides for dialog.edn"]
+   debug ["-d" "--debug" "Print out dgdebug command to be execute"]]
+  (let [ build-data (read-build-file)
+        overrides (when overrides-path
+                    (-> overrides-path 
+                        slurp
+                        read-string))
+        build-data' (merge build-data overrides)
+        seed (:seed build-data)        
+        sources (extract-sources build-data' false)
+        args (cond-> ["--quit"]
+               seed (into ["--seed" seed])
+               true (into sources))]
+    (when debug
+      (apply println "dgdebug" args))
+    (os/exec "dgdebug" {:args args
+                        :stdin *in*
+                        :stdout *out*
+                        :stderr *err*})))
+
+;; Main entry point.
+(multi/dispatch {:tool-name "dgt"
+                 :namespaces ['dgt]})
