@@ -84,12 +84,10 @@ Download the `dgt` script and place it on your `$PATH`.
 - Version numbers at start of game transcripts are problematic
   and perhaps can be editted out by `dgt` to prevent false
   failures
-- Partial bless may be possible by using `sdiff`
-- Add `--bless` to `test` to immediate bless after testing
-- Control over random number seed (on a test-by-test basis)?  
-  Maybe as a hash of the transcript file name?  
+- Add all sources files in a directory as a single entry
 - Packaging as a zblorb
 - Build along with a website, etc.
+- Setup a brew formula
 
 ## License
 
