@@ -30,7 +30,7 @@ as other things.
  :name "monty-haul"
  :story-sources ["src/*.dg"]
  :debug-sources ["debug/*.dg"
-                 /usr/local/share/dialog-if/stddebug.dg"]
+                 "/usr/local/share/dialog-if/stddebug.dg"]
  :library-sources ["lib/*.dg"
                    "/usr/local/share/dialog-if/stdlib.dg"]}
 ```                   
