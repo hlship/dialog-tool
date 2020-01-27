@@ -3,9 +3,10 @@
 ;; dgt - Dialog Tool
 
 (ns-sources
- {"net.lewisship.multi" {:url "https://raw.githubusercontent.com/hlship/multi/v1.1.0/src/net/lewisship/multi.joke"}})
+ {"net.lewisship.multi" {:url "https://raw.githubusercontent.com/hlship/multi/v1.4.0/src/net/lewisship/multi.joke"}})
 
 (ns dgt
+  "Build, run, and test interactive fiction stories in Dialog."
   (:require
    [joker.os :as os]
    [joker.string :as str]
@@ -16,7 +17,7 @@
 
 (def failures-path "out/failures.edn")
 
-(def csi "\u001b[")
+(def csi "\u001b[") 
 (def reset-font (str csi "m")) 
 (def red-font (str csi "31m"))
 (def green-font (str csi "32m"))
