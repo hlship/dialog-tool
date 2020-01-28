@@ -13,6 +13,10 @@
    [joker.filepath :as f]
    [joker.time :as t]
    [joker.strconv :refer [atoi]]
+   [joker.crypto :as crypto]
+   [joker.hex :as hex]
+   [joker.http :as http]
+   [joker.better-cond :as b]
    [net.lewisship.multi :as multi :refer [defcommand]]))
 
 (def failures-path "out/failures.edn")
@@ -52,9 +56,78 @@
     (check-result "Remove" 
                   (os/sh "rm" path))))
 
+(defn cache-url
+  "Caches a file identified by a URL, returning the path to the cached file."
+  [url]
+  (b/cond
+    :let [file-name (f/base url)
+          sha (-> url crypto/sha1 hex/encode-string)
+          cache-dir (f/join ".cache" sha)
+          _ (mkdirs cache-dir)
+          cache-path (f/join cache-dir file-name)]
+    
+    (os/exists? cache-path)
+    cache-path
+    
+    :let [response (http/send {:url url})
+          {:keys [status body]} response]
+    
+    (not= 200 status)
+    (fail (format "Download of %s failed with status %d" url status))
+    
+    :else
+    (do
+      (spit cache-path body)
+      cache-path)))
+
+(defn expand-github 
+  [lib]
+  (let [{:keys [github version path]} lib]
+    (when (or (nil? version)
+              (nil? path))
+      (throw (ex-info "Version and path are required"
+                      {:lib lib})))
+    (when (= "master" version)
+      (throw (ex-info "Version may not be master"
+                      {:lib lib})))
+    
+    (cache-url (str "https://raw.githubusercontent.com/"
+                    github  ;; eg "hlship/threaded-conversation"
+                    "/"
+                    version ;; eg "v0.1"
+                    "/"
+                    path)))) ;; eg "lib/threaded-conversation.dg"
+
+  (defn expand-lib
+  [lib]
+  (b/cond
+    (string? lib)
+    lib
+    
+    (not (map? lib))
+    (throw (ex-info "Library must be string or map"
+                    {:lib lib}))
+    
+    :let [{:keys [github]} lib]
+    
+    (some? github)
+    (expand-github lib)
+    
+    :else
+    (throw (ex-info "Unknown library map"
+                    {:lib lib}))))
+
 ;; Commands library
 
 ;; DGT Commands
+
+(defn glob-lib
+  "If the library is a string, glob it into a seq of matches.
+   Otherwise, it is a map, and wrap it in a vector."
+  [lib]
+  (if (string? lib)
+    (f/glob lib)
+    [lib]))
 
 (defn read-build-file
   []
@@ -66,7 +139,7 @@
                        read-string)
         merged (merge default-build-data build-data)]
     (reduce (fn [m k]
-              (update m k #(mapcat f/glob %)))
+              (update m k #(mapcat glob-lib %)))
             merged
             [:story-sources :debug-sources :library-sources])))
 
@@ -76,12 +149,13 @@
   [build-data for-release?]
   (let [{:keys [story-sources
                 debug-sources
-                library-sources]} build-data]
-    (reduce into []
-            [story-sources
-             (when-not for-release?
-               debug-sources)
-             library-sources])))
+                library-sources]} build-data
+        sources (reduce into []
+                        [story-sources
+                         (when-not for-release?
+                           debug-sources)
+                         library-sources])]
+    (mapv expand-lib sources)))
 
 (defn do-build
   [build-data options]
@@ -125,9 +199,11 @@
 
 (defcommand clean
   "Cleans output"
-  []
-  (check-result "Delete"
-                (os/sh "rm" "-rf" "out")))
+  [cache ["-c" "--cache" "Clean cache as well"]]
+  (let [paths (cond-> ["out"]
+                cache (conj ".cache"))]
+    (check-result "Delete"
+                  (apply os/sh "rm" "-rf"  paths))))
 
 (defn find-test-paths
   []

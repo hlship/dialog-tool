@@ -14,7 +14,7 @@ including what individual source files to use, and then provides commands to:
 
 Unlike many of my projects, this is _really_ for personal use:
 
-- No releases, just the repo
+- OS X only
 - Subject to breaking change at any time
 - Written in [Joker](https://github.com/candid82/joker) (the ultimate scripting language) which you almost certainly don't know
 
@@ -53,6 +53,25 @@ generator.
 When `:seed` is omitted when running tests, a default seed value, based on a hash
 of the path to the test input script, is supplied.
 
+# Remote Sources
+
+`dgt` can download sources from GitHub repositories.
+
+A remote source is a map with the following structure:
+
+```
+   {:github "hlship/threaded-conversation"
+    :version "v0.1"
+    :path "lib/threaded-conversation.dg"}
+```
+
+On first execution, this map will be converted to a URL, which is downloaded, and saved to 
+the `.cache` directory.
+
+The `:version` key may *not* be `master`.
+Ideally it should be a published tag, though it can also
+be a Git commit SHA.
+
 ## Write / Run / Test Loop
 
 Dialog makes it easy to code and test at the same time; the
@@ -84,7 +103,7 @@ between executions.
 ## Installing
 
 ```
-brew install candid82/brew/joker colordiff vickio/dialog/dialog-if
+brew install hlship/brew/dgt
 ```
 
 Download the `dgt` script and place it on your `$PATH`.
@@ -96,7 +115,6 @@ Download the `dgt` script and place it on your `$PATH`.
   failures
 - Packaging as a zblorb
 - Build along with a website, etc.
-- Setup a brew formula
 
 ## License
 
