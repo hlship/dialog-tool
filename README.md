@@ -45,9 +45,9 @@ For each, you may specify any number of individual files, or _glob matches_.
 You should be careful with glob matches, as Dialog can be sensitive to the order in which
 source files are loaded.
 
-* `:story-sources` story specific files
-* `:debug-sources` used by the `debug` and `build --test` commands
-* `:library-sources` additional libraries, including the standard library
+* `:story-sources` - story specific files
+* `:debug-sources` - used by the `debug` and `build --test` commands
+* `:library-sources` - additional libraries, including the standard library
 
 You may omit `:debug-sources` or `:library-sources`; the default `stddebug.dg` and `stdlib.dg` will be
 supplied.
