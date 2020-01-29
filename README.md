@@ -1,7 +1,7 @@
 # dgt - Dialog Tool
 
-`dgt` is a tool to assist in the development of games
-written in [Dialog](https://linusakesson.net/dialog/index.php).
+`dgt` is a tool to assist in the development of interactive fiction
+written in the [Dialog](https://linusakesson.net/dialog/index.php) language.
 
 `dgt` simplifies development, it allows you to specify the details of your project,
 including what individual source files to use, and then provides commands to:
@@ -18,12 +18,17 @@ Unlike many of my projects, this is _really_ for personal use:
 - Subject to breaking change at any time
 - Written in [Joker](https://github.com/candid82/joker) (the ultimate scripting language) which you almost certainly don't know
 
+Run the command `dgt help` for a list of commands; each command has a `--help` option (abbreviated as `-h`) that gives
+specific details.
+
 ## dialog.edn
 
 Your project must have a `dialog.edn` file at the root.
 
-This file identifies the sources in your project as well
-as other things.
+> [EDN (Extensible Data Notation)](https://github.com/edn-format/edn) is like JSON on steroids. It's the natural
+  choice for Clojure or Joker programmers, but it's close enough to JSON that you should be able to figure it out.
+
+This file identifies the sources in your project as well as other details needs to build, debug, and test your project.
 
 ```
 {:output-format :z8
@@ -36,15 +41,15 @@ as other things.
 ```                   
 
 `dgt` uses three sets of sources.
-For each, you may specify any number of inidividual files, or _glob matches_.
+For each, you may specify any number of individual files, or _glob matches_.
 You should be careful with glob matches, as Dialog can be sensitive to the order in which
 source files are loaded.
 
-* :story-sources story specific files
-* :debug-sources used by the `debug` and `build --test` commands
-* :library-sources additional libraries, including the standard library
+* `:story-sources` story specific files
+* `:debug-sources` used by the `debug` and `build --test` commands
+* `:library-sources` additional libraries, including the standard library
 
-You may omit :debug-sources or :library-sources; the default `stddebug.dg` and `stdlib.dg` will be
+You may omit `:debug-sources` or `:library-sources`; the default `stddebug.dg` and `stdlib.dg` will be
 supplied.
 
 You may specify a numeric `:seed` value, used to initialize the random number
@@ -87,17 +92,17 @@ when any of the source files change.
 - if the execution generates different text than what been previously _blessed_, it is marked as a failure
 - execute `dgt bless` to review failed tests and choose which to bless (mark as correct)
 
-`dgt` searches all directories under `tests` for test files (with
+`dgt test` searches all directories under `tests` for test files (with
 extension `.txt`), which allows you to organize things as you like.
 Once blessed, the blessed tests' output is saved with extension `.out`.
 
-The `@save` command does a good job of saving just the input
+From the debugger, the `@save` command does a good job of saving just the input
 to the game; although `dgdebug` has additional commands (prefixed
 with `@`) and the ability to evaluate predicates, these
 inputs are *not* saved to the input transcript file, which is
 very convienient.
 
-`dgt` users a colorized side-by-side diff to show what changed
+`dgt bless` uses a colorized side-by-side diff to show what changed
 between executions.
 
 ## Installing
