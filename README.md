@@ -6,10 +6,10 @@ written in the [Dialog](https://linusakesson.net/dialog/index.php) language.
 `dgt` simplifies development, it allows you to specify the details of your project,
 including what individual source files to use, and then provides commands to:
 
-- run your game in the Dialog debugger
+- run your project in the Dialog debugger
 - run tests and identify failures
 - review failed tests and "bless" updates
-- build a compiled game for distribution
+- build a compiled project for distribution
 - more to come ...
 
 Unlike many of my projects, this is _really_ for personal use:
@@ -45,7 +45,7 @@ For each, you may specify any number of individual files, or _glob matches_.
 You should be careful with glob matches, as Dialog can be sensitive to the order in which
 source files are loaded.
 
-* `:story-sources` - story specific files
+* `:story-sources` - sources specific to your project
 * `:debug-sources` - used by the `debug` and `build --test` commands
 * `:library-sources` - additional libraries, including the standard library
 
@@ -54,21 +54,24 @@ supplied.
 
 You may specify a numeric `:seed` value, used to initialize the random number
 generator.
+This can be very useful when writing tests where output text varies randomly; the same test script
+with the same seed will result in stable, repeatable output.
 
 When `:seed` is omitted when running tests, a default seed value, based on a hash
 of the path to the test input script, is supplied.
 
 # Remote Sources
 
-`dgt` can download sources from GitHub repositories.
-
-A remote source is a map with the following structure:
+`dgt` can download sources from GitHub repositories.  Instead of a string path (as shown above), a remote source
+is a map with the following structure:
 
 ```
    {:github "hlship/threaded-conversation"
     :version "v0.1"
     :path "lib/threaded-conversation.dg"}
 ```
+
+This identifies the GitHub repository, the version, and the path within the GitHub repository.
 
 On first execution, this map will be converted to a URL, which is downloaded, and saved to 
 the `.cache` directory.
@@ -83,9 +86,10 @@ Dialog makes it easy to code and test at the same time; the
 `dgdebug` does a great job of updating in-place
 when any of the source files change.
 
-`dgt`s approach to testing is really simple:
+`dgt`'s approach to testing is really simple:
 
-- capture an input transcript from the REPL using `@save`
+- start the debugger with `dgt debug`
+- capture an input transcript from the debugger using `@save`
 - save the input transcript as a file under `tests` with extension `.txt`
 - execute `dgt test` to run all tests
 - for each input transcript, the game is executed and output captured
