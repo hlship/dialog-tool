@@ -106,8 +106,6 @@ between executions.
 brew install hlship/brew/dgt
 ```
 
-Download the `dgt` script and place it on your `$PATH`.
-
 ## Future Work
 
 - Version numbers at start of game transcripts are problematic
