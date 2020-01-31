@@ -239,7 +239,7 @@
                         (remove #(str/starts-with? % "%%"))
                         (str/join \newline))
         seed (get build-data' :seed (hash test-path))
-        args (into ["--quit" 
+        args (into ["--quit"
                     "--width" "80" ;; Good for comparing test output
                     "-L"
                     "--seed" (str seed)]
@@ -267,7 +267,7 @@
         (with-out-str (pprint failures))))
 
 (defn bless-test
-  "Show diff for test, ask user to bless.
+  "Show diff for test, ask user to bless
 
   If user approves, replace blessed file with output file, and return true.
 
@@ -310,17 +310,17 @@
       (write-failures failures')
       (rm failures-path))))
 
-(defcommand ^{:command-name "test"} run-tests
+(defcommand run-tests
   "Runs tests, capturing output, summarizing failures.
 
   Any failures are recorded, for use by the bless command."
-  [bless ["-b" "--bless" "Immediately bless changes if there are failures"]]
+  [bless ["-b" "--bless" "Immediately bless changes if there are failures"]
+   :command-name "test"]
   (let [build-data (read-build-file)
         paths (find-test-paths)
         test-names (->> paths
                         (map #(str/replace % "tests/" ""))
-                        (map #(str/replace % #"\.txt" ""))
-                        sort)
+                        (map #(str/replace % #"\.txt" "")))
         test-tuples (map vector test-names paths)
         max-width (apply max (map count test-names))
         f (fn [failures [test-name test-path]]
@@ -337,7 +337,9 @@
                 (do
                   (println (str green-font \u2713 reset-font) elapsed)
                   failures))))
-        failures (reduce f [] test-tuples)]
+        failures (->> test-tuples
+                      (sort-by first)
+                      (reduce f []))]
     (mkdirs "out")
     (if (seq failures)
       (do
