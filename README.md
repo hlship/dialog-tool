@@ -112,7 +112,7 @@ between executions.
 ## Installing
 
 ```
-brew install hlship/brew/dgt
+brew install hlship/brew/dialog-tool
 ```
 
 ## Future Work
