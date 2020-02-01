@@ -2,6 +2,8 @@
 
 Can now limit tests to run with `dgt test <name>`.
 
+Fixed a bug where the `:seed` from an overrides file was not applied by `dgt debug`.
+
 1.1 -- 30 Jan 2020
 
 Fixed a bug where the wrong input transcript would be fed into each test.

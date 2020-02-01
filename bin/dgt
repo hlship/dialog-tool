@@ -382,7 +382,7 @@
                         slurp
                         read-string))
         build-data' (merge build-data overrides)
-        seed' (or seed (:seed build-data))
+        seed' (or seed (:seed build-data'))
         sources (extract-sources build-data' false)
         args (-> (cond-> ["--quit"]
                    seed' (into ["--seed" (str seed')]))
