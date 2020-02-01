@@ -52,8 +52,9 @@ source files are loaded.
 You may omit `:debug-sources` or `:library-sources`; the default `stddebug.dg` and `stdlib.dg` will be
 supplied.
 
-You may specify a numeric `:seed` value, used to initialize the random number
-generator.
+The default for `:output-format` is `:z8`, and the default for `:name` is the name of the current directory.
+
+You may optinally specify a numeric `:seed` value, used to initialize the random number generator.
 This can be very useful when writing tests where output text varies randomly; the same test script
 with the same seed will result in stable, repeatable output.
 
@@ -86,18 +87,22 @@ Dialog makes it easy to code and test at the same time; the
 `dgdebug` does a great job of updating in-place
 when any of the source files change.
 
-`dgt`'s approach to testing is really simple:
+Testing is very simple with `dgt`; under the `tests` folder are `.txt` files
+and corresponding `.out` files.
+The first is a transcript for the project, the series of commands to execute.
+The transcript may also include Dialog style comments (`%%`), and
+Dialog queries, including `(now)` queries.
 
-- start the debugger with `dgt debug`
-- capture an input transcript from the debugger using `@save`
-- save the input transcript as a file under `tests` with extension `.txt`
-- execute `dgt test` to run all tests
-- for each input transcript, the game is executed and output captured
-- if the execution generates different text than what been previously _blessed_, it is marked as a failure
-- execute `dgt bless` to review failed tests and choose which to bless (mark as correct)
+The `dgt test` command finds each of these files, runs the debugger to execute
+the transcript, and captures the output.
+If the output matches the `.out` file, the test is succesful.
+Otherwise, the actual output is saved and the test is a failure; the
+`dgt bless` command allows you to review failed tests, using
+a colorized side-by-side diff, and identify those where
+the new output is correct.
 
-`dgt test` searches all directories under `tests` for test files (with
-extension `.txt`), which allows you to organize things as you like.
+`dgt test` searches all directories under `tests` for test files
+which allows you to organize things as you like.
 Once blessed, the blessed tests' output is saved with extension `.out`.
 
 From the debugger, the `@save` command does a good job of saving just the input
@@ -105,9 +110,6 @@ to the game; although `dgdebug` has additional commands (prefixed
 with `@`) and the ability to evaluate predicates, these
 inputs are *not* saved to the input transcript file, which is
 very convienient.
-
-`dgt bless` uses a colorized side-by-side diff to show what changed
-between executions.
 
 ## Installing
 
