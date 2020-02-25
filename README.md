@@ -68,8 +68,8 @@ is a map with the following structure:
 
 ```
    {:github "hlship/threaded-conversation"
-    :version "v0.1"
-    :path "lib/threaded-conversation.dg"}
+    :version "v0.2"
+    :path "lib/tc.dg"}
 ```
 
 This identifies the GitHub repository, the version, and the path within the GitHub repository.
