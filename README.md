@@ -77,7 +77,7 @@ This identifies the GitHub repository, the version, and the path within the GitH
 On first execution, this map will be converted to a URL, which is downloaded, and saved to 
 the `.cache` directory.
 
-The `:version` key may *not* be `master`.
+The `:version` key may *not* be `master` or `main`.
 Ideally it should be a published tag, though it can also
 be a Git commit SHA.
 

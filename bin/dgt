@@ -87,7 +87,7 @@
               (nil? path))
       (throw (ex-info "Version and path are required"
                       {:lib lib})))
-    (when (= "master" version)
+    (when (#{"master" "main"} version)
       (throw (ex-info "Version may not be master"
                       {:lib lib})))
     
