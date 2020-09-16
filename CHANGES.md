@@ -1,3 +1,7 @@
+1.3 -- UNRELEASED
+
+`dgt test` now blesses failed tests by default
+
 1.2 -- 9 Aug 2020
 
 Can now limit tests to run with `dgt test <name>`.

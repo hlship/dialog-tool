@@ -310,7 +310,9 @@
 
 (defcommand run-tests
   "Runs tests, capturing output, summarizing failures"
-  [bless ["-b" "--bless" "Immediately bless changes if there are failures"]
+  [bless ["-b" "--no-bless" "Immediately bless changes if there are failures"
+          :default true
+          :update-fn (constantly false)]
    :args
    test-name ["NAME" "Limit tests to those that match this name"
                :optional true]
