@@ -19,12 +19,21 @@
    [joker.better-cond :as b]
    [net.lewisship.multi :as multi :refer [defcommand]]))
 
+(def *debug (atom false))
+
+(def debug-opt
+  ["-d" "--debug" "Output shell commands before executing them"
+   :update-fn (fn [_] 
+                (reset! *debug true)
+                true)])
+
 (def failures-path "out/failures.edn")
 
 (def csi "\u001b[") 
 (def reset-font (str csi "m")) 
 (def red-font (str csi "31m"))
 (def green-font (str csi "32m"))
+(def cyan-font (str csi "36m"))
 
 (def default-build-data
   {:output-format :z8
@@ -44,17 +53,35 @@
     (fail (str label " failed: " (:err-msg result) \n (:err result))))
   result)
 
+(defn sh
+  [name & arguments]
+  (when @*debug
+    (println (str cyan-font name " " (str/join " " arguments) reset-font)))
+
+  (apply os/sh name arguments))
+
+(defn exec
+  [name opts]
+  (when @*debug
+    (println (str cyan-font
+                  name
+                  " "
+                  (str/join " " (:args opts))
+                  reset-font)))
+
+  (os/exec name opts))
+
 (defn mkdirs
   "Recursively create a directory, if it doesn't already exist."
   [path]
   (check-result "mkdirs"
-                (os/sh "mkdir" "-p" path)))
+                (sh "mkdir" "-p" path)))
 
 (defn rm
   [path]  
   (when (os/exists? path)
     (check-result "Remove" 
-                  (os/sh "rm" path))))
+                  (sh "rm" path))))
 
 (defn cache-url
   "Caches a file identified by a URL, returning the path to the cached file."
@@ -63,7 +90,6 @@
     :let [file-name (f/base url)
           sha (-> url crypto/sha1 hex/encode-string)
           cache-dir (f/join ".cache" sha)
-          _ (mkdirs cache-dir)
           cache-path (f/join cache-dir file-name)]
     
     (os/exists? cache-path)
@@ -77,6 +103,7 @@
     
     :else
     (do
+      (mkdirs cache-dir)
       (spit cache-path body)
       cache-path)))
 
@@ -161,9 +188,8 @@
   [build-data options]
   (let [{:keys [output-format]
          output-name :name} build-data
-        {:keys [release debug verbose]
+        {:keys [release  verbose]
          :or {:release true
-              :debug false
               :verbose true}} options
         output-dir (str "out/"
                         (if release "release" "test"))
@@ -178,13 +204,11 @@
                      verbose (conj "--verbose"))
                    sources)]
     (mkdirs output-dir)
-    (when debug
-      (apply println "dialogc" args))
-    (check-result "Compile" 
-                  (os/exec "dialogc"
-                           {:stdout *out*
-                            :stderr *err*
-                            :args args}))
+    (check-result "Compile"
+                  (exec "dialogc"
+                        {:stdout *out*
+                         :stderr *err*
+                         :args args}))
     output-path))
 
 (defcommand build
@@ -192,21 +216,21 @@
 
   Projects can be built for release, or for testing; the testing
   build include :debug-sources, the release build does not."
-  [debug ["-d" "--debug" "Print out the dialogc command to be executed"]
+  [_ debug-opt
    testing ["-t" "--testing" "Compile for testing, including debug sources"]
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
-  (let [output (do-build (read-build-file) {:debug debug
-                                            :release (not testing)
+  (let [output (do-build (read-build-file) {:release (not testing)
                                             :verbose verbose})]
     (println "Wrote file" output)))
 
 (defcommand clean
   "Cleans output"
-  [cache ["-c" "--cache" "Clean cache as well"]]
+  [cache ["-c" "--cache" "Clean cache as well"]
+   _ debug-opt]
   (let [paths (cond-> ["out"]
                 cache (conj ".cache"))]
     (check-result "Delete"
-                  (apply os/sh "rm" "-rf"  paths))))
+                  (apply sh "rm" "-rf"  paths))))
 
 (defn find-test-paths
   []
@@ -243,8 +267,8 @@
                     "--seed" (str seed)]
                    sources)
         result (check-result "Test Execution"
-                             (os/exec "dgdebug" {:args args
-                                                 :stdin test-input}))
+                             (exec "dgdebug" {:args args
+                                              :stdin test-input}))
         actual-output (:out result)
         blessed-path (str "tests/" test-name ".out")
         expected-output (when (os/exists? blessed-path)
@@ -264,6 +288,11 @@
   (spit failures-path
         (with-out-str (pprint failures))))
 
+(defn overwrite-failures
+  [failures]
+  (doseq [{:keys [output-path blessed-path]} failures]
+    (check-result "Move file" (sh "mv" "-f" output-path blessed-path))))
+
 (defn bless-test
   "Show diff for test, ask user to bless
 
@@ -273,7 +302,7 @@
   [failure-map]
   (let [{:keys [test-name output-path blessed-path]} failure-map]
     ;; Its going to fail (with 1) because the files are not the same
-    (os/exec "colordiff" {:args ["-N" "-y" "-W" "170"
+    (exec "colordiff" {:args ["-N" "-y" "-W" "170"
                                  "--left-column"
                                  blessed-path output-path]
                           :stdout *out*
@@ -285,7 +314,7 @@
         (cond
           (= input "y")
           (do
-            (check-result "Move file" (os/sh "mv" "-f" output-path blessed-path))
+            (check-result "Move file" (sh "mv" "-f" output-path blessed-path))
             true)
 
           (or (= input "")
@@ -313,6 +342,8 @@
   [bless ["-b" "--no-bless" "Immediately bless changes if there are failures"
           :default true
           :update-fn (constantly false)]
+   _ debug-opt
+   force ["-f" "--force" "Identify failures, but overwrite .out files anyway"]
    :args
    test-name ["NAME" "Limit tests to those that match this name"
                :optional true]
@@ -355,9 +386,17 @@
     (if (seq failures)
       (do
         (println (str "\n" red-font (count failures) " failures" reset-font))
-        (if bless
+        (cond
+          force
+          (overwrite-failures failures)
+          
+          bless
           (do-bless failures)
-          (write-failures failures)))
+          
+          :else
+          (do
+            (write-failures failures)
+            (rm failures-path))))
       (do
         (println (str "\n" green-font "OK" reset-font))
         (rm failures-path)))))
@@ -377,10 +416,10 @@
   [overrides-path ["-o" "--overrides PATH" "Path to overrides for dialog.edn"]
    seed ["-s" "--seed NUMBER" "Initialize random number generator"
          :parse-fn atoi]
-   debug ["-d" "--debug" "Print out dgdebug command to be execute"]]
-  (let [ build-data (read-build-file)
+   _ debug-opt]
+  (let [build-data (read-build-file)
         overrides (when overrides-path
-                    (-> overrides-path 
+                    (-> overrides-path
                         slurp
                         read-string))
         build-data' (merge build-data overrides)
@@ -389,12 +428,10 @@
         args (-> (cond-> ["--quit"]
                    seed' (into ["--seed" (str seed')]))
                  (into sources))]
-    (when debug
-      (apply println "dgdebug" args))
-    (os/exec "dgdebug" {:args args
-                        :stdin *in*
-                        :stdout *out*
-                        :stderr *err*})))
+    (exec "dgdebug" {:args args
+                     :stdin *in*
+                     :stdout *out*
+                     :stderr *err*})))
 
 ;; Main entry point.
 (multi/dispatch {:tool-name "dgt"
