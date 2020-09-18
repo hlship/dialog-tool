@@ -35,8 +35,8 @@
 (def green-font (str csi "32m"))
 (def cyan-font (str csi "36m"))
 
-(def default-build-data
-  {:output-format :z8
+(def default-project
+  {:default-output :web
    :name (f/base (joker.os/cwd))
    :debug-sources ["/usr/local/share/dialog-if/stddebug.dg"]
    :library-sources ["/usr/local/share/dialog-if/stdlib.dg"]})
@@ -156,15 +156,15 @@
     (f/glob lib)
     [lib]))
 
-(defn read-build-file
+(defn read-project-file
   []
   (when-not (os/exists? "dialog.edn")
     (fail "No dialog.edn file in current directory."))
   
-  (let [build-data (-> "dialog.edn"
+  (let [project (-> "dialog.edn"
                        slurp
                        read-string)
-        merged (merge default-build-data build-data)]
+        merged (merge default-project project)]
     (reduce (fn [m k]
               (update m k #(mapcat glob-lib %)))
             merged
@@ -173,10 +173,10 @@
 ;; Commands
 
 (defn extract-sources
-  [build-data for-release?]
+  [project for-release?]
   (let [{:keys [story-sources
                 debug-sources
-                library-sources]} build-data
+                library-sources]} project
         sources (reduce into []
                         [story-sources
                          (when-not for-release?
@@ -184,44 +184,121 @@
                          library-sources])]
     (mapv expand-lib sources)))
 
-(defn do-build
-  [build-data options]
-  (let [{:keys [output-format]
-         output-name :name} build-data
-        {:keys [release  verbose]
-         :or {:release true
-              :verbose true}} options
-        output-dir (str "out/"
-                        (if release "release" "test"))
-        output-path (str output-dir
-                         "/"
-                         output-name
-                         "."
-                         (name output-format))
-        sources (extract-sources build-data release)
-        args (into (cond-> ["--format" (name output-format)
-                            "--output" output-path]
-                     verbose (conj "--verbose"))
+
+(defmulti run-build
+  (fn [format project sources output-dir options] format))
+
+(defn  make-args
+  [format project options output-path]
+  (let [{:keys [verbose testing extra-args resource-dir]
+         :or {resource-dir "resources"}} options
+        {:keys [build-args]} project]
+    (cond-> ["--format" (name format)
+             "--output" output-path]
+
+      verbose (conj "--verbose")
+
+      (and resource-dir
+           (os/exists? resource-dir))
+      (conj "--resources" resource-dir)
+
+      (not testing) (conj "--strip")
+
+      extra-args (into extra-args)
+
+      build-args (into build-args))))
+
+(defn invoke-dialogc
+  [format project sources output-dir options]
+  (let [ext (if (= format :aa) "aastory" (name format))
+        output-path (str output-dir "/" (:name project) "." ext) 
+        args (into (make-args format project options output-path)
                    sources)]
-    (mkdirs output-dir)
     (check-result "Compile"
                   (exec "dialogc"
                         {:stdout *out*
                          :stderr *err*
                          :args args}))
+    (println "Wrote" output-path)
     output-path))
+
+(defmethod run-build :z5
+  [format project sources output-dir options]
+  (invoke-dialogc format project sources output-dir options))
+
+(defmethod run-build :z8
+  [format project sources output-dir options]
+  (invoke-dialogc format project sources output-dir options))
+
+(defmethod run-build :aa
+  [format project sources output-dir options]
+  (invoke-dialogc format project sources output-dir options))
+
+(defmethod run-build :zblorb
+  [format project sources output-dir options]
+  (let [{:keys [cover cover-alt]} project
+        extra-args (cond-> nil
+                     cover (conj "--cover" cover)
+                     cover-alt (conj "--cover-alt" cover-alt))]
+    (invoke-dialogc format project sources
+                    output-dir
+                    (assoc options :extra-args extra-args))))
+
+(defn bundle
+  [format project sources output-dir options]
+  (let [aastory-file (run-build :aa project sources output-dir options)
+        bundle-dir (str output-dir "/" (name format))
+        args ["--target" (name format)
+              "--output" bundle-dir
+              aastory-file]]
+    (when (os/exists? bundle-dir)
+      (sh "rm" "-rf" bundle-dir))
+    (check-result "Bundle"
+                  (exec "aambundle"
+                        {:stdout *out*
+                         :stderr *err*
+                         :args args}))
+    (println "Wrote" bundle-dir)))
+
+(defmethod run-build :web
+  [format project sources output-dir options]
+  (bundle format project sources output-dir options))
+
+(defmethod run-build :c64
+  [format project sources output-dir options]
+  (bundle format project sources output-dir options))
+
+(defn do-build
+  [project options]
+  (let [{:keys [default-output]} project
+        {:keys [output-format release]} options
+        output-dir (str "out/"
+                        (if release "release" "test"))
+        sources (extract-sources project release)]
+    (mkdirs output-dir)
+    (run-build (or output-format default-output) project sources output-dir options)))
+
+(def allowed-formats #{:web :aa :zblorb :z8 :z5 :c64})
+
+(def allowed-formats-str (->> allowed-formats (map name) sort (str/join ", ")))
 
 (defcommand build
   "Builds a compiled version of the project
 
   Projects can be built for release, or for testing; the testing
-  build include :debug-sources, the release build does not."
+  build includes :debug-sources, the release build does not."
   [_ debug-opt
    testing ["-t" "--testing" "Compile for testing, including debug sources"]
-   verbose ["-v" "--verbose" "Enable additional compiler output"]]
-  (let [output (do-build (read-build-file) {:release (not testing)
-                                            :verbose verbose})]
-    (println "Wrote file" output)))
+   verbose ["-v" "--verbose" "Enable additional compiler output"]
+   :args
+   format ["FORMAT" (str "Override default output format (" allowed-formats-str ")")
+           :optional true
+           :parse-fn keyword
+           :validate [allowed-formats (str "Unrecognized format, must be one of: " allowed-formats-str)]]]
+  (do-build (read-project-file)
+            {:output-format format 
+             :release (not testing)
+             :verbose verbose}))
 
 (defcommand clean
   "Cleans output"
@@ -249,10 +326,10 @@
   to feed into the game.
   
   Returns nil on success and a failure map on failure."
-  [build-data test-name test-path]
+  [project test-name test-path]
   (let [overrides (overrides-for-test test-path)
-        build-data' (merge build-data overrides)
-        sources (extract-sources build-data' false)
+        project' (merge project overrides)
+        sources (extract-sources project' false)
         test-input (->> test-path
                         slurp
                         str/split-lines
@@ -260,7 +337,7 @@
                         ;; Allow Dialog-style comments in the source transcript
                         (remove #(str/starts-with? % "%%"))
                         (str/join \newline))
-        seed (get build-data' :seed (hash test-path))
+        seed (get project' :seed (hash test-path))
         args (into ["--quit"
                     "--width" "80" ;; Good for comparing test output
                     "-L"
@@ -348,7 +425,7 @@
    test-name ["NAME" "Limit tests to those that match this name"
                :optional true]
    :command-name "test"]
-  (let [build-data (read-build-file)
+  (let [project (read-project-file)
         paths (find-test-paths)
         all-tests (map (fn [path]
                          {:test-path path
@@ -368,7 +445,7 @@
         f (fn [failures {:keys [test-name test-path]}]
             (print (str/pad-left test-name " " max-width) "... ")
             (let [start-time (t/now)
-                  failure (execute-test build-data test-name test-path)
+                  failure (execute-test project test-name test-path)
                   elapsed (str/pad-left
                            (t/string (t/since start-time))
                            " " 18)]
@@ -417,14 +494,14 @@
    seed ["-s" "--seed NUMBER" "Initialize random number generator"
          :parse-fn atoi]
    _ debug-opt]
-  (let [build-data (read-build-file)
+  (let [project (read-project-file)
         overrides (when overrides-path
                     (-> overrides-path
                         slurp
                         read-string))
-        build-data' (merge build-data overrides)
-        seed' (or seed (:seed build-data'))
-        sources (extract-sources build-data' false)
+        project' (merge project overrides)
+        seed' (or seed (:seed project'))
+        sources (extract-sources project' false)
         args (-> (cond-> ["--quit"]
                    seed' (into ["--seed" (str seed')]))
                  (into sources))]

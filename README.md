@@ -28,11 +28,12 @@ Your project must have a `dialog.edn` file at the root.
 > [EDN (Extensible Data Notation)](https://github.com/edn-format/edn) is like JSON on steroids. It's the natural
   choice for Clojure or Joker programmers, but it's close enough to JSON that you should be able to figure it out.
 
-This file identifies the sources in your project as well as other details needs to build, debug, and test your project.
+This file identifies the sources in your project as well as other details needed to build, debug, and test your project.
 
+An example `dialog.edn`:
+ 
 ```
-{:output-format :z8
- :name "monty-haul"
+{:name "monty-haul"
  :story-sources ["src/*.dg"]
  :debug-sources ["debug/*.dg"
                  "/usr/local/share/dialog-if/stddebug.dg"]
@@ -40,19 +41,27 @@ This file identifies the sources in your project as well as other details needs 
                    "/usr/local/share/dialog-if/stdlib.dg"]}
 ```                   
 
+Your `dialog.edn` is merged on top of a default:
+
+```
+{:default-output :web
+  :name <directory name>
+  :debug-sources ["/usr/local/share/dialog-if/stddebug.dg"]
+  :library-sources ["/usr/local/share/dialog-if/stdlib.dg"]}
+```
+
+A very minimal `dialog.edn` will just define `:store-sources`.
+
+You can override the default output format as the argument to `dgt build`, e.g., `dgt build c64`.
+
 `dgt` uses three sets of sources.
 For each, you may specify any number of individual files, or _glob matches_.
 You should be careful with glob matches, as Dialog can be sensitive to the order in which
 source files are loaded.
 
 * `:story-sources` - sources specific to your project
-* `:debug-sources` - used by the `debug` and `build --test` commands
+* `:debug-sources` - used by the `test`, `debug` and `build --test` commands
 * `:library-sources` - additional libraries, including the standard library
-
-You may omit `:debug-sources` or `:library-sources`; the default `stddebug.dg` and `stdlib.dg` will be
-supplied.
-
-The default for `:output-format` is `:z8`, and the default for `:name` is the name of the current directory.
 
 You may optinally specify a numeric `:seed` value, used to initialize the random number generator.
 This can be very useful when writing tests where output text varies randomly; the same test script
@@ -84,18 +93,19 @@ be a Git commit SHA.
 ## Write / Run / Test Loop
 
 Dialog makes it easy to code and test at the same time; the
-`dgdebug` does a great job of updating in-place
+`dgdebug` command does a great job of updating in-place
 when any of the source files change.
 
 Testing is very simple with `dgt`; under the `tests` folder are `.txt` files
 and corresponding `.out` files.
-The first is a transcript for the project, the series of commands to execute.
-The transcript may also include Dialog style comments (`%%`), and
+The `.txt` file is a series of commands to execute, and the `.out` file is the
+expected game output from executing those commands.
+The `.txt` file may also include Dialog style comments (`%%`), and
 Dialog queries, including `(now)` queries.
 
 The `dgt test` command finds each of these files, runs the debugger to execute
-the transcript, and captures the output.
-If the output matches the `.out` file, the test is succesful.
+the game script, and captures the output.
+If the output matches the `.out` file, the test is successful.
 Otherwise, the actual output is saved and the test is a failure; the
 `dgt bless` command allows you to review failed tests, using
 a colorized side-by-side diff, and identify those where
@@ -111,6 +121,10 @@ with `@`) and the ability to evaluate predicates, these
 inputs are *not* saved to the input transcript file, which is
 very convienient.
 
+`dgt test --force` will automatically bless all failed tests; you can then
+use source code control to perform the diff, which works better for very long
+transcripts.
+
 ## Installing
 
 ```
@@ -122,8 +136,6 @@ brew install hlship/brew/dialog-tool
 - Version numbers at start of game transcripts are problematic
   and perhaps can be editted out by `dgt` to prevent false
   failures
-- Packaging as a zblorb
-- Build along with a website, etc.
 
 ## License
 

@@ -1,6 +1,14 @@
-1.3 -- UNRELEASED
+1.3 -- 17 Sep 2020
 
 `dgt test` now blesses failed tests by default
+
+`dgt test --force` will automatically bless failed tests
+
+`dgt build` now takes an optional format to output and can now build
+as aa, c64, web, z5, z8, or zblorb.
+
+All commands now include a `--debug` argument that outputs shell commands
+as they are executed.
 
 1.2 -- 9 Aug 2020
 
