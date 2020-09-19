@@ -1,3 +1,7 @@
+# 1.4 -- UNRELEASED
+
+Remove the `bless` command; it is now all done from the `test` command.
+
 # 1.3 -- 17 Sep 2020
 
 `dgt test` now blesses failed tests by default

@@ -360,11 +360,6 @@
          :output-path output-path
          :blessed-path blessed-path}))))
 
-(defn write-failures 
-  [failures]
-  (spit failures-path
-        (with-out-str (pprint failures))))
-
 (defn overwrite-failures
   [failures]
   (doseq [{:keys [output-path blessed-path]} failures]
@@ -390,52 +385,40 @@
       (let [input (read-line)]
         (cond
           (= input "y")
-          (do
-            (check-result "Move file" (sh "mv" "-f" output-path blessed-path))
-            true)
+          (check-result "Move file" (sh "mv" "-f" output-path blessed-path))
 
           (or (= input "")
               (= input "n"))
-          false
+          nil
 
           :else
           (do
             (println (str red-font "Enter 'y' or 'n' (or hit enter)" reset-font))
             (recur)))))))
 
-(defn do-bless
-  [failures]
-  (let [f (fn [failures failure-map]
-            (if (bless-test failure-map)
-              failures
-              (conj failures failure-map)))
-        failures' (reduce f [] failures)]
-    (if (seq failures')
-      (write-failures failures')
-      (rm failures-path))))
+(defn format-nanos
+  [nanos]
+  (format "%8.1f ms"
+          (double (/ nanos 1e6))))
 
 (defcommand run-tests
-  "Runs tests, capturing output, summarizing failures"
-  [bless ["-b" "--no-bless" "Immediately bless changes if there are failures"
-          :default true
-          :update-fn (constantly false)]
+  "Runs tests, capturing output, summarizing failures, then ask to 'bless' changes"
+  [force ["-f" "--force" "Identify failures, but overwrite .out files anyway"]
    _ debug-opt
-   force ["-f" "--force" "Identify failures, but overwrite .out files anyway"]
    :args
    test-name ["NAME" "Limit tests to those that match this name"
-               :optional true]
+              :optional true]
    :command-name "test"]
   (let [project (read-project-file)
         paths (find-test-paths)
-        all-tests (map (fn [path]
-                         {:test-path path
-                          :test-name (-> path
-                                         (str/replace "tests/" "")
-                                         (str/replace #"\.txt" ""))})
-                       paths)
-        tests (if test-name
-                (filter #(str/includes? (:test-name %) test-name) all-tests)
-                all-tests)
+        tests (cond->> (map (fn [path]
+                              {:test-path path
+                               :test-name (-> path
+                                              (str/replace "tests/" "")
+                                              (str/replace #"\.txt" ""))})
+                            paths)
+                test-name  (filter #(str/includes? (:test-name %) test-name))
+                true (sort-by :test-name))
         _ (when (empty? tests)
             (fail "No tests match"))
         max-width (->> tests
@@ -446,9 +429,8 @@
             (print (str/pad-left test-name " " max-width) "... ")
             (let [start-time (t/now)
                   failure (execute-test project test-name test-path)
-                  elapsed (str/pad-left
-                           (t/string (t/since start-time))
-                           " " 18)]
+                  elapsed (format-nanos
+                           (t/since start-time))]
               (if failure
                 (do
                   (println (str red-font "X" reset-font) elapsed)
@@ -456,37 +438,14 @@
                 (do
                   (println (str green-font \u2713 reset-font) elapsed)
                   failures))))
-        failures (->> tests
-                      (sort-by :test-name)
-                      (reduce f []))]
-    (mkdirs "out")
+        failures (reduce f [] tests)]
     (if (seq failures)
       (do
         (println (str "\n" red-font (count failures) " failures" reset-font))
-        (cond
-          force
+        (if force
           (overwrite-failures failures)
-          
-          bless
-          (do-bless failures)
-          
-          :else
-          (do
-            (write-failures failures)
-            (rm failures-path))))
-      (do
-        (println (str "\n" green-font "OK" reset-font))
-        (rm failures-path)))))
-
-(defcommand bless
-  "Review failed tests and bless those where the change is acceptable"
-  []
-  (when-not (os/exists? failures-path)
-    (fail "No failed tests to bless"))
-  (-> failures-path
-      slurp
-      read-string
-      do-bless))
+          (run! bless-test failures)))
+      (println (str "\n" green-font "OK" reset-font)))))
 
 (defcommand debug
   "Runs the game in the Dialog debugger"
