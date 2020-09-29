@@ -1,6 +1,8 @@
-# 1.4 -- UNRELEASED
+# 1.4 -- 29 Sep 2020
 
 Remove the `bless` command; it is now all done from the `test` command.
+
+Fix building cover art options passed to `dialogc`.
 
 # 1.3 -- 17 Sep 2020
 

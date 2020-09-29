@@ -23,7 +23,7 @@
 
 (def debug-opt
   ["-d" "--debug" "Output shell commands before executing them"
-   :update-fn (fn [_] 
+   :update-fn (fn [_]  
                 (reset! *debug true)
                 true)])
 
@@ -237,7 +237,7 @@
 (defmethod run-build :zblorb
   [format project sources output-dir options]
   (let [{:keys [cover cover-alt]} project
-        extra-args (cond-> nil
+        extra-args (cond-> []
                      cover (conj "--cover" cover)
                      cover-alt (conj "--cover-alt" cover-alt))]
     (invoke-dialogc format project sources
@@ -375,8 +375,9 @@
   (let [{:keys [test-name output-path blessed-path]} failure-map]
     ;; Its going to fail (with 1) because the files are not the same
     (exec "colordiff" {:args ["-N" "-y" "-W" "170"
-                                 "--left-column"
-                                 blessed-path output-path]
+                              "--left-column"
+                              "--horizon-lines=30"
+                              blessed-path output-path]
                           :stdout *out*
                           :stderr *err*})
     (println)
