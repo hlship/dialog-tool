@@ -46,15 +46,13 @@
   [])
 
 (comment
-  (time
-    (do
-      (def proc (sp/start-debug-process "dgdebug" (pf/read-project "../../olivia/petshop")))
+  (def proc (sp/start-debug-process "dgdebug" (pf/read-project "../../olivia/petshop")))
 
-      (sp/read-response! proc)))
+  (sp/read-response! proc)
 
   (-> proc :process .isAlive)
 
-  (sp/write-command! proc "get up")
+  (time (sp/write-command! proc "get up"))
   (sp/write-command! proc "look")
   (sp/kill! proc)
 

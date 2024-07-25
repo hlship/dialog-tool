@@ -1,75 +1,40 @@
 (ns dialog-tool.skein.process
   (:require [babashka.fs :as fs]
             [clojure.core.async :refer [chan close! >!! <!!]]
+            [clojure.string :as string]
             [dialog-tool.project-file :as pf])
-  (:import (java.io BufferedReader IOException PrintWriter)
+  (:import (java.io BufferedReader PrintWriter)
            (java.util List)))
 
 
-(defn- conj-line
-  [lines buffer line-start line-end-inclusive]
-  (cond-> lines
-          (>= line-end-inclusive line-start) (conj (String/valueOf buffer line-start (- (inc line-end-inclusive) line-start)))))
-
-(defn- split-buffer
-  [buffer n-read]
-  (loop [i 0
-         line-start 0
-         lines []]
-    (cond
-      (> line-start n-read)
-      lines
-
-      (>= i n-read)
-      (conj-line lines buffer line-start (dec i))
-
-      (= (aget buffer i) \newline)
-      (recur (inc i)
-             (inc i)
-             (conj-line lines buffer line-start i))
-
-      :else
-      (recur (inc i)
-             line-start
-             lines))))
+(defn- check-for-end-of-response
+  [sb output-ch]
+  (let [s (.toString sb)]
+    (when (string/ends-with? s "> ")
+      (let [last-nl (string/last-index-of s \newline)]
+        (assert (pos? last-nl))
+        (.setLength sb 0)
+        ;; Send everything upto and including the newline
+        (>!! output-ch (subs s 0 (inc last-nl)))
+        ;; Put prompt back into the SB
+        (.append sb (subs s (inc last-nl)))))))
 
 (defn- read-loop
   [^BufferedReader r output-ch]
-  ;; Buffer really only needs to be big enough to read a single line
-  (let [buffer-size 100
+  ;; TODO: Verify this all works as expected when we need to read into the buffer multiple times.
+  (let [buffer-size 2000
         buffer (char-array buffer-size)
-        sb (StringBuilder. 1000)]
+        sb (StringBuilder. buffer-size)]
     (loop []
       ;; Only read as much as is ready, so that we don't block at a bad time. We need to read
       ;; up to the prompt (which will not have a trailing new line). Reading past the prompt will block.
       (let [n-read (.read r buffer 0 buffer-size)]
         (if (neg? n-read)
           (close! output-ch)
-          (let [lines (split-buffer buffer n-read)
-                last-line (last lines)]
-            ;; TODO: This will cause use pain later because there's a few places where Dialog may
-            ;; prompt us before the ">".  Further, Dialog can read a single key, have to figure out
-            ;; what that does.  Playing with streams at this low level is painful.  Would a PushbackReader
-            ;; make it easier?
-            (if (= last-line "> ")
-              (do
-                ;; Everything but the trailing prompt line goes into
-                ;; a single string (which includes newlines) and is conveyed through
-                ;; the channel.
-                (run! #(.append sb %) (butlast lines))
-                (>!! output-ch (.toString sb))
-                (.setLength sb 0)
-                ;; Add the prompt back in; the *next* command will be echoed after and the transcript will
-                ;; look correct e.g., "> go east".
-                (.append sb "> ")
-                ;; The prompt doesn't go into the output channel
-                (recur))
-              (do
-                ;; This can be zero, especially when the sub-process dies or is killed.
-                (when (pos? n-read)
-                  (.append sb buffer 0 n-read))
-                (recur)))))))))
-
+          (do
+            (.append sb buffer 0 n-read)
+            (check-for-end-of-response sb output-ch)
+            (recur)))))))
 
 (defn- start-thread
   [reader output-ch]
