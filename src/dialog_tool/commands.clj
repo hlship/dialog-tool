@@ -1,6 +1,8 @@
 (ns dialog-tool.commands
   (:require [babashka.process :as p]
             [net.lewisship.cli-tools :as cli :refer [defcommand]]
+            [dialog-tool.skein.process :as sp]
+            [clj-commons.format.binary :as b]
             [dialog-tool.project-file :as pf]))
 
 (def path-opt ["-p" "--path PATH" "Path to root directory of Dialog project."
@@ -19,7 +21,7 @@
   (let [project (pf/read-project path)
         extra-args (cond-> []
                            width (conj "--width" width))
-        cmd (-> [debugger "--quit" "-D"]
+        cmd (-> [debugger "--quit"]
                 (into extra-args)
                 (into (pf/expand-sources project {:debug? true})))
         *process (p/process {:cmd     cmd
@@ -35,12 +37,26 @@
   "Runs the Skein UI to test the Dialog project."
   [])
 
-(defcommand compile
+(defcommand compile-project
   "Compiles the project to a file ready execute with an interpreter."
-  [])
-
-
+  [:command "compile"])
 
 (defcommand bundle
   "Bundles a project into a Zip archive that can be deployed to a web host."
   [])
+
+(comment
+  (time
+    (do
+      (def proc (sp/start-debug-process "dgdebug" (pf/read-project "../../olivia/petshop")))
+
+      (sp/read-response! proc)))
+
+  (-> proc :process .isAlive)
+
+  (sp/write-command! proc "get up")
+  (sp/write-command! proc "look")
+  (sp/kill! proc)
+
+  )
+

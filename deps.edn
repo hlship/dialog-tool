@@ -6,7 +6,8 @@
          org.clj-commons/pretty     {:mvn/version "3.0.0"}
          io.github.hlship/cli-tools {:mvn/version "0.12"}
          ;; Bundled Babashka dependencies:
-         babashka/fs                {:mvn/version "0.5.21"}}
+         babashka/fs                {:mvn/version "0.5.21"}
+         org.clojure/core.async     {:mvn/version "1.6.681"}}
 
  :aliases
  {:test {:extra-paths ["dev"
