@@ -46,7 +46,7 @@
 
 (defn start-debug-process
   [debugger-path project]
-  (let [^List cmd (-> [debugger-path "--quit" "--width" "80"]
+  (let [^List cmd (-> [debugger-path "--quit" #_ #_  "--width" "80"]
                       (into (pf/expand-sources project {:debug? true})))
         dir (-> project :dir fs/file)
         process (-> (ProcessBuilder. cmd)

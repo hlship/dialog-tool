@@ -2,13 +2,15 @@
   (:require [babashka.process :as p]
             [net.lewisship.cli-tools :as cli :refer [defcommand]]
             [dialog-tool.skein.process :as sp]
-            [clj-commons.format.binary :as b]
+            [dialog-tool.skein.file :as sk.file]
+            [dialog-tool.skein.tree :as tree]
             [dialog-tool.project-file :as pf]))
 
 (def path-opt ["-p" "--path PATH" "Path to root directory of Dialog project."
                :default "."])
 (def debugger-opt ["-D" "--debugger PATH" "Path to Dialog dgdebug executable."
-                   :default "/usr/local/bin/dgdebug"])
+                   ;; Soon: deal with /usr/lib/bin vs. /opt/homebrew/bin
+                   :default "dgdebug"])
 
 (defcommand debug
   "Run the project in the Dialog debugger."
@@ -46,15 +48,30 @@
   [])
 
 (comment
-  (def proc (sp/start-debug-process "dgdebug" (pf/read-project "../../olivia/petshop")))
+  (-> (pf/read-project "../sanddancer-dialog") (pf/expand-sources {:debug? true}))
+
+  (def proc (sp/start-debug-process "dgdebug" (pf/read-project "../sanddancer-dialog")))
 
   (sp/read-response! proc)
 
   (-> proc :process .isAlive)
 
-  (time (sp/write-command! proc "get up"))
+  (time (sp/write-command! proc "brood stories"))
   (sp/write-command! proc "look")
   (sp/kill! proc)
+
+
+  (let [id1 (tree/next-id)
+        id2 (tree/next-id)]
+    (-> (tree/new-tree)
+        (assoc-in [:meta :seed] 998877)
+        (tree/update-response 0 "Wicked Cool Adventure\n")
+        (tree/add-child 0 id1 "look" "room description")
+        (tree/add-child id1 id2 "get lamp" "You pick up the lamp.\n")
+        (tree/bless-node id2)
+        (tree/update-response id2 "You pick up the dusty lamp.\n")
+        (sk.file/write-skein *out*)))
+
 
   )
 

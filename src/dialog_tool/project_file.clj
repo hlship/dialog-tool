@@ -6,10 +6,10 @@
 
 (defn read-project
   [dir]
-  (let [dir' (fs/path (or dir "."))
-        path (fs/path dir' "dialog.edn")
-        _ (or (fs/exists? path)
-              (fail (str path) " does not exist"))
+  (let [dir'    (fs/path (or dir "."))
+        path    (fs/path dir' "dialog.edn")
+        _       (or (fs/exists? path)
+                    (fail (str path) " does not exist"))
         content (-> path
                     fs/file
                     slurp
@@ -35,10 +35,9 @@
                  story
                  (when debug? debug)
                  library)]
-     (->>
-       globs
-       (mapcat #(expand-source dir %))
-       (map str)))))
+     (->> globs
+          (mapcat #(expand-source dir %))
+          (map str)))))
 
 
 
