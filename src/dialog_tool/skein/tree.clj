@@ -31,6 +31,17 @@
         (assoc-in [:nodes new-id] node)
         (update-in [:children parent-id] conj* new-id))))
 
+(defn rebuild-children
+  "Rebuilds the tree's :children index (this is used after reading
+   a skein file)."
+  [tree]
+  (let [children (->> tree
+                      :nodes
+                      vals
+                      (reduce (fn [m {:keys [id parent-id]}]
+                                (update parent-id conj* id))))]
+    (assoc tree :children children)))
+
 (defn delete-node
   "Deletes a previously added node, and any children below it."
   [tree node-id]
@@ -65,6 +76,5 @@
   (update-in tree [:nodes node-id] store-response new-response))
 
 (comment
-
 
   )

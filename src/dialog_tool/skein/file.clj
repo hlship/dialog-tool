@@ -3,7 +3,7 @@
   (:require [babashka.fs :as fs]
             [dialog-tool.skein.tree :as tree]
             [clojure.java.io :as io])
-  (:import (java.io BufferedOutputStream FileOutputStream PrintWriter)))
+  (:import (java.io BufferedOutputStream FileOutputStream LineNumberReader PrintWriter Reader)))
 
 (def ^:private sep
   "--------------------------------------------------------------------------------")
@@ -39,6 +39,98 @@
       (when unblessed
         (.println out unblessed-sep)
         (.println out unblessed)))))
+
+
+(def meta-parsers
+  {"seed" #(assoc-in %1 [:meta :seed] (parse-long %2))})
+
+(def kv-re #"(?x)
+    (.+): \s (.+)$ ")
+
+(defn- parse-kv
+  [line]
+  (when-let [[_ k v] (re-matches kv-re line)]
+    [k v]))
+
+(defn- apply-kv
+  [m k v parsers]
+  (if-let [parser (get parsers k)]
+    (parser m v)
+    m))
+
+(comment
+  (parse-kv "not a kv")
+  (parse-kv "seed: 12345")
+
+  )
+
+(defn- read-meta
+  [^LineNumberReader r]
+  (loop [meta {}]
+    (let [line (.readLine r)]
+      (if (or (nil? line)                                   ; should not happen, but ...
+              (= sep line))
+        {:meta meta}
+        (let [[k v] (parse-kv line)]
+          (if k
+            (recur (apply-kv meta k v meta-parsers))
+            (recur meta)))))))
+
+(def node-parsers
+  {"id"        #(assoc %1 :id (parse-long %2))
+   "parent-id" #(assoc %1 :parent-id (parse-long %2))
+   "command"   #(assoc %1 :command %2)})
+
+(defn- read-content
+  [node ^LineNumberReader r]
+  node)
+
+(defn- read-node-attrs
+  [^LineNumberReader r]
+  (loop [node {}]
+    (let [line (.readLine r)]
+      (cond
+        (nil? line)
+        node
+
+        (= sep line)
+        (read-content node r)
+
+        :else
+        (let [[k v] (parse-kv line)]
+          (if k
+            (recur (apply-kv node k v node-parsers))
+            (recur node)))))))
+
+(defn- read-node
+  [^LineNumberReader in]
+  (loop [node (read-node-attrs in)]))
+
+(defn- read-nodes
+  [initial-tree ^LineNumberReader in]
+  (loop [tree initial-tree]
+    (if-let [node (read-node in)]
+      (recur (apply-node tree node))
+      tree)))
+
+(defn read-skein
+  [^LineNumberReader in]
+  (-> (read-meta in)
+      (read-nodes in)))
+
+(defn load-skein
+  [path]
+  (with-open [reader (-> path
+                         fs/path
+                         fs/file
+                         io/reader
+                         LineNumberReader.)]
+    (read-skein reader)))
+
+(comment
+  (load-skein "game.skein")
+
+  )
 
 (defn save-skein
   "Saves the Skein to the file identified by the given path.  Writes the file atomically,
