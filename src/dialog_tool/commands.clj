@@ -68,7 +68,7 @@
         (tree/update-response 0 "Wicked Cool Adventure\n")
         (tree/add-child 0 id1 "look" "room description")
         (tree/add-child id1 id2 "get lamp" "You pick up the lamp.\n")
-        (tree/bless-node id2)
+        (tree/bless-response id2)
         (tree/update-response id2 "You pick up the dusty lamp.\n")
         (sk.file/write-skein *out*)))
 

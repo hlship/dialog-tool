@@ -7,7 +7,7 @@
 
 (defn create-new!
   [debugger-path project seed skein-path]
-  ;; TODO: Make work better to just pass in the already started process
+  ;; TODO: May work better to just pass in the already started process
   (let [process (sk.process/start-debug-process! debugger-path
                                                  project
                                                  seed)
@@ -53,7 +53,7 @@
   [session]
   (let [{:keys [process]} session
         new-initial-response (sk.process/send-command! process "(restart)")
-        ;; TODO: Clip first line?
+        ;; TODO: Clip first line? "> (restart)"
         ;; TODO: restart maybe should be handled by sk.process
         ;; TODO: verify that RNG is reset too (otherwise, have to restart entire process).
         ]
@@ -62,14 +62,16 @@
         (update :tree tree/update-response 0 new-initial-response))))
 
 (defn replay-to!
-  "Restarts the game, then plays through all the commands leading up to the node."
+  "Restarts the game, then plays through all the commands leading up to the node.
+  This will either verify that each node's response is unchanged, or capture
+  unblessed responses to be verified."
   [session node-id]
   (let [commands (collect-commands (:tree session) node-id)]
     (reduce command! (restart! session) commands)))
 
 (defn bless
   [session node-id]
-  (update session :tree tree/bless-node node-id))
+  (update session :tree tree/bless-response node-id))
 
 (defn- bless-all
   [session]
@@ -87,7 +89,6 @@
   "Kills the session, and the underlying process. Returns nil."
   [session]
   (sk.process/kill! (:process session)))
-
 
 ;; Temporary
 

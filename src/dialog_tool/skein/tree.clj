@@ -1,6 +1,8 @@
 (ns dialog-tool.skein.tree
-  "Tree of nodes."
-  )
+  "Tree of Skein nodes.  Each node represents one command in a chain of commands
+  starting at the root node. Each node has a unique id.
+
+  Nodes have a response and optionally an unblessed response.")
 
 (defn new-tree
   [seed]
@@ -21,7 +23,7 @@
   (conj (or set #{}) k))
 
 (defn add-child
-  "Adds a child node.  The text is added as :"
+  "Adds a child node.  The response is initially unblessed."
   [tree parent-id new-id command response]
   (let [node {:id        new-id
               :parent-id parent-id
@@ -55,15 +57,19 @@
         (update :nodes dissoc node-id)
         (update-in [:children parent-id] disj node-id))))
 
-(defn- bless-node*
+(defn- bless-node
   [node]
-  (-> node
-      (dissoc :unblessed)
-      (assoc :response (:unblessed node))))
+  (if (contains? node :unblessed)
+    (-> node
+        (dissoc :unblessed)
+        (assoc :response (:unblessed node)))
+    node))
 
-(defn bless-node
+(defn bless-response
+  "Blesses a node's response by rolling the unblessed response into the main response.
+  Does nothing if the node has no unblessed response."
   [tree node-id]
-  (update-in tree [:nodes node-id] bless-node*))
+  (update-in tree [:nodes node-id] bless-node))
 
 (defn- store-response
   [node response]
