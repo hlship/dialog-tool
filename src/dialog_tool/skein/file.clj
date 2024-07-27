@@ -17,6 +17,16 @@
     (.print ": ")
     (.println (str v))))
 
+(defn- sep?
+  [s]
+  (or (nil? s)
+      (re-matches #"-{4,}" s)))
+
+(defn- unblessed-sep?
+  [s]
+  (and (some? s)
+       (re-matches #"<+{4,}" s)))
+
 (defn write-skein
   [tree ^PrintWriter out]
   (let [{:keys [meta nodes]} tree]
@@ -42,10 +52,13 @@
 
 
 (def meta-parsers
-  {"seed" #(assoc-in %1 [:meta :seed] (parse-long %2))})
+  {"seed" parse-long})
 
 (def kv-re #"(?x)
-    (.+): \s (.+)$ ")
+    (.+):   # key portion
+    \s*     # zero or more spaces
+    (.+)    # value (may include trailing spaces)
+    ")
 
 (defn- parse-kv
   [line]
@@ -55,21 +68,14 @@
 (defn- apply-kv
   [m k v parsers]
   (if-let [parser (get parsers k)]
-    (parser m v)
+    (assoc m (keyword k) (parser v))
     m))
-
-(comment
-  (parse-kv "not a kv")
-  (parse-kv "seed: 12345")
-
-  )
 
 (defn- read-meta
   [^LineNumberReader r]
   (loop [meta {}]
     (let [line (.readLine r)]
-      (if (or (nil? line)                                   ; should not happen, but ...
-              (= sep line))
+      (if (sep? line)
         {:meta meta}
         (let [[k v] (parse-kv line)]
           (if k
@@ -77,17 +83,40 @@
             (recur meta)))))))
 
 (def node-parsers
-  {"id"        #(assoc %1 :id (parse-long %2))
-   "parent-id" #(assoc %1 :parent-id (parse-long %2))
-   "command"   #(assoc %1 :command %2)})
+  {"id"        parse-long
+   "parent-id" parse-long
+   "command"   identity})
+
+(defn- apply-content
+  [node k ^StringBuilder sb]
+  (if (pos? (.length sb))
+    (let [s (str sb)]
+      (.setLength sb 0)
+      (assoc node k s))
+    node))
 
 (defn- read-content
-  [node ^LineNumberReader r]
-  node)
+  [initial-node ^LineNumberReader r]
+  (let [sb (StringBuilder. 1000)]
+    (loop [node initial-node
+           k :response]
+      (let [line (.readLine r)]
+        (cond
+          (sep? line)
+          (apply-content node k sb)
 
-(defn- read-node-attrs
+          (unblessed-sep? line)
+          (recur (apply-content node k sb) :unblessed)
+
+          :else
+          (do
+            (.append sb ^String line)
+            (.append sb \newline)
+            (recur node k)))))))
+
+(defn- read-node
   [^LineNumberReader r]
-  (loop [node {}]
+  (loop [node nil]
     (let [line (.readLine r)]
       (cond
         (nil? line)
@@ -102,21 +131,19 @@
             (recur (apply-kv node k v node-parsers))
             (recur node)))))))
 
-(defn- read-node
-  [^LineNumberReader in]
-  (loop [node (read-node-attrs in)]))
-
 (defn- read-nodes
   [initial-tree ^LineNumberReader in]
   (loop [tree initial-tree]
     (if-let [node (read-node in)]
-      (recur (apply-node tree node))
+      ;; Just add the node, we rebuild the :children index at the end
+      (recur (assoc-in tree [:nodes (:id node)] node))
       tree)))
 
 (defn read-skein
   [^LineNumberReader in]
   (-> (read-meta in)
-      (read-nodes in)))
+      (read-nodes in)
+      tree/rebuild-children))
 
 (defn load-skein
   [path]
@@ -128,7 +155,7 @@
     (read-skein reader)))
 
 (comment
-  (load-skein "game.skein")
+  (load-skein "target/game.skein")
 
   )
 
@@ -141,12 +168,12 @@
                       fs/canonicalize
                       fs/parent
                       (fs/path (str "_" (fs/file-name path'))))]
+    (fs/create-dir (fs/parent temp-path))
     (with-open [out (-> temp-path
                         fs/file
                         io/writer
                         PrintWriter.)]
       (write-skein tree out))
-
     (fs/move temp-path path' {:replace-existing true
                               :atomic-move      true})
 
@@ -163,7 +190,7 @@
         (tree/add-child id1 id2 "get lamp" "You pick up the lamp.\n")
         (tree/bless-node id2)
         (tree/update-response id2 "You pick up the dusty lamp.\n")
-        (save-skein "game.skein")))
+        (save-skein "target/game.skein")))
 
   )
 

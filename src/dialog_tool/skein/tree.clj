@@ -39,7 +39,10 @@
                       :nodes
                       vals
                       (reduce (fn [m {:keys [id parent-id]}]
-                                (update parent-id conj* id))))]
+                                (if parent-id
+                                  (update m parent-id conj* id)
+                                  m))
+                              {}))]
     (assoc tree :children children)))
 
 (defn delete-node
