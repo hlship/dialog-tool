@@ -3,8 +3,8 @@
   )
 
 (defn new-tree
-  []
-  {:meta     {}
+  [seed]
+  {:meta     {:seed seed}
    :nodes    {0 {:id    0
                  :label "START"}}
    ;; id -> #{id ...} of child nodes
@@ -78,6 +78,15 @@
   [tree node-id new-response]
   (update-in tree [:nodes node-id] store-response new-response))
 
-(comment
+(defn find-child-id
+  "Looks in the children of the given node for an existing node with
+  the indicated command string; if found, returns the node's id, otherwise
+   returns nil."
+  [tree node-id command]
+  (let [{:keys [children nodes]} tree]
+    (->> (get children node-id)
+         (map nodes)
+         (filter #(= command (:command %)))
+         first
+         :id)))
 
-  )

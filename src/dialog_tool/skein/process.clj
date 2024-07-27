@@ -1,11 +1,13 @@
 (ns dialog-tool.skein.process
+  "Management of a sub-process running the Dialog debugger,
+  sending it commands to execute, and receiving back
+  the results (output) from those commands."
   (:require [babashka.fs :as fs]
             [clojure.core.async :refer [chan close! >!! <!!]]
             [clojure.string :as string]
             [dialog-tool.project-file :as pf])
   (:import (java.io BufferedReader PrintWriter)
            (java.util List)))
-
 
 (defn- check-for-end-of-response
   [sb output-ch]
@@ -14,8 +16,9 @@
       (let [last-nl (string/last-index-of s \newline)]
         (assert (pos? last-nl))
         (.setLength sb 0)
-        ;; Send everything upto and including the newline
-        (>!! output-ch (subs s 0 (inc last-nl)))
+        ;; Keep only up to the newline, then trim whitespace and send
+        (>!! output-ch
+             (string/trim (subs s 0 (inc last-nl))))
         ;; Put prompt back into the SB
         (.append sb (subs s (inc last-nl)))))))
 
@@ -38,15 +41,18 @@
 
 (defn- start-thread
   [reader output-ch]
-  (let [f #(read-loop reader output-ch)
-        thread (doto (Thread. ^Runnable f "dialog debug reader")
-                 (.setDaemon true)
-                 .start)]
-    thread))
+  (let [f #(read-loop reader output-ch)]
+    (doto (Thread. ^Runnable f "dialog debugger reader")
+      (.setDaemon true)
+      .start)))
 
-(defn start-debug-process
-  [debugger-path project]
-  (let [^List cmd (-> [debugger-path "--quit" #_ #_  "--width" "80"]
+(defn start-debug-process!
+  "Starts a Skein process using the Dialog debugger."
+  [debugger-path project seed]
+  (let [^List cmd (-> [(or debugger-path "dgdebug")
+                       "--quit"
+                       "--seed" (str seed)
+                       "--width" "80"]
                       (into (pf/expand-sources project {:debug? true})))
         dir (-> project :dir fs/file)
         process (-> (ProcessBuilder. cmd)
@@ -66,7 +72,9 @@
   [debug-process]
   (-> debug-process :output-ch <!!))
 
-(defn write-command!
+(defn send-command!
+  "Sends a player command to the process, blocking until a response to the command
+  is available.  Returns the response."
   [debug-process ^String cmd]
   (let [{:keys [^PrintWriter stdin-writer]} debug-process]
     (doto stdin-writer
@@ -76,6 +84,8 @@
   (read-response! debug-process))
 
 (defn kill!
+  "Kills the debug process and returns nil."
   [debug-process]
   (let [{:keys [^Process process]} debug-process]
-    (.destroy process)))
+    (.destroy process))
+  nil)

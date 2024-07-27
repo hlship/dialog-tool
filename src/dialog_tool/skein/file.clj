@@ -3,7 +3,7 @@
   (:require [babashka.fs :as fs]
             [dialog-tool.skein.tree :as tree]
             [clojure.java.io :as io])
-  (:import (java.io BufferedOutputStream FileOutputStream LineNumberReader PrintWriter Reader)))
+  (:import (java.io IOException LineNumberReader PrintWriter)))
 
 (def ^:private sep
   "--------------------------------------------------------------------------------")
@@ -12,10 +12,11 @@
 
 (defn- p
   [^PrintWriter out ^String label v]
-  (doto out
-    (.print label)
-    (.print ": ")
-    (.println (str v))))
+  (when v
+    (doto out
+      (.print label)
+      (.print ": ")
+      (.println (str v)))))
 
 (defn- sep?
   [s]
@@ -27,14 +28,20 @@
   (and (some? s)
        (re-matches #"<+{4,}" s)))
 
+(defn- s->long
+  [s]
+  (or (parse-long s)
+      (throw (IllegalArgumentException. (format "Could not parse '%s' as a number" s)))))
+
 (defn write-skein
   [tree ^PrintWriter out]
   (let [{:keys [meta nodes]} tree]
     (p out "seed" (:seed meta))
     (doseq [node-id (-> tree :nodes keys sort)
-            :let [{:keys [id parent-id response unblessed command]} (get nodes node-id)]]
+            :let [{:keys [id parent-id response unblessed command label]} (get nodes node-id)]]
       (.println out sep)
       (p out "id" id)
+      (p out "label" label)
       (when parent-id
         ;; The START node has no parent
         (p out "parent-id" parent-id))
@@ -52,7 +59,7 @@
 
 
 (def meta-parsers
-  {"seed" parse-long})
+  {"seed" s->long})
 
 (def kv-re #"(?x)
     (.+):   # key portion
@@ -83,9 +90,10 @@
             (recur meta)))))))
 
 (def node-parsers
-  {"id"        parse-long
-   "parent-id" parse-long
-   "command"   identity})
+  {"id"        s->long
+   "parent-id" s->long
+   "command"   identity
+   "label"     identity})
 
 (defn- apply-content
   [node k ^StringBuilder sb]
@@ -141,9 +149,17 @@
 
 (defn read-skein
   [^LineNumberReader in]
-  (-> (read-meta in)
-      (read-nodes in)
-      tree/rebuild-children))
+  (try
+    (-> (read-meta in)
+        (read-nodes in)
+        tree/rebuild-children)
+    (catch Exception e
+      (let [m (or (ex-message e)
+                  (-> e class .getName))
+            line (.getLineNumber in)]
+        (throw (IOException. (format "Unable to read skein: %s (on line %d)"
+                                     m line)
+                             e))))))
 
 (defn load-skein
   [path]
@@ -154,11 +170,6 @@
                          LineNumberReader.)]
     (read-skein reader)))
 
-(comment
-  (load-skein "target/game.skein")
-
-  )
-
 (defn save-skein
   "Saves the Skein to the file identified by the given path.  Writes the file atomically,
   then returns the tree."
@@ -167,8 +178,10 @@
         temp-path (-> path'
                       fs/canonicalize
                       fs/parent
-                      (fs/path (str "_" (fs/file-name path'))))]
-    (fs/create-dir (fs/parent temp-path))
+                      (fs/path (str "_" (fs/file-name path'))))
+        parent (fs/parent temp-path)]
+    (when-not (fs/exists? parent)
+      (fs/create-dir parent))
     (with-open [out (-> temp-path
                         fs/file
                         io/writer
@@ -178,19 +191,3 @@
                               :atomic-move      true})
 
     tree))
-
-(comment
-
-  (let [id1 (tree/next-id)
-        id2 (tree/next-id)]
-    (-> (tree/new-tree)
-        (assoc-in [:meta :seed] 998877)
-        (tree/update-response 0 "Wicked Cool Adventure\n")
-        (tree/add-child 0 id1 "look" "room description")
-        (tree/add-child id1 id2 "get lamp" "You pick up the lamp.\n")
-        (tree/bless-node id2)
-        (tree/update-response id2 "You pick up the dusty lamp.\n")
-        (save-skein "target/game.skein")))
-
-  )
-

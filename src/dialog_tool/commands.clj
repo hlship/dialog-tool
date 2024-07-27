@@ -50,14 +50,14 @@
 (comment
   (-> (pf/read-project "../sanddancer-dialog") (pf/expand-sources {:debug? true}))
 
-  (def proc (sp/start-debug-process "dgdebug" (pf/read-project "../sanddancer-dialog")))
+  (def proc (sp/start-debug-process! "dgdebug" (pf/read-project "../sanddancer-dialog")))
 
   (sp/read-response! proc)
 
   (-> proc :process .isAlive)
 
-  (time (sp/write-command! proc "brood stories"))
-  (sp/write-command! proc "look")
+  (time (sp/send-command! proc "brood stories"))
+  (sp/send-command! proc "look")
   (sp/kill! proc)
 
 
