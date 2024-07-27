@@ -51,14 +51,14 @@
 (defn restart!
   "Restarts the game, sets the active node to 0."
   [session]
+  ;; First pass made use of '(restart)' but that had problems, and dgdebug is so fast
+  ;; to start up that it doesn't make sense.
   (let [{:keys [process]} session
-        new-initial-response (sk.process/send-command! process "(restart)")
-        ;; TODO: Clip first line? "> (restart)"
-        ;; TODO: restart maybe should be handled by sk.process
-        ;; TODO: verify that RNG is reset too (otherwise, have to restart entire process).
-        ]
+        process' (sk.process/restart! process)
+        new-initial-response (sk.process/read-response! process')]
     (-> session
-        (assoc :active-node-id 0)
+        (assoc :active-node-id 0
+               :process process')
         (update :tree tree/update-response 0 new-initial-response))))
 
 (defn replay-to!
@@ -107,7 +107,7 @@
   (swap! *session bless-all)
   (swap! *session restart!)
   (swap! *session command! "x truck")
-  (swap! *session replay-to! 1722104090423)
+  (time (swap! *session replay-to! 1722110146856))
   (swap! *session save!)
   (swap! *session kill!)
   )

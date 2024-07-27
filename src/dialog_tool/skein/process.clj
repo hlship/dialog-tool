@@ -24,8 +24,7 @@
 
 (defn- read-loop
   [^BufferedReader r output-ch]
-  ;; TODO: Verify this all works as expected when we need to read into the buffer multiple times.
-  (let [buffer-size 2000
+  (let [buffer-size 5000
         buffer (char-array buffer-size)
         sb (StringBuilder. buffer-size)]
     (loop []
@@ -46,6 +45,21 @@
       (.setDaemon true)
       .start)))
 
+(defn- start!
+  [dir ^List cmd seed]
+  (let [process (-> (ProcessBuilder. cmd)
+                    (.directory dir)
+                    .start)
+        stdout-reader (.inputReader process)
+        output-ch (chan)]
+    {:process      process
+     :seed         seed
+     :dir          dir
+     :cmd          cmd
+     :stdin-writer (-> process .outputWriter PrintWriter.)  ; write stdin of process
+     :output-ch    output-ch
+     :thread       (start-thread stdout-reader output-ch)}))
+
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger."
   [debugger-path project seed]
@@ -54,19 +68,8 @@
                        "--seed" (str seed)
                        "--width" "80"]
                       (into (pf/expand-sources project {:debug? true})))
-        dir (-> project :dir fs/file)
-        process (-> (ProcessBuilder. cmd)
-                    (.directory dir)
-                    .start)
-        stdout-reader (.inputReader process)
-        output-ch (chan 20)]
-    {:process       process
-     :dir           dir
-     :cmd           cmd
-     :stdout-reader stdout-reader                           ; read stdout of process
-     :stdin-writer  (-> process .outputWriter PrintWriter.) ; write stdin of process
-     :output-ch     output-ch
-     :thread        (start-thread stdout-reader output-ch)}))
+        dir (-> project :dir fs/file)]
+    (start! dir cmd seed)))
 
 (defn read-response!
   [debug-process]
@@ -89,3 +92,10 @@
   (let [{:keys [^Process process]} debug-process]
     (.destroy process))
   nil)
+
+(defn restart!
+  "Kills the debug process and starts a new one, returning a new process map."
+  [debug-process]
+  (kill! debug-process)
+  (let [{:keys [dir cmd seed]} debug-process]
+    (start! dir cmd seed)))

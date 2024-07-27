@@ -137,6 +137,10 @@ brew install hlship/brew/dialog-tool
   and perhaps can be editted out by `dgt` to prevent false
   failures
 
+## dgt 2.0 TODO
+
+- Be able to run the Skein against compiled zcode via dumbfrotz
+
 ## License
 
 Apache Software License 2.0
