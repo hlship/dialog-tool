@@ -4,19 +4,22 @@
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]))
 
+(defn create-loaded!
+  "Creates a new session from a tree loaded from the path, and a process started with
+  the skein's seed. The process should be just started so that we can read the initial
+  response."
+  [process skein-path tree]
+  (let [initial-response (sk.process/read-response! process)]
+    {:skein-path     skein-path
+     :process        process
+     :tree           (tree/update-response tree 0 initial-response)
+     :active-node-id 0}))
+
 (defn create-new!
   "Creates a new session from an existing debug process.  The process should be
   just started, so that we can read the initial response."
   [process skein-path]
-  (let [initial-response (sk.process/read-response! process)
-        tree (-> (tree/new-tree (:seed process))
-                 (tree/update-response 0 initial-response))]
-    {:skein-path     skein-path
-     :process        process
-     :tree           tree
-     :active-node-id 0}))
-
-;; TODO: create-from-file!
+  (create-loaded! process skein-path (tree/new-tree (:seed process))))
 
 (defn command!
   "Sends a player command to the process at the current node. This will either
