@@ -2,22 +2,21 @@
   "A session wraps around a Skein process, maintaining a tree, the process, and the current node."
   (:require [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
-            [dialog-tool.project-file :as pf]
             [dialog-tool.skein.tree :as tree]))
 
 (defn create-new!
-  [debugger-path project seed skein-path]
-  ;; TODO: May work better to just pass in the already started process
-  (let [process (sk.process/start-debug-process! debugger-path
-                                                 project
-                                                 seed)
-        initial-response (sk.process/read-response! process)
-        tree (-> (tree/new-tree seed)
+  "Creates a new session from an existing debug process.  The process should be
+  just started, so that we can read the initial response."
+  [process skein-path]
+  (let [initial-response (sk.process/read-response! process)
+        tree (-> (tree/new-tree (:seed process))
                  (tree/update-response 0 initial-response))]
     {:skein-path     skein-path
      :process        process
      :tree           tree
      :active-node-id 0}))
+
+;; TODO: create-from-file!
 
 (defn command!
   "Sends a player command to the process at the current node. This will either
@@ -73,7 +72,7 @@
   [session node-id]
   (update session :tree tree/bless-response node-id))
 
-(defn- bless-all
+(defn bless-all
   [session]
   (let [ids (-> session :tree :nodes keys)]
     (reduce bless session ids)))
@@ -89,25 +88,3 @@
   "Kills the session, and the underlying process. Returns nil."
   [session]
   (sk.process/kill! (:process session)))
-
-;; Temporary
-
-^:clj-reload/keep
-(def *session (atom nil))
-
-(comment
-  @*session
-  (reset! *session (create-new! nil (pf/read-project "../sanddancer-dialog") 40000 "target/game.skein"))
-
-  (swap! *session command! "open glove")
-  (swap! *session command! "x pack")
-  (swap! *session command! "smoke")
-  (swap! *session command! "cigarette")
-  (swap! *session bless 0)
-  (swap! *session bless-all)
-  (swap! *session restart!)
-  (swap! *session command! "x truck")
-  (time (swap! *session replay-to! 1722110146856))
-  (swap! *session save!)
-  (swap! *session kill!)
-  )
