@@ -15,12 +15,14 @@
 
 (defn- api-handler
   [{:keys [request-method *session]}]
-  (if (= :get request-method)
-    (->json {:status 200
-             :body   (tree/->wire (:tree @*session))})
-    {:status  200
-     :headers text-plain
-     :body    "NOT YET IMPLEMENTED"}))
+  (assoc-in
+    (if (= :get request-method)
+      (->json {:status 200
+               :body   (tree/->wire (:tree @*session))})
+      {:status  200
+       :headers text-plain
+       :body    "NOT YET IMPLEMENTED"})
+    [:headers "Access-Control-Allow-Origin"] "*"))
 
 (defn- extension->content-type
   [uri]
