@@ -1,28 +1,38 @@
 <script>
   import SkNode from "./lib/SkNode.svelte";
-  import { onMount } from "svelte";
+  import { onMount, setContext, getContext } from "svelte";
+  import { writable } from "svelte/store";
 
-  let nodes;
+  let nodes = writable(new Map());
+
+  let loaded = false;
+
+  setContext('nodes', nodes)
+
+  nodes.subscribe((m) => console.log(`${m.size} nodes`))
 
   onMount(async () => {
     let response = await fetch("//localhost:10140/api");
-    nodes = await response.json();
+    let body = await response.json();
+    let m = new Map();
+
+    body.forEach((node) => m.set(node.id, node));
+
+    nodes.set(m); 
+
+    loaded = true;
+
   });
 </script>
 
-<div class="container mx-lg mx-auto px-8 py-4 d">
+<div class="container mx-lg mx-auto px-8 py-4">
   <h1 class="text-emerald-600 text-3xl">Dialog Skein</h1>
 
-  <p>This is a whole lot of text about the Skein, and how you use it, and how to navigate
-    and how you use it for testing, and how it's neat as sin, and a great idea that
-    I can't take credit for.
-  </p>
- 
-  {#if nodes}
-  <ul>
-    {#each nodes as node (node.id)}
-      <li><SkNode {node} /></li>
-    {/each}
-  </ul>
+
+  {#if loaded}
+  <div class="overflow-x-scroll bg-slate-200">
+        <SkNode id={0}/>
+  </div>
   {/if}
+ 
 </div>
