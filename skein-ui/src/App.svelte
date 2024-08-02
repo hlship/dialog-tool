@@ -9,14 +9,17 @@
 
   setContext('nodes', nodes)
 
-  nodes.subscribe((m) => console.log(`${m.size} nodes`))
-
   onMount(async () => {
     let response = await fetch("//localhost:10140/api");
     let body = await response.json();
     let m = new Map();
 
-    body.forEach((node) => m.set(node.id, node));
+    body.forEach((node) => {
+      // Temporary: this "expands" each node in the temporary linear UI to the first child
+      // of that node.
+      node.selectedId = node.children[0];
+      m.set(node.id, node)
+  });
 
     nodes.set(m); 
 
