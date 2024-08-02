@@ -30,9 +30,7 @@
 
 
   {#if loaded}
-  <div class="overflow-x-scroll bg-slate-200">
-        <SkNode id={0}/>
-  </div>
+  <SkNode id={0}/>
   {/if}
  
 </div>
