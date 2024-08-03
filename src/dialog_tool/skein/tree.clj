@@ -96,19 +96,24 @@
          first
          :id)))
 
+(defn node->wire
+  [tree node]
+  (let [{:keys [children]} tree
+        {:keys [id parent-id]} node]
+    (-> node
+        (dissoc :parent-id)
+        (assoc :parent_id parent-id
+               :children (->> (get children id)
+                              sort
+                              vec)))))
+
 (defn ->wire
-  "Convert the nodes of a tree to a format suitable for transfer over the wire
+  "Convert the nodes of a tree to a format suitable for transfer over the wire`
   to the UI."
   [tree]
-  (let [{:keys [children nodes]} tree]
-    (->> nodes
-         vals
-         (map (fn [{:keys [id parent-id] :as node}]
-                (-> node
-                    (dissoc :parent-id)
-                    (assoc :parent_id parent-id
-                           :children (->> (get children id)
-                                          sort
-                                          vec)))))
-         (sort-by :id))))
+  (->> tree
+       :nodes
+       vals
+       (map #(node->wire tree %))
+       (sort-by :id)))
 

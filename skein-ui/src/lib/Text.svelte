@@ -7,9 +7,11 @@
         return s.split("\n")
     };
 
+    $: lines = lineBreak(value)
+
 </script>
 
-{#each lineBreak(value) as line }
+{#each lines as line }
   {line}
   <br>
 {/each}

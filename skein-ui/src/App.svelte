@@ -1,6 +1,6 @@
 <script>
   import SkNode from "./lib/SkNode.svelte";
-  import { onMount, setContext, getContext } from "svelte";
+  import { onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
 
   let nodes = writable(new Map());
