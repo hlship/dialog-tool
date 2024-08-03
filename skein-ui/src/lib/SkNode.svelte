@@ -1,6 +1,7 @@
 <script>
     import { getContext } from "svelte";
     import Text from "./Text.svelte";
+    import App from "../App.svelte";
 
     let nodes = getContext("nodes");
 
@@ -18,12 +19,37 @@
 
     $: children = node.children.map((id) => $nodes.get(id))
 
+    function applyResult(result) {
+        console.debug(result)
+        result.updates.forEach((n) => nodes.update((m) => m.set(n.id, n)));
+        // TODO: Deletions
+    }
+
+    async function processUpdate(payload) {
+        const response = await fetch("//localhost:10140/api", {
+            method: "POST",
+            cache: "no-cache",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+
+        applyResult(result);
+        }
+
+    function bless(_event) {
+        processUpdate({"action": "bless", "id": id});
+    }
+
 </script>
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
     <button class="{buttonFull}">Replay</button>
-    <button class="{blessButtonClasses}" disabled="{! blessEnabled}">Bless</button>
+    <button class="{blessButtonClasses}" disabled="{! blessEnabled}"
+        on:click={bless}
+    >Bless</button>
 </div>
 
 <div class="flex flex-row">
