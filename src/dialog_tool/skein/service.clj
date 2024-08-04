@@ -55,8 +55,6 @@
 
 (comment
 
-
-
   @*session
 
   (start! (pf/read-project "../sanddancer-dialog")

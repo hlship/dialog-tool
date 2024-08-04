@@ -1,8 +1,9 @@
 ;; Lots of testing using Clojure and REPL, but the final tool is Babashka
 
 {:paths ["src"
-         ;; HTML and JS is copied and or generated to gen/public
-         "gen"]
+         ;; HTML and JS is copied and or generated to skein-ui/dist/public.
+         ;; Resources under public are made visible.
+         "skein-ui/dist"]
  :deps  {org.clojure/clojure        {:mvn/version "1.11.3"}
          ;; Keep sync'ed w/ bb.edn:
          org.clj-commons/pretty     {:mvn/version "3.0.0"}
