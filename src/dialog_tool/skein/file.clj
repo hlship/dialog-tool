@@ -143,7 +143,7 @@
   [initial-tree ^LineNumberReader in]
   (loop [tree initial-tree]
     (if-let [node (read-node in)]
-      ;; Just add the node, we rebuild the :children index at the end
+      ;; Just add the node, we rebuild the :children key for each node at the end
       (recur (assoc-in tree [:nodes (:id node)] node))
       tree)))
 

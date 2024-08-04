@@ -68,8 +68,6 @@
   This will either verify that each node's response is unchanged, or capture
   unblessed responses to be verified."
   [session node-id]
-  ;; TODO: optimize for case where already at the replay point, or active node is a parent
-  ;; of replay point.
   (let [commands (collect-commands (:tree session) node-id)]
     (reduce command! (restart! session) commands)))
 

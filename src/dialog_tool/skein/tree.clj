@@ -8,9 +8,7 @@
   [seed]
   {:meta     {:seed seed}
    :nodes    {0 {:id    0
-                 :label "START"}}
-   ;; id -> #{id ...} of child nodes
-   :children {}})
+                 :label "START"}}})
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -31,31 +29,31 @@
               :unblessed response}]
     (-> tree
         (assoc-in [:nodes new-id] node)
-        (update-in [:children parent-id] conj* new-id))))
+        (update-in [:nodes parent-id :children] conj* new-id))))
 
 (defn rebuild-children
-  "Rebuilds the tree's :children index (this is used after reading
-   a skein file)."
+  "Rebuild the :children of each node from the :parent-id of all other nodes."
   [tree]
-  (let [children (->> tree
-                      :nodes
-                      vals
-                      (reduce (fn [m {:keys [id parent-id]}]
-                                (if parent-id
-                                  (update m parent-id conj* id)
-                                  m))
-                              {}))]
-    (assoc tree :children children)))
+  (let [nodes (-> tree :nodes vals)
+        parent->children (->> nodes
+                              (reduce (fn [m {:keys [id parent-id]}]
+                                        (update m parent-id conj* id))
+                                      {}))
+        nodes' (reduce (fn [m {:keys [id] :as node}]
+                         (assoc m id (assoc node :children (parent->children id))))
+                       {}
+                       nodes)]
+    (assoc tree :nodes nodes')))
 
 (defn delete-node
   "Deletes a previously added node, and any children below it."
   [tree node-id]
-  (let [children  (get-in tree [:children node-id])
-        parent-id (get-in tree [:nodes node-id :parent-id])
-        tree'     (reduce delete-node tree children)]
-    (-> tree'
+  (let [node (get-in tree [:nodes node-id])
+        {:keys [children]} node]
+    (-> (reduce delete-node tree children)
         (update :nodes dissoc node-id)
-        (update-in [:children parent-id] disj node-id))))
+        ;; Yes, we don't care about efficiency!
+        rebuild-children)))
 
 (defn- bless-node
   [node]
@@ -89,23 +87,20 @@
   the indicated command string; if found, returns the node's id, otherwise
    returns nil."
   [tree node-id command]
-  (let [{:keys [children nodes]} tree]
-    (->> (get children node-id)
+  (let [{:keys [nodes]} tree]
+    (->> (get-in nodes [node-id :children])
          (map nodes)
          (filter #(= command (:command %)))
          first
          :id)))
 
 (defn node->wire
-  [tree node]
-  (let [{:keys [children]} tree
-        {:keys [id parent-id]} node]
+  [node]
+  (let [{:keys [parent-id]} node]
     (-> node
         (dissoc :parent-id)
-        (assoc :parent_id parent-id
-               :children (->> (get children id)
-                              sort
-                              vec)))))
+        (assoc :parent_id parent-id)
+        (update :children #(-> % sort vec)))))
 
 (defn ->wire
   "Convert the nodes of a tree to a format suitable for transfer over the wire`
@@ -114,6 +109,6 @@
   (->> tree
        :nodes
        vals
-       (map #(node->wire tree %))
+       (map #(node->wire %))
        (sort-by :id)))
 

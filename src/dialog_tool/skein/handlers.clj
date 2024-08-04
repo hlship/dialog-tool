@@ -16,30 +16,23 @@
       (assoc-in [:headers "Content-Type"] "application/json")
       (update :body json/generate-string {:pretty true})))
 
-(defn- fold-in-children
-  [tree]
-  (let [{:keys [children]} tree
-        f (fn [m id node]
-            (assoc m id
-                  (assoc node :children (get children id))))]
-    (update tree :nodes #(reduce-kv f {} %))))
-
 (defn- tree-delta
   "Computes the main body of the response as a delta for any changed
-  (or deleted) nodes."
+  (or deleted) nodes.  This includes changes to a parent when a new child is added
+  (the :children will be different)."
   [old-tree new-tree]
-  ;; Have to fold the children into the nodes to do a proper comparison because
-  ;; some operations (such as adding a new node) affects just the children of the
-  ;; parent node.
-  (let [old-nodes (-> old-tree fold-in-children :nodes)
-        new-nodes (-> new-tree fold-in-children :nodes)
+  (let [old-nodes (:nodes old-tree)
+        new-nodes (:nodes new-tree)
+        ;; This will include newly added nodes as well as changed
         updates (->> new-nodes
                      vals
                      (remove #(= % (get old-nodes (:id %)))))
         removed-ids (set/difference
                       (-> old-nodes keys set)
                       (-> new-nodes keys set))]
-    {:updates     (mapv #(tree/node->wire new-tree %) updates)
+    ;; Because we don't care about efficiency, we send the entire updated node, rather than
+    ;; sending just what's changed.
+    {:updates     (mapv tree/node->wire updates)
      :removed_ids removed-ids}))
 
 (defn- bless
