@@ -28,7 +28,6 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - "Bless All" (w/ a confirm)
 - After bless (or other update), loses track of selected child node(s)
 - Delete node
-- Implement replay
 - Collapsable text
 - Highlight nodes that need to be "blessed"
 - Visual diff of text (!!!)

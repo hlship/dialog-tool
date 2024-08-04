@@ -48,9 +48,13 @@
         {:keys [active-node-id]} session']
     (assoc session' ::extra-body {:new_id active-node-id})))
 
-(defn- save!
+(defn- save
   [session _payload]
   (session/save! session))
+
+(defn- replay
+  [session {:keys [id]}]
+  (session/replay-to! session id))
 
 (defn- invoke-handler
   [*session payload handler]
@@ -65,7 +69,8 @@
 (def action->handler
   {"bless"       bless
    "new-command" new-command
-   "save"        save! })
+   "save"        save
+   "replay"      replay})
 
 (defn- update-handler
   [request]

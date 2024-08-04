@@ -21,6 +21,10 @@
         await update({ action: "bless", id: id });
     }
 
+    function replay() {
+        update({action: "replay", id: id});
+    }
+
     let newCommand = null;
 
     async function runNewCommand() {
@@ -40,7 +44,7 @@
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
-    <SkButton>Replay</SkButton>
+    <SkButton on:click={replay}>Replay</SkButton>
     <SkButton disabled={!blessEnabled} on:click={bless}>Bless</SkButton>
 </div>
 
