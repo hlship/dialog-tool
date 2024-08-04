@@ -25,9 +25,6 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 
 - Visual feedback when the skein changes
 - The graph view (currently it's just a serial view, one path through the graph)
-- Common SkButton component
-- Visually distinguish disabled buttons
-- Visually distinguish the selected button (the next node after each command)
 - "Bless All" (w/ a confirm)
 - After bless (or other update), loses track of selected child node(s)
 - Delete node

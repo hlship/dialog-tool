@@ -1,17 +1,20 @@
 <script>
-    export let value = null;
+  export let value = null;
 
-    function lineBreak(s) {
-        if (!s) { return []; }     
+  function lineBreak(s) {
+    if (!s) {
+      return [];
+    }
 
-        return s.split("\n")
-    };
+    return s.split("\n");
+  }
 
-    $: lines = lineBreak(value)
-
+  $: lines = lineBreak(value);
 </script>
 
-{#each lines as line }
-  {line}
-  <br>
-{/each}
+{#if value != null}
+  {#each lines as line}
+    {line}
+    <br />
+  {/each}
+{/if}

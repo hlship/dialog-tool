@@ -1,6 +1,7 @@
 <script>
     import { getContext } from "svelte";
     import Text from "./Text.svelte";
+    import SkButton from "./SkButton.svelte";
     import { processUpdate } from "./common.js";
 
     let nodes = getContext("nodes");
@@ -10,29 +11,19 @@
     $: node = $nodes.get(id);
     $: label = node.label || node.command;
     $: blessEnabled = node.unblessed && node.unblessed != "";
-
-    let button =
-        "bg-blue-600 font-black text-white rounded-lg p-2 drop-shadow-lg flex-none mx-2";
-    let hover = "hover:bg-blue-800 hover:drop-shadow-xl";
-    let buttonFull = button + " " + hover;
-
-    $: blessButtonClasses = blessEnabled ? buttonFull : button;
-
     $: children = node.children.map((id) => $nodes.get(id));
-
-
 
     async function update(payload) {
         return await processUpdate(nodes, payload);
     }
 
-    async function bless(_event) {
+    async function bless() {
         await update({ action: "bless", id: id });
     }
 
     let newCommand = null;
 
-    async function runNewCommand(_event) {
+    async function runNewCommand() {
         const result = await update({
             action: "new-command",
             command: newCommand,
@@ -49,10 +40,8 @@
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
-    <button class={buttonFull}>Replay</button>
-    <button class={blessButtonClasses} disabled={!blessEnabled} on:click={bless}
-        >Bless</button
-    >
+    <SkButton>Replay</SkButton>
+    <SkButton disabled={!blessEnabled} on:click={bless}>Bless</SkButton>
 </div>
 
 <div class="flex flex-row">
@@ -62,16 +51,18 @@
         {/if}
         <Text value={node.response} />
     </div>
+    {#if node.unblessed}
     <div class="bg-yellow-100 p-1">
         <Text value={node.unblessed} />
     </div>
+    {/if}
 </div>
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2 mb-8">
     {#each children as child (child.id)}
-        <button class={button} on:click={(_) => (node.selectedId = child.id)}
-            >{child.command}</button
-        >
+        <SkButton selected={node.selectedId == child.id}
+        on:click={() => node.selectedId = child.id}>{child.command}
+        </SkButton>
     {/each}
 
     <input
