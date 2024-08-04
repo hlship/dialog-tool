@@ -1,6 +1,7 @@
 <script>
     import { getContext } from "svelte";
     import Text from "./Text.svelte";
+    import { processUpdate } from "./common.js";
 
     let nodes = getContext("nodes");
 
@@ -19,34 +20,20 @@
 
     $: children = node.children.map((id) => $nodes.get(id));
 
-    function applyResult(result) {
-        result.updates.forEach((n) => nodes.update((m) => m.set(n.id, n)));
-        // TODO: Deletions
-    }
 
-    async function processUpdate(payload) {
-        const response = await fetch("//localhost:10140/api", {
-            method: "POST",
-            cache: "no-cache",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        });
 
-        const result = await response.json();
-
-        applyResult(result);
-
-        return result;
+    async function update(payload) {
+        return await processUpdate(nodes, payload);
     }
 
     async function bless(_event) {
-        await processUpdate({ action: "bless", id: id });
+        await update({ action: "bless", id: id });
     }
 
     let newCommand = null;
 
     async function runNewCommand(_event) {
-        const result = await processUpdate({
+        const result = await update({
             action: "new-command",
             command: newCommand,
             id: id,

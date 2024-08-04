@@ -48,6 +48,10 @@
         {:keys [active-node-id]} session']
     (assoc session' ::extra-body {:new_id active-node-id})))
 
+(defn- save!
+  [session _payload]
+  (session/save! session))
+
 (defn- invoke-handler
   [*session payload handler]
   (let [[session session'] (swap-vals! *session handler payload)
@@ -60,7 +64,8 @@
 
 (def action->handler
   {"bless"       bless
-   "new-command" new-command})
+   "new-command" new-command
+   "save"        save! })
 
 (defn- update-handler
   [request]
