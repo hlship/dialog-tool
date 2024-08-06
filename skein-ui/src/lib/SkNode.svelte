@@ -1,5 +1,5 @@
 <script>
-    import { getContext, createEventDispatcher } from "svelte";
+    import { getContext, createEventDispatcher, onMount } from "svelte";
     import Text from "./Text.svelte";
     import SkButton from "./SkButton.svelte";
     import { postApi } from "./common.js";
@@ -17,11 +17,11 @@
     $: children = node.children.map((id) => $nodes.get(id));
 
     async function post(payload) {
-        let response = await postApi(payload);
+        let result = await postApi(payload);
 
-        dispatcher("response", { response });
+        dispatcher("result", result );
 
-        return response;
+        return result;
     }
 
     function bless() {
@@ -86,5 +86,5 @@
 </div>
 
 {#if node.selectedId}
-    <svelte:self id={node.selectedId} on:response/>
+    <svelte:self id={node.selectedId} on:result/>
 {/if}

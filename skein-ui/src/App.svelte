@@ -27,21 +27,17 @@
     loaded = true;
   });
 
-  function processResult(event) {
-    console.debug(event);
-
-    const response = event.detail.response;
-
-    response.updates.forEach((n) => nodes.update((m) => m.set(n.id, n)));
+  function processResult(result) {
+    result.updates.forEach((n) => nodes.update((m) => m.set(n.id, n)));
 
     // TODO: Deletes and anything else we want to support (timing, status message, etc.).
 
   }
 
   async function save() {
-    let response = await  postApi({ action: "save" });
+    let result = await  postApi({ action: "save" });
 
-    processResult(response);
+    processResult(result);
 
   }
 </script>
@@ -53,7 +49,7 @@
   </div>
 
   {#if loaded}
-    <SkNode id={0} on:response={ processResult }/>
+    <SkNode id={0} on:result={ (event) => processResult(event.detail) }/>
   {/if}
 </div>
 

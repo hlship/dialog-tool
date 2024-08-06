@@ -2,7 +2,7 @@ const url = "//localhost:10140/api";
 
 export async function load() {
     const response = await fetch("//localhost:10140/api");
-    
+
     return await response.json();
 }
 
@@ -14,6 +14,7 @@ export async function postApi(payload) {
         body: JSON.stringify(payload),
     });
 
+    // The response body is converted to JSON and returned as the result.
    return await response.json();
 
 }
