@@ -1,10 +1,13 @@
 <script>
-    import { getContext } from "svelte";
+    import { getContext, createEventDispatcher } from "svelte";
     import Text from "./Text.svelte";
     import SkButton from "./SkButton.svelte";
-    import { processUpdate } from "./common.js";
+    import { postApi } from "./common.js";
 
-    let nodes = getContext("nodes");
+    const dispatcher = createEventDispatcher();
+
+    // We don't instantiate an SkNode until after we have at least one node.
+    const nodes = getContext("nodes");
 
     export let id = undefined;
 
@@ -13,22 +16,26 @@
     $: blessEnabled = node.unblessed && node.unblessed != "";
     $: children = node.children.map((id) => $nodes.get(id));
 
-    async function update(payload) {
-        return await processUpdate(nodes, payload);
+    async function post(payload) {
+        let response = await postApi(payload);
+
+        dispatcher("response", { response });
+
+        return response;
     }
 
-    async function bless() {
-        await update({ action: "bless", id: id });
+    function bless() {
+        post({ action: "bless", id: id });
     }
 
     function replay() {
-        update({action: "replay", id: id});
+        post({action: "replay", id: id});
     }
 
     let newCommand = null;
 
     async function runNewCommand() {
-        const result = await update({
+        const result = await post({
             action: "new-command",
             command: newCommand,
             id: id,
@@ -79,5 +86,5 @@
 </div>
 
 {#if node.selectedId}
-    <svelte:self id={node.selectedId} />
+    <svelte:self id={node.selectedId} on:response/>
 {/if}

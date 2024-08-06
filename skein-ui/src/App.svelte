@@ -2,7 +2,7 @@
   import SkNode from "./lib/SkNode.svelte";
   import { onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
-  import { load, processUpdate } from "./lib/common.js";
+  import { load, postApi } from "./lib/common.js";
   import SkButton from "./lib/SkButton.svelte";
 
   let nodes = writable(new Map());
@@ -27,8 +27,22 @@
     loaded = true;
   });
 
-  function save() {
-    processUpdate(nodes, { action: "save" });
+  function processResult(event) {
+    console.debug(event);
+
+    const response = event.detail.response;
+
+    response.updates.forEach((n) => nodes.update((m) => m.set(n.id, n)));
+
+    // TODO: Deletes and anything else we want to support (timing, status message, etc.).
+
+  }
+
+  async function save() {
+    let response = await  postApi({ action: "save" });
+
+    processResult(response);
+
   }
 </script>
 
@@ -39,6 +53,7 @@
   </div>
 
   {#if loaded}
-    <SkNode id={0} />
+    <SkNode id={0} on:response={ processResult }/>
   {/if}
 </div>
+
