@@ -11,6 +11,8 @@
   [process skein-path tree]
   (let [initial-response (sk.process/read-response! process)]
     {:skein-path     skein-path
+     :undo-stack     []
+     :redo-stack     []
      :process        process
      :tree           (tree/update-response tree 0 initial-response)
      :active-node-id 0}))
@@ -21,12 +23,14 @@
   [process skein-path]
   (create-loaded! process skein-path (tree/new-tree (:seed process))))
 
-(defn command!
-  "Sends a player command to the process at the current node. This will either
-  update a child of the current node (with a possibly unblessed response) or
-  will create a new child node.
+(defn- capture-undo
+  [session]
+  (-> session
+      (update :undo-stack conj (:tree session))
+      ;; TODO: Really shouldn't clear it unless :tree changed at end; macro time?
+      (update :redo-stack empty)))
 
-  Returns the updated session."
+(defn- run-command!
   [session command]
   (let [{:keys [tree active-node-id process]} session
         child-node-id (tree/find-child-id tree active-node-id command)
@@ -40,6 +44,17 @@
             (assoc :active-node-id new-node-id)
             (update :tree tree/add-child active-node-id new-node-id command response))))))
 
+(defn command!
+  "Sends a player command to the process at the current node. This will either
+  update a child of the current node (with a possibly unblessed response) or
+  will create a new child node.
+
+  Returns the updated session."
+  [session command]
+  (-> session
+      capture-undo
+      (run-command! command)))
+
 (defn- collect-commands
   [{:keys [nodes]} initial-node-id]
   (loop [node-id initial-node-id
@@ -50,8 +65,7 @@
         (recur parent-id
                (cons command commands))))))
 
-(defn restart!
-  "Restarts the game, sets the active node to 0."
+(defn- do-restart!
   [session]
   ;; First pass made use of '(restart)' but that had problems, and dgdebug is so fast
   ;; to start up that it doesn't make sense.
@@ -63,22 +77,36 @@
                :process process')
         (update :tree tree/update-response 0 new-initial-response))))
 
+(defn restart!
+  "Restarts the game, sets the active node to 0."
+  [session]
+  (-> session
+      capture-undo
+      do-restart!))
+
 (defn replay-to!
   "Restarts the game, then plays through all the commands leading up to the node.
   This will either verify that each node's response is unchanged, or capture
   unblessed responses to be verified."
   [session node-id]
-  (let [commands (collect-commands (:tree session) node-id)]
-    (reduce command! (restart! session) commands)))
+  (let [session' (capture-undo session)
+        commands (collect-commands (:tree session') node-id)]
+    (reduce run-command! (do-restart! session') commands)))
 
 (defn bless
   [session node-id]
-  (update session :tree tree/bless-response node-id))
+  (-> session
+      capture-undo
+      (update :tree tree/bless-response node-id)))
 
 (defn bless-all
   [session]
-  (let [ids (-> session :tree :nodes keys)]
-    (reduce bless session ids)))
+  (let [session' (capture-undo session)
+        ids (-> session' :tree :nodes keys)]
+    (assoc session :tree (reduce (fn [tree node-id]
+                                   (tree/bless-response tree node-id))
+                                 (:tree session')
+                                 ids))))
 
 (defn save!
   "Saves the current tree state to the file."
@@ -86,6 +114,25 @@
   (let [{:keys [tree skein-path]} session]
     (sk.file/save-skein tree skein-path)
     session))
+
+(defn undo
+  "Undoes the state of the tree one step; the current tree is pushed onto the
+  redo stack."
+  [session]
+  (let [tree' (-> session :undo-stack peek)]
+    (-> session
+        (assoc :tree tree')
+        (update :redo-stack conj (:tree session))
+        (update :undo-stack pop))))
+
+(defn redo
+  [session]
+  "Reverts an undo, restoring a prior state of the tree."
+  (let [tree' (-> session :redo-stack peek)]
+    (-> session
+        (assoc :tree tree')
+        (update :undo-stack conj (:tree session))
+        (update :redo-stack pop))))
 
 (defn kill!
   "Kills the session, and the underlying process. Returns nil."

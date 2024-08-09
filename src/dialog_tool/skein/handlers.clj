@@ -56,13 +56,28 @@
   [session {:keys [id]}]
   (session/replay-to! session id))
 
+(defn- undo
+  [session _]
+  (session/undo session))
+
+(defn- redo
+  [session _]
+  (session/redo session))
+
 (defn- invoke-handler
   [*session payload handler]
-  (let [[session session'] (swap-vals! *session handler payload)
-        extra-body (::extra-body session')
-        body (cond-> (tree-delta (:tree session)
+  (let [*extra-body (atom nil)
+        [session session'] (swap-vals! *session
+                                       (fn [session]
+                                         (let [session' (handler session payload)]
+                                           (reset! *extra-body (::extra-body session'))
+                                           (dissoc session' ::extra-body))))
+        extra-body @*extra-body
+        body (-> (tree-delta (:tree session)
                                  (:tree session'))
-                     extra-body (merge extra-body))]
+                 (assoc :enable_undo (-> session' :undo-stack empty? not)
+                        :enable_redo (-> session' :redo-stack empty? not))
+                 (merge extra-body))]
     {:status  200
      :body    body}))
 
@@ -70,7 +85,9 @@
   {"bless"       bless
    "new-command" new-command
    "save"        save
-   "replay"      replay})
+   "replay"      replay
+   "undo"        undo
+   "redo"        redo})
 
 (defn- update-handler
   [request]

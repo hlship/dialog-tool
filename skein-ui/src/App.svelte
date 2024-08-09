@@ -9,6 +9,9 @@
 
   let loaded = false;
 
+  let enableUndo = false;
+  let enableRedo = false;
+
   setContext("nodes", nodes);
 
   onMount(async () => {
@@ -32,20 +35,40 @@
 
     // TODO: Deletes and anything else we want to support (timing, status message, etc.).
 
+    enableUndo = result.enable_undo;
+    enableRedo = result.enable_redo;
+
+    console.debug(result);
   }
 
-  async function save() {
-    let result = await  postApi({ action: "save" });
+  async function doPost(request) {
+    let result = await postApi(request);
 
     processResult(result);
-
   }
+
+   function save() {
+    doPost({action: "save"});
+  }
+
+  function undo() {
+    doPost({action: "undo"});
+  }
+
+  function redo() {
+    doPost({action: "redo"});
+  }
+
 </script>
+
+{@debug enableUndo}
 
 <div class="container mx-lg mx-auto px-8 py-4">
   <div class="flex flex-row mb-8">
     <div class="text-emerald-600 text-3xl">Dialog Skein</div>
     <SkButton on:click={save}>Save</SkButton>
+    <SkButton on:click={undo} disabled={!enableUndo}>Undo</SkButton>
+    <SkButton on:click={redo} disabled={!enableRedo}>Redo</SkButton>
   </div>
 
   {#if loaded}
