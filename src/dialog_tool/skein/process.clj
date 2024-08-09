@@ -16,9 +16,9 @@
       (let [last-nl (string/last-index-of s \newline)]
         (assert (pos? last-nl))
         (.setLength sb 0)
-        ;; Keep only up to the newline, then trim whitespace and send
+        ;; Keep only up to (and including) the newline
         (>!! output-ch
-             (string/trim (subs s 0 (inc last-nl))))
+             (subs s 0 (inc last-nl)))
         ;; Put prompt back into the SB
         (.append sb (subs s (inc last-nl)))))))
 
@@ -62,8 +62,8 @@
 
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger."
-  [debugger-path project seed]
-  (let [^List cmd (-> [(or debugger-path "dgdebug")
+  [project seed]
+  (let [^List cmd (-> ["dgdebug"
                        "--quit"
                        "--seed" (str seed)
                        "--width" "80"]

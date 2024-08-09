@@ -51,11 +51,12 @@
       (.println out sep)
       ;; TODO: tags, label, etc. once they exist
       ;; response may not exist if not yet blessed
+      ;; Also, these strings end with a newline
       (when response
-        (.println out ^String response))
+        (.print out ^String response))
       (when unblessed
         (.println out unblessed-sep)
-        (.println out unblessed)))))
+        (.print out unblessed)))))
 
 
 (def meta-parsers

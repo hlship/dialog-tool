@@ -27,14 +27,14 @@
   "Starts a service with the Skein for the given path, or a new empty skein
   if the path does not exist."
   [project skein-path opts]
-  (let [{:keys [port debugger-path seed join?]
+  (let [{:keys [port seed join?]
          :or   {port 10140}} opts
         tree (when (fs/exists? skein-path)
                (sk.file/load-skein skein-path))
         seed (or (get-in tree [:meta :seed])
                  seed
                  (rand-int 10000))
-        process (sk.process/start-debug-process! debugger-path project seed)
+        process (sk.process/start-debug-process! project seed)
         session (if tree
                   (s/create-loaded! process skein-path tree)
                   (s/create-new! process skein-path))
@@ -59,7 +59,7 @@
 
   (start! (pf/read-project "../sanddancer-dialog")
           "target/game.skein"
-          nil)                                              ; does not join!
+          nil)                                             ; does not join!
 
   (@*shutdown)
 
@@ -70,6 +70,7 @@
 
   (tree/->wire (:tree @*session))
 
+  (-> @*session :tree :nodes (get 0))
 
   (swap! *session s/command! "open glove")
   (time (swap! *session s/command! "x pack"))

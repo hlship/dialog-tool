@@ -131,15 +131,13 @@ transcripts.
 brew install hlship/brew/dialog-tool
 ```
 
-## Future Work
-
-- Version numbers at start of game transcripts are problematic
-  and perhaps can be editted out by `dgt` to prevent false
-  failures
-
-## dgt 2.0 TODO
+## dgt 2.0 TODO / IDEAS
 
 - Be able to run the Skein against compiled zcode via dumbfrotz
+- Optional override in dialog.edn for where the tools (dgdebug, etc.) are stored 
+- Run dgdebugger to collect data (title, version, etc.) needed to publish
+- Could we generate (live?) documentation by parsing the source?
+- 
 
 ## License
 
