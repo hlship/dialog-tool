@@ -8,14 +8,10 @@
 
 (def path-opt ["-p" "--path PATH" "Path to root directory of Dialog project."
                :default "."])
-(def debugger-opt ["-D" "--debugger PATH" "Path to Dialog dgdebug executable."
-                   ;; Soon: deal with /usr/lib/bin vs. /opt/homebrew/bin
-                   :default "dgdebug"])
 
 (defcommand debug
   "Run the project in the Dialog debugger."
   [path path-opt
-   debugger debugger-opt
    width ["-w" "--width NUMBER" "Output width (omit to use terminal width)"
           :parse-fn parse-long
           :validate [some? "Not a number"
@@ -23,7 +19,7 @@
   (let [project (pf/read-project path)
         extra-args (cond-> []
                            width (conj "--width" width))
-        cmd (-> [debugger "--quit"]
+        cmd (-> ["dgdebug" "--quit"]
                 (into extra-args)
                 (into (pf/expand-sources project {:debug? true})))
         *process (p/process {:cmd     cmd

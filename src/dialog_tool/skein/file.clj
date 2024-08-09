@@ -3,7 +3,8 @@
   (:require [babashka.fs :as fs]
             [dialog-tool.skein.tree :as tree]
             [clojure.java.io :as io])
-  (:import (java.io IOException LineNumberReader PrintWriter)))
+  (:import (java.io IOException PrintWriter)
+           (clojure.lang LineNumberingPushbackReader)))
 
 (def ^:private sep
   "--------------------------------------------------------------------------------")
@@ -80,7 +81,7 @@
     m))
 
 (defn- read-meta
-  [^LineNumberReader r]
+  [^LineNumberingPushbackReader r]
   (loop [meta {}]
     (let [line (.readLine r)]
       (if (sep? line)
@@ -105,7 +106,7 @@
     node))
 
 (defn- read-content
-  [initial-node ^LineNumberReader r]
+  [initial-node ^LineNumberingPushbackReader r]
   (let [sb (StringBuilder. 1000)]
     (loop [node initial-node
            k :response]
@@ -124,7 +125,7 @@
             (recur node k)))))))
 
 (defn- read-node
-  [^LineNumberReader r]
+  [^LineNumberingPushbackReader r]
   (loop [node nil]
     (let [line (.readLine r)]
       (cond
@@ -141,7 +142,7 @@
             (recur node)))))))
 
 (defn- read-nodes
-  [initial-tree ^LineNumberReader in]
+  [initial-tree ^LineNumberingPushbackReader in]
   (loop [tree initial-tree]
     (if-let [node (read-node in)]
       ;; Just add the node, we rebuild the :children key for each node at the end
@@ -149,7 +150,7 @@
       tree)))
 
 (defn read-skein
-  [^LineNumberReader in]
+  [^LineNumberingPushbackReader in]
   (try
     (-> (read-meta in)
         (read-nodes in)
@@ -168,7 +169,7 @@
                          fs/path
                          fs/file
                          io/reader
-                         LineNumberReader.)]
+                         LineNumberingPushbackReader.)]
     (read-skein reader)))
 
 (defn save-skein
