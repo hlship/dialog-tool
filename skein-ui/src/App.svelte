@@ -31,16 +31,17 @@
   });
 
   function processResult(result) {
-    result.updates.forEach((n) => nodes.update((m) => m.set(n.id, n)));
+    nodes.update((m) => {
+      result.updates.forEach((n) => m.set(n.id, n));
+      result.removed_ids.forEach((id) => m.delete(id));
 
-    result.removedId.forEach((id) => nodes.update((m) => m.delete(id)));
+      return m;
+    });
 
     // TODO: Deletes and anything else we want to support (timing, status message, etc.).
 
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
-
-    console.debug(result);
   }
 
   async function doPost(request) {
@@ -49,18 +50,17 @@
     processResult(result);
   }
 
-   function save() {
-    doPost({action: "save"});
+  function save() {
+    doPost({ action: "save" });
   }
 
   function undo() {
-    doPost({action: "undo"});
+    doPost({ action: "undo" });
   }
 
   function redo() {
-    doPost({action: "redo"});
+    doPost({ action: "redo" });
   }
-
 </script>
 
 <div class="container mx-lg mx-auto px-8 py-4">
@@ -72,7 +72,6 @@
   </div>
 
   {#if loaded}
-    <SkNode id={0} on:result={ (event) => processResult(event.detail) }/>
+    <SkNode id={0} on:result={(event) => processResult(event.detail)} />
   {/if}
 </div>
-
