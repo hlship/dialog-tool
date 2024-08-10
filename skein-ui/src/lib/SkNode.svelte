@@ -47,12 +47,18 @@
 
         // TODO: Find a way to move input to the new text field in the new child node
     }
+
+    async function deleteNode() {
+        post({action: "delete", id: id})
+    }
 </script>
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
     <SkButton on:click={replay}>Replay</SkButton>
     <SkButton disabled={!blessEnabled} on:click={bless}>Bless</SkButton>
+    <!-- TODO: Make this red, but don't need a modal, because we have undo! -->
+    <SkButton on:click={deleteNode}>Delete</SkButton>
 </div>
 
 <div class="flex flex-row">

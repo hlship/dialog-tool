@@ -64,6 +64,10 @@
   [session _]
   (session/redo session))
 
+(defn- delete
+  [session {:keys [id]}]
+  (session/delete session id))
+
 (defn- invoke-handler
   [*session payload handler]
   (let [*extra-body (atom nil)
@@ -87,7 +91,8 @@
    "save"        save
    "replay"      replay
    "undo"        undo
-   "redo"        redo})
+   "redo"        redo
+   "delete"      delete})
 
 (defn- update-handler
   [request]

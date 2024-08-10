@@ -134,6 +134,13 @@
         (update :undo-stack conj (:tree session))
         (update :redo-stack pop))))
 
+(defn delete
+  "Deletes a node from the tree, including any descendants of the node."
+  [session node-id]
+  (-> session
+      capture-undo
+      (update :tree tree/delete-node node-id)))
+
 (defn kill!
   "Kills the session, and the underlying process. Returns nil."
   [session]

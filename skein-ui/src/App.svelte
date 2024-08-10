@@ -33,6 +33,8 @@
   function processResult(result) {
     result.updates.forEach((n) => nodes.update((m) => m.set(n.id, n)));
 
+    result.removedId.forEach((id) => nodes.update((m) => m.delete(id)));
+
     // TODO: Deletes and anything else we want to support (timing, status message, etc.).
 
     enableUndo = result.enable_undo;
@@ -60,8 +62,6 @@
   }
 
 </script>
-
-{@debug enableUndo}
 
 <div class="container mx-lg mx-auto px-8 py-4">
   <div class="flex flex-row mb-8">
