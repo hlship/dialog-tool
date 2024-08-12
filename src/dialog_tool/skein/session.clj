@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.session
-  "A session wraps around a Skein process, maintaining a tree, the process, and the current node."
+  "A session wraps around a Skein process, maintaining a tree, the process, and the current node.
+  In addition, there's an undo and redo stack, representing prior states of the tree."
   (:require [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]))
@@ -109,7 +110,7 @@
                                  ids))))
 
 (defn save!
-  "Saves the current tree state to the file."
+  "Saves the current tree state to the file.  Does not affect undo/redo."
   [session]
   (let [{:keys [tree skein-path]} session]
     (sk.file/save-skein tree skein-path)
