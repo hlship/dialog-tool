@@ -1,44 +1,50 @@
 <script>
-  import SkNode from "./lib/SkNode.svelte";
+  import Knot from "./lib/Knot.svelte";
   import { onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
   import { load, postApi } from "./lib/common.js";
   import SkButton from "./lib/SkButton.svelte";
 
-  let nodes = writable(new Map());
+  let knots = writable(new Map());
 
   let loaded = false;
 
   let enableUndo = false;
   let enableRedo = false;
 
-  setContext("nodes", nodes);
+  setContext("knots", knots);
 
   onMount(async () => {
     let response = await load();
-    let m = new Map();
 
-    response.forEach((node) => {
-      // Temporary: this "expands" each node in the temporary linear UI to the first child
-      // of that node.
-      node.selectedId = node.children[0];
-      m.set(node.id, node);
+    knots.update((m) => {
+
+      response.forEach((node) => {
+        // Temporary: this "expands" each node in the temporary linear UI to the first child
+        // of that node.
+        let knot = writable({ node: node, selectedId: node.children[0] });
+        m.set(node.id, knot);
+      });
+
+      return m;
     });
-
-    nodes.set(m);
 
     loaded = true;
   });
 
   function processResult(result) {
-    nodes.update((m) => {
-      result.updates.forEach((n) => m.set(n.id, n));
-      result.removed_ids.forEach((id) => m.delete(id));
+    knots.update(m => {
+      console.debug(m);
+      result.updates.forEach((n) => {
+        let knot = m.get(n.id) || writable({});
+        knot.node = n;
+      });
+
+      // For each deleted node, we need to find the node's parent and ensure that it is not
+      // the selected child.
 
       return m;
     });
-
-    // TODO: Deletes and anything else we want to support (timing, status message, etc.).
 
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
@@ -72,6 +78,6 @@
   </div>
 
   {#if loaded}
-    <SkNode id={0} on:result={(event) => processResult(event.detail)} />
+    <Knot id={0} on:result={(event) => processResult(event.detail)} />
   {/if}
 </div>

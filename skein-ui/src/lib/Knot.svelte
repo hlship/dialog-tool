@@ -1,25 +1,33 @@
 <script>
-    import { getContext, createEventDispatcher, onMount } from "svelte";
+    import { getContext, createEventDispatcher } from "svelte";
     import Text from "./Text.svelte";
     import SkButton from "./SkButton.svelte";
     import { postApi } from "./common.js";
 
     const dispatcher = createEventDispatcher();
 
-    // We don't instantiate an SkNode until after we have at least one node.
-    const nodes = getContext("nodes");
+    // We don't instantiate a Knot until after we have at least one knot.
+    const knots = getContext("knots");
 
     export let id = undefined;
 
-    $: node = $nodes.get(id);
+    $: knot = $knots.get(id);
+    $: node = $knot.node;
     $: label = node.label || node.command;
     $: blessEnabled = node.unblessed && node.unblessed != "";
-    $: children = node.children.map((id) => $nodes.get(id));
 
+    let children = [];
+
+    $: {
+        children = node.children.map(id => $knots.get(id))
+    }
+
+    $: console.debug("children", children)
+    
     async function post(payload) {
         let result = await postApi(payload);
 
-        dispatcher("result", result );
+        dispatcher("result", result);
 
         return result;
     }
@@ -29,7 +37,7 @@
     }
 
     function replay() {
-        post({action: "replay", id: id});
+        post({ action: "replay", id: id });
     }
 
     let newCommand = null;
@@ -43,13 +51,11 @@
 
         newCommand = null;
 
-        node.selectedId = result.new_id;
-
-        // TODO: Find a way to move input to the new text field in the new child node
+        knots.update((m) => (m.get(id).selectedId = result.new_id));
     }
 
     async function deleteNode() {
-        post({action: "delete", id: id})
+        post({ action: "delete", id: id });
     }
 </script>
 
@@ -58,7 +64,9 @@
     <SkButton on:click={replay}>Replay</SkButton>
     <SkButton disabled={!blessEnabled} on:click={bless}>Bless</SkButton>
     <!-- TODO: Make this red, but don't need a modal, because we have undo! -->
+     {#if id != 0}
     <SkButton on:click={deleteNode}>Delete</SkButton>
+    {/if}
 </div>
 
 <div class="flex flex-row">
@@ -69,16 +77,18 @@
         <Text value={node.response} />
     </div>
     {#if node.unblessed}
-    <div class="bg-yellow-100 p-1">
-        <Text value={node.unblessed} />
-    </div>
+        <div class="bg-yellow-100 p-1">
+            <Text value={node.unblessed} />
+        </div>
     {/if}
 </div>
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2 mb-8">
     {#each children as child (child.id)}
-        <SkButton selected={node.selectedId == child.id}
-        on:click={() => node.selectedId = child.id}>{child.command}
+        <SkButton
+            selected={knot.selectedId == child.id}
+            on:click={() => (knot.selectedId = child.id)}
+            >{child.command}
         </SkButton>
     {/each}
 
@@ -91,6 +101,6 @@
     />
 </div>
 
-{#if node.selectedId}
-    <svelte:self id={node.selectedId} on:result/>
+{#if knot.selectedId}
+    <svelte:self id={knot.selectedId} on:result />
 {/if}
