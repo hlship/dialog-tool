@@ -21,12 +21,12 @@
   (or deleted) nodes.  This includes changes to a parent when a new child is added
   (the :children will be different)."
   [old-tree new-tree]
-  (let [old-nodes (:nodes old-tree)
-        new-nodes (:nodes new-tree)
+  (let [old-nodes   (:nodes old-tree)
+        new-nodes   (:nodes new-tree)
         ;; This will include newly added nodes as well as changed
-        updates (->> new-nodes
-                     vals
-                     (remove #(= % (get old-nodes (:id %)))))
+        updates     (->> new-nodes
+                         vals
+                         (remove #(= % (get old-nodes (:id %)))))
         removed-ids (set/difference
                       (-> old-nodes keys set)
                       (-> new-nodes keys set))]
@@ -68,6 +68,12 @@
   [session {:keys [id]}]
   (session/delete session id))
 
+(defn- response-body
+  [old-tree new-session]
+  (-> (tree-delta old-tree (:tree new-session))
+      (assoc :enable_undo (-> new-session :undo-stack empty? not)
+             :enable_redo (-> new-session :redo-stack empty? not))))
+
 (defn- invoke-handler
   [*session payload handler]
   (let [*extra-body (atom nil)
@@ -76,14 +82,11 @@
                                          (let [session' (handler session payload)]
                                            (reset! *extra-body (::extra-body session'))
                                            (dissoc session' ::extra-body))))
-        extra-body @*extra-body
-        body (-> (tree-delta (:tree session)
-                                 (:tree session'))
-                 (assoc :enable_undo (-> session' :undo-stack empty? not)
-                        :enable_redo (-> session' :redo-stack empty? not))
-                 (merge extra-body))]
-    {:status  200
-     :body    body}))
+        extra-body  @*extra-body
+        body        (-> (response-body (:tree session) session')
+                        (merge extra-body))]
+    {:status 200
+     :body   body}))
 
 (def action->handler
   {"bless"       bless
@@ -113,7 +116,7 @@
   (cond
     (= :get request-method)
     (->json {:status 200
-             :body   (tree/->wire (:tree @*session))})
+             :body   (response-body {} @*session)})
 
     (= :post request-method)
     (update-handler request)

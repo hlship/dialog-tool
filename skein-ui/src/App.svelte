@@ -4,41 +4,21 @@
   import { writable } from "svelte/store";
   import { load, postApi } from "./lib/common.js";
   import SkButton from "./lib/SkButton.svelte";
-  import { withChildren } from "./lib/data";
 
-  let rawKnots = writable(new Map());
+  let knots = writable(new Map());
+  let childNames = writable(new Map());
 
   let loaded = false;
 
   let enableUndo = false;
   let enableRedo = false;
 
-  setContext("knots", withChildren(rawKnots));
-
-  onMount(async () => {
-    // TODO: rework this to use processResult(); change server-side to return same on initial load as
-    // on update.
-    let response = await load();
-
-    rawKnots.update((m) => {
-
-      console.info("initial data received")
-      response.forEach((node) => {
-        // Temporary: this "expands" each node in the temporary linear UI to the first child
-        // of that node.
-        let knot = { node: writable(node), selectedId: node.children[0] };
-        m.set(node.id, knot);
-      });
-
-      return m;
-    });
-
-    loaded = true;
-  });
+  setContext("knots", knots);
+  setContext("childNames", childNames);
 
   function processResult(result) {
-    rawKnots.update(m => {
-      result.updates.forEach((n) => {
+    knots.update(m => {
+      result.updates.forEach(n => {
         let knot = m.get(n.id) || {};
         if (knot.node) {
           knot.node.set(n);
@@ -47,11 +27,23 @@
           // A new node needs to be wrapped in a writable, added to the map
           knot.node = writable(n);
           m.set(n.id, knot);
-        } 
-      });
 
+          knot.children = []; // TEMPORARY!
+        } 
+
+        if (!loaded) {
+          knot.selectedId = n.children[0];
+        }
+      });
       // TODO: For each deleted node, we need to find the node's parent and ensure that it is not
       // the selected child.
+
+      return m;
+    });
+
+    childNames.update(m => {
+
+      result.updates.forEach(n => m.set(n.id, n.command));
 
       return m;
     });
@@ -59,6 +51,14 @@
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
   }
+
+  onMount(async () => {
+    let result = await load();
+
+    processResult(result);
+
+    loaded = true;
+  });
 
   async function doPost(request) {
     let result = await postApi(request);

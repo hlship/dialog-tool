@@ -3,11 +3,14 @@
     import Text from "./Text.svelte";
     import SkButton from "./SkButton.svelte";
     import { postApi } from "./common.js";
+    import { derived } from "svelte/store";
+    import { deriveChildren  } from "./children";
 
     const dispatcher = createEventDispatcher();
 
     // We don't instantiate a Knot until after we have at least one knot.
     const knots = getContext("knots");
+    const childNames = getContext("childNames");
 
     export let id = undefined;
 
@@ -15,6 +18,9 @@
     $: node = knot.node;
     $: label = $node.label || $node.command;
     $: blessEnabled = $node.unblessed && $node.unblessed != "";
+
+    $: children = deriveChildren(childNames, node);
+
 
     async function post(payload) {
         let result = await postApi(payload);
@@ -43,7 +49,7 @@
 
         newCommand = null;
 
-        knots.update((m) => (m.get(id).selectedId = result.new_id));
+        knot.selectedId = result.new_id;
     }
 
     async function deleteNode() {
@@ -56,8 +62,8 @@
     <SkButton on:click={replay}>Replay</SkButton>
     <SkButton disabled={!blessEnabled} on:click={bless}>Bless</SkButton>
     <!-- TODO: Make this red, but don't need a modal, because we have undo! -->
-     {#if id != 0}
-    <SkButton on:click={deleteNode}>Delete</SkButton>
+    {#if id != 0}
+        <SkButton on:click={deleteNode}>Delete</SkButton>
     {/if}
 </div>
 
@@ -76,7 +82,7 @@
 </div>
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2 mb-8">
-    {#each knot.children as child (child.id)}
+    {#each $children as child (child.id)}
         <SkButton
             selected={knot.selectedId == child.id}
             on:click={() => (knot.selectedId = child.id)}
