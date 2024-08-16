@@ -3,7 +3,6 @@
     import Text from "./Text.svelte";
     import SkButton from "./SkButton.svelte";
     import { postApi } from "./common.js";
-    import { derived } from "svelte/store";
     import { deriveChildren  } from "./children";
 
     const dispatcher = createEventDispatcher();

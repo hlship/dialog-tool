@@ -17,33 +17,45 @@
   setContext("childNames", childNames);
 
   function processResult(result) {
-    knots.update(m => {
-      result.updates.forEach(n => {
+    knots.update((m) => {
+      result.updates.forEach((n) => {
         let knot = m.get(n.id) || {};
         if (knot.node) {
           knot.node.set(n);
-        }
-        else {
+        } else {
           // A new node needs to be wrapped in a writable, added to the map
           knot.node = writable(n);
+          knot.parentId = n.parent_id;
           m.set(n.id, knot);
 
           knot.children = []; // TEMPORARY!
-        } 
+        }
 
         if (!loaded) {
           knot.selectedId = n.children[0];
         }
       });
-      // TODO: For each deleted node, we need to find the node's parent and ensure that it is not
-      // the selected child.
+
+      // Note that for deleted nodes, we leave the knot around; deleted knots simply won't be
+      // reachable anymore. We use that data here:
+
+      result.removed_ids.forEach((id) => {
+        let knot = m.get(id);
+        let parentId = knot.parentId;
+
+        // If a deleted knot was the selectedId of its parent knot, then clear the parent's
+        // selectedId.
+        let parentKnot = m.get(parentId);
+        if (parentKnot?.selectedId == id) {
+          parentKnot.selectedId = null;
+        }
+      });
 
       return m;
     });
 
-    childNames.update(m => {
-
-      result.updates.forEach(n => m.set(n.id, n.command));
+    childNames.update((m) => {
+      result.updates.forEach((n) => m.set(n.id, n.command));
 
       return m;
     });
