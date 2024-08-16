@@ -6,7 +6,7 @@
   $: composedClass = composeClass(disabled, selected);
 
   function composeClass(disabled, selected) {
-    let s = "font-black text-white rounded-lg p-2 drop-shadow-lg flex-none mx-2";
+    let s = "font-black text-white rounded-lg p-2 drop-shadow-lg flex-none mx-2 text-xs";
 
     if (disabled) {
         s += " bg-zinc-400";

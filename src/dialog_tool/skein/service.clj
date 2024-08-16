@@ -59,7 +59,8 @@
 
   (start! (pf/read-project "../sanddancer-dialog")
           "target/game.skein"
-          nil)                                             ; does not join!
+          ;; Seed is for complete/honor script
+          {:seed 7363521})                                             ; does not join!
 
   (@*shutdown)
 

@@ -4,25 +4,29 @@
   import { writable } from "svelte/store";
   import { load, postApi } from "./lib/common.js";
   import SkButton from "./lib/SkButton.svelte";
+  import { withChildren } from "./lib/data";
 
-  let knots = writable(new Map());
+  let rawKnots = writable(new Map());
 
   let loaded = false;
 
   let enableUndo = false;
   let enableRedo = false;
 
-  setContext("knots", knots);
+  setContext("knots", withChildren(rawKnots));
 
   onMount(async () => {
+    // TODO: rework this to use processResult(); change server-side to return same on initial load as
+    // on update.
     let response = await load();
 
-    knots.update((m) => {
+    rawKnots.update((m) => {
 
+      console.info("initial data received")
       response.forEach((node) => {
         // Temporary: this "expands" each node in the temporary linear UI to the first child
         // of that node.
-        let knot = writable({ node: node, selectedId: node.children[0] });
+        let knot = { node: writable(node), selectedId: node.children[0] };
         m.set(node.id, knot);
       });
 
@@ -33,14 +37,20 @@
   });
 
   function processResult(result) {
-    knots.update(m => {
-      console.debug(m);
+    rawKnots.update(m => {
       result.updates.forEach((n) => {
-        let knot = m.get(n.id) || writable({});
-        knot.node = n;
+        let knot = m.get(n.id) || {};
+        if (knot.node) {
+          knot.node.set(n);
+        }
+        else {
+          // A new node needs to be wrapped in a writable, added to the map
+          knot.node = writable(n);
+          m.set(n.id, knot);
+        } 
       });
 
-      // For each deleted node, we need to find the node's parent and ensure that it is not
+      // TODO: For each deleted node, we need to find the node's parent and ensure that it is not
       // the selected child.
 
       return m;

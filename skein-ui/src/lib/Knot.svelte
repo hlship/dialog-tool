@@ -12,18 +12,10 @@
     export let id = undefined;
 
     $: knot = $knots.get(id);
-    $: node = $knot.node;
-    $: label = node.label || node.command;
-    $: blessEnabled = node.unblessed && node.unblessed != "";
+    $: node = knot.node;
+    $: label = $node.label || $node.command;
+    $: blessEnabled = $node.unblessed && $node.unblessed != "";
 
-    let children = [];
-
-    $: {
-        children = node.children.map(id => $knots.get(id))
-    }
-
-    $: console.debug("children", children)
-    
     async function post(payload) {
         let result = await postApi(payload);
 
@@ -59,7 +51,7 @@
     }
 </script>
 
-<div class="flex flex-row bg-slate-100 rounded-md p-2">
+<div class="flex flex-row bg-slate-100 rounded-md p-2 text-sm">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
     <SkButton on:click={replay}>Replay</SkButton>
     <SkButton disabled={!blessEnabled} on:click={bless}>Bless</SkButton>
@@ -69,32 +61,32 @@
     {/if}
 </div>
 
-<div class="flex flex-row">
+<div class="flex flex-row text-xs">
     <div class="bg-yellow-50 basis-6/12 mr-2 p-1">
-        {#if !node.response}
+        {#if !$node.response}
             <em>No blessed response</em>
         {/if}
-        <Text value={node.response} />
+        <Text value={$node.response} />
     </div>
-    {#if node.unblessed}
+    {#if blessEnabled}
         <div class="bg-yellow-100 p-1">
-            <Text value={node.unblessed} />
+            <Text value={$node.unblessed} />
         </div>
     {/if}
 </div>
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2 mb-8">
-    {#each children as child (child.id)}
+    {#each knot.children as child (child.id)}
         <SkButton
             selected={knot.selectedId == child.id}
             on:click={() => (knot.selectedId = child.id)}
-            >{child.command}
+            >{child.label}
         </SkButton>
     {/each}
 
     <input
         type="text"
-        class="ml-4 mr-2 w-full px-2"
+        class="ml-4 mr-2 w-full px-2 text-sm"
         placeholder="New command"
         bind:value={newCommand}
         on:change={runNewCommand}
