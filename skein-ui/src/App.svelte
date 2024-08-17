@@ -27,8 +27,6 @@
           knot.node = writable(n);
           knot.parentId = n.parent_id;
           m.set(n.id, knot);
-
-          knot.children = []; // TEMPORARY!
         }
 
         if (!loaded) {
@@ -92,7 +90,7 @@
 </script>
 
 <div class="container mx-lg mx-auto px-8 py-4">
-  <div class="flex flex-row mb-8">
+  <div class="flex flex-row mb-8 sticky top-8 left-4 right-4 pb-4  z-50 shadow-md">
     <div class="text-emerald-600 text-3xl">Dialog Skein</div>
     <SkButton on:click={save}>Save</SkButton>
     <SkButton on:click={undo} disabled={!enableUndo}>Undo</SkButton>

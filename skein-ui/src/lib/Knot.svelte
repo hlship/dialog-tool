@@ -1,5 +1,5 @@
 <script>
-    import { getContext, createEventDispatcher } from "svelte";
+    import { getContext, createEventDispatcher, onMount } from "svelte";
     import Text from "./Text.svelte";
     import SkButton from "./SkButton.svelte";
     import { postApi } from "./common.js";
@@ -20,6 +20,12 @@
 
     $: children = deriveChildren(childNames, node);
 
+    let commandField;
+
+    onMount(() => {
+        commandField.focus();
+        commandField.scrollIntoView();
+    });
 
     async function post(payload) {
         let result = await postApi(payload);
@@ -91,6 +97,7 @@
 
     <input
         type="text"
+        bind:this={commandField}
         class="ml-4 mr-2 w-full px-2 text-sm"
         placeholder="New command"
         bind:value={newCommand}
