@@ -3,7 +3,8 @@
   import { onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
   import { load, postApi } from "./lib/common.js";
-  import SkButton from "./lib/SkButton.svelte";
+  import { Button } from "flowbite-svelte";
+  import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
 
   let knots = writable(new Map());
   let childNames = writable(new Map());
@@ -89,15 +90,27 @@
   }
 </script>
 
-<div class="container mx-lg mx-auto px-8 py-4">
-  <div class="flex flex-row mb-8 sticky top-8 left-4 right-4 pb-4  z-50 shadow-md">
-    <div class="text-emerald-600 text-3xl">Dialog Skein</div>
-    <SkButton on:click={save}>Save</SkButton>
-    <SkButton on:click={undo} disabled={!enableUndo}>Undo</SkButton>
-    <SkButton on:click={redo} disabled={!enableRedo}>Redo</SkButton>
-  </div>
+<div class="relative px-8">
+   
+<Navbar  class="px-2 sm:px-4 py-2.5 fixed w-full z-20 top-0 start-0 border-b">
+  <NavBrand>
+    <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Dialog Skein</span>
+  </NavBrand>
+  <div class="flex md:order-2 space-x-2">
+    <Button color="blue" size="xs" on:click={save}>Save</Button>
+    <Button color="blue" size="xs" on:click={undo} disabled={!enableUndo}
+      >Undo</Button
+    >
+    <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}
+      >Redo</Button
+    >
+  <NavHamburger  />
+</div>
+</Navbar>
 
+<div class="container mx-lg mx-auto px-8 py-4 mt-16">
   {#if loaded}
     <Knot id={0} on:result={(event) => processResult(event.detail)} />
   {/if}
+</div>
 </div>
