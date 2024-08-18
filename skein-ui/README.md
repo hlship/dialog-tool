@@ -26,7 +26,6 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - Visual feedback when the skein changes
 - The graph view (currently it's just a serial view, one path through the graph)
 - "Bless All" (w/ a confirm)
-- After bless (or other update), loses track of selected child node(s)
 - Delete node
 - Collapsable text
 - Highlight nodes that need to be "blessed"
@@ -36,12 +35,10 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - Label a node
 - Mark a node w/ a tag: solution (to be included in the packaged game)
 - Animation when adding/removing nodes
-- Handle *many* children for a node
 - Search the Skein
 - Jump to labeled node
 - Jump to "nearest" unblessed node
 - Show warning in menu bar about number of unblessed nodes
 - Show the path to the Skein file in the menu bar
-- Undo/Redo
-
+- Very slow when (for example) selecting a command that has a large number (20? 30?) of children (maybe fixed by not nesting Knots inside Knots)
 Visual feedback is a problem, because the round-trip is often just milliseconds.

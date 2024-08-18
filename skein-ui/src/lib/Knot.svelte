@@ -1,9 +1,9 @@
 <script>
     import { getContext, createEventDispatcher, onMount } from "svelte";
     import Text from "./Text.svelte";
-    import SkButton from "./SkButton.svelte";
     import { postApi } from "./common.js";
-    import { deriveChildren  } from "./children";
+    import { deriveChildren } from "./children";
+    import { Button } from "flowbite-svelte";
 
     const dispatcher = createEventDispatcher();
 
@@ -21,6 +21,7 @@
     $: children = deriveChildren(childNames, node);
 
     let commandField;
+    let blessVisible = false;
 
     onMount(() => {
         commandField.focus();
@@ -64,11 +65,12 @@
 
 <div class="flex flex-row bg-slate-100 rounded-md p-2 text-sm">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
-    <SkButton on:click={replay}>Replay</SkButton>
-    <SkButton disabled={!blessEnabled} on:click={bless}>Bless</SkButton>
+    <Button size="xs" color="blue" on:click={replay}>Replay</Button>
     <!-- TODO: Make this red, but don't need a modal, because we have undo! -->
     {#if id != 0}
-        <SkButton on:click={deleteNode}>Delete</SkButton>
+        <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}
+            >Delete</Button
+        >
     {/if}
 </div>
 
@@ -80,25 +82,39 @@
         <Text value={$node.response} />
     </div>
     {#if blessEnabled}
-        <div class="bg-yellow-100 p-1">
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div
+            class="bg-yellow-100 basis-6/12 p-1 relative"
+            on:mouseenter={() => (blessVisible = true)}
+            on:mouseleave={() => (blessVisible = false)}
+        >
+            {#if blessVisible}
+                <div class="absolute top-2 right-2">
+                    <Button color="blue" size="xs" on:click={bless}
+                        >Bless</Button
+                    >
+                </div>
+            {/if}
             <Text value={$node.unblessed} />
         </div>
     {/if}
 </div>
 
-<div class="flex flex-row bg-slate-100 rounded-md p-2 mb-8">
+<div class="flex flex-wrap bg-slate-100 rounded-md p-2 mb-2 text-nowrap">
     {#each $children as child (child.id)}
-        <SkButton
-            selected={knot.selectedId == child.id}
+        <Button
+            class="m-1"
+            pill
+            color={knot.selectedId == child.id ? "green" : "blue"}
+            size="xs"
             on:click={() => (knot.selectedId = child.id)}
             >{child.label}
-        </SkButton>
+        </Button>
     {/each}
-
     <input
         type="text"
         bind:this={commandField}
-        class="ml-4 mr-2 w-full px-2 text-sm"
+        class="ml-2 w-1/4 grow px-2 text-sm"
         placeholder="New command"
         bind:value={newCommand}
         on:change={runNewCommand}
