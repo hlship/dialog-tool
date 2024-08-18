@@ -1,9 +1,10 @@
 (ns dialog-tool.commands
-  (:require [babashka.process :as p]
+  (:require [babashka.fs :as fs]
+            [babashka.process :as p]
+            [clj-commons.ansi :refer [pcompose]]
             [net.lewisship.cli-tools :as cli :refer [defcommand]]
-            [dialog-tool.skein.process :as sp]
-            [dialog-tool.skein.file :as sk.file]
-            [dialog-tool.skein.tree :as tree]
+            [clojure.java.browse :as browse]
+            [dialog-tool.skein.service :as service]
             [dialog-tool.project-file :as pf]))
 
 (def path-opt ["-p" "--path PATH" "Path to root directory of Dialog project."
@@ -15,7 +16,7 @@
    width ["-w" "--width NUMBER" "Output width (omit to use terminal width)"
           :parse-fn parse-long
           :validate [some? "Not a number"
-                     pos-int? "Must be greater than zero."]]]
+                     pos-int? "Must be at least one"]]]
   (let [project (pf/read-project path)
         extra-args (cond-> []
                            width (conj "--width" width))
@@ -33,7 +34,24 @@
 
 (defcommand skein
   "Runs the Skein UI to test the Dialog project."
-  [])
+  [path path-opt
+   seed [nil "--seed NUMBER" "Random number generator seed to use, if creating a new Skein"
+         :parse-fn parse-long
+         :validate [some? "Not a number"
+                    pos-int? "Must be at least one"]]
+   skein ["-f" "--file SKEIN" "Path to file containing the Skein; will be created if necessary."
+          :default "game.skein"]]
+  (let [project (pf/read-project path)
+        {:keys [port]} (service/start! project skein (cond-> nil
+                                                             seed (assoc :seed seed)))
+        url (str "http://localhost:" port "/index.html")]
+    (pcompose [:bold (if (fs/exists? skein) "Loading" "Creating")
+               " " skein " ..."])
+    (pcompose [:faint "Skein service started on port " port " ..."])
+    (pcompose "Hit " [:bold "Ctrl+C"] " when done")
+    (browse/browse-url url))
+  ;; Hang forever
+  @(promise))
 
 (defcommand compile-project
   "Compiles the project to a file ready execute with an interpreter."
@@ -42,32 +60,4 @@
 (defcommand bundle
   "Bundles a project into a Zip archive that can be deployed to a web host."
   [])
-
-(comment
-  (-> (pf/read-project "../sanddancer-dialog") (pf/expand-sources {:debug? true}))
-
-  (def proc (sp/start-debug-process! "dgdebug" (pf/read-project "../sanddancer-dialog")))
-
-  (sp/read-response! proc)
-
-  (-> proc :process .isAlive)
-
-  (time (sp/send-command! proc "brood stories"))
-  (sp/send-command! proc "look")
-  (sp/kill! proc)
-
-
-  (let [id1 (tree/next-id)
-        id2 (tree/next-id)]
-    (-> (tree/new-tree)
-        (assoc-in [:meta :seed] 998877)
-        (tree/update-response 0 "Wicked Cool Adventure\n")
-        (tree/add-child 0 id1 "look" "room description")
-        (tree/add-child id1 id2 "get lamp" "You pick up the lamp.\n")
-        (tree/bless-response id2)
-        (tree/update-response id2 "You pick up the dusty lamp.\n")
-        (sk.file/write-skein *out*)))
-
-
-  )
 

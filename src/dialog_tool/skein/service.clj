@@ -25,9 +25,16 @@
 
 (defn start!
   "Starts a service with the Skein for the given path, or a new empty skein
-  if the path does not exist."
+  if the path does not exist.
+
+  The :seed option is only used if the skein file does not already exist;
+  otherwise it is used (or, if omitted, a random seed is created).
+
+  Does not join the service.
+
+  Returns a function that does shutdown the service."
   [project skein-path opts]
-  (let [{:keys [port seed join?]
+  (let [{:keys [port seed]
          :or   {port 10140}} opts
         tree (when (fs/exists? skein-path)
                (sk.file/load-skein skein-path))
@@ -42,15 +49,13 @@
                                    {:port          port
                                     :ip            "localhost"
                                     :server-header "Dialog Skein Service"})
-        blocker (promise)]
+        shutdown-service-fn (fn []
+                              (shutdown-fn)
+                              (println "Shut down"))]
     (reset! *session session)
-    (reset! *shutdown
-            (fn []
-              (shutdown-fn)
-              (deliver blocker true)
-              (println "Shut down")))
-    (when join?
-      @blocker)))
+    (reset! *shutdown shutdown-service-fn)
+    {:shutdown-fn shutdown-service-fn
+     :port port}))
 
 
 (comment
