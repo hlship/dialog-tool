@@ -40,5 +40,5 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - Jump to "nearest" unblessed node
 - Show warning in menu bar about number of unblessed nodes
 - Show the path to the Skein file in the menu bar
-- Very slow when (for example) selecting a command that has a large number (20? 30?) of children (maybe fixed by not nesting Knots inside Knots)
-Visual feedback is a problem, because the round-trip is often just milliseconds.
+- ~~Very slow when (for example) selecting a command that has a large number (20? 30?) of children (maybe fixed by not nesting Knots inside Knots)~~ (maybe fixed by using whitespace-pre class on blessed/unblessed text)
+- Visual feedback is a problem, because the round-trip is often just milliseconds.

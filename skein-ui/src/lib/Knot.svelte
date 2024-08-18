@@ -1,6 +1,5 @@
 <script>
     import { getContext, createEventDispatcher, onMount } from "svelte";
-    import Text from "./Text.svelte";
     import { postApi } from "./common.js";
     import { deriveChildren } from "./children";
     import { Button } from "flowbite-svelte";
@@ -75,19 +74,18 @@
 </div>
 
 <div class="flex flex-row text-xs">
-    <div class="bg-yellow-50 basis-6/12 mr-2 p-1">
+    <div class="bg-yellow-50 basis-6/12 mr-2 p-1 whitespace-pre">
         {#if !$node.response}
             <em>No blessed response</em>
         {/if}
-        <Text value={$node.response} />
+  {$node.response}
     </div>
     {#if blessEnabled}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
-            class="bg-yellow-100 basis-6/12 p-1 relative"
-            on:mouseenter={() => (blessVisible = true)}
-            on:mouseleave={() => (blessVisible = false)}
-        >
+            class="bg-yellow-100 basis-6/12 p-1 relative whitespace-pre"
+            on:mouseenter={() => blessVisible = true}
+            on:mouseleave={() => blessVisible = false} >
             {#if blessVisible}
                 <div class="absolute top-2 right-2">
                     <Button color="blue" size="xs" on:click={bless}
@@ -95,7 +93,7 @@
                     >
                 </div>
             {/if}
-            <Text value={$node.unblessed} />
+            {$node.unblessed}
         </div>
     {/if}
 </div>
