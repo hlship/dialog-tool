@@ -75,10 +75,11 @@
 
 <div class="flex flex-row text-xs">
     <div class="bg-yellow-50 basis-6/12 mr-2 p-1 whitespace-pre">
-        {#if !$node.response}
+        {#if $node.response}
+        {$node.response}
+        {:else}
             <em>No blessed response</em>
         {/if}
-  {$node.response}
     </div>
     {#if blessEnabled}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
