@@ -2,66 +2,52 @@
   import Knot from "./lib/Knot.svelte";
   import { onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
-  import { load, postApi } from "./lib/common.js";
+  import { load, postApi, updateStoreMap } from "./lib/common.js";
+  import { displayList } from "./lib/display-list";
   import { Button } from "flowbite-svelte";
-  import { Navbar, NavBrand, NavLi, NavUl, NavHamburger } from 'flowbite-svelte';
+  import { Navbar, NavBrand, NavHamburger } from "flowbite-svelte";
 
-  let knots = writable(new Map());
-  let childNames = writable(new Map());
+  let globals = {
+    // id -> node data (from service)
+    knots: writable(new Map()),
+    // id-> command (string)
+    knotCommands: writable(new Map()),
+    // id-> selected child id
+    selected: writable(new Map()),
+  };
+
+  setContext("globals", globals);
 
   let loaded = false;
 
   let enableUndo = false;
   let enableRedo = false;
 
-  setContext("knots", knots);
-  setContext("childNames", childNames);
-
   function processResult(result) {
-    knots.update((m) => {
-      result.updates.forEach((n) => {
-        let knot = m.get(n.id) || {};
-        if (knot.node) {
-          knot.node.set(n);
-        } else {
-          // A new node needs to be wrapped in a writable, added to the map
-          knot.node = writable(n);
-          knot.parentId = n.parent_id;
-          m.set(n.id, knot);
-        }
+    updateStoreMap(globals.knots, (_knots) => {
+      updateStoreMap(globals.knotCommands, (_knotCommands) => {
+        updateStoreMap(globals.selected, (_selected) => {
+          result.updates.forEach((node) => {
+            _knots.set(node.id, node);
+            if (!loaded) {
+              _selected.set(node.id, node.children[0]);
+            }
 
-        if (!loaded) {
-          knot.selectedId = n.children[0];
-        }
+            _knotCommands.set(node.id, node.command);
+          });
+
+          globals.knots.set(_knots);
+          globals.knotCommands.set(_knotCommands);
+          globals.selected.set(_selected);
+        });
       });
-
-      // Note that for deleted nodes, we leave the knot around; deleted knots simply won't be
-      // reachable anymore. We use that data here:
-
-      result.removed_ids.forEach((id) => {
-        let knot = m.get(id);
-        let parentId = knot.parentId;
-
-        // If a deleted knot was the selectedId of its parent knot, then clear the parent's
-        // selectedId.
-        let parentKnot = m.get(parentId);
-        if (parentKnot?.selectedId == id) {
-          parentKnot.selectedId = null;
-        }
-      });
-
-      return m;
-    });
-
-    childNames.update((m) => {
-      result.updates.forEach((n) => m.set(n.id, n.command));
-
-      return m;
     });
 
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
   }
+
+  let displayIds = displayList(globals.knots, globals.selected);
 
   onMount(async () => {
     let result = await load();
@@ -91,26 +77,30 @@
 </script>
 
 <div class="relative px-8">
-   
-<Navbar  class="px-2 sm:px-4 py-2.5 fixed w-full z-20 top-0 start-0 border-b">
-  <NavBrand>
-    <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Dialog Skein</span>
-  </NavBrand>
-  <div class="flex md:order-2 space-x-2">
-    <Button color="blue" size="xs" on:click={save}>Save</Button>
-    <Button color="blue" size="xs" on:click={undo} disabled={!enableUndo}
-      >Undo</Button
-    >
-    <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}
-      >Redo</Button
-    >
-  <NavHamburger  />
-</div>
-</Navbar>
+  <Navbar class="px-2 sm:px-4 py-2.5 fixed w-full z-20 top-0 start-0 border-b">
+    <NavBrand>
+      <span
+        class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
+        >Dialog Skein</span
+      >
+    </NavBrand>
+    <div class="flex md:order-2 space-x-2">
+      <Button color="blue" size="xs" on:click={save}>Save</Button>
+      <Button color="blue" size="xs" on:click={undo} disabled={!enableUndo}
+        >Undo</Button
+      >
+      <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}
+        >Redo</Button
+      >
+      <NavHamburger />
+    </div>
+  </Navbar>
 
-<div class="container mx-lg mx-auto px-8 py-4 mt-16">
-  {#if loaded}
-    <Knot id={0} on:result={(event) => processResult(event.detail)} />
-  {/if}
-</div>
+  <div class="container mx-lg mx-auto px-8 py-4 mt-16">
+    {#if loaded}
+      {#each $displayIds as knotId}
+        <Knot id={knotId} on:result={(event) => processResult(event.detail)} />
+      {/each}
+    {/if}
+  </div>
 </div>

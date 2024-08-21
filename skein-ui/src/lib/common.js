@@ -18,3 +18,10 @@ export async function postApi(payload) {
    return await response.json();
 
 }
+
+export function updateStoreMap(store, f) {
+    store.update((m) => {
+        f(m);
+        return m;
+    });
+}

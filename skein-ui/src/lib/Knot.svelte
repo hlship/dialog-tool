@@ -1,25 +1,26 @@
 <script>
     import { getContext, createEventDispatcher, onMount } from "svelte";
-    import { postApi } from "./common.js";
+    import { postApi, updateStoreMap } from "./common.js";
     import { deriveChildren } from "./children";
     import { Button } from "flowbite-svelte";
 
     const dispatcher = createEventDispatcher();
 
     // We don't instantiate a Knot until after we have at least one knot.
-    const knots = getContext("knots");
-    const childNames = getContext("childNames");
+    const globals = getContext("globals");
+    const knots = globals.knots;
+    const selected = globals.selected;
 
     export let id = undefined;
 
     // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
 
-    function computeNodeColor(node) {
-        if (node.unblessed && node.response == undefined) {
+    function computeKnotColor(knot) {
+        if (knot.unblessed && knot.response == undefined) {
             return "yellow-200";
         }
 
-        if (node.unblessed) {
+        if (knot.unblessed) {
             // An actual conflict 
             return "rose-400";
         }
@@ -27,21 +28,26 @@
         return "stone-200";
     }
 
-    $: knot = $knots.get(id);
-    $: node = knot.node;
-    $: label = $node.label || $node.command;
-    $: blessEnabled = $node.unblessed && $node.unblessed != "";
-    $: color = computeNodeColor($node);
 
-    $: children = deriveChildren(childNames, node);
+    $: knot = $knots.get(id);
+    $: label = knot.label || knot.command;
+    $: blessEnabled = knot.unblessed && knot.unblessed != "";
+    $: color = computeKnotColor(knot);
+
+    $: children = deriveChildren(globals.knotCommands, knot);
+    $: selectedId = $selected.get(id);
 
     let commandField;
     let blessVisible = false;
 
-    onMount(() => {
+    // This turns out to be a bad idea for multiple reasons, especially
+    // because it makes things very very slow (i.e., adds many *seconds* to the
+    // page redraw after changing the selected node).  Need a different way of moving
+    // focus to the new command when it is first added.
+/*     onMount(() => {
         commandField.focus();
         commandField.scrollIntoView();
-    });
+    }); */
 
     async function post(payload) {
         let result = await postApi(payload);
@@ -61,6 +67,12 @@
 
     let newCommand = null;
 
+    function setSelectedId(selectedId) {
+        updateStoreMap(selected, (_selected) => {
+            _selected.set(id, selectedId);
+        });
+    }
+
     async function runNewCommand() {
         const result = await post({
             action: "new-command",
@@ -70,7 +82,7 @@
 
         newCommand = null;
 
-        knot.selectedId = result.new_id;
+        setSelectedId(result.new_id);
     }
 
     async function deleteNode() {
@@ -91,8 +103,8 @@
 
 <div class="flex flex-row border-{color} border-2">
     <div class="bg-yellow-50 basis-6/12 mr-2 p-1 whitespace-pre">
-        {#if $node.response}
-            {$node.response}
+        {#if knot.response}
+            {knot.response}
         {:else}
             <em>No blessed response</em>
         {/if}
@@ -111,19 +123,21 @@
                     >
                 </div>
             {/if}
-            {$node.unblessed}
+            {knot.unblessed}
         </div>
     {/if}
 </div>
 
-<div class="flex flex-wrap bg-{color} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md">
+<div
+    class="flex flex-wrap bg-{color} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md"
+>
     {#each $children as child (child.id)}
         <Button
             class="m-1"
             pill
-            color={knot.selectedId == child.id ? "green" : "blue"}
+            color={selectedId == child.id ? "green" : "blue"}
             size="xs"
-            on:click={() => (knot.selectedId = child.id)}
+            on:click={() => setSelectedId(child.id)}
             >{child.label}
         </Button>
     {/each}
@@ -136,7 +150,3 @@
         on:change={runNewCommand}
     />
 </div>
-
-{#if knot.selectedId}
-    <svelte:self id={knot.selectedId} on:result />
-{/if}
