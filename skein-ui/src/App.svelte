@@ -35,10 +35,13 @@
 
             _knotCommands.set(node.id, node.command);
           });
+          result.removed_ids.forEach((id) => {
+            let parent_id = _knots.get(id)?.parent_id;
 
-          globals.knots.set(_knots);
-          globals.knotCommands.set(_knotCommands);
-          globals.selected.set(_selected);
+            if (_selected.get(parent_id) == id) {
+              _selected.delete(parent_id);
+            }
+          })
         });
       });
     });
