@@ -12,10 +12,26 @@
 
     export let id = undefined;
 
+    // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
+
+    function computeNodeColor(node) {
+        if (node.unblessed && node.response == undefined) {
+            return "yellow-200";
+        }
+
+        if (node.unblessed) {
+            // An actual conflict 
+            return "rose-400";
+        }
+
+        return "stone-200";
+    }
+
     $: knot = $knots.get(id);
     $: node = knot.node;
     $: label = $node.label || $node.command;
     $: blessEnabled = $node.unblessed && $node.unblessed != "";
+    $: color = computeNodeColor($node);
 
     $: children = deriveChildren(childNames, node);
 
@@ -62,7 +78,7 @@
     }
 </script>
 
-<div class="flex flex-row bg-slate-100 rounded-md p-2 text-sm">
+<div class="flex flex-row bg-{color} rounded-t-lg p-2 text-sm">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
     <Button size="xs" color="blue" on:click={replay}>Replay</Button>
     <!-- TODO: Make this red, but don't need a modal, because we have undo! -->
@@ -73,10 +89,10 @@
     {/if}
 </div>
 
-<div class="flex flex-row text-xs">
+<div class="flex flex-row border-{color} border-2">
     <div class="bg-yellow-50 basis-6/12 mr-2 p-1 whitespace-pre">
         {#if $node.response}
-        {$node.response}
+            {$node.response}
         {:else}
             <em>No blessed response</em>
         {/if}
@@ -85,8 +101,9 @@
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div
             class="bg-yellow-100 basis-6/12 p-1 relative whitespace-pre"
-            on:mouseenter={() => blessVisible = true}
-            on:mouseleave={() => blessVisible = false} >
+            on:mouseenter={() => (blessVisible = true)}
+            on:mouseleave={() => (blessVisible = false)}
+        >
             {#if blessVisible}
                 <div class="absolute top-2 right-2">
                     <Button color="blue" size="xs" on:click={bless}
@@ -99,7 +116,7 @@
     {/if}
 </div>
 
-<div class="flex flex-wrap bg-slate-100 rounded-md p-2 mb-2 text-nowrap">
+<div class="flex flex-wrap bg-{color} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md">
     {#each $children as child (child.id)}
         <Button
             class="m-1"
