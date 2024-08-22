@@ -1,7 +1,7 @@
 <script>
-    import { getContext, createEventDispatcher, onMount } from "svelte";
+    import { getContext, createEventDispatcher } from "svelte";
     import { postApi, updateStoreMap } from "./common.js";
-    import { deriveChildren } from "./children";
+    import { deriveChildren } from "./derived.js";
     import { Button } from "flowbite-svelte";
 
     const dispatcher = createEventDispatcher();
@@ -21,15 +21,14 @@
         }
 
         if (knot.unblessed) {
-            // An actual conflict 
+            // An actual conflict
             return "rose-400";
         }
 
         return "stone-200";
     }
 
-
-    $: knot = $knots.get(id);
+    $: knot = $knots.get(id) || {};
     $: label = knot.label || knot.command;
     $: blessEnabled = knot.unblessed && knot.unblessed != "";
     $: color = computeKnotColor(knot);
@@ -39,15 +38,6 @@
 
     let commandField;
     let blessVisible = false;
-
-    // This turns out to be a bad idea for multiple reasons, especially
-    // because it makes things very very slow (i.e., adds many *seconds* to the
-    // page redraw after changing the selected node).  Need a different way of moving
-    // focus to the new command when it is first added.
-/*     onMount(() => {
-        commandField.focus();
-        commandField.scrollIntoView();
-    }); */
 
     async function post(payload) {
         let result = await postApi(payload);
