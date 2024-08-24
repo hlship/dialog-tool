@@ -57,22 +57,57 @@
     {:shutdown-fn shutdown-service-fn
      :port port}))
 
+;; Temporary
+
+(defn import-script [path]
+  (println path)
+  (let [lines (->> path
+                   slurp
+                   string/split-lines
+                   (remove #(string/starts-with? % "%%")))
+        f (fn [line]
+            (println "  " line)
+            (swap! *session s/command! line))]
+    (swap! *session s/replay-to! 0)
+    (run! f lines)))
 
 (comment
 
   @*session
 
   (start! (pf/read-project "../sanddancer-dialog")
-          "target/game.skein"
+          "../sanddancer-dialog/game.skein"
           ;; Seed is for complete/honor script
           {:seed 7363521})                                             ; does not join!
 
   (@*shutdown)
 
-  (->> "../sanddancer-dialog/tests/complete/honor.txt"
-       slurp
+  (->> "attack-cage-with-strength.txt
+base-of-tower.txt
+chase.txt
+cobweb.txt
+control-center-via-courage.txt
+control-center-via-strength.txt
+get-flashlight.txt
+guidebook.txt
+leave-truck.txt
+memories.txt
+no-undo.txt
+open-desert.txt
+open-with-key.txt
+rabbits-offer.txt
+radio-chat.txt
+sinister-voices.txt
+temptation.txt
+waiting.txt
+"
        string/split-lines
-       (run! #(swap! *session s/command! %)))
+       (mapv #(str "../sanddancer-dialog/tests/" %))
+       (run! import-script)
+       )
+
+
+  (import-script "../sanddancer-dialog/tests/complete/honor.txt")
 
   (tree/->wire (:tree @*session))
 

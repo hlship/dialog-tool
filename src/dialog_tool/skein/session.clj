@@ -56,15 +56,23 @@
       capture-undo
       (run-command! command)))
 
-(defn- collect-commands
+(defn- nodes-to
+  "Returns a seq of nodes at or above the given node in the tree; order is from
+  node 0 down to the initial node."
   [{:keys [nodes]} initial-node-id]
   (loop [node-id initial-node-id
-         commands ()]
-    (if (zero? node-id)
-      commands
-      (let [{:keys [command parent-id]} (get nodes node-id)]
-        (recur parent-id
-               (cons command commands))))))
+         result ()]
+    (if (nil? node-id)
+      result
+      (let [node (get nodes node-id)]
+        (recur (:parent-id node)
+               (cons node result))))))
+
+(defn- collect-commands
+  [tree initial-node-id]
+  (->> (nodes-to tree initial-node-id)
+       (drop 1)                                             ; no command for root node
+       (map :command)))
 
 (defn- do-restart!
   [session]
@@ -99,6 +107,15 @@
   (-> session
       capture-undo
       (update :tree tree/bless-response node-id)))
+
+(defn bless-to
+  [session node-id]
+  (let [{:keys [tree]} session
+        ids (->> (nodes-to tree node-id)
+                 (map :id))]
+    (-> session
+        capture-undo
+        (assoc :tree (reduce tree/bless-response tree ids)))))
 
 (defn bless-all
   [session]

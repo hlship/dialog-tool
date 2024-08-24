@@ -39,6 +39,15 @@
   [session payload]
   (session/bless session (:id payload)))
 
+(defn- bless-to
+  [session payload]
+  (prn `bless-to)
+  (session/bless-to session (:id payload)))
+
+(defn- bless-all
+  [session _payload]
+  (session/bless-all session))
+
 (defn- new-command
   [session payload]
   (let [{:keys [id command]} payload
@@ -90,6 +99,8 @@
 
 (def action->handler
   {"bless"       bless
+   "bless-all" bless-all
+   "bless-to" bless-to
    "new-command" new-command
    "save"        save
    "replay"      replay

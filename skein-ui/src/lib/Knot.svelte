@@ -51,6 +51,10 @@
         post({ action: "bless", id: id });
     }
 
+    function blessTo() {
+        post({ action: "bless-to", id: id });
+    }
+
     function replay() {
         post({ action: "replay", id: id });
     }
@@ -75,7 +79,7 @@
         setSelectedId(result.new_id);
     }
 
-    async function deleteNode() {
+    function deleteNode() {
         post({ action: "delete", id: id });
     }
 </script>
@@ -108,9 +112,8 @@
         >
             {#if blessVisible}
                 <div class="absolute top-2 right-2">
-                    <Button color="blue" size="xs" on:click={bless}
-                        >Bless</Button
-                    >
+                    <Button color="blue" size="xs" on:click={bless}>Bless</Button>
+                    <Button color="blue" size="xs" on:click={blessTo}>Bless To</Button>
                 </div>
             {/if}
             {knot.unblessed}
@@ -121,7 +124,8 @@
 <div
     class="flex flex-wrap bg-{color} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md"
 >
-    {#each $children as child (child.id)}
+
+{#each $children as child (child.id)}
         <Button
             class="m-1"
             pill

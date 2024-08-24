@@ -3,10 +3,7 @@
   import { onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
   import { load, postApi, updateStoreMap } from "./lib/common.js";
-  import {
-    deriveDisplayIds,
-    deriveKnotTotals,
-  } from "./lib/derived";
+  import { deriveDisplayIds, deriveKnotTotals } from "./lib/derived";
   import { Button } from "flowbite-svelte";
   import { Navbar, NavBrand, NavHamburger } from "flowbite-svelte";
 
@@ -90,18 +87,19 @@
     <NavBrand>
       <span
         class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
-        >Dialog Skein</span>
+        >Dialog Skein</span
+      >
     </NavBrand>
-    <div class="mx-0">
-      <span class="text-white bg-green-400 p-4 font-semibold">
-        { $knotTotals.ok }
-      </span>
-      <span class="text-white bg-yellow-200 p-4 font-semibold">
-        { $knotTotals.unblessed }
-    </span>
-    <span class="text-white bg-red-500 p-4 font-semibold">
-      { $knotTotals.error }
-    </span>
+    <div class="mx-0 inline-flex">
+      <div class="text-black bg-green-400  p-2 font-semibold rounded-l-lg">
+        {$knotTotals.ok}
+      </div>
+      <div class="text-black bg-yellow-200 p-2 font-semibold">
+        {$knotTotals.unblessed}
+      </div>
+      <div class="text-black bg-red-500 p-2 font-semibold rounded-r-lg">
+        {$knotTotals.error}
+      </div>
     </div>
     <div class="flex md:order-2 space-x-2">
       <Button color="blue" size="xs" on:click={save}>Save</Button>
