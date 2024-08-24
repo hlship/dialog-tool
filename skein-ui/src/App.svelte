@@ -4,8 +4,8 @@
   import { writable } from "svelte/store";
   import { load, postApi, updateStoreMap } from "./lib/common.js";
   import { deriveDisplayIds, deriveKnotTotals } from "./lib/derived";
-  import { Button } from "flowbite-svelte";
-  import { Navbar, NavBrand, NavHamburger } from "flowbite-svelte";
+  import { Button, Navbar, NavBrand, NavHamburger } from "flowbite-svelte";
+  import { UndoOutline, RedoOutline, FloppyDiskAltSolid} from "flowbite-svelte-icons";
 
   const globals = {
     // id -> node data (from service)
@@ -102,13 +102,13 @@
       </div>
     </div>
     <div class="flex md:order-2 space-x-2">
-      <Button color="blue" size="xs" on:click={save}>Save</Button>
-      <Button color="blue" size="xs" on:click={undo} disabled={!enableUndo}
-        >Undo</Button
+      <Button color="blue" size="xs" on:click={save}>
+        <FloppyDiskAltSolid class="w-5 h-5 me-2"/> Save</Button>
+      <Button color="blue" size="xs" on:click={undo} disabled={!enableUndo}>
+        <UndoOutline class="w-5 h-5 me-2"/> Undo</Button
       >
-      <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}
-        >Redo</Button
-      >
+      <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}>
+        <RedoOutline class="w-5 h-5 me-2"/>Redo</Button >
       <NavHamburger />
     </div>
   </Navbar>

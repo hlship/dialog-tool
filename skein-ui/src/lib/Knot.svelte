@@ -2,7 +2,8 @@
     import { getContext, createEventDispatcher } from "svelte";
     import { postApi, updateStoreMap } from "./common.js";
     import { deriveChildren } from "./derived.js";
-    import { Button } from "flowbite-svelte";
+    import { Button, Tooltip } from "flowbite-svelte";
+    import { CloseCircleSolid, CheckCircleSolid, CheckPlusCircleSolid } from "flowbite-svelte-icons";
 
     const dispatcher = createEventDispatcher();
 
@@ -87,11 +88,12 @@
 <div class="flex flex-row bg-{color} rounded-t-lg p-2 text-sm">
     <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
     <Button size="xs" color="blue" on:click={replay}>Replay</Button>
+    <Tooltip>Replay game to here</Tooltip>
     <!-- TODO: Make this red, but don't need a modal, because we have undo! -->
     {#if id != 0}
-        <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}
-            >Delete</Button
-        >
+        <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}>
+            <CloseCircleSolid class="w-5 h-5 me-2"/>Delete</Button>
+        <Tooltip>Delete node (and children)</Tooltip>
     {/if}
 </div>
 
@@ -112,8 +114,12 @@
         >
             {#if blessVisible}
                 <div class="absolute top-2 right-2">
-                    <Button color="blue" size="xs" on:click={bless}>Bless</Button>
-                    <Button color="blue" size="xs" on:click={blessTo}>Bless To</Button>
+                    <Button color="blue" size="xs" on:click={bless}>
+                        <CheckCircleSolid class="w-5 h-5 me-2"/> Bless</Button>
+                    <Tooltip>Accept this change</Tooltip>
+                    <Button color="blue" size="xs" on:click={blessTo}>
+                        <CheckPlusCircleSolid class="w-5 h-5 me-2"/> Bless To</Button>
+                    <Tooltip>Accept all changes from start to here</Tooltip>
                 </div>
             {/if}
             {knot.unblessed}
