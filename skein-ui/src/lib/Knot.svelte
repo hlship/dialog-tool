@@ -1,9 +1,15 @@
 <script>
-    import { getContext, createEventDispatcher } from "svelte";
+    import { getContext, createEventDispatcher, tick } from "svelte";
     import { postApi, updateStoreMap } from "./common.js";
     import { deriveChildren } from "./derived.js";
     import { Button, Tooltip } from "flowbite-svelte";
-    import { CloseCircleSolid, CheckCircleSolid, CheckPlusCircleSolid } from "flowbite-svelte-icons";
+    import {
+        CloseCircleSolid,
+        CheckCircleSolid,
+        CheckPlusCircleSolid,
+        PlaySolid,
+        PenOutline,
+    } from "flowbite-svelte-icons";
 
     const dispatcher = createEventDispatcher();
 
@@ -83,18 +89,75 @@
     function deleteNode() {
         post({ action: "delete", id: id });
     }
+
+    var edittingLabel;
+    var editLabelField;
+    var newLabel;
+
+    async function startLabelEdit() {
+        newLabel = label;
+        edittingLabel = true;
+
+        await tick();
+
+        editLabelField.select();
+    }
+
+    function labelEditKeydown(event) {
+        if (event.code == "Escape") {
+            edittingLabel = false;
+            event.preventDefault();
+        }
+
+        if (event.code == "Enter") {
+            edittingLabel = false;
+            event.preventDefault();
+
+            post({ action: "label", id: id, label: newLabel });
+        }
+    }
 </script>
 
-<div class="flex flex-row bg-{color} rounded-t-lg p-2 text-sm">
-    <div class="mx-2 my-auto font-bold text-emerald-400">{label}</div>
-    <Button size="xs" color="blue" on:click={replay}>Replay</Button>
-    <Tooltip>Replay game to here</Tooltip>
-    <!-- TODO: Make this red, but don't need a modal, because we have undo! -->
-    {#if id != 0}
-        <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}>
-            <CloseCircleSolid class="w-5 h-5 me-2"/>Delete</Button>
-        <Tooltip>Delete node (and children)</Tooltip>
+<div
+    class="flex w-full justify-between items-center bg-{color} rounded-t-lg p-2 text-sm"
+>
+    {#if edittingLabel}
+        <div class="w-full me-2">
+            <input
+                type="text"
+                bind:this={editLabelField}
+                bind:value={newLabel}
+                on:keydown={labelEditKeydown}
+                class="mr-2 w-1/4 grow px-2 text-sm"
+            />
+            <Button
+                size="xs"
+                color="blue"
+                on:click={() => (edittingLabel = false)}>Cancel</Button
+            >
+        </div>
+    {:else}
+        <div class="mx-2 font-bold text-emerald-400">
+            {label}
+            {#if id != 0}
+                <Button size="xs" color="blue" on:click={startLabelEdit}>
+                    <PenOutline class="w-5 h-5 me-2" />Edit Label
+                </Button>
+            {/if}
+        </div>
     {/if}
+    <div class="flex space-x-2">
+        <Button size="xs" color="blue" on:click={replay}>
+            <PlaySolid class="w-5 h-5 me-2" /> Replay</Button
+        >
+        <Tooltip>Replay game to here</Tooltip>
+        {#if id != 0}
+            <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}>
+                <CloseCircleSolid class="w-5 h-5 me-2" />Delete</Button
+            >
+            <Tooltip>Delete knot (and children)</Tooltip>
+        {/if}
+    </div>
 </div>
 
 <div class="flex flex-row border-{color} border-2">
@@ -115,10 +178,12 @@
             {#if blessVisible}
                 <div class="absolute top-2 right-2">
                     <Button color="blue" size="xs" on:click={bless}>
-                        <CheckCircleSolid class="w-5 h-5 me-2"/> Bless</Button>
+                        <CheckCircleSolid class="w-5 h-5 me-2" /> Bless</Button
+                    >
                     <Tooltip>Accept this change</Tooltip>
                     <Button color="blue" size="xs" on:click={blessTo}>
-                        <CheckPlusCircleSolid class="w-5 h-5 me-2"/> Bless To</Button>
+                        <CheckPlusCircleSolid class="w-5 h-5 me-2" /> Bless To</Button
+                    >
                     <Tooltip>Accept all changes from start to here</Tooltip>
                 </div>
             {/if}
@@ -130,8 +195,7 @@
 <div
     class="flex flex-wrap bg-{color} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md"
 >
-
-{#each $children as child (child.id)}
+    {#each $children as child (child.id)}
         <Button
             class="m-1"
             pill

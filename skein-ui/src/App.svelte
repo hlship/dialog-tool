@@ -113,7 +113,7 @@
     </div>
   </Navbar>
 
-  <div class="container mx-lg mx-auto px-8 py-4 mt-16">
+  <div class="container mx-lg mx-auto px-8 py-4 mt-20">
     {#if loaded}
       {#each $displayIds as knotId}
         <Knot id={knotId} on:result={(event) => processResult(event.detail)} />

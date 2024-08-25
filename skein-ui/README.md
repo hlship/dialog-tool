@@ -32,7 +32,7 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - Visual diff of text (!!!)
 - Buttons to jump to next/prev command
 - ~~Keep the main menu bar pinned to the top of the window~~
-- Label a node
+- ~~Label a node~~
 - Mark a node w/ a tag: solution (to be included in the packaged game)
 - Animation when adding/removing nodes
 - Search the Skein

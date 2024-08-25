@@ -55,6 +55,10 @@
         ;; Yes, we don't care about efficiency!
         rebuild-children)))
 
+(defn label-node
+  [tree node-id label]
+  (assoc-in tree [:nodes node-id :label] label))
+
 (defn- bless-node
   [node]
   (if (contains? node :unblessed)

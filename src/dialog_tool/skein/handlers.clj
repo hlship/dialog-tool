@@ -77,6 +77,10 @@
   [session {:keys [id]}]
   (session/delete session id))
 
+(defn- label
+  [session {:keys [id label]}]
+  (session/label session id label))
+
 (defn- response-body
   [old-tree new-session]
   (-> (tree-delta old-tree (:tree new-session))
@@ -101,6 +105,7 @@
   {"bless"       bless
    "bless-all" bless-all
    "bless-to" bless-to
+   "label" label
    "new-command" new-command
    "save"        save
    "replay"      replay

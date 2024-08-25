@@ -152,6 +152,12 @@
         (update :undo-stack conj (:tree session))
         (update :redo-stack pop))))
 
+(defn label
+  [session node-id label]
+  (-> session
+      capture-undo
+      (update :tree tree/label-node node-id label)))
+
 (defn delete
   "Deletes a node from the tree, including any descendants of the node."
   [session node-id]
