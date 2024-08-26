@@ -36,7 +36,7 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - Mark a node w/ a tag: solution (to be included in the packaged game)
 - Animation when adding/removing nodes
 - Search the Skein
-- Jump to labeled node
+- ~~Jump to labeled node~~
 - Jump to "nearest" unblessed node
 - ~~Show warning in menu bar about number of unblessed nodes~~
 - Show the path to the Skein file in the menu bar

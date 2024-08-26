@@ -1,7 +1,7 @@
 import { derived } from "svelte/store";
 
 export function deriveChildren(knotCommands, knot) {
-    return derived([knotCommands], ([$knotCommands]) => {
+    return derived(knotCommands, $knotCommands => {
         let children = [];
 
         for (const childId of knot.children || []) {
@@ -41,7 +41,8 @@ export function deriveKnotTotals(knots) {
         let unblessed = 0; // Unblessed content for new node (no conflicting response)
         let error = 0; // Conflict between response and unblessed
 
-        $knots.forEach(knot => {
+        for (const [_, knot] of $knots) {
+             
             if (knot.unblessed) {
                 if (knot.response) {
                     error += 1;
@@ -49,11 +50,38 @@ export function deriveKnotTotals(knots) {
                     unblessed += 1;
                 }
             }
-        });
+        }
 
         return {
             ok: $knots.size - unblessed - error,
             unblessed, error
         };
+    });
+}
+
+// Using knots map, derives a list of label tuples [String, long]
+// in sorted order.
+export function deriveLabels(knots) {
+    return derived(knots, $knots => {
+        let result = [];
+
+        for (const [id, knot] of $knots) {
+            if (knot.label) {
+                result.push({label: knot.label, id});
+            }
+        }
+
+        result.sort((a, b) => {
+            if (a.label == b.label) { return 0; }
+
+            if (a.label == "START") { return -1};
+
+            if (a.label < b.label) { return -1; }
+
+            return 1;
+        })
+
+
+        return result;
     });
 }

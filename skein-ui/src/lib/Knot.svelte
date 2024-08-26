@@ -118,8 +118,7 @@
     }
 </script>
 
-<div
-    class="flex w-full justify-between items-center bg-{color} rounded-t-lg p-2 text-sm"
+<div id="knot_{id}" class="flex w-full justify-between items-center bg-{color} rounded-t-lg p-2 text-sm"
 >
     {#if edittingLabel}
         <div class="w-full me-2">
