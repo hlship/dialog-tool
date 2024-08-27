@@ -155,7 +155,7 @@
       <Button class="ml-8" color="blue" size="xs"
         >Jump <ChevronDownOutline /></Button
       >
-      <Dropdown>
+      <Dropdown class="overflow-y-auto h-128">
         {#each $labelItems as item}
           <DropdownItem on:click={() => jumpTo(item.id)}
             >{item.label}</DropdownItem
