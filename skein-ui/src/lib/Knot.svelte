@@ -2,6 +2,7 @@
     import { getContext, createEventDispatcher, tick } from "svelte";
     import { postApi, updateStoreMap } from "./common.js";
     import { deriveChildren } from "./derived.js";
+    import * as common from "./common.js";
     import { Button, Tooltip } from "flowbite-svelte";
     import {
         CloseCircleSolid,
@@ -22,25 +23,21 @@
 
     // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
 
-    function computeKnotColor(knot) {
-        if (knot.unblessed && knot.response == undefined) {
-            return "yellow-200";
-        }
+    function computeKnotColor(traif) {
+        if (traif == "error") { return "rose-400" ;}
 
-        if (knot.unblessed) {
-            // An actual conflict
-            return "rose-400";
-        }
+        if (traif == "new") { return "yellow-200"; }
 
         return "stone-200";
     }
 
     $: knot = $knots.get(id) || {};
     $: label = knot.label || knot.command;
-    $: blessEnabled = knot.unblessed && knot.unblessed != "";
-    $: color = computeKnotColor(knot);
+    $: traif = common.traif(knot);
+    $: blessEnabled = (traif != "ok");
+    $: color = computeKnotColor(traif);
 
-    $: children = deriveChildren(globals.knotCommands, knot);
+    $: children = deriveChildren(globals.knotCommands, globals.traif, knot);
     $: selectedId = $selected.get(id);
 
     let commandField;
@@ -115,6 +112,17 @@
 
             post({ action: "label", id: id, label: newLabel });
         }
+    }
+
+    function childButtonColor(child) {
+        // console.debug(knot.id, selectedId, label, child);
+        if (selectedId == child.id) { return "blue"; }
+
+        if (child.traif == "new") { return "yellow"; }
+
+        if (child.traif == "error") { return "red; "}
+
+        return "green";
     }
 </script>
 
@@ -198,7 +206,7 @@
         <Button
             class="m-1"
             pill
-            color={selectedId == child.id ? "green" : "blue"}
+            color={childButtonColor(child)}
             size="xs"
             on:click={() => setSelectedId(child.id)}
             >{child.label}

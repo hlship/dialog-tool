@@ -106,8 +106,7 @@ waiting.txt
        (run! import-script)
        )
 
-
-  (import-script "../sanddancer-dialog/tests/complete/honor.txt")
+  (import-script "../sanddancer-dialog/tests/photo/nearby.txt")
 
   (tree/->wire (:tree @*session))
 

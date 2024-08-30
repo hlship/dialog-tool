@@ -25,10 +25,11 @@
   const globals = {
     // id -> node data (from service)
     knots,
-    // id-> command (string)
+    // id -> command (string)
     knotCommands: writable(new Map()),
-    // id-> selected child id
+    // id -> selected child id
     selected: writable(new Map()),
+    traif: derived.deriveKnotTraif(knots)
   };
 
   setContext("globals", globals);
@@ -155,7 +156,7 @@
       <Button class="ml-8" color="blue" size="xs"
         >Jump <ChevronDownOutline /></Button
       >
-      <Dropdown class="overflow-y-auto h-128">
+      <Dropdown class="overflow-y-auto h-96">
         {#each $labelItems as item}
           <DropdownItem on:click={() => jumpTo(item.id)}
             >{item.label}</DropdownItem

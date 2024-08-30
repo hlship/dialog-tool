@@ -25,3 +25,20 @@ export function updateStoreMap(store, f) {
         return m;
     });
 }
+
+export function traif(knot) {
+    if (knot.unblessed == undefined) { return "ok"; }
+
+    if (knot.response == undefined) { return "new" ;}
+
+    return "error";
+}
+
+export function addTraif(left, right) {
+    if (left == "error" || right == "error") { return "error";}
+
+    if (left == "new" || right == "new") { return "new"; }
+
+    return "ok";
+}
+
