@@ -29,7 +29,7 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - ~~Delete node~~
 - Collapsable text
 - ~~Highlight nodes that need to be "blessed"~~
-- Visual diff of text (!!!)
+- ~~Visual diff of text (!!!)~~
 - Buttons to jump to next/prev command
 - ~~Keep the main menu bar pinned to the top of the window~~
 - ~~Label a node~~
@@ -44,3 +44,6 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - Visual feedback is a problem, because the round-trip is often just milliseconds.
 - Add an indicator that there are invisible whitespace changes in a diff
 - ~~Delete seems to be a bit broken~~
+- ~~Replay All~~
+- Replay All creates huge number of undos, can we "bracket" into a single undo for batch?flowbright-svelete progress bar how to know when it is dismissed by user
+- ~~Replay on the START knot doesn't seem to work~~ (unblessed was not always cleared)

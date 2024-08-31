@@ -78,7 +78,7 @@
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/game.skein"
           ;; Seed is for complete/honor script
-          {:seed 7363521})                                             ; does not join!
+          {:seed 7363521})
 
   (@*shutdown)
 
@@ -110,7 +110,8 @@ waiting.txt
 
   (tree/->wire (:tree @*session))
 
-  (-> @*session :tree :nodes (get 0))
+  (-> @*session :tree :nodes (get 1723218892802))
+  (and (swap! *session s/replay-to! 1723218892802) nil)
 
   (swap! *session s/command! "open glove")
   (time (swap! *session s/command! "x pack"))

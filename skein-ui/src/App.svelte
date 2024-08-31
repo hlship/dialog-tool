@@ -130,6 +130,10 @@
 
     animateScroll.scrollTo({ element, offset: -offset });
   }
+
+  function onResult(event) {
+     processResult(event.detail);
+  }
 </script>
 
 <div class="relative px-8">
@@ -184,10 +188,10 @@
   <div class="container mx-lg mx-auto px-8 py-4 mt-16">
     {#if loaded}
       {#each $displayIds as knotId}
-        <Knot id={knotId} on:result={(event) => processResult(event.detail)} />
+        <Knot id={knotId} on:result={onResult} />
       {/each}
     {/if}
   </div>
 </div>
 
-<ReplayAllModal bind:this={replayAllModal}/>
+<ReplayAllModal on:result={onResult} bind:this={replayAllModal}/>

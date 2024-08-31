@@ -79,7 +79,7 @@
 (defn- store-response
   [node response]
   (if (= (:response node) response)
-    node
+    (dissoc node :unblessed)
     (assoc node :unblessed response)))
 
 (defn update-response
