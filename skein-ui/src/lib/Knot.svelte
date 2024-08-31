@@ -3,6 +3,7 @@
     import { postApi, updateStoreMap } from "./common.js";
     import * as common from "./common.js";
     import { Button, Tooltip } from "flowbite-svelte";
+ 
     import KnotText from "./KnotText.svelte";
     import {
         CloseCircleSolid,
@@ -44,7 +45,7 @@
     function computeChildren(knots, traif, selectedId) {
         let result = [];
 
-        for (const childId of knot.children) {
+        for (const childId of knot?.children) {
             let child = {
                 id: childId,
                 label: knots.get(childId).command,
@@ -191,8 +192,8 @@
 
 <div class="flex flex-row border-{knotColor} border-2">
     <KnotText
-        bind:response={knot.response}
-        bind:unblessed={knot.unblessed}
+        response={knot.response}
+        unblessed={knot.unblessed}
         on:bless={bless}
         on:blessTo={blessTo}
     />
