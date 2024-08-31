@@ -162,8 +162,8 @@
             >
         </div>
     {:else}
-        <div class="mx-2 font-bold text-emerald-400">
-            {label}
+        <div class="flex items-center text-nowrap w-full">
+            <div class="ml-4 mr-10 font-bold basis-1/4 text-ellipsis overflow-hidden">{label}</div>
             {#if id != 0}
                 <Button size="xs" color="blue" on:click={startLabelEdit}>
                     <PenOutline class="w-5 h-5 me-2" />Edit Label
@@ -222,7 +222,7 @@
 >
     {#each children as child (child.id)}
         <Button
-            class="m-1"
+            class="m-1 max-w-64"
             pill
             color={child.color}
             size="xs"
@@ -231,7 +231,7 @@
             {#if child.iconColor}
                  <ExclamationCircleSolid color={child.iconColor} class="h-5 w-5 me-2"/>
             {/if}
-            {child.label}
+            <span class="text-ellipsis overflow-hidden">{child.label}</span>
         </Button>
     {/each}
     <input
