@@ -25,8 +25,6 @@
   const globals = {
     // id -> node data (from service)
     knots,
-    // id -> command (string)
-    knotCommands: writable(new Map()),
     // id -> selected child id
     selected: writable(new Map()),
     traif: derived.deriveKnotTraif(knots)
@@ -43,7 +41,6 @@
 
   function processResult(result) {
     updateStoreMap(knots, (_knots) => {
-      updateStoreMap(globals.knotCommands, (_knotCommands) => {
         updateStoreMap(globals.selected, (_selected) => {
           for (const knot of result.updates) {
             _knots.set(knot.id, knot);
@@ -51,7 +48,6 @@
               _selected.set(knot.id, knot.children[0]);
             }
 
-            _knotCommands.set(knot.id, knot.command);
           }
           for (const id of result.removed_ids) {
             let parent_id = _knots.get(id)?.parent_id;
@@ -62,7 +58,6 @@
             _knots.delete(id);
           }
         });
-      });
     });
 
     enableUndo = result.enable_undo;

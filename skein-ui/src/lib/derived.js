@@ -1,29 +1,28 @@
 import { derived } from "svelte/store";
 import { traif, addTraif } from "./common.js";
 
-
 export function deriveKnotTraif(knots) {
     return derived(knots, $knots => {
 
-        let leafIds = [];
+        let failedIds = [];
         let result = new Map();
 
         for (const [id, knot] of $knots) {
             const t = traif(knot);
             result.set(id, t);
 
-            if (knot.children.length == 0) {
-                leafIds.push(id);
+            if (t != "ok") {
+                failedIds.push(id);
             }
         }
 
-        // Next, we accumulate traif from leaves up to root
+        // Next, we accumulate traif from errors up to root
 
-        for (const leafId of leafIds) {
-            let t = result.get(leafId);
+        for (const failedId of failedIds) {
+            let t = result.get(failedId);
 
             if (t != "ok") {
-                let id = leafId;
+                let id = failedId;
                 while (true) {
                     let parentId = $knots.get(id).parent_id;
 
@@ -34,7 +33,6 @@ export function deriveKnotTraif(knots) {
                     result.set(parentId, t);
 
                     id = parentId;
-
                 }
             }
         }
@@ -43,21 +41,6 @@ export function deriveKnotTraif(knots) {
     });
 }
 
-export function deriveChildren(knotCommands, traif, knot) {
-    return derived([knotCommands, traif], ([$knotCommands, $traif]) => {
-        let children = [];
-
-        for (const childId of knot.children || []) {
-            const command = $knotCommands.get(childId);
-            // console.debug(childId, $traif.get(childId), command);
-            children.push({ id: childId, 
-                traif: $traif.get(childId),
-                label: command });
-        }
-
-        return children;
-    });
-};
 
 // derives the list of of knots ids to display, starting with 0, and working forward from each node's selected child id.
 export function deriveDisplayIds(knots, selected) {

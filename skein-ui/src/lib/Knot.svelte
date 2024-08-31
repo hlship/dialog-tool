@@ -1,7 +1,6 @@
 <script>
     import { getContext, createEventDispatcher, tick } from "svelte";
     import { postApi, updateStoreMap } from "./common.js";
-    import { deriveChildren } from "./derived.js";
     import * as common from "./common.js";
     import { Button, Tooltip } from "flowbite-svelte";
     import {
@@ -10,6 +9,7 @@
         CheckPlusCircleSolid,
         PlaySolid,
         PenOutline,
+        ExclamationCircleSolid,
     } from "flowbite-svelte-icons";
 
     const dispatcher = createEventDispatcher();
@@ -18,27 +18,54 @@
     const globals = getContext("globals");
     const knots = globals.knots;
     const selected = globals.selected;
+    const traif = globals.traif;
 
     export let id = undefined;
 
-    // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
-
-    function computeKnotColor(traif) {
-        if (traif == "error") { return "rose-400" ;}
-
-        if (traif == "new") { return "yellow-200"; }
-
-        return "stone-200";
-    }
-
     $: knot = $knots.get(id) || {};
     $: label = knot.label || knot.command;
-    $: traif = common.traif(knot);
-    $: blessEnabled = (traif != "ok");
-    $: color = computeKnotColor(traif);
-
-    $: children = deriveChildren(globals.knotCommands, globals.traif, knot);
+    $: blessEnabled = knot.unblessed != undefined;
     $: selectedId = $selected.get(id);
+
+    $: knotColor = null;
+
+        // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
+
+    const traif2color = { error: "rose-400", new: "yellow-200", ok: "stone-200"};
+
+    $: {
+
+        let knotTraif = common.traif(knot);
+
+        knotColor =  traif2color[knotTraif];
+    }
+
+    function computeChildren(knots, traif, selectedId) {
+        let result = [];
+
+        for (const childId of knot.children) {
+            let child = {
+                id: childId,
+                label: knots.get(childId).command,
+                color: childId == selectedId ? "blue" : "green"
+            };
+
+                let childTraif = traif.get(childId);
+
+                if (childTraif == "new") {
+                    child.iconColor = "yellow";
+                }
+                if (childTraif == "error") {
+                    child.iconColor = "red";
+                }
+
+            result.push(child);
+        }
+
+        return result;
+    }
+
+    $: children = computeChildren($knots, $traif, selectedId);
 
     let commandField;
     let blessVisible = false;
@@ -113,20 +140,11 @@
             post({ action: "label", id: id, label: newLabel });
         }
     }
-
-    function childButtonColor(child) {
-        // console.debug(knot.id, selectedId, label, child);
-        if (selectedId == child.id) { return "blue"; }
-
-        if (child.traif == "new") { return "yellow"; }
-
-        if (child.traif == "error") { return "red; "}
-
-        return "green";
-    }
 </script>
 
-<div id="knot_{id}" class="flex w-full justify-between items-center bg-{color} rounded-t-lg p-2 text-sm"
+<div
+    id="knot_{id}"
+    class="flex w-full justify-between items-center bg-{knotColor} rounded-t-lg p-2 text-sm"
 >
     {#if edittingLabel}
         <div class="w-full me-2">
@@ -167,7 +185,7 @@
     </div>
 </div>
 
-<div class="flex flex-row border-{color} border-2">
+<div class="flex flex-row border-{knotColor} border-2">
     <div class="bg-yellow-50 basis-6/12 mr-2 p-1 whitespace-pre">
         {#if knot.response}
             {knot.response}
@@ -200,16 +218,20 @@
 </div>
 
 <div
-    class="flex flex-wrap bg-{color} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md"
+    class="flex flex-wrap bg-{knotColor} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md"
 >
-    {#each $children as child (child.id)}
+    {#each children as child (child.id)}
         <Button
             class="m-1"
             pill
-            color={childButtonColor(child)}
+            color={child.color}
             size="xs"
             on:click={() => setSelectedId(child.id)}
-            >{child.label}
+            >
+            {#if child.iconColor}
+                 <ExclamationCircleSolid color={child.iconColor} class="h-5 w-5 me-2"/>
+            {/if}
+            {child.label}
         </Button>
     {/each}
     <input
