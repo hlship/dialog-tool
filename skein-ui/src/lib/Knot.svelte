@@ -3,10 +3,9 @@
     import { postApi, updateStoreMap } from "./common.js";
     import * as common from "./common.js";
     import { Button, Tooltip } from "flowbite-svelte";
+    import KnotText from "./KnotText.svelte";
     import {
         CloseCircleSolid,
-        CheckCircleSolid,
-        CheckPlusCircleSolid,
         PlaySolid,
         PenOutline,
         ExclamationCircleSolid,
@@ -24,20 +23,22 @@
 
     $: knot = $knots.get(id) || {};
     $: label = knot.label || knot.command;
-    $: blessEnabled = knot.unblessed != undefined;
     $: selectedId = $selected.get(id);
 
     $: knotColor = null;
 
-        // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
+    // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
 
-    const traif2color = { error: "rose-400", new: "yellow-200", ok: "stone-200"};
+    const traif2color = {
+        error: "rose-400",
+        new: "yellow-200",
+        ok: "stone-200",
+    };
 
     $: {
-
         let knotTraif = common.traif(knot);
 
-        knotColor =  traif2color[knotTraif];
+        knotColor = traif2color[knotTraif];
     }
 
     function computeChildren(knots, traif, selectedId) {
@@ -47,17 +48,17 @@
             let child = {
                 id: childId,
                 label: knots.get(childId).command,
-                color: childId == selectedId ? "blue" : "green"
+                color: childId == selectedId ? "blue" : "green",
             };
 
-                let childTraif = traif.get(childId);
+            let childTraif = traif.get(childId);
 
-                if (childTraif == "new") {
-                    child.iconColor = "yellow";
-                }
-                if (childTraif == "error") {
-                    child.iconColor = "red";
-                }
+            if (childTraif == "new") {
+                child.iconColor = "yellow";
+            }
+            if (childTraif == "error") {
+                child.iconColor = "red";
+            }
 
             result.push(child);
         }
@@ -68,7 +69,6 @@
     $: children = computeChildren($knots, $traif, selectedId);
 
     let commandField;
-    let blessVisible = false;
 
     async function post(payload) {
         let result = await postApi(payload);
@@ -163,7 +163,11 @@
         </div>
     {:else}
         <div class="flex items-center text-nowrap w-full">
-            <div class="ml-4 mr-10 font-bold basis-1/4 text-ellipsis overflow-hidden">{label}</div>
+            <div
+                class="ml-4 mr-10 font-bold basis-1/4 text-ellipsis overflow-hidden"
+            >
+                {label}
+            </div>
             {#if id != 0}
                 <Button size="xs" color="blue" on:click={startLabelEdit}>
                     <PenOutline class="w-5 h-5 me-2" />Edit Label
@@ -186,35 +190,12 @@
 </div>
 
 <div class="flex flex-row border-{knotColor} border-2">
-    <div class="bg-yellow-50 basis-6/12 mr-2 p-1 whitespace-pre">
-        {#if knot.response}
-            {knot.response}
-        {:else}
-            <em>No blessed response</em>
-        {/if}
-    </div>
-    {#if blessEnabled}
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div
-            class="bg-yellow-100 basis-6/12 p-1 relative whitespace-pre"
-            on:mouseenter={() => (blessVisible = true)}
-            on:mouseleave={() => (blessVisible = false)}
-        >
-            {#if blessVisible}
-                <div class="absolute top-2 right-2">
-                    <Button color="blue" size="xs" on:click={bless}>
-                        <CheckCircleSolid class="w-5 h-5 me-2" /> Bless</Button
-                    >
-                    <Tooltip>Accept this change</Tooltip>
-                    <Button color="blue" size="xs" on:click={blessTo}>
-                        <CheckPlusCircleSolid class="w-5 h-5 me-2" /> Bless To</Button
-                    >
-                    <Tooltip>Accept all changes from start to here</Tooltip>
-                </div>
-            {/if}
-            {knot.unblessed}
-        </div>
-    {/if}
+    <KnotText
+        bind:response={knot.response}
+        bind:unblessed={knot.unblessed}
+        on:bless={bless}
+        on:blessTo={blessTo}
+    />
 </div>
 
 <div
@@ -227,9 +208,12 @@
             color={child.color}
             size="xs"
             on:click={() => setSelectedId(child.id)}
-            >
+        >
             {#if child.iconColor}
-                 <ExclamationCircleSolid color={child.iconColor} class="h-5 w-5 me-2"/>
+                <ExclamationCircleSolid
+                    color={child.iconColor}
+                    class="h-5 w-5 me-2"
+                />
             {/if}
             <span class="text-ellipsis overflow-hidden">{child.label}</span>
         </Button>
