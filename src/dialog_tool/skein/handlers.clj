@@ -51,9 +51,12 @@
 (defn- new-command
   [session payload]
   (let [{:keys [id command]} payload
+        command' (-> command
+                     (string/trim)
+                     (string/replace #"\s+" " "))
         session' (-> session
                      (session/replay-to! id)
-                     (session/command! command))
+                     (session/command! command'))
         {:keys [active-node-id]} session']
     (assoc session' ::extra-body {:new_id active-node-id})))
 
@@ -79,7 +82,7 @@
 
 (defn- label
   [session {:keys [id label]}]
-  (session/label session id label))
+  (session/label session id (string/trim label)))
 
 (defn- response-body
   [old-tree new-session]
