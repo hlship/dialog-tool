@@ -10,8 +10,6 @@
     export let response;
     export let unblessed;
 
-    let blessVisible = false;
-
     const dispatch = createEventDispatcher();
 
     let changes;
@@ -39,12 +37,8 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
-    class="bg-yellow-50 w-full p-1 relative whitespace-pre"
-    on:mouseenter={() => (blessVisible = true)}
-    on:mouseleave={() => (blessVisible = false)}
->
+    class="bg-yellow-50 w-full p-1 relative whitespace-pre">
     {#if unblessed}
-        {#if blessVisible}
         <div class="absolute top-2 right-2">
             <Button color="blue" size="xs" on:click={() => dispatch("bless")}>
                 <CheckCircleSolid class="w-5 h-5 me-2" /> Bless</Button
@@ -55,7 +49,6 @@
             >
             <Tooltip>Accept all changes from start to here</Tooltip>
         </div>
-        {/if}
         {#each changes as change}
             <span class={spanClass(change)}>{change.value}</span>
         {/each}
