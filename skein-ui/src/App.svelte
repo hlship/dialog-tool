@@ -100,7 +100,7 @@
   }
 
   function selectNode(knots, id) {
-    updateStoreMap(globals.selected, (_selected) => {
+    updateStoreMap(selected, (_selected) => {
       let childId = id;
       while (childId != undefined) {
         const knot = knots.get(childId);
