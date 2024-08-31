@@ -2,7 +2,8 @@
   "Tree of Skein nodes.  Each node represents one command in a chain of commands
   starting at the root node. Each node has a unique id.
 
-  Nodes have a response and optionally an unblessed response.")
+  Nodes have a response and optionally an unblessed response."
+  (:require [clojure.string :as string]))
 
 (defn new-tree
   [seed]
@@ -57,7 +58,9 @@
 
 (defn label-node
   [tree node-id label]
-  (assoc-in tree [:nodes node-id :label] label))
+  (if (string/blank? label)
+    (update-in tree [:nodes node-id] dissoc :label)
+    (assoc-in tree [:nodes node-id :label] label)))
 
 (defn- bless-node
   [node]
