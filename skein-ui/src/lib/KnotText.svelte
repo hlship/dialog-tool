@@ -18,10 +18,7 @@
 
     $: {
         if (response && unblessed) {
-            console.debug({ response, unblessed });
             changes = Diff.diffWords(response, unblessed);
-
-            console.debug({ response, unblessed, changes});
         } else if (response == undefined && unblessed) {
             changes = [{ added: true, value: unblessed }];
         }

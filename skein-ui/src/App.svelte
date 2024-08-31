@@ -1,5 +1,6 @@
 <script>
   import Knot from "./lib/Knot.svelte";
+  import ReplayAllModal from "./lib/ReplayAllModal.svelte";
   import { onMount, setContext, tick } from "svelte";
   import { writable } from "svelte/store";
   import { load, postApi, updateStoreMap } from "./lib/common.js";
@@ -11,28 +12,25 @@
     NavHamburger,
     Dropdown,
     DropdownItem,
+    Tooltip,
   } from "flowbite-svelte";
   import {
     UndoOutline,
     RedoOutline,
     FloppyDiskAltSolid,
+    PlaySolid,
     ChevronDownOutline,
   } from "flowbite-svelte-icons";
   import { animateScroll } from "svelte-scrollto-element";
 
   const knots = writable(new Map());
+  const selected = writable(new Map());
 
-  const globals = {
-    // id -> node data (from service)
-    knots,
-    // id -> selected child id
-    selected: writable(new Map()),
-    traif: derived.deriveKnotTraif(knots)
-  };
+  setContext("knots", knots);
+  setContext("selected", selected);
+  setContext("traif", derived.deriveKnotTraif(knots));
 
-  setContext("globals", globals);
-
-  const knotTotals = derived.deriveKnotTotals(globals.knots);
+  const knotTotals = derived.deriveKnotTotals(knots);
 
   let loaded = false;
 
@@ -41,32 +39,31 @@
 
   function processResult(result) {
     updateStoreMap(knots, (_knots) => {
-        updateStoreMap(globals.selected, (_selected) => {
-          for (const knot of result.updates) {
-            _knots.set(knot.id, knot);
-            if (!loaded) {
-              _selected.set(knot.id, knot.children[0]);
-            }
-
+      updateStoreMap(selected, (_selected) => {
+        for (const knot of result.updates) {
+          _knots.set(knot.id, knot);
+          if (!loaded) {
+            _selected.set(knot.id, knot.children[0]);
           }
-          for (const id of result.removed_ids) {
-            let parent_id = _knots.get(id)?.parent_id;
+        }
+        for (const id of result.removed_ids) {
+          let parent_id = _knots.get(id)?.parent_id;
 
-            if (_selected.get(parent_id) == id) {
-              _selected.delete(parent_id);
-            }
-            _knots.delete(id);
+          if (_selected.get(parent_id) == id) {
+            _selected.delete(parent_id);
           }
-        });
+          _knots.delete(id);
+        }
+      });
     });
 
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
   }
 
-  let displayIds = derived.deriveDisplayIds(globals.knots, globals.selected);
+  let displayIds = derived.deriveDisplayIds(knots, selected);
 
-  let labelItems = derived.deriveLabels(globals.knots);
+  let labelItems = derived.deriveLabels(knots);
 
   onMount(async () => {
     let result = await load();
@@ -92,6 +89,14 @@
 
   function redo() {
     doPost({ action: "redo" });
+  }
+
+  let replayAllModal;
+
+  function replayAll() {
+
+    replayAllModal.run();
+
   }
 
   function selectNode(knots, id) {
@@ -160,6 +165,9 @@
       </Dropdown>
     </div>
     <div class="flex md:order-2 space-x-2">
+      <Button color="blue" size="xs" on:click={replayAll}>
+        <PlaySolid class="w-5 h-5 me-2"/>Replay All</Button>
+        <Tooltip>Replay <em>every</em> knot</Tooltip>
       <Button color="blue" size="xs" on:click={save}>
         <FloppyDiskAltSolid class="w-5 h-5 me-2" /> Save</Button
       >
@@ -181,3 +189,5 @@
     {/if}
   </div>
 </div>
+
+<ReplayAllModal bind:this={replayAllModal}/>

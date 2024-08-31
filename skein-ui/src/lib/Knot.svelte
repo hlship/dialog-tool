@@ -14,11 +14,9 @@
 
     const dispatcher = createEventDispatcher();
 
-    // We don't instantiate a Knot until after we have at least one knot.
-    const globals = getContext("globals");
-    const knots = globals.knots;
-    const selected = globals.selected;
-    const traif = globals.traif;
+    const knots = getContext("knots");
+    const selected = getContext("selected");
+    const traif = getContext("traif");
 
     export let id = undefined;
 
