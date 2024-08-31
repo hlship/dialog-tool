@@ -43,9 +43,10 @@
     }
 
     function computeChildren(knots, traif, selectedId) {
-        let result = [];
 
-        for (const childId of knot?.children) {
+        let result = [];
+        
+        for (const childId of knot.children || []) {
             let child = {
                 id: childId,
                 label: knots.get(childId).command,
