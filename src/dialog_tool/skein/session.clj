@@ -24,12 +24,18 @@
   [process skein-path]
   (create-loaded! process skein-path (tree/new-tree (:seed process))))
 
+(defn enable-undo
+  [session undo-enabled?]
+  (assoc session :undo-enabled? undo-enabled?))
+
 (defn- capture-undo
   [session]
-  (-> session
-      (update :undo-stack conj (:tree session))
-      ;; TODO: Really shouldn't clear it unless :tree changed at end; macro time?
-      (update :redo-stack empty)))
+  (if-not (:undo-enabled? session)
+    session
+    (-> session
+        (update :undo-stack conj (:tree session))
+        ;; TODO: Really shouldn't clear it unless :tree changed at end; macro time?
+        (update :redo-stack empty))))
 
 (defn- run-command!
   [session command]
@@ -101,6 +107,25 @@
   (let [session' (capture-undo session)
         commands (collect-commands (:tree session') node-id)]
     (reduce run-command! (do-restart! session') commands)))
+
+(defn- node-category
+  [{:keys [unblessed response]}]
+  (cond
+    (nil? unblessed) :ok
+
+    (some? response) :error
+
+    :default :new))
+
+(defn totals
+  "Totals the number of nodes that are :ok, :new, or :error."
+  [session]
+  (->> session
+       :tree
+       tree/all-nodes
+       (reduce (fn [counts node]
+                 (update counts (node-category node) inc))
+               {:ok 0 :new 0 :error 0})))
 
 (defn bless
   [session node-id]

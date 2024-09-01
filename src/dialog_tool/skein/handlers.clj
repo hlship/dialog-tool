@@ -41,7 +41,6 @@
 
 (defn- bless-to
   [session payload]
-  (prn `bless-to)
   (session/bless-to session (:id payload)))
 
 (defn- bless-all

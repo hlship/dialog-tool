@@ -43,16 +43,9 @@
       (.println out sep)
       (p out "id" id)
       (p out "label" label)
-      (when parent-id
-        ;; The START node has no parent
-        (p out "parent-id" parent-id))
-      (when command
-        ;; The START node has no command
-        (p out "command" command))
+      (p out "parent-id" parent-id)
+      (p out "command" command)
       (.println out sep)
-      ;; TODO: tags, label, etc. once they exist
-      ;; response may not exist if not yet blessed
-      ;; Also, these strings end with a newline
       (when response
         (.print out ^String response))
       (when unblessed

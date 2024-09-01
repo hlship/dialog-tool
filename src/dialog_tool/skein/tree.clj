@@ -2,6 +2,8 @@
   "Tree of Skein nodes.  Each node represents one command in a chain of commands
   starting at the root node. Each node has a unique id.
 
+  TODO: The Skein UI calls these \"knots\" not \"nodes\", we should align.
+
   Nodes have a response and optionally an unblessed response."
   (:require [clojure.string :as string]))
 
@@ -102,6 +104,7 @@
          :id)))
 
 (defn node->wire
+  "Converts a single node for transfer over the wire to the browser."
   [node]
   (let [{:keys [parent-id]} node]
     (-> node
@@ -119,3 +122,14 @@
        (map #(node->wire %))
        (sort-by :id)))
 
+(defn all-nodes
+  "Returns all nodes in the tree, in an unspecified order."
+  [tree]
+  (->> tree :nodes vals))
+
+(defn leaf-nodes
+  "Returns just the leaf nodes (nodes without children), in an unspecified order."
+  [tree]
+  (->> tree
+       all-nodes
+       (remove #(-> % :children seq))))

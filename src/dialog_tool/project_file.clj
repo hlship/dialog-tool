@@ -6,16 +6,15 @@
 
 (defn read-project
   [dir]
-  (let [dir'    (fs/path (or dir "."))
-        path    (fs/path dir' "dialog.edn")
-        _       (or (fs/exists? path)
-                    (fail (str path) " does not exist"))
-        content (-> path
-                    fs/file
-                    slurp
-                    edn/read-string)]
-    {:dir     dir'
-     :content content}))
+  (let [dir' (fs/path (or dir "."))
+        path (fs/path dir' "dialog.edn")]
+    (or (fs/exists? path)
+        (fail (str path) " does not exist"))
+    (-> path
+        fs/file
+        slurp
+        edn/read-string
+        (assoc ::dir dir'))))
 
 (defn- expand-source
   [dir glob]
@@ -28,8 +27,8 @@
    (expand-sources project nil))
   ([project {:keys [debug?]
              :or   {debug? true}}]
-   (let [{:keys [dir content]} project
-         {:keys [sources]} content
+   (let [{::keys [dir]
+          :keys  [sources]} project
          {:keys [story debug library]} sources
          globs (concat
                  story
@@ -38,6 +37,19 @@
      (->> globs
           (mapcat #(expand-source dir %))
           (map str)))))
+
+(defn ^String relative-path
+  [project path]
+  (if-not (string/starts-with? path "/")
+    (str (::dir project) "/" path)
+    path))
+
+(defn test-skein-paths
+  [project]
+  (let [{:keys [test-skeins]
+         :or   {test-skeins ["game.skein"]}} project]
+    (map #(relative-path project %) test-skeins)))
+
 
 
 
