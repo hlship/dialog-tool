@@ -1,0 +1,8 @@
+#!/usr/bin/env bb
+
+(require '[net.lewisship.cli-tools :as cli])
+
+(cli/dispatch {:flat       true
+               :namespaces '[dialog-tool.commands]})
+
+
