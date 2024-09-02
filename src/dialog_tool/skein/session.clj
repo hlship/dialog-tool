@@ -28,7 +28,7 @@
   [session undo-enabled?]
   (assoc session :undo-enabled? undo-enabled?))
 
-(defn- capture-undo
+(defn capture-undo
   [session]
   (if-not (:undo-enabled? session)
     session
