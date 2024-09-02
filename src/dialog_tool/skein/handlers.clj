@@ -5,8 +5,7 @@
             [clojure.string :as string]
             [cheshire.core :as json]
             [dialog-tool.skein.tree :as tree]
-            [dialog-tool.skein.session :as session])
-  (:import (java.io BufferedReader InputStreamReader)))
+            [dialog-tool.skein.session :as session]))
 
 (def text-plain {"Content-Type" "text/plain"})
 
@@ -83,11 +82,29 @@
   [session {:keys [id label]}]
   (session/label session id (string/trim label)))
 
+(defn- start-batch
+  "Turns off undo tracking, so the session will start to "
+  [session _]
+  (-> session
+      (session/enable-undo false)
+      (assoc ::saved-tree (:tree session)
+             ::batching? true)))
+
 (defn- response-body
   [old-tree new-session]
   (-> (tree-delta old-tree (:tree new-session))
       (assoc :enable_undo (-> new-session :undo-stack empty? not)
              :enable_redo (-> new-session :redo-stack empty? not))))
+
+(defn- end-batch
+  [session _]
+  (let [{::keys [saved-tree]} session]
+    (-> session
+        (session/enable-undo true)
+        session/capture-undo
+        ;; This extra-body is merged on top of the fairly empty real body
+        (assoc ::extra-body (response-body saved-tree session))
+        (dissoc ::saved-tree ::batching?))))
 
 (defn- invoke-handler
   [*session payload handler]
@@ -97,9 +114,11 @@
                                          (let [session' (handler session payload)]
                                            (reset! *extra-body (::extra-body session'))
                                            (dissoc session' ::extra-body))))
-        extra-body  @*extra-body
-        body        (-> (response-body (:tree session) session')
-                        (merge extra-body))]
+        {::keys [batching?]} session'
+        extra-body @*extra-body
+        body (cond-> {}
+                     (not batching?) (merge (response-body (:tree session) session'))
+                     extra-body (merge extra-body))]
     {:status 200
      :body   body}))
 
@@ -109,6 +128,8 @@
    "bless-to" bless-to
    "label" label
    "new-command" new-command
+   "start-batch" start-batch
+   "end-batch"   end-batch
    "save"        save
    "replay"      replay
    "undo"        undo
@@ -118,10 +139,7 @@
 (defn- update-handler
   [request]
   (let [{:keys [body *session]} request
-        payload (with-open [reader (-> body
-                                       InputStreamReader.
-                                       BufferedReader.)]
-                  (json/parse-stream reader true))
+        payload (json/parse-string body true)
         {:keys [action]} payload
         handler (action->handler action)]
     (if handler
@@ -143,7 +161,7 @@
     ;; against the vite development mode server.
     (= :options request-method)
     {:status 200}
-
+    `
     :else
     {:status  404
      :headers text-plain
@@ -195,8 +213,11 @@
 
 (defn service-handler
   [request]
-  (let [{:keys [uri request-method]} request]
-    (println (-> request-method name string/upper-case) uri)
+  (let [{:keys [uri request-method]} request
+        request' (cond-> request
+                         (= :post request-method)
+                         (update :body slurp))]
+    (println (-> request-method name string/upper-case) uri (:body request'))
     (if (= uri "/api")
-      (api-handler request)
+      (api-handler request')
       (resource-handler uri))))
