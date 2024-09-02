@@ -1,0 +1,27 @@
+;; bb --config release.edn
+;; The bb.edn is for the dgt tool, this file contains things needed by dgt maintainers.
+
+{:deps  {org.clj-commons/pretty {:mvn/version "3.1.1"}}
+ :paths ["release"]
+ :tasks
+ {:requires ([clj-commons.ansi :refer [pcompose] :rename {pcompose p}]
+             [clojure.string :as string]
+             [babashka.fs :as fs]
+             [dgt.release :as r :refer [sh]])
+  release   (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
+                  _ (sh {:dir "skein-ui"} "npm run build")
+                  zip-file (r/package tag)
+                  sha (r/sha256 zip-file)
+                  create-opts (cond-> ["--verify-tag" "--generate-notes"]
+                                (string/includes? tag "alpha")
+                                (conj "--prerelease"))]
+              (apply sh "gh release create" tag create-opts)
+              (sh "gh release upload --clobber" tag zip-file)
+              (println)
+              (p "Release URL: "
+                [:bold
+                 "https://github.com/hlship/dialog-tool/releases/tag/" tag])
+              (p "  Asset URL: "
+                [:bold "https://github.com/hlship/dialog-tool/releases/download/"
+                 tag "/" (fs/file-name zip-file)])
+              (p "     SHA256: " [:bold sha]))}}
