@@ -13,8 +13,6 @@
             [dialog-tool.skein.service :as service]
             [dialog-tool.project-file :as pf]))
 
-(def path-opt ["-p" "--path PATH" "Path to root directory of Dialog project."])
-
 (defcommand debug
   "Run the project in the Dialog debugger."
   [path path-opt
@@ -85,7 +83,7 @@
         session (-> (s/create-loaded! process skein-path tree)
                     (s/enable-undo false))
         leaf-ids (->> tree
-                      tree/leaf-nodes
+                      tree/leaf-knots
                       (map :id))
         test-leaf (fn [session id]
                     (print ".") (flush)
@@ -108,8 +106,8 @@
   The :test-skeins key of the dialog.edn lists the skein paths
   to test and defaults to just game.skein if omitted.
 
-  Outputs the number of correct nodes, the number of new nodes
-  (no prior response), and the number of error nodes (conflicting response).
+  Outputs the number of correct knots, the number of new knots
+  (no prior response), and the number of error knots (conflicting response).
 
   Exits with 0 if all knots are correct, or with 1 if there are any errors."
   [path path-opt

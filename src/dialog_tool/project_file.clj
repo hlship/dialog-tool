@@ -5,16 +5,19 @@
             [clojure.string :as string]))
 
 (defn read-project
-  [dir]
-  (let [dir' (fs/path (or dir "."))
-        path (fs/path dir' "dialog.edn")]
-    (or (fs/exists? path)
-        (fail (str path) " does not exist"))
-    (-> path
-        fs/file
-        slurp
-        edn/read-string
-        (assoc ::dir dir'))))
+  ;; 0 arity is normal, 1 arity is just for testing purposes
+  ([]
+   (read-project "."))
+  ([dir]
+   (let [dir' (fs/path (or dir "."))
+         path (fs/path dir '"dialog.edn")]
+     (or (fs/exists? path)
+         (fail (str path) " does not exist"))
+     (-> path
+         fs/file
+         slurp
+         edn/read-string
+         (assoc ::dir dir')))))
 
 (defn- expand-source
   [dir glob]
@@ -45,6 +48,7 @@
     path))
 
 (defn test-skein-paths
+  ;; TODO: Change this to just find any .skein files in the project root.
   [project]
   (let [{:keys [test-skeins]
          :or   {test-skeins ["game.skein"]}} project]

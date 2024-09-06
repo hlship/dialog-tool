@@ -110,7 +110,7 @@ waiting.txt
 
   (tree/->wire (:tree @*session))
 
-  (-> @*session :tree :nodes (get 1723218892802))
+  (-> @*session :tree :knots (get 1723218892802))
   (and (swap! *session s/replay-to! 1723218892802) nil)
 
   (swap! *session s/command! "open glove")

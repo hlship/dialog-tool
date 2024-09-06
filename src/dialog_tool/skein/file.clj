@@ -36,10 +36,10 @@
 
 (defn write-skein
   [tree ^PrintWriter out]
-  (let [{:keys [meta nodes]} tree]
+  (let [{:keys [meta knots]} tree]
     (p out "seed" (:seed meta))
-    (doseq [node-id (-> tree :nodes keys sort)
-            :let [{:keys [id parent-id response unblessed command label]} (get nodes node-id)]]
+    (doseq [knot-id (-> tree :knots keys sort)
+            :let [{:keys [id parent-id response unblessed command label]} (get knots knot-id)]]
       (.println out sep)
       (p out "id" id)
       (p out "label" label)
@@ -84,69 +84,69 @@
             (recur (apply-kv meta k v meta-parsers))
             (recur meta)))))))
 
-(def node-parsers
+(def knot-parsers
   {"id"        s->long
    "parent-id" s->long
    "command"   identity
    "label"     identity})
 
 (defn- apply-content
-  [node k ^StringBuilder sb]
+  [knot k ^StringBuilder sb]
   (if (pos? (.length sb))
     (let [s (str sb)]
       (.setLength sb 0)
-      (assoc node k s))
-    node))
+      (assoc knot k s))
+    knot))
 
 (defn- read-content
-  [initial-node ^LineNumberingPushbackReader r]
+  [initial-knot ^LineNumberingPushbackReader r]
   (let [sb (StringBuilder. 1000)]
-    (loop [node initial-node
+    (loop [knot initial-knot
            k :response]
       (let [line (.readLine r)]
         (cond
           (sep? line)
-          (apply-content node k sb)
+          (apply-content knot k sb)
 
           (unblessed-sep? line)
-          (recur (apply-content node k sb) :unblessed)
+          (recur (apply-content knot k sb) :unblessed)
 
           :else
           (do
             (.append sb ^String line)
             (.append sb \newline)
-            (recur node k)))))))
+            (recur knot k)))))))
 
-(defn- read-node
+(defn- read-knot
   [^LineNumberingPushbackReader r]
-  (loop [node nil]
+  (loop [knot nil]
     (let [line (.readLine r)]
       (cond
         (nil? line)
-        node
+        knot
 
         (= sep line)
-        (read-content node r)
+        (read-content knot r)
 
         :else
         (let [[k v] (parse-kv line)]
           (if k
-            (recur (apply-kv node k v node-parsers))
-            (recur node)))))))
+            (recur (apply-kv knot k v knot-parsers))
+            (recur knot)))))))
 
-(defn- read-nodes
+(defn- read-knots
   [initial-tree ^LineNumberingPushbackReader in]
   (loop [tree initial-tree]
-    (if-let [node (read-node in)]
-      ;; Just add the node, we rebuild the :children key for each node at the end
-      (recur (assoc-in tree [:nodes (:id node)] node))
+    (if-let [knot (read-knot in)]
+      ;; Just add the knot, we rebuild the :children key for each knot at the end
+      (recur (assoc-in tree [:knots (:id knot)] knot))
       tree)))
 
 (defn read-skein
   [^LineNumberingPushbackReader in]
   (try
     (-> (read-meta in)
-        (read-nodes in)
+        (read-knots in)
         tree/rebuild-children)
     (catch Exception e
       (let [m (or (ex-message e)

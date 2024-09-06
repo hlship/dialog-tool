@@ -1,6 +1,6 @@
 ;; bb --config release.edn
-;; The bb.edn is for the dgt tool, this file contains things needed by dgt maintainers.
-
+;; The bb.edn is for the dgt tool (shipped in the dialog-tool package),
+;; this file contains things needed by dgt maintainers.
 {:deps  {org.clj-commons/pretty {:mvn/version "3.1.1"}}
  :paths ["release"]
  :tasks
