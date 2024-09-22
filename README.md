@@ -19,10 +19,56 @@ Unlike many of my projects, this is _really_ for personal use:
 - Subject to breaking change at any time
 - Written in [Babashka](https://github.com/babashka/babashka) (the ultimate scripting language) which you almost certainly don't know
 
+## Installing
+
+Dialog tool is easily installed on OS X using the [Homebrew](https://brew.sh/).
+
+```
+brew install hlship/brew/dialog-tool
+```
+
 Run the command `dgt help` for a list of commands; each command has a `--help` option (abbreviated as `-h`) that gives
 specific details.
 
 > The first time you run `dgt` it will be somewhat slow, as it has to download additional libraries. After that, it will be lightning fast.
+
+## Creating a new project
+
+The command `dgt new` creates a new directory and a new project within it:
+
+```
+> dgt new magnum-opus
+Creating magnum-opus ...
+  dialog.edn
+  meta.dg
+  project.dg
+  stdlib.dg
+  stddebug.dg
+
+Change to magnum-opus to begin work
+dgt debug to run the game in the Dialog debugger
+dgt skein to open a web browser to the Skein UI
+dgt help for other options
+> tree magnum-opus
+magnum-opus
+├── dialog.edn
+├── lib
+│   └── dialog
+│       ├── stddebug.dg
+│       └── stdlib.dg
+└── src
+    ├── meta.dg
+    └── project.dg
+
+4 directories, 5 files
+>
+```
+The exact files created by `dgt new` may change over time.
+
+The directory must not already exist.
+
+`dgt new` will create a unique [IFID](https://linusakesson.net/dialog/docs/beyondprg.html) for your project; it
+will be part of the content in the `meta.dg` file. 
 
 ## dialog.edn
 
@@ -36,12 +82,10 @@ This file identifies the sources in your project as well as other details needed
 A minimal example `dialog.edn`:
  
 ```
-{:sources {
-  :story ["src/*.dg"]
-  :debug ["debug/*.dg"
-          "/usr/local/share/dialog-if/stddebug.dg"]
-  :library ["lib/*.dg"
-            "/usr/local/share/dialog-if/stdlib.dg"]}}
+{:sources
+ {:story   ["src/*.dg"]
+  :debug   ["lib/dialog/stddebug.dg"]
+  :library ["lib/dialog/stdlib.dg"]}}
 ```                   
 
 The primary (but not only) use of `dialog.edn` is to tell `dgt` where the sources for your project are,
@@ -58,17 +102,42 @@ source files are loaded.
 * `:debug` - used by the `test`, `debug` and `build --test` commands
 * `:library` - additional libraries, including the standard library
 
-Counter to the above example, you should generally copy the standard library into your own project.
-Over time you may need to change the standard library, or you may upgrade your Dialog dependency in a way that breaks your project.
-
 ## Running your project
 
-`dgt debug` will start your project in the debugger so you can play.
+`dgt debug` will start your project in the debugger so you can play interactively at the console.
+
+```
+> dgt debug
+Dialog Interactive Debugger (dgdebug) version 0m/03.
+Type @help at the game prompt for a brief introduction.
+
+
+The Featureless Space
+An interactive fiction by The Intrepid Author.
+Release 0. Serial number DEBUG.
+Dialog Interactive Debugger (dgdebug) version 0m/03. Library version 0.46.
+Debugging extension 1.1.
+
+Endless Featureless Space
+You are in an endless, featureless space. Just what will you create within it?
+
+>
+```
+
+Again, the title, author, release number, and other details can be configured by editing `meta.dg`.
+The file `project.dg` contains the room and player and not anything else.  From here, it is all about
+your imagination.
+
 
 ## Running the Skein
 
-`dgt skein` will  open up the skein UI;
-the skein represents your project as a tree of "knots"; each knot is a command. You can
+`dgt skein` will open up the skein UI.  By default, the file is named `default.skein`, or you can provide a different
+name (you may want to have multiple skein files).  The file will be created as needed.
+
+The Skein UI is an alternate way of running your project in the Dialog debugger; you interact through
+a web-based user interface.
+
+The Skein represents your project as a tree of "knots"; each knot is a command. You can
 add new commands beneath any knot, and you can also rerun the project to any knot
 and the skein will identify anything that has changed.  You can even run *all* possible branches
 to completion.
@@ -77,24 +146,12 @@ to completion.
 
 ## Building and Packaging
 
-This is coming; it was part of dgt 1.x and will be reimplented soon.
-
-## Creating new projects
-
-This is coming as well, a command to create a new empty project.
-
-## Installing
-
-```
-brew install hlship/brew/dialog-tool
-```
+This is coming; it was part of dgt 1.x and will be reimplemented soon.
 
 ## dgt 2.0 TODO / IDEAS
 
 - Be able to run the Skein against compiled zcode via dumbfrotz
-- Optional override in dialog.edn for where the tools (dgdebug, etc.) are stored 
-- Run dgdebugger to collect data (title, version, etc.) needed to publish
-- Could we generate (live?) documentation by parsing the source?
+ - Could we generate (live?) documentation by parsing the source?
 
 ## License
 
