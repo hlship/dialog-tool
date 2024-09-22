@@ -6,8 +6,8 @@
          "skein-ui/dist"]
  :deps  {org.clojure/clojure        {:mvn/version "1.12.0"}
          ;; Keep sync'ed w/ bb.edn:
-         org.clj-commons/pretty     {:mvn/version "3.1.1"}
-         io.github.hlship/cli-tools {:mvn/version "0.12"}
+         org.clj-commons/pretty     {:mvn/version "3.2.0"}
+         io.github.hlship/cli-tools {:mvn/version "0.13"}
          ;; Bundled Babashka dependencies:
          babashka/fs                {:mvn/version "0.5.22"}
          org.clojure/core.async     {:mvn/version "1.6.681"}
@@ -17,5 +17,5 @@
  :aliases
  {:test {:extra-paths ["dev"
                        "dev-resources"]
-         :extra-deps  {io.github.hlship/trace      {:mvn/version "1.3"}
+         :extra-deps  {io.github.hlship/trace      {:mvn/version "1.4"}
                        io.github.tonsky/clj-reload {:mvn/version "0.7.1"}}}}}

@@ -2,5 +2,5 @@
          ;; HTML and JS is copied and or generated to skein-ui/dist/public.
          ;; Resources under public are made visible.
          "skein-ui/dist"]
- :deps  {org.clj-commons/pretty     {:mvn/version "3.1.1"}
-         io.github.hlship/cli-tools {:mvn/version "0.12"}}}
+ :deps  {org.clj-commons/pretty     {:mvn/version "3.2.0"}
+         io.github.hlship/cli-tools {:mvn/version "0.13"}}}
