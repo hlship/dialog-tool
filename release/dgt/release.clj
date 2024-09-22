@@ -35,6 +35,8 @@
              "bb.edn"
              "LICENSE"
              "README.md"
+             "CHANGES.md"
+             "resources"
              "skein-ui/dist"])
     zip-file))
 

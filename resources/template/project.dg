@@ -1,0 +1,12 @@
+#featureless-space
+(room *)
+(name *) Endless Featureless Space
+(look *)
+    You are in an endless, featureless space.  Just what will you create within it?
+
+#player
+(current player *)
+(descr *)
+    As undefined as the space you inhabit.
+(* is #in #featureless-space)
+

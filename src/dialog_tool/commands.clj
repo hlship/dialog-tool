@@ -8,6 +8,7 @@
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.tree :as tree]
+            [dialog-tool.template :as template]
             [net.lewisship.cli-tools :as cli :refer [defcommand]]
             [clojure.java.browse :as browse]
             [dialog-tool.skein.service :as service]
@@ -19,20 +20,27 @@
           :parse-fn parse-long
           :validate [some? "Not a number"
                      pos-int? "Must be at least one"]]]
-  (let [project (pf/read-project)
+  (let [project    (pf/read-project)
         extra-args (cond-> []
-                           width (conj "--width" width))
-        cmd (-> ["dgdebug" "--quit"]
-                (into extra-args)
-                (into (pf/expand-sources project {:debug? true})))
-        *process (p/process {:cmd     cmd
-                             :inherit true})
+                     width (conj "--width" width))
+        cmd        (-> ["dgdebug" "--quit"]
+                       (into extra-args)
+                       (into (pf/expand-sources project {:debug? true})))
+        *process   (p/process {:cmd     cmd
+                               :inherit true})
         {:keys [exit]} @*process]
     (cli/exit exit)))
 
 (defcommand new-project
   "Creates a new empty Dialog project from a template."
-  [:command "new"])
+  [:command "new"
+   :as command
+   :args
+   project-dir ["DIR" "New directory to create"]]
+  (when (fs/exists? project-dir)
+    (cli/print-errors command "Directory already exists")
+    (cli/exit -1))
+  (template/create-from-template project-dir nil))
 
 (defcommand skein
   "Runs the Skein UI to test the Dialog project."
@@ -44,10 +52,10 @@
           :default "default.skein"]]
   (let [project (pf/read-project)
         {:keys [port]} (service/start! project skein (cond-> nil
-                                                             seed (assoc :seed seed)))
-        url (str "http://localhost:" port "/index.html")]
+                                                       seed (assoc :seed seed)))
+        url     (str "http://localhost:" port "/index.html")]
     (pout [:bold (if (fs/exists? skein) "Loading" "Creating")
-               " " skein " ..."])
+           " " skein " ..."])
     (pout [:faint "Skein service started on port " port " ..."])
     (pout "Hit " [:bold "Ctrl+C"] " when done")
     (browse/browse-url url))
@@ -76,24 +84,24 @@
 
 (defn- run-tests
   [project width skein-path]
-  (let [tree (sk.file/load-skein skein-path)
-        process (sk.process/start-debug-process! project (get-in tree [:meta :seed]))
-        session (-> (s/create-loaded! process skein-path tree)
-                    (s/enable-undo false))
-        leaf-ids (->> tree
-                      tree/leaf-knots
-                      (map :id))
+  (let [tree      (sk.file/load-skein skein-path)
+        process   (sk.process/start-debug-process! project (get-in tree [:meta :seed]))
+        session   (-> (s/create-loaded! process skein-path tree)
+                      (s/enable-undo false))
+        leaf-ids  (->> tree
+                       tree/leaf-knots
+                       (map :id))
         test-leaf (fn [session id]
                     (print ".") (flush)
                     (s/replay-to! session id))
-        path' (trim-dot skein-path)
-        spaces (- width (count path'))
-        session' (do
-                   (printf "Testing %s%s: "
-                           (apply str (repeat spaces " "))
-                           path')
-                   (reduce test-leaf session leaf-ids))
-        totals (s/totals session')]
+        path'     (trim-dot skein-path)
+        spaces    (- width (count path'))
+        session'  (do
+                    (printf "Testing %s%s: "
+                            (apply str (repeat spaces " "))
+                            path')
+                    (reduce test-leaf session leaf-ids))
+        totals    (s/totals session')]
     (print " ")
     (println (compose-totals totals))
     totals))
@@ -109,14 +117,14 @@
    skein-file ["SKEIN-FILE" "Path to single skein file to test"
                :optional true]
    :command "test"]
-  (let [project (pf/read-project)
+  (let [project     (pf/read-project)
         skein-paths (if skein-file
                       [skein-file]
                       (->> (fs/glob "." "*.skein")
                            (map str)))
-        width (->> skein-paths (map trim-dot) (map count) (apply max))
+        width       (->> skein-paths (map trim-dot) (map count) (apply max))
         test-totals (map #(run-tests project width %) skein-paths)
-        totals (apply merge-with + test-totals)]
+        totals      (apply merge-with + test-totals)]
     (println "Results:" (compose-totals totals))
     (when (pos? (+ (:new totals) (:error totals)))
       (perr [:yellow "Run " [:bold "dgt skein " [:italic "<file>"]] " to run the skein UI to investigate errors."])
