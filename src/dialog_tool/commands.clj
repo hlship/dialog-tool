@@ -34,12 +34,10 @@
 (defcommand new-project
   "Creates a new empty Dialog project from a template."
   [:command "new"
-   :as command
    :args
-   project-dir ["DIR" "New directory to create"]]
-  (when (fs/exists? project-dir)
-    (cli/print-errors command "Directory already exists")
-    (cli/exit -1))
+   project-dir ["DIR" "New directory to create"
+                :parse-fn fs/path
+                :validate [#(not (fs/exists? %)) "Directory already exists"]]]
   (template/create-from-template project-dir nil))
 
 (defcommand skein
