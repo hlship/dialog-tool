@@ -1,5 +1,6 @@
 (ns dgt.release
-  (:require [clj-commons.ansi :refer [pcompose perr] :rename {pcompose pout}]
+  "Support for release new version of dialog-tool (see release.edn)."
+  (:require [clj-commons.ansi :refer [pout perr]]
             [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as string]))
@@ -34,6 +35,8 @@
              "bb.edn"
              "LICENSE"
              "README.md"
+             "CHANGES.md"
+             "resources"
              "skein-ui/dist"])
     zip-file))
 

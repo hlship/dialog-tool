@@ -1,5 +1,5 @@
 (ns dialog-tool.skein.session
-  "A session wraps around a Skein process, maintaining a tree, the process, and the current node.
+  "A session wraps around a Skein process, maintaining a tree, the process, and the current knot.
   In addition, there's an undo and redo stack, representing prior states of the tree."
   (:require [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
@@ -16,7 +16,7 @@
      :redo-stack     []
      :process        process
      :tree           (tree/update-response tree 0 initial-response)
-     :active-node-id 0}))
+     :active-knot-id 0}))
 
 (defn create-new!
   "Creates a new session from an existing debug process.  The process should be
@@ -39,22 +39,22 @@
 
 (defn- run-command!
   [session command]
-  (let [{:keys [tree active-node-id process]} session
-        child-node-id (tree/find-child-id tree active-node-id command)
+  (let [{:keys [tree active-knot-id process]} session
+        child-knot-id (tree/find-child-id tree active-knot-id command)
         response (sk.process/send-command! process command)]
-    (if child-node-id
+    (if child-knot-id
       (-> session
-          (assoc :active-node-id child-node-id)
-          (update :tree tree/update-response child-node-id response))
-      (let [new-node-id (tree/next-id)]
+          (assoc :active-knot-id child-knot-id)
+          (update :tree tree/update-response child-knot-id response))
+      (let [new-knot-id (tree/next-id)]
         (-> session
-            (assoc :active-node-id new-node-id)
-            (update :tree tree/add-child active-node-id new-node-id command response))))))
+            (assoc :active-knot-id new-knot-id)
+            (update :tree tree/add-child active-knot-id new-knot-id command response))))))
 
 (defn command!
-  "Sends a player command to the process at the current node. This will either
-  update a child of the current node (with a possibly unblessed response) or
-  will create a new child node.
+  "Sends a player command to the process at the current knot. This will either
+  update a child of the current knot (with a possibly unblessed response) or
+  will create a new child knot.
 
   Returns the updated session."
   [session command]
@@ -63,21 +63,21 @@
       (run-command! command)))
 
 (defn- nodes-to
-  "Returns a seq of nodes at or above the given node in the tree; order is from
-  node 0 down to the initial node."
-  [{:keys [nodes]} initial-node-id]
-  (loop [node-id initial-node-id
+  "Returns a seq of nodes at or above the given knot in the tree; order is from
+  knot 0 down to the initial knot."
+  [{:keys [nodes]} initial-knot-id]
+  (loop [knot-id initial-knot-id
          result ()]
-    (if (nil? node-id)
+    (if (nil? knot-id)
       result
-      (let [node (get nodes node-id)]
-        (recur (:parent-id node)
-               (cons node result))))))
+      (let [knot (get nodes knot-id)]
+        (recur (:parent-id knot)
+               (cons knot result))))))
 
 (defn- collect-commands
-  [tree initial-node-id]
-  (->> (nodes-to tree initial-node-id)
-       (drop 1)                                             ; no command for root node
+  [tree initial-knot-id]
+  (->> (nodes-to tree initial-knot-id)
+       (drop 1)                                             ; no command for root knot
        (map :command)))
 
 (defn- do-restart!
@@ -88,27 +88,27 @@
         process' (sk.process/restart! process)
         new-initial-response (sk.process/read-response! process')]
     (-> session
-        (assoc :active-node-id 0
+        (assoc :active-knot-id 0
                :process process')
         (update :tree tree/update-response 0 new-initial-response))))
 
 (defn restart!
-  "Restarts the game, sets the active node to 0."
+  "Restarts the game, sets the active knot to 0."
   [session]
   (-> session
       capture-undo
       do-restart!))
 
 (defn replay-to!
-  "Restarts the game, then plays through all the commands leading up to the node.
-  This will either verify that each node's response is unchanged, or capture
+  "Restarts the game, then plays through all the commands leading up to the knot.
+  This will either verify that each knot's response is unchanged, or capture
   unblessed responses to be verified."
-  [session node-id]
+  [session knot-id]
   (let [session' (capture-undo session)
-        commands (collect-commands (:tree session') node-id)]
+        commands (collect-commands (:tree session') knot-id)]
     (reduce run-command! (do-restart! session') commands)))
 
-(defn- node-category
+(defn- knot-category
   [{:keys [unblessed response]}]
   (cond
     (nil? unblessed) :ok
@@ -122,21 +122,21 @@
   [session]
   (->> session
        :tree
-       tree/all-nodes
-       (reduce (fn [counts node]
-                 (update counts (node-category node) inc))
+       tree/all-knots
+       (reduce (fn [counts knot]
+                 (update counts (knot-category knot) inc))
                {:ok 0 :new 0 :error 0})))
 
 (defn bless
-  [session node-id]
+  [session knot-id]
   (-> session
       capture-undo
-      (update :tree tree/bless-response node-id)))
+      (update :tree tree/bless-response knot-id)))
 
 (defn bless-to
-  [session node-id]
+  [session knot-id]
   (let [{:keys [tree]} session
-        ids (->> (nodes-to tree node-id)
+        ids (->> (nodes-to tree knot-id)
                  (map :id))]
     (-> session
         capture-undo
@@ -145,9 +145,9 @@
 (defn bless-all
   [session]
   (let [session' (capture-undo session)
-        ids (-> session' :tree :nodes keys)]
-    (assoc session :tree (reduce (fn [tree node-id]
-                                   (tree/bless-response tree node-id))
+        ids (-> session' :tree :knots keys)]
+    (assoc session :tree (reduce (fn [tree knot-id]
+                                   (tree/bless-response tree knot-id))
                                  (:tree session')
                                  ids))))
 
@@ -178,17 +178,17 @@
         (update :redo-stack pop))))
 
 (defn label
-  [session node-id label]
+  [session knot-id label]
   (-> session
       capture-undo
-      (update :tree tree/label-node node-id label)))
+      (update :tree tree/label-knot knot-id label)))
 
 (defn delete
-  "Deletes a node from the tree, including any descendants of the node."
-  [session node-id]
+  "Deletes a knot from the tree, including any descendants of the knot."
+  [session knot-id]
   (-> session
       capture-undo
-      (update :tree tree/delete-node node-id)))
+      (update :tree tree/delete-knot knot-id)))
 
 (defn kill!
   "Kills the session, and the underlying process. Returns nil."

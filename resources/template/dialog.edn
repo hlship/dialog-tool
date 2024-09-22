@@ -1,0 +1,4 @@
+{:sources
+ {:story   ["src/*.dg"]
+  :debug   ["lib/dialog/stddebug.dg"]
+  :library ["lib/dialog/stdlib.dg"]}}

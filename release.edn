@@ -1,10 +1,10 @@
 ;; bb --config release.edn
-;; The bb.edn is for the dgt tool, this file contains things needed by dgt maintainers.
-
-{:deps  {org.clj-commons/pretty {:mvn/version "3.1.1"}}
+;; The bb.edn is for the dgt tool (shipped in the dialog-tool package),
+;; this file contains things needed by dgt maintainers.
+{:deps  {org.clj-commons/pretty {:mvn/version "3.2.0"}}
  :paths ["release"]
  :tasks
- {:requires ([clj-commons.ansi :refer [pcompose] :rename {pcompose p}]
+ {:requires ([clj-commons.ansi :refer [pout]]
              [clojure.string :as string]
              [babashka.fs :as fs]
              [dgt.release :as r :refer [sh]])
@@ -18,10 +18,10 @@
               (apply sh "gh release create" tag create-opts)
               (sh "gh release upload --clobber" tag zip-file)
               (println)
-              (p "Release URL: "
+              (pout "Release URL: "
                 [:bold
                  "https://github.com/hlship/dialog-tool/releases/tag/" tag])
-              (p "  Asset URL: "
+              (pout "  Asset URL: "
                 [:bold "https://github.com/hlship/dialog-tool/releases/download/"
                  tag "/" (fs/file-name zip-file)])
-              (p "     SHA256: " [:bold sha]))}}
+              (pout "     SHA256: " [:bold sha]))}}

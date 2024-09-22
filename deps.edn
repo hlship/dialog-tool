@@ -1,21 +1,23 @@
 ;; Lots of testing using Clojure and REPL, but the final tool is Babashka
 
 {:paths ["src"
+         "resources"
          ;; HTML and JS is copied and or generated to skein-ui/dist/public.
          ;; Resources under public are made visible.
          "skein-ui/dist"]
- :deps  {org.clojure/clojure        {:mvn/version "1.11.3"}
+ :deps  {org.clojure/clojure        {:mvn/version "1.12.0"}
          ;; Keep sync'ed w/ bb.edn:
-         org.clj-commons/pretty     {:mvn/version "3.0.0"}
-         io.github.hlship/cli-tools {:mvn/version "0.12"}
+         org.clj-commons/pretty     {:mvn/version "3.2.0"}
+         io.github.hlship/cli-tools {:mvn/version "0.13"}
          ;; Bundled Babashka dependencies:
-         babashka/fs                {:mvn/version "0.5.21"}
+         selmer                     {:mvn/version "1.12.61"}
+         babashka/fs                {:mvn/version "0.5.22"}
          org.clojure/core.async     {:mvn/version "1.6.681"}
-         cheshire/cheshire          {:mvn/version "5.12.0"}
-         http-kit/http-kit          {:mvn/version "2.6.0"}}
+         cheshire/cheshire          {:mvn/version "5.13.0"}
+         http-kit/http-kit          {:mvn/version "2.8.0"}}
 
  :aliases
  {:test {:extra-paths ["dev"
                        "dev-resources"]
-         :extra-deps  {io.github.hlship/trace      {:mvn/version "1.3"}
+         :extra-deps  {io.github.hlship/trace      {:mvn/version "1.4"}
                        io.github.tonsky/clj-reload {:mvn/version "0.7.1"}}}}}

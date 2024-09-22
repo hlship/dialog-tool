@@ -1,8 +1,6 @@
 (ns dialog-tool.skein.tree
-  "Tree of Skein nodes.  Each node represents one command in a chain of commands
-  starting at the root node. Each node has a unique id.
-
-  TODO: The Skein UI calls these \"knots\" not \"nodes\", we should align.
+  "Tree of Skein nodes.  Each knot represents one command in a chain of commands
+  starting at the root knot. Each knot has a unique id.
 
   Nodes have a response and optionally an unblessed response."
   (:require [clojure.string :as string]))
@@ -10,7 +8,7 @@
 (defn new-tree
   [seed]
   {:meta     {:seed seed}
-   :nodes    {0 {:id    0
+   :knots    {0 {:id    0
                  :label "START"}}})
 
 (def *next-id (atom (System/currentTimeMillis)))
@@ -24,112 +22,112 @@
   (conj (or set #{}) k))
 
 (defn add-child
-  "Adds a child node.  The response is initially unblessed."
+  "Adds a child knot.  The response is initially unblessed."
   [tree parent-id new-id command response]
-  (let [node {:id        new-id
+  (let [knot {:id        new-id
               :parent-id parent-id
               :command   command
               :unblessed response}]
     (-> tree
-        (assoc-in [:nodes new-id] node)
-        (update-in [:nodes parent-id :children] conj* new-id))))
+        (assoc-in [:knots new-id] knot)
+        (update-in [:knots parent-id :children] conj* new-id))))
 
 (defn rebuild-children
-  "Rebuild the :children of each node from the :parent-id of all other nodes."
+  "Rebuild the :children of each knot from the :parent-id of all other knots."
   [tree]
-  (let [nodes (-> tree :nodes vals)
-        parent->children (->> nodes
+  (let [knots (-> tree :knots vals)
+        parent->children (->> knots
                               (reduce (fn [m {:keys [id parent-id]}]
                                         (update m parent-id conj* id))
                                       {}))
-        nodes' (reduce (fn [m {:keys [id] :as node}]
-                         (assoc m id (assoc node :children (parent->children id))))
+        knots' (reduce (fn [m {:keys [id] :as knot}]
+                         (assoc m id (assoc knot :children (parent->children id))))
                        {}
-                       nodes)]
-    (assoc tree :nodes nodes')))
+                       knots)]
+    (assoc tree :knots knots')))
 
-(defn delete-node
-  "Deletes a previously added node, and any children below it."
-  [tree node-id]
-  (let [node (get-in tree [:nodes node-id])
-        {:keys [children]} node]
-    (-> (reduce delete-node tree children)
-        (update :nodes dissoc node-id)
+(defn delete-knot
+  "Deletes a previously added knot, and any children below it."
+  [tree knot-id]
+  (let [knot (get-in tree [:knots knot-id])
+        {:keys [children]} knot]
+    (-> (reduce delete-knot tree children)
+        (update :knots dissoc knot-id)
         ;; Yes, we don't care about efficiency!
         rebuild-children)))
 
-(defn label-node
-  [tree node-id label]
+(defn label-knot
+  [tree knot-id label]
   (if (string/blank? label)
-    (update-in tree [:nodes node-id] dissoc :label)
-    (assoc-in tree [:nodes node-id :label] label)))
+    (update-in tree [:knots knot-id] dissoc :label)
+    (assoc-in tree [:knots knot-id :label] label)))
 
-(defn- bless-node
-  [node]
-  (if (contains? node :unblessed)
-    (-> node
+(defn- bless-knot
+  [knot]
+  (if (contains? knot :unblessed)
+    (-> knot
         (dissoc :unblessed)
-        (assoc :response (:unblessed node)))
-    node))
+        (assoc :response (:unblessed knot)))
+    knot))
 
 (defn bless-response
-  "Blesses a node's response by rolling the unblessed response into the main response.
-  Does nothing if the node has no unblessed response."
-  [tree node-id]
-  (update-in tree [:nodes node-id] bless-node))
+  "Blesses a knot's response by rolling the unblessed response into the main response.
+  Does nothing if the knot has no unblessed response."
+  [tree knot-id]
+  (update-in tree [:knots knot-id] bless-knot))
 
 (defn- store-response
-  [node response]
-  (if (= (:response node) response)
-    (dissoc node :unblessed)
-    (assoc node :unblessed response)))
+  [knot response]
+  (if (= (:response knot) response)
+    (dissoc knot :unblessed)
+    (assoc knot :unblessed response)))
 
 (defn update-response
-  "Adds a response to a node; if the new response matches existing :response,
-  the node is unchanged, otherwise updates the node adding :unblessed
+  "Adds a response to a knot; if the new response matches existing :response,
+  the knot is unchanged, otherwise updates the knot adding :unblessed
   with the new response."
-  [tree node-id new-response]
-  (update-in tree [:nodes node-id] store-response new-response))
+  [tree knot-id new-response]
+  (update-in tree [:knots knot-id] store-response new-response))
 
 (defn find-child-id
-  "Looks in the children of the given node for an existing node with
-  the indicated command string; if found, returns the node's id, otherwise
+  "Looks in the children of the given knot for an existing knot with
+  the indicated command string; if found, returns the child knot's id, otherwise
    returns nil."
-  [tree node-id command]
+  [tree knot-id command]
   (let [{:keys [nodes]} tree]
-    (->> (get-in nodes [node-id :children])
+    (->> (get-in nodes [knot-id :children])
          (map nodes)
          (filter #(= command (:command %)))
          first
          :id)))
 
-(defn node->wire
-  "Converts a single node for transfer over the wire to the browser."
-  [node]
-  (let [{:keys [parent-id]} node]
-    (-> node
+(defn knot->wire
+  "Converts a single knot for transfer over the wire to the browser."
+  [knot]
+  (let [{:keys [parent-id]} knot]
+    (-> knot
         (dissoc :parent-id)
         (assoc :parent_id parent-id)
         (update :children #(-> % sort vec)))))
 
 (defn ->wire
-  "Convert the nodes of a tree to a format suitable for transfer over the wire`
+  "Convert the knots of a tree to a format suitable for transfer over the wire`
   to the UI."
   [tree]
   (->> tree
-       :nodes
+       :knots
        vals
-       (map #(node->wire %))
+       (map #(knot->wire %))
        (sort-by :id)))
 
-(defn all-nodes
-  "Returns all nodes in the tree, in an unspecified order."
+(defn all-knots
+  "Returns all knots in the tree, in an unspecified order."
   [tree]
-  (->> tree :nodes vals))
+  (->> tree :knots vals))
 
-(defn leaf-nodes
-  "Returns just the leaf nodes (nodes without children), in an unspecified order."
+(defn leaf-knots
+  "Returns just the leaf knots (nodes without children), in an unspecified order."
   [tree]
   (->> tree
-       all-nodes
+       all-knots
        (remove #(-> % :children seq))))
