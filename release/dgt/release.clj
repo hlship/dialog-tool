@@ -1,6 +1,6 @@
 (ns dgt.release
   "Support for release new version of dialog-tool (see release.edn)."
-  (:require [clj-commons.ansi :refer [pcompose perr] :rename {pcompose pout}]
+  (:require [clj-commons.ansi :refer [pout perr]]
             [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as string]))

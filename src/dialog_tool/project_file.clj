@@ -28,8 +28,7 @@
 (defn expand-sources
   ([project]
    (expand-sources project nil))
-  ([project {:keys [debug?]
-             :or   {debug? true}}]
+  ([project {:keys [debug?]}]
    (let [{::keys [dir]
           :keys  [sources]} project
          {:keys [story debug library]} sources
@@ -40,20 +39,6 @@
      (->> globs
           (mapcat #(expand-source dir %))
           (map str)))))
-
-(defn ^String relative-path
-  [project path]
-  (if-not (string/starts-with? path "/")
-    (str (::dir project) "/" path)
-    path))
-
-(defn test-skein-paths
-  ;; TODO: Change this to just find any .skein files in the project root.
-  [project]
-  (let [{:keys [test-skeins]
-         :or   {test-skeins ["game.skein"]}} project]
-    (map #(relative-path project %) test-skeins)))
-
 
 
 
