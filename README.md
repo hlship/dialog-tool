@@ -40,28 +40,15 @@ The command `dgt new` creates a new directory and a new project within it:
 > dgt new magnum-opus
 Creating magnum-opus ...
   dialog.edn
-  meta.dg
-  project.dg
-  stdlib.dg
-  stddebug.dg
-
-Change to magnum-opus to begin work
-dgt debug to run the game in the Dialog debugger
+  src/meta.dg
+  src/magnum-opus.dg
+  lib/dialog/stdlib.dg
+  lib/dialog/stddebug.dg
+ 
+Change to directory magnum-opus to begin work
+dgt debug to run the project in the Dialog debugger
 dgt skein to open a web browser to the Skein UI
 dgt help for other options
-> tree magnum-opus
-magnum-opus
-├── dialog.edn
-├── lib
-│   └── dialog
-│       ├── stddebug.dg
-│       └── stdlib.dg
-└── src
-    ├── meta.dg
-    └── project.dg
-
-4 directories, 5 files
->
 ```
 The exact files created by `dgt new` may change over time.
 
@@ -82,7 +69,8 @@ This file identifies the sources in your project as well as other details needed
 A minimal example `dialog.edn`:
  
 ```
-{:sources
+{:name "magnum-opus"
+ :sources
  {:story   ["src/*.dg"]
   :debug   ["lib/dialog/stddebug.dg"]
   :library ["lib/dialog/stdlib.dg"]}}

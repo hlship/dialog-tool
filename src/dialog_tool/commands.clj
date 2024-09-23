@@ -11,6 +11,7 @@
             [dialog-tool.template :as template]
             [net.lewisship.cli-tools :as cli :refer [defcommand]]
             [clojure.java.browse :as browse]
+            [dialog-tool.build :as build]
             [dialog-tool.skein.service :as service]
             [dialog-tool.project-file :as pf]))
 
@@ -32,13 +33,18 @@
     (cli/exit exit)))
 
 (defcommand new-project
-  "Creates a new empty Dialog project from a template."
+  "Creates a new empty Dialog project from a template.
+
+  The name of the project will match the directory name, if the project name is omitted."
   [:command "new"
    :args
    project-dir ["DIR" "New directory to create"
                 :parse-fn fs/path
-                :validate [#(not (fs/exists? %)) "Directory already exists"]]]
-  (template/create-from-template project-dir nil))
+                :validate [#(not (fs/exists? %)) "Directory already exists"]]
+   project-name ["NAME" "Name of project "
+                 :optional true]]
+  (template/create-from-template project-dir
+                                 {:project-name (or project-name project-dir)}))
 
 (defcommand skein
   "Runs the Skein UI to test the Dialog project."
@@ -60,9 +66,17 @@
   ;; Hang forever
   @(promise))
 
-(defcommand compile-project
-  "Compiles the project to a file ready execute with an interpreter."
-  [:command "compile"])
+(defcommand build
+  "Compiles the project to a file ready to execute with an interpreter."
+  [testing ["-t" "--testing" "Compile for testing (include debug sources)"]
+   verbose ["-v" "--verbose" "Enable additional compiler output"]
+   format (cli/select-option "-f" "--format FORMAT" "Output format:"
+                             #{:web :aa :zblorb :z8 :z5 :c64}
+                             :default :z8)]
+  (build/build-project (pf/read-project)
+                       {:format   format
+                        :test?    testing
+                        :verbose? verbose}))
 
 (defcommand bundle
   "Bundles a project into a Zip archive that can be deployed to a web host."
