@@ -167,6 +167,7 @@ This is coming; it was part of dgt 1.x and will be reimplemented soon.
 
 - Be able to run the Skein against compiled zcode via dumbfrotz
  - Could we generate (live?) documentation by parsing the source?
+- Would JSON format, instead of EDN, improve adoption/usability?
 
 ## License
 

@@ -9,7 +9,7 @@
 (defn- dialogc-args
   [format options project output-path]
   (let [{:keys [verbose? test?]} options
-        {:keys [build cover-alt]} project
+        {:keys [build]} project
         build' (merge (:default build)
                             (get build format))
         build-options (:options build')
@@ -54,8 +54,8 @@
 (defn build-project
   "Builds a project; returns the path of the compiled file."
   [project options]
-  (let [{:keys [format]} project
-        {:keys [test?]} options
+  (let [ {:keys [format test?]} options
+        format     (or format (:format project))
         output-dir (fs/path "out" (name format) (if test? "test" "release"))
         sources    (pf/expand-sources project {:debug? test?})]
     (when (fs/exists? output-dir)

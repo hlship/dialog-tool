@@ -9,6 +9,7 @@
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.template :as template]
+            [dialog-tool.bundle :as bundle]
             [net.lewisship.cli-tools :as cli :refer [defcommand]]
             [clojure.java.browse :as browse]
             [dialog-tool.build :as build]
@@ -76,7 +77,8 @@
 
 (defcommand bundle
   "Bundles a project into a Zip archive that can be deployed to a web host."
-  [])
+  []
+  (bundle/bundle-project (pf/read-project) nil))
 
 (defn- trim-dot
   [path]

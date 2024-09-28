@@ -17,30 +17,37 @@
   (perr [:cyan "  " (subpath target)])
   (fs/create-dirs (fs/parent target)))
 
-(defn- copy
-  [source context target]
+(defn- maybe-create
+  [f]
+  (when-not (fs/exists? f)
+    (fs/create-file f))
+  f)
+
+(defn copy
+  [resource-path context target]
   (setup-target target)
-  (let [content (s/render-file source context)]
+  (let [content (s/render-file resource-path context)]
     (with-open [w (-> target
-                      fs/create-file
+                      maybe-create
                       fs/file
-                      io/writer
-                      )]
+                      io/writer)]
       (.write w content))))
 
-(defn- file-copy
+(defn file-copy
+  "Copies a file to a target path."
   [from target]
   (setup-target target)
   (fs/copy from target))
 
-(defn- resource-copy
-  [from target]
+(defn copy-binary
+  "Copies a binary resource from a resource path to a target path."
+  [resource-path target]
   (setup-target target)
-  (with-open [in (-> from
+  (with-open [in (-> resource-path
                      io/resource
                      io/input-stream)
               out (-> target
-                      fs/create-file
+                      maybe-create
                       fs/file
                       io/output-stream)]
     (io/copy in out)))
@@ -74,8 +81,8 @@
     (file-copy (fs/path dialog-root "stddebug.dg")
                (fs/path dir' "lib" "dialog" "stddebug.dg"))
 
-    (resource-copy "template/default-cover.png"
-                   (fs/path dir' "cover.png"))
+    (copy-binary "template/default-cover.png"
+                 (fs/path dir' "cover.png"))
 
     (perr "\nChange to directory " [:bold dir] " to begin work")
     (perr [:bold "dgt debug"] " to run the project in the Dialog debugger")
