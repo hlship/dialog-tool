@@ -69,13 +69,9 @@
 (defcommand build
   "Compiles the project to a file ready to execute with an interpreter."
   [testing ["-t" "--testing" "Compile for testing (include debug sources)"]
-   verbose ["-v" "--verbose" "Enable additional compiler output"]
-   format (cli/select-option "-f" "--format FORMAT" "Output format:"
-                             #{:web :aa :zblorb :z8 :z5 :c64}
-                             :default :z8)]
+   verbose ["-v" "--verbose" "Enable additional compiler output"]]
   (build/build-project (pf/read-project)
-                       {:format   format
-                        :test?    testing
+                       {:test?    testing
                         :verbose? verbose}))
 
 (defcommand bundle

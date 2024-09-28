@@ -12,10 +12,14 @@
   [^Path p]
   (.subpath p 1 (.getNameCount p)))
 
-(defn- copy
-  [target source context]
+(defn- setup-target
+  [target]
   (perr [:cyan "  " (subpath target)])
-  (fs/create-dirs (fs/parent target))
+  (fs/create-dirs (fs/parent target)))
+
+(defn- copy
+  [source context target]
+  (setup-target target)
   (let [content (s/render-file source context)]
     (with-open [w (-> target
                       fs/create-file
@@ -25,38 +29,53 @@
       (.write w content))))
 
 (defn- file-copy
-  [from to]
-  (perr [:cyan "  " (subpath to)])
-  (fs/create-dirs (fs/parent to))
-  (fs/copy from to))
+  [from target]
+  (setup-target target)
+  (fs/copy from target))
+
+(defn- resource-copy
+  [from target]
+  (setup-target target)
+  (with-open [in (-> from
+                     io/resource
+                     io/input-stream)
+              out (-> target
+                      fs/create-file
+                      fs/file
+                      io/output-stream)]
+    (io/copy in out)))
 
 (defn create-from-template
   [dir opts]
   (perr [:cyan "Creating " dir " ..."])
   (let [{:keys [project-name]} opts
         dir'        (fs/path dir)
+        src-dir (fs/path dir "src")
         brew-root   (-> (p/sh "brew --prefix")
                         :out
                         string/trim)
         dialog-root (fs/path brew-root "share" "dialog-if")]
 
-    (copy (fs/path dir' "dialog.edn")
-          "template/dialog.edn"
-          opts)
+    (copy "template/dialog.edn"
+          opts
+          (fs/path dir' "dialog.edn"))
 
-    (copy (fs/path dir' "src" "meta.dg")
-          "template/meta.dg"
-          {:ifid (-> (random-uuid) str str/upper-case)})
+    (copy "template/meta.dg"
+          {:ifid (-> (random-uuid) str str/upper-case)}
+          (fs/path src-dir "meta.dg"))
 
-    (copy (fs/path dir' "src" (str project-name ".dg"))
-          "template/project.dg"
-          {})
+    (copy "template/project.dg"
+          {}
+          (fs/path src-dir  (str project-name ".dg")))
 
     (file-copy (fs/path dialog-root "stdlib.dg")
                (fs/path dir' "lib" "dialog" "stdlib.dg"))
 
     (file-copy (fs/path dialog-root "stddebug.dg")
                (fs/path dir' "lib" "dialog" "stddebug.dg"))
+
+    (resource-copy "template/default-cover.png"
+                   (fs/path dir' "cover.png"))
 
     (perr "\nChange to directory " [:bold dir] " to begin work")
     (perr [:bold "dgt debug"] " to run the project in the Dialog debugger")

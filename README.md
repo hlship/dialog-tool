@@ -44,12 +44,14 @@ Creating magnum-opus ...
   src/magnum-opus.dg
   lib/dialog/stdlib.dg
   lib/dialog/stddebug.dg
- 
+  cover.png
+
 Change to directory magnum-opus to begin work
 dgt debug to run the project in the Dialog debugger
 dgt skein to open a web browser to the Skein UI
 dgt help for other options
 ```
+
 The exact files created by `dgt new` may change over time.
 
 The directory must not already exist.
@@ -66,15 +68,21 @@ Your project must have a `dialog.edn` file at the root.
 
 This file identifies the sources in your project as well as other details needed to build, debug, and test your project.
 
-A minimal example `dialog.edn`:
+A minimal example `dialog.edn` (as created by `dgt new`):
  
 ```
 {:name "magnum-opus"
+ :format :zblorb
+ :build
+ {:zblorb
+  {:options ["--cover-alt" "Magnum-opus"]}}
  :sources
  {:story   ["src/*.dg"]
   :debug   ["lib/dialog/stddebug.dg"]
   :library ["lib/dialog/stdlib.dg"]}}
 ```                   
+
+### Source Paths
 
 The primary (but not only) use of `dialog.edn` is to tell `dgt` where the sources for your project are,
 and _in what order_ they should apply (which is very critical to how Dialog operates).
@@ -89,6 +97,25 @@ source files are loaded.
 * `:story` - sources specific to your project
 * `:debug` - used by the `test`, `debug` and `build --test` commands
 * `:library` - additional libraries, including the standard library
+
+
+### Format
+
+The :format key defines the output when the project is built; :zblorb is a good general choice.
+In specific situations you may want to build for :z5, :z8, or :aa.  The differences between
+these formats are described in [the Dialog manual](https://linusakesson.net/dialog/docs/software.html#compiler).
+
+
+### Build Config
+
+The :build key contains build configuration for each format (when publishing for the web, you may build once for the 
+project, and a second time in :aa format for the web).
+
+The :options key is used to specify additional options to add to the command line.
+This is typically used to set the heap size information.
+
+Under :build, the :default key contains defaults for building (any format); the specific build map (:zblorb, in our example)
+is merged on top of the :default map, if present.
 
 ## Running your project
 
