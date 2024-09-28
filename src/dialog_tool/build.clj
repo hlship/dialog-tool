@@ -56,9 +56,7 @@
   [project options]
   (let [ {:keys [format test?]} options
         format     (or format (:format project))
-        output-dir (fs/path "out" (name format) (if test? "test" "release"))
+        output-dir (fs/path "out" (if test? "test" "release"))
         sources    (pf/expand-sources project {:debug? test?})]
-    (when (fs/exists? output-dir)
-      (fs/delete-tree output-dir))
     (fs/create-dirs output-dir)
     (invoke-dialogc format project sources output-dir options)))

@@ -36,7 +36,9 @@
 (defn bundle-project
   [project opts]
   (let [compiled-path (build/build-project project opts)
-        aa-path       (build/build-project project {:format :aa})
+        aa-path       (if (= :aa (:format project))
+                        compiled-path
+                        (build/build-project project {:format :aa}))
         compiled-name (fs/file-name compiled-path)
         story         (extract-story-info project)
         bundle-path   (fs/path "." "out" "web")]
@@ -56,7 +58,8 @@
     (t/copy-binary "bundle/introduction-to-if.pdf" (fs/path bundle-path "introduction-to-if.pdf"))
     (t/copy-binary "bundle/style.css" (fs/path bundle-path "style.css"))
     (t/file-copy compiled-path (fs/path bundle-path compiled-name))
-    ;; TODO small-cover.jpg
+
+    ;; TODO: Make cover.png optional (adjust template when it is missing).
     (t/file-copy "cover.png" (fs/path bundle-path "cover.png"))
 
     (perr [:cyan "  out/web/cover-small.jpg"])
