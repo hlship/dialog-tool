@@ -1,4 +1,9 @@
-{:sources
+{:name "{{project-name}}"
+ :format :zblorb
+ :build
+ {:zblorb
+  {:options ["--cover-alt" "{{project-name|capitalize}}"]}}
+ :sources
  {:story   ["src/*.dg"]
   :debug   ["lib/dialog/stddebug.dg"]
   :library ["lib/dialog/stdlib.dg"]}}
