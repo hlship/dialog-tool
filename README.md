@@ -159,9 +159,50 @@ to completion.
 
 > More on this later
 
-## Building and Packaging
 
-This is coming; it was part of dgt 1.x and will be reimplemented soon.
+## Building and Bundling
+
+The `dgt build` command is used to build your project; the :format key of `dialog.edn` determines how it
+will be built; the default is :zblorb; The [ZBlorb format](https://en.wikipedia.org/wiki/Blorb) can contain not only the compiled output of your project, but
+also sounds and images.
+
+```
+> dgt build
+Creating out/release/magnum-opus.zblorb ...
+```
+
+ZBlorb files also include a cover image; the file `cover.png` is used for this.  A boring placeholder `cover.png` is
+created by `dgt new`.
+
+This image can be used by an application that runs your compiled project,
+such as [Spatterlight](https://github.com/angstsmurf/spatterlight):
+
+![Spatterlight Screen](images/splatterlight.png)
+
+You can see that some of the game's meta data is also presented, such as the title, and the "blurb". This is all customized in the `meta.dg` file.
+
+
+You can upload your zblorb file to the [Interactive Fiction Database](https://ifdb.org/).
+If you want to self-host your project, you can bundle it:
+
+```
+> dgt bundle
+Creating out/release/magnum-opus.zblorb ...
+Creating out/release/magnum-opus.aastory ...
+  out/web/resources/...
+  out/web/resources/style.css
+  out/web/introduction-to-if.pdf
+  out/web/style.css
+  out/web/magnum-opus.zblorb
+  out/web/cover.png
+  out/web/cover-small.jpg
+  out/web/index.html
+```
+Bundle creates a directory and populates it with a custom page for your project; if you open `out/web/index.html` in a web browser, you'll be provided with an option to download the game file, or play the game in-browser:
+
+![Bundled Web Page](images/web-bundle-loaded.png)
+
+
 
 ## dgt 2.0 TODO / IDEAS
 

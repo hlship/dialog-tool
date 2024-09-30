@@ -69,11 +69,15 @@
 
 (defcommand build
   "Compiles the project to a file ready to execute with an interpreter."
-  [testing ["-t" "--testing" "Compile for testing (include debug sources)"]
+  [format (cli/select-option "-f" "--format FORMAT"
+                             "Output format:"
+                             #{:zblorb :z5 :z8 :aa})
+   testing ["-t" "--testing" "Compile for testing (include debug sources)"]
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
   (build/build-project (pf/read-project)
                        {:test?    testing
-                        :verbose? verbose}))
+                        :verbose? verbose
+                        :format format}))
 
 (defcommand bundle
   "Bundles a project into a Zip archive that can be deployed to a web host."

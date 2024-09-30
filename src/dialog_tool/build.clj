@@ -54,7 +54,7 @@
 (defn build-project
   "Builds a project; returns the path of the compiled file."
   [project options]
-  (let [ {:keys [format test?]} options
+  (let [{:keys [format test?]} options
         format     (or format (:format project))
         output-dir (fs/path "out" (if test? "test" "release"))
         sources    (pf/expand-sources project {:debug? test?})]
