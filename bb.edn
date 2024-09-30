@@ -5,4 +5,5 @@
          ;; Templates
          "resources"]
  :deps  {org.clj-commons/pretty     {:mvn/version "3.2.0"}
+         org.clj-commons/humanize   {:mvn/version "1.0"}
          io.github.hlship/cli-tools {:mvn/version "0.13"}}}

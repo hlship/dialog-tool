@@ -5,6 +5,7 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
             [clj-commons.ansi :refer [perr]]
+            [clj-commons.humanize :as h]
             [clojure.string :as string]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.template :as t]
@@ -71,7 +72,12 @@
     (t/copy "bundle/index.html"
             {:story                  story
              :story-file             compiled-name
-             :story-file-description "[DESC]"}
+             :story-file-description (str
+                                       (-> project :format name)
+                                       " "
+                                       (-> compiled-path
+                                              fs/size
+                                              h/filesize))}
             (fs/path bundle-path "index.html"))
 
     (t/setup-target zip-file)
