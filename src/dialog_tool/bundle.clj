@@ -36,14 +36,14 @@
 
 (defn bundle-project
   [project opts]
-  (let [project-name (:name project)
+  (let [project-name  (:name project)
         compiled-path (build/build-project project opts)
         aa-path       (if (= :aa (:format project))
                         compiled-path
                         (build/build-project project {:format :aa}))
         compiled-name (fs/file-name compiled-path)
         story         (extract-story-info project)
-        zip-file (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
+        zip-file      (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
         bundle-path   (fs/path "." "out" "web")]
 
     (when (fs/exists? bundle-path)
@@ -59,8 +59,13 @@
     ;; TODO: Could we edit the file instead?
     (t/copy-binary "bundle/play.css" (fs/path bundle-path "resources" "style.css"))
 
-    (t/copy-binary "bundle/introduction-to-if.pdf" (fs/path bundle-path "introduction-to-if.pdf"))
-    (t/copy-binary "bundle/style.css" (fs/path bundle-path "style.css"))
+    (run! (fn [source]
+            (t/copy-binary (str "bundle/" source)
+                           (fs/path bundle-path source)))
+          ["introduction-to-if.pdf"
+           "play-if-card.pdf"
+           "style.css"])
+
     (t/file-copy compiled-path (fs/path bundle-path compiled-name))
 
     ;; TODO: Make cover.png optional (adjust template when it is missing).
@@ -76,8 +81,8 @@
                                        (-> project :format name)
                                        " "
                                        (-> compiled-path
-                                              fs/size
-                                              h/filesize))}
+                                           fs/size
+                                           h/filesize))}
             (fs/path bundle-path "index.html"))
 
     (t/setup-target zip-file)
