@@ -76,9 +76,8 @@
   @*session
 
   (start! (pf/read-project "../sanddancer-dialog")
-          "../sanddancer-dialog/game.skein"
-          ;; Seed is for complete/honor script
-          {:seed 7363521})
+          "../sanddancer-dialog/default.skein"
+          nil)
 
   (@*shutdown)
 

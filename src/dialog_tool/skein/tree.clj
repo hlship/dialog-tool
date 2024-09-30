@@ -111,7 +111,7 @@
         (update :children #(-> % sort vec)))))
 
 (defn ->wire
-  "Convert the knots of a tree to a format suitable for transfer over the wire`
+  "Convert the knots of a tree to a format suitable for transfer over the wire
   to the UI."
   [tree]
   (->> tree

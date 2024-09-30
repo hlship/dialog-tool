@@ -104,9 +104,12 @@
   This will either verify that each knot's response is unchanged, or capture
   unblessed responses to be verified."
   [session knot-id]
-  (let [session' (capture-undo session)
-        commands (collect-commands (:tree session') knot-id)]
-    (reduce run-command! (do-restart! session') commands)))
+  (if (= (:active-knot-id session) knot-id)
+    session
+    (let [session' (capture-undo session)
+          commands (collect-commands (:tree session') knot-id)]
+      (assoc (reduce run-command! (do-restart! session') commands)
+             :active-knot_id knot-id))))
 
 (defn- knot-category
   [{:keys [unblessed response]}]
