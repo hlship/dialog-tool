@@ -42,7 +42,7 @@
         args        (into (dialogc-args format options project output-path)
                           sources)
         command     (into ["dialogc"] args)
-        _           (perr [:cyan "Creating " output-path " ..."])
+        _           (perr [:cyan "Building " output-path " ..."])
         _           (when (:verbose? options)
                       (perr [:cyan (str/join " " command)]))
         {:keys [exit]} @(p/process {:cmd     command
@@ -54,7 +54,7 @@
 (defn build-project
   "Builds a project; returns the path of the compiled file."
   [project options]
-  (let [ {:keys [format test?]} options
+  (let [{:keys [format test?]} options
         format     (or format (:format project))
         output-dir (fs/path "out" (if test? "test" "release"))
         sources    (pf/expand-sources project {:debug? test?})]

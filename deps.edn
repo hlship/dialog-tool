@@ -6,8 +6,9 @@
          ;; Resources under public are made visible.
          "skein-ui/dist"]
  :deps  {org.clojure/clojure        {:mvn/version "1.12.0"}
-         ;; Keep sync'ed w/ bb.edn:
+         ;; Keep sync'ed w/ bb.edn:l
          org.clj-commons/pretty     {:mvn/version "3.2.0"}
+         org.clj-commons/humanize   {:mvn/version "1.0"}
          io.github.hlship/cli-tools {:mvn/version "0.13"}
          ;; Bundled Babashka dependencies:
          selmer                     {:mvn/version "1.12.61"}
