@@ -62,21 +62,21 @@
       capture-undo
       (run-command! command)))
 
-(defn- nodes-to
-  "Returns a seq of nodes at or above the given knot in the tree; order is from
-  knot 0 down to the initial knot."
-  [{:keys [nodes]} initial-knot-id]
+(defn- knots-from-root
+  "Returns a seq of knots at or above the given knot in the tree; order is from
+  knot 0 (the root) down to the initial knot."
+  [{:keys [knots]} initial-knot-id]
   (loop [knot-id initial-knot-id
          result ()]
     (if (nil? knot-id)
       result
-      (let [knot (get nodes knot-id)]
+      (let [knot (get knots knot-id)]
         (recur (:parent-id knot)
                (cons knot result))))))
 
 (defn- collect-commands
   [tree initial-knot-id]
-  (->> (nodes-to tree initial-knot-id)
+  (->> (knots-from-root tree initial-knot-id)
        (drop 1)                                             ; no command for root knot
        (map :command)))
 
@@ -139,7 +139,7 @@
 (defn bless-to
   [session knot-id]
   (let [{:keys [tree]} session
-        ids (->> (nodes-to tree knot-id)
+        ids (->> (knots-from-root tree knot-id)
                  (map :id))]
     (-> session
         capture-undo

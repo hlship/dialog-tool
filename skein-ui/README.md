@@ -48,4 +48,4 @@ a server on port 10140 to serve these files as well as the `/api` endpoint.
 - Replay All creates huge number of undos, can we "bracket" into a single undo for batch?flowbright-svelete progress bar how to know when it is dismissed by user
 - ~~Replay on the START knot doesn't seem to work~~ (unblessed was not always cleared)
 - ~~Bug in new command: seems to be adding the new node to the root (or as a new root)~~
-- Bug in "Bless To" (doesn't update UI, does something wierd to data on server)
+- ~~Bug in "Bless To" (doesn't update UI, does something wierd to data on server)~~
