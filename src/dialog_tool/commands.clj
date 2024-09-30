@@ -80,7 +80,7 @@
                         :format format}))
 
 (defcommand bundle
-  "Bundles a project into a Zip archive that can be deployed to a web host."
+  "Bundles the project into a Zip archive that can be deployed to a web host."
   []
   (bundle/bundle-project (pf/read-project) nil))
 

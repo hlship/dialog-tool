@@ -35,12 +35,14 @@
 
 (defn bundle-project
   [project opts]
-  (let [compiled-path (build/build-project project opts)
+  (let [project-name (:name project)
+        compiled-path (build/build-project project opts)
         aa-path       (if (= :aa (:format project))
                         compiled-path
                         (build/build-project project {:format :aa}))
         compiled-name (fs/file-name compiled-path)
         story         (extract-story-info project)
+        zip-file (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
         bundle-path   (fs/path "." "out" "web")]
 
     (when (fs/exists? bundle-path)
@@ -53,6 +55,7 @@
     (perr [:cyan "  out/web/resources/..."])
 
     ;; Override for a wide play area in the browser
+    ;; TODO: Could we edit the file instead?
     (t/copy-binary "bundle/play.css" (fs/path bundle-path "resources" "style.css"))
 
     (t/copy-binary "bundle/introduction-to-if.pdf" (fs/path bundle-path "introduction-to-if.pdf"))
@@ -69,4 +72,9 @@
             {:story                  story
              :story-file             compiled-name
              :story-file-description "[DESC]"}
-            (fs/path bundle-path "index.html"))))
+            (fs/path bundle-path "index.html"))
+
+    (t/setup-target zip-file)
+    (fs/delete-if-exists zip-file)
+    (fs/create-file zip-file)
+    (fs/zip zip-file ["out/web"] {:root "out/web"})))

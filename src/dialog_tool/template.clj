@@ -12,7 +12,7 @@
   [^Path p]
   (.subpath p 1 (.getNameCount p)))
 
-(defn- setup-target
+(defn setup-target
   [target]
   (perr [:cyan "  " (subpath target)])
   (fs/create-dirs (fs/parent target)))
