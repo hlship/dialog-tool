@@ -1,6 +1,6 @@
 <script>
     import { getContext, createEventDispatcher, tick } from "svelte";
-    import { postApi, updateStoreMap } from "./common.js";
+    import { postApi, selectChild } from "./common.js";
     import * as common from "./common.js";
     import { Button, Tooltip } from "flowbite-svelte";
  
@@ -68,8 +68,6 @@
 
     $: children = computeChildren($knots, $traif, selectedId);
 
-    let commandField;
-
     async function post(payload) {
         let result = await postApi(payload);
 
@@ -90,24 +88,9 @@
         post({ action: "replay", id: id });
     }
 
-    let newCommand = null;
 
     function setSelectedId(selectedId) {
-        updateStoreMap(selected, (_selected) => {
-            _selected.set(id, selectedId);
-        });
-    }
-
-    async function runNewCommand() {
-        const result = await post({
-            action: "new-command",
-            command: newCommand,
-            id: id,
-        });
-
-        newCommand = null;
-
-        setSelectedId(result.new_id);
+        selectChild(selected, id, selectedId);
     }
 
     function deleteNode() {
@@ -218,12 +201,4 @@
             <span class="text-ellipsis overflow-hidden">{child.label}</span>
         </Button>
     {/each}
-    <input
-        type="text"
-        bind:this={commandField}
-        class="ml-2 w-1/4 grow px-2 text-sm"
-        placeholder="New command"
-        bind:value={newCommand}
-        on:change={runNewCommand}
-    />
 </div>

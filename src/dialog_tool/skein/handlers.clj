@@ -20,12 +20,12 @@
   (or deleted) knots.  This includes changes to a parent when a new child is added
   (the :children will be different)."
   [old-tree new-tree]
-  (let [old-knots   (:knots old-tree)
-        new-knots   (:knots new-tree)
+  (let [old-knots (:knots old-tree)
+        new-knots (:knots new-tree)
         ;; This will include newly added knots as well as changed
-        updates     (->> new-knots
-                         vals
-                         (remove #(= % (get old-knots (:id %)))))
+        updates (->> new-knots
+                     vals
+                     (remove #(= % (get old-knots (:id %)))))
         removed-ids (set/difference
                       (-> old-knots keys set)
                       (-> new-knots keys set))]
@@ -124,9 +124,9 @@
 
 (def action->handler
   {"bless"       bless
-   "bless-all" bless-all
-   "bless-to" bless-to
-   "label" label
+   "bless-all"   bless-all
+   "bless-to"    bless-to
+   "label"       label
    "new-command" new-command
    "start-batch" start-batch
    "end-batch"   end-batch
@@ -151,8 +151,10 @@
   [{:keys [request-method *session] :as request}]
   (cond
     (= :get request-method)
-    (->json {:status 200
-             :body   (response-body {} @*session)})
+    (let [session @*session]
+      (->json {:status 200
+               :body   (assoc (response-body {} session)
+                         :title (:skein-path session))}))
 
     (= :post request-method)
     (update-handler request)
@@ -161,7 +163,7 @@
     ;; against the vite development mode server.
     (= :options request-method)
     {:status 200}
-    `
+
     :else
     {:status  404
      :headers text-plain

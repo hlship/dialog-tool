@@ -109,7 +109,7 @@
     (let [session' (capture-undo session)
           commands (collect-commands (:tree session') knot-id)]
       (assoc (reduce run-command! (do-restart! session') commands)
-             :active-knot_id knot-id))))
+             :active-knot-id knot-id))))
 
 (defn- knot-category
   [{:keys [unblessed response]}]
