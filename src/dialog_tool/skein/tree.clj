@@ -3,7 +3,7 @@
   starting at the root knot. Each knot has a unique id.
 
   Nodes have a response and optionally an unblessed response."
-  (:require [clojure.string :as string]
+  (:require [clojure.string :as string]))
 
 (defn new-tree
   [seed]
