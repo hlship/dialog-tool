@@ -4,7 +4,6 @@
     import { postApi } from "./common.js" ;
     import { Input, Label } from "flowbite-svelte";
     import { AngleRightOutline } from "flowbite-svelte-icons";
-    import App from "../App.svelte";
     const dispatcher = createEventDispatcher();
 
     const selected = getContext("selected");
@@ -16,6 +15,8 @@
     export function focus() {
       // Not working yet, despire LLM hallucinations
       // inputField.focus();  
+      // See https://github.com/themesberg/flowbite-svelte/discussions/393
+      // May not be possible, considered a A11y problem (though it isn't)
     }
 
 
@@ -49,5 +50,3 @@
     </Input>
 </Label>
 
-<p>newCommand: {newCommand}</p>
-<p>parentId: {parentId}</p>

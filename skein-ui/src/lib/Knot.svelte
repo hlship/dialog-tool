@@ -3,6 +3,7 @@
     import { postApi, selectChild } from "./common.js";
     import * as common from "./common.js";
     import { Button, Tooltip } from "flowbite-svelte";
+    import { KeyboardSolid} from "flowbite-svelte-icons";
  
     import KnotText from "./KnotText.svelte";
     import {
@@ -11,6 +12,7 @@
         PenOutline,
         ExclamationCircleSolid,
     } from "flowbite-svelte-icons";
+    import NewCommand from "./NewCommand.svelte";
 
     const dispatcher = createEventDispatcher();
 
@@ -97,6 +99,12 @@
         post({ action: "delete", id: id });
     }
 
+    // Select this node as the deepest selected node; which will cause the NewCommand to apply to this node
+    // Ultimately, want to be able to force focus into the newCommand text field
+    function selectThis() {
+            selectChild(selected, id, null);
+    }
+
     var edittingLabel;
     var editLabelField;
     var newLabel;
@@ -158,7 +166,11 @@
             {/if}
         </div>
     {/if}
-    <div class="flex space-x-2">
+    <div class="flex space-x-2 w-full">
+        <Button size="xs" color="blue" on:click={selectThis}>
+            <KeyboardSolid class="w-5 h-5 me-2"/>
+            New Child
+        </Button>
         <Button size="xs" color="blue" on:click={replay}>
             <PlaySolid class="w-5 h-5 me-2" /> Replay</Button
         >
@@ -166,7 +178,7 @@
         {#if id != 0}
             <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}>
                 <CloseCircleSolid class="w-5 h-5 me-2" />Delete</Button
-            >
+            >NewCommand
             <Tooltip>Delete knot (and children)</Tooltip>
         {/if}
     </div>
