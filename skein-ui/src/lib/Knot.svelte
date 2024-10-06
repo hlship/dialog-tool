@@ -1,8 +1,9 @@
 <script>
     import { getContext, createEventDispatcher, tick } from "svelte";
-    import { postApi, updateStoreMap } from "./common.js";
+    import { postApi, selectChild } from "./common.js";
     import * as common from "./common.js";
     import { Button, Tooltip } from "flowbite-svelte";
+    import { KeyboardSolid} from "flowbite-svelte-icons";
  
     import KnotText from "./KnotText.svelte";
     import {
@@ -11,6 +12,7 @@
         PenOutline,
         ExclamationCircleSolid,
     } from "flowbite-svelte-icons";
+    import NewCommand from "./NewCommand.svelte";
 
     const dispatcher = createEventDispatcher();
 
@@ -68,8 +70,6 @@
 
     $: children = computeChildren($knots, $traif, selectedId);
 
-    let commandField;
-
     async function post(payload) {
         let result = await postApi(payload);
 
@@ -90,28 +90,19 @@
         post({ action: "replay", id: id });
     }
 
-    let newCommand = null;
 
     function setSelectedId(selectedId) {
-        updateStoreMap(selected, (_selected) => {
-            _selected.set(id, selectedId);
-        });
-    }
-
-    async function runNewCommand() {
-        const result = await post({
-            action: "new-command",
-            command: newCommand,
-            id: id,
-        });
-
-        newCommand = null;
-
-        setSelectedId(result.new_id);
+        selectChild(selected, id, selectedId);
     }
 
     function deleteNode() {
         post({ action: "delete", id: id });
+    }
+
+    // Select this node as the deepest selected node; which will cause the NewCommand to apply to this node
+    // Ultimately, want to be able to force focus into the newCommand text field
+    function selectThis() {
+            selectChild(selected, id, null);
     }
 
     var edittingLabel;
@@ -175,7 +166,11 @@
             {/if}
         </div>
     {/if}
-    <div class="flex space-x-2">
+    <div class="flex space-x-2 w-full">
+        <Button size="xs" color="blue" on:click={selectThis}>
+            <KeyboardSolid class="w-5 h-5 me-2"/>
+            New Child
+        </Button>
         <Button size="xs" color="blue" on:click={replay}>
             <PlaySolid class="w-5 h-5 me-2" /> Replay</Button
         >
@@ -183,7 +178,7 @@
         {#if id != 0}
             <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}>
                 <CloseCircleSolid class="w-5 h-5 me-2" />Delete</Button
-            >
+            >NewCommand
             <Tooltip>Delete knot (and children)</Tooltip>
         {/if}
     </div>
@@ -218,12 +213,4 @@
             <span class="text-ellipsis overflow-hidden">{child.label}</span>
         </Button>
     {/each}
-    <input
-        type="text"
-        bind:this={commandField}
-        class="ml-2 w-1/4 grow px-2 text-sm"
-        placeholder="New command"
-        bind:value={newCommand}
-        on:change={runNewCommand}
-    />
 </div>
