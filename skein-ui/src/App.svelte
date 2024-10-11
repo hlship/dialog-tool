@@ -29,7 +29,7 @@
 
   setContext("knots", knots);
   setContext("selected", selected);
-  setContext("traif", derived.deriveKnotTraif(knots));
+  setContext("category", derived.driveKnotCategory(knots));
 
   const knotTotals = derived.deriveKnotTotals(knots);
 
@@ -140,6 +140,12 @@
   function onResult(event) {
     processResult(event.detail);
   }
+
+  let newCommand;
+
+  function focusNewCommand() {
+    newCommand.focus();
+  }
 </script>
 
 <div class="relative px-8">
@@ -195,11 +201,11 @@
   <div class="container mx-lg mx-auto px-8 py-4 mt-16">
     {#if loaded}
       {#each $displayIds as knotId}
-        <Knot id={knotId} on:result={onResult} />
+        <Knot id={knotId} on:result={onResult} on:focusNewCommand={focusNewCommand}/>
       {/each}
     {/if}
 
-    <NewCommand on:result={onResult} parentId={lastSelectedKnotId} />
+    <NewCommand on:result={onResult} parentId={lastSelectedKnotId} bind:this={newCommand} />
   </div>
 </div>
 

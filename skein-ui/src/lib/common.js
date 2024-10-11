@@ -26,7 +26,7 @@ export function updateStoreMap(store, f) {
     });
 }
 
-export function traif(knot) {
+export function category(knot) {
     if (knot.unblessed == undefined) { return "ok"; }
 
     if (knot.response == undefined) { return "new"; }
@@ -34,7 +34,7 @@ export function traif(knot) {
     return "error";
 }
 
-export function addTraif(left, right) {
+export function mergeCategory(left, right) {
     if (left == "error" || right == "error") { return "error"; }
 
     if (left == "new" || right == "new") { return "new"; }

@@ -10,13 +10,16 @@
 
     export let parentId;
     let newCommand = "";
-    let inputField;
+    let inputElement;
 
     export function focus() {
-      // Not working yet, despire LLM hallucinations
-      // inputField.focus();  
       // See https://github.com/themesberg/flowbite-svelte/discussions/393
-      // May not be possible, considered a A11y problem (though it isn't)
+      // They think it's a A11y problem, but this is my hack workaround.
+ 
+      let element = inputElement && inputElement.querySelector && inputElement.querySelector("input")[0];
+
+      if (element) { element.focus(); }
+
     }
 
 
@@ -43,7 +46,7 @@
 </script>
 
 <Label class="space-y-2">
-    <Input type="text" placeholder="New command" size="lg" bind:this={inputField}
+    <Input type="text" placeholder="New command" size="lg" bind:this={inputElement}
     bind:value={newCommand}
     on:change={runNewCommand}>
         <AngleRightOutline slot="left" class="w-4 h-4" />

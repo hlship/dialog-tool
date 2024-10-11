@@ -18,7 +18,7 @@
 
     const knots = getContext("knots");
     const selected = getContext("selected");
-    const traif = getContext("traif");
+    const category = getContext("category");
 
     export let id = undefined;
 
@@ -30,19 +30,19 @@
 
     // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
 
-    const traif2color = {
+    const category2color = {
         error: "rose-400",
         new: "yellow-200",
         ok: "stone-200",
     };
 
     $: {
-        let knotTraif = common.traif(knot);
+        let knotcategory = common.category(knot);
 
-        knotColor = traif2color[knotTraif];
+        knotColor = category2color[knotcategory];
     }
 
-    function computeChildren(knots, traif, selectedId) {
+    function computeChildren(knots, category, selectedId) {
 
         let result = [];
         
@@ -53,12 +53,12 @@
                 color: childId == selectedId ? "blue" : "green",
             };
 
-            let childTraif = traif.get(childId);
+            let childcategory = category.get(childId);
 
-            if (childTraif == "new") {
+            if (childcategory == "new") {
                 child.iconColor = "yellow";
             }
-            if (childTraif == "error") {
+            if (childcategory == "error") {
                 child.iconColor = "red";
             }
 
@@ -68,7 +68,7 @@
         return result;
     }
 
-    $: children = computeChildren($knots, $traif, selectedId);
+    $: children = computeChildren($knots, $category, selectedId);
 
     async function post(payload) {
         let result = await postApi(payload);
@@ -103,6 +103,7 @@
     // Ultimately, want to be able to force focus into the newCommand text field
     function selectThis() {
             selectChild(selected, id, null);
+            dispatcher("focusNewCommand", {});
     }
 
     var edittingLabel;
@@ -178,7 +179,7 @@
         {#if id != 0}
             <Button class="ml-2" size="xs" color="blue" on:click={deleteNode}>
                 <CloseCircleSolid class="w-5 h-5 me-2" />Delete</Button
-            >NewCommand
+            >
             <Tooltip>Delete knot (and children)</Tooltip>
         {/if}
     </div>
