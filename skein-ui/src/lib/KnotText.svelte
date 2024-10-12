@@ -29,7 +29,7 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
-    class="bg-yellow-50 w-full whitespace-pre relative">
+    class="bg-yellow-50 w-full whitespace-pre relative p-2">
     <slot name="actions"/>
     {#if unblessed}
         {#each changes as change}

@@ -11,14 +11,11 @@ export default {
     "./node_modules/flowbite-svelte/**/*.{html,js,svelte,ts}",
     "./node_modules/flowbite-svelte-icons/**/*.{html,js,svelte,ts}"
   ],
-  safelist: [
-    "bg-yellow-200", "border-yellow-200",
-    "bg-rose-400", "border-rose-400",
-    "bg-stone-200", "border-stone-200",
-    ],
   theme: {
     extend: {},
   },
+  safelist: [],
+
   plugins: [flowbitePlugin]
 }
 

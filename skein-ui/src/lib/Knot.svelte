@@ -5,13 +5,13 @@
     import {
         Button,
         Dropdown,
+        DropdownDivider,
         DropdownItem,
         Helper,
     } from "flowbite-svelte";
     import KnotText from "./KnotText.svelte";
     import {
         DotsVerticalOutline,
-        PenOutline,
         ExclamationCircleSolid,
     } from "flowbite-svelte-icons";
 
@@ -30,15 +30,14 @@
     $: label = knot.label || knot.command;
     $: selectedId = $selected.get(id);
 
-    $: knotColor = null;
-
-    // Make sure bg- and border- version of these are in the safelist in tailwind.config.js
+    $: knotColor = null; 
+    $: controlColor = null;
 
     const category2color = {
-        error: "rose-400",
-        new: "yellow-200",
-        ok: "stone-200",
-    };
+        error: { text: "text-rose-400", border: "border-rose-400", background: "bg-rose-200" },
+        new: { text: "text-yellow-400", border: "border-yellow-200", background: "bg-yellow-200" },
+        ok: { border: "border-green-200", background: ""}
+        };
 
     $: {
         let knotCategory = common.category(knot);
@@ -47,7 +46,9 @@
 
         blessEnabled = knotCategory != "ok";
 
-        blessClass = blessEnabled ? null : "text-gray-400 cursor-not-allowed"
+        blessClass = blessEnabled ? null : "text-gray-600 cursor-not-allowed";
+
+        controlColor = category2color[ $category.get(id)];
     }
 
     function computeChildren(knots, category, selectedId) {
@@ -60,14 +61,9 @@
                 color: childId == selectedId ? "blue" : "green",
             };
 
-            let childcategory = category.get(childId);
+            let childCategory = category.get(childId);
 
-            if (childcategory == "new") {
-                child.iconColor = "yellow";
-            }
-            if (childcategory == "error") {
-                child.iconColor = "red";
-            }
+            child.iconColor = category2color[childCategory].text;
 
             result.push(child);
         }
@@ -88,7 +84,6 @@
 
         return result;
     }
-
 
     function bless() {
         if (blessEnabled) {
@@ -151,48 +146,20 @@
     }
 </script>
 
-<div
-    id="knot_{id}"
-    class="flex w-full justify-between items-center bg-{knotColor} rounded-t-lg p-2 text-sm"
->
-    {#if edittingLabel}
-        <div class="w-full me-2">
-            <input
-                type="text"
-                bind:this={editLabelField}
-                bind:value={newLabel}
-                on:keydown={labelEditKeydown}
-                class="mr-2 w-1/4 grow px-2 text-sm"
-            />
-            <Button
-                size="xs"
-                color="blue"
-                on:click={() => (edittingLabel = false)}>Cancel</Button
-            >
-        </div>
-    {:else}
-        <div class="flex items-center text-nowrap w-full">
-            <div
-                class="ml-4 mr-10 font-bold basis-1/4 text-ellipsis overflow-hidden"
-            >
-                {label}
-            </div>
-            {#if id != 0}
-                <Button size="xs" color="blue" on:click={startLabelEdit}>
-                    <PenOutline class="w-5 h-5 me-2" />Edit Label
-                </Button>
-            {/if}
-        </div>
-    {/if}
-</div>
-
-<div class="flex flex-row border-{knotColor} border-2">
+<div class="border-x-4 {knotColor.border}" id="knot_{id}">
     <KnotText response={knot.response} unblessed={knot.unblessed}>
-        <div slot="actions" class="whitespace-normal absolute top-2 right-2">
-            <Button color="light" size="xs" class="w-0"
+        <div slot="actions" class="whitespace-normal absolute top-2 right-2 align-middle">
+            {#if knot.label}
+            <span class="text-bold bg-gray-200 border-1 mr-4 p-2 rounded-md">{knot.label}</span>
+            {/if}
+            <Button color="light" size="xs" class="w-0 {controlColor.background}"
                 ><DotsVerticalOutline class="w-4 h-4" /></Button
             >
-            <Dropdown bind:open={dropdownOpen} class="w-60">
+            <Dropdown
+                placement="left"
+                bind:open={dropdownOpen}
+                class="w-96 h-72 overflow-y-auto bg-slate-100"
+            >
                 <DropdownItem on:click={replay}>Replay</DropdownItem>
                 {#if id != 0}
                     <DropdownItem on:click={deleteKnot}
@@ -210,30 +177,23 @@
                         <Helper>Bless all knots from root to here</Helper>
                     </DropdownItem>
                 {/if}
+                <DropdownItem on:click={() => null}>Edit Label</DropdownItem>
                 <DropdownItem on:click={selectThis}>New Child</DropdownItem>
+                {#if children.length > 0}
+                    <DropdownDivider class="bg-black" />
+                    {#each children as child (child.id)}
+                        <DropdownItem on:click={() => setSelectedId(child.id)}>
+                            {#if child.iconColor}
+                                <ExclamationCircleSolid
+                                    class="h-5 w-5 me-2 inline {child.iconColor}"
+                                />
+                            {/if}
+                            {child.label}
+                        </DropdownItem>
+                    {/each}
+                {/if}
             </Dropdown>
         </div>
     </KnotText>
-</div>
-
-<div
-    class="flex flex-wrap bg-{knotColor} rounded-b-lg p-2 mb-2 text-nowrap drop-shadow-md"
->
-    {#each children as child (child.id)}
-        <Button
-            class="m-1 max-w-64"
-            pill
-            color={child.color}
-            size="xs"
-            on:click={() => setSelectedId(child.id)}
-        >
-            {#if child.iconColor}
-                <ExclamationCircleSolid
-                    color={child.iconColor}
-                    class="h-5 w-5 me-2"
-                />
-            {/if}
-            <span class="text-ellipsis overflow-hidden">{child.label}</span>
-        </Button>
-    {/each}
+    <hr/>
 </div>

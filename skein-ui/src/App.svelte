@@ -10,7 +10,6 @@
     Button,
     Navbar,
     NavBrand,
-    NavHamburger,
     Dropdown,
     DropdownItem,
     Tooltip,
@@ -194,11 +193,10 @@
       <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}>
         <RedoOutline class="w-5 h-5 me-2" />Redo</Button
       >
-      <NavHamburger />
     </div>
   </Navbar>
 
-  <div class="container mx-lg mx-auto px-8 py-4 mt-16">
+  <div class="container mx-lg mx-auto mt-16">
     {#if loaded}
       {#each $displayIds as knotId}
         <Knot id={knotId} on:result={onResult} on:focusNewCommand={focusNewCommand}/>

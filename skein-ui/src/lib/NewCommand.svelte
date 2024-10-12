@@ -45,7 +45,7 @@
 </script>
 
 <Label class="space-y-2">
-    <Input type="text" placeholder="New command" size="lg" bind:this={inputElement} class="x-new-command-input"
+    <Input type="text" size="lg" bind:this={inputElement} class="x-new-command-input"
     bind:value={newCommand}
     on:change={runNewCommand}>
         <AngleRightOutline slot="left" class="w-4 h-4" />
