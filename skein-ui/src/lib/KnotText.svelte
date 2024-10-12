@@ -1,16 +1,8 @@
 <script>
-    import { createEventDispatcher } from "svelte";
-    import { Button, Tooltip } from "flowbite-svelte";
-    import {
-        CheckCircleSolid,
-        CheckPlusCircleSolid,
-    } from "flowbite-svelte-icons";
     import * as Diff from "diff";
 
     export let response;
     export let unblessed;
-
-    const dispatch = createEventDispatcher();
 
     let changes;
 
@@ -37,18 +29,9 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
-    class="bg-yellow-50 w-full p-1 relative whitespace-pre">
+    class="bg-yellow-50 w-full whitespace-pre relative">
+    <slot name="actions"/>
     {#if unblessed}
-        <div class="absolute top-2 right-2">
-            <Button color="blue" size="xs" on:click={() => dispatch("bless")}>
-                <CheckCircleSolid class="w-5 h-5 me-2" /> Bless</Button
-            >
-            <Tooltip>Accept this change</Tooltip>
-            <Button color="blue" size="xs" on:click={() => dispatch("blessTo")}>
-                <CheckPlusCircleSolid class="w-5 h-5 me-2" /> Bless To</Button
-            >
-            <Tooltip>Accept all changes from start to here</Tooltip>
-        </div>
         {#each changes as change}
             <span class={spanClass(change)}>{change.value}</span>
         {/each}
