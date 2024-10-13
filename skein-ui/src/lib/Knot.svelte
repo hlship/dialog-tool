@@ -5,7 +5,6 @@
     import {
         Button,
         Dropdown,
-        DropdownDivider,
         DropdownItem,
         Helper,
     } from "flowbite-svelte";
@@ -13,6 +12,7 @@
     import {
         DotsVerticalOutline,
         ExclamationCircleSolid,
+        CodeMergeSolid,
     } from "flowbite-svelte-icons";
 
     const dispatcher = createEventDispatcher();
@@ -30,14 +30,22 @@
     $: label = knot.label || knot.command;
     $: selectedId = $selected.get(id);
 
-    $: knotColor = null; 
+    $: knotColor = null;
     $: controlColor = null;
 
     const category2color = {
-        error: { text: "text-rose-400", border: "border-rose-400", background: "bg-rose-200" },
-        new: { text: "text-yellow-400", border: "border-yellow-200", background: "bg-yellow-200" },
-        ok: { border: "border-green-200", background: ""}
-        };
+        error: {
+            text: "text-rose-400",
+            border: "border-rose-400",
+            background: "bg-rose-200 hover:bg-rose-400",
+        },
+        new: {
+            text: "text-yellow-400",
+            border: "border-yellow-200",
+            background: "bg-yellow-200 hover:bg-yellow-300",
+        },
+        ok: { border: "border-green-200", background: "" },
+    };
 
     $: {
         let knotCategory = common.category(knot);
@@ -48,7 +56,7 @@
 
         blessClass = blessEnabled ? null : "text-gray-600 cursor-not-allowed";
 
-        controlColor = category2color[ $category.get(id)];
+        controlColor = category2color[$category.get(id)];
     }
 
     function computeChildren(knots, category, selectedId) {
@@ -73,10 +81,11 @@
 
     $: children = computeChildren($knots, $category, selectedId);
 
-    let dropdownOpen;
+    let actionDropdownOpen;
+    let childDropdownOpen;
 
     async function post(payload) {
-        dropdownOpen = false;
+        actionDropdownOpen = false;
 
         let result = await postApi(payload);
 
@@ -102,7 +111,8 @@
     }
 
     function setSelectedId(selectedId) {
-        dropdownOpen = false;
+        actionDropdownOpen = false;
+        childDropdownOpen = false;
         selectChild(selected, id, selectedId);
     }
 
@@ -113,7 +123,7 @@
     // Select this node as the deepest selected node; which will cause the NewCommand to apply to this node
     // Ultimately, want to be able to force focus into the newCommand text field
     function selectThis() {
-        dropdownOpen = false;
+        actionDropdownOpen = false;
         selectChild(selected, id, null);
         dispatcher("focusNewCommand", {});
     }
@@ -148,39 +158,62 @@
 
 <div class="border-x-4 {knotColor.border}" id="knot_{id}">
     <KnotText response={knot.response} unblessed={knot.unblessed}>
-        <div slot="actions" class="whitespace-normal absolute top-2 right-2 align-middle">
-            {#if knot.label}
-            <span class="text-bold bg-gray-200 border-1 mr-4 p-2 rounded-md">{knot.label}</span>
-            {/if}
-            <Button color="light" size="xs" class="w-0 {controlColor.background}"
-                ><DotsVerticalOutline class="w-4 h-4" /></Button
-            >
-            <Dropdown
-                placement="left"
-                bind:open={dropdownOpen}
-                class="w-96 h-72 overflow-y-auto bg-slate-100"
-            >
-                <DropdownItem on:click={replay}>Replay</DropdownItem>
-                {#if id != 0}
-                    <DropdownItem on:click={deleteKnot}
-                        >Delete
-                        <Helper>Delete this knot and all children</Helper>
-                    </DropdownItem>
+        <div slot="actions" class="whitespace-normal">
+            <div class="absolute top-2 right-2">
+                {#if knot.label}
+                    <span
+                        class="text-bold bg-gray-200 border-1 mr-4 p-2 rounded-md"
+                        >{knot.label}</span
+                    >
                 {/if}
-                <DropdownItem on:click={bless} class={blessClass}
-                    >Bless
-                    <Helper>Accept changes</Helper>
-                </DropdownItem>
-                {#if id != 0}
-                    <DropdownItem on:click={blessTo} class={blessClass}
-                        >Bless To Here
-                        <Helper>Bless all knots from root to here</Helper>
+                <Button
+                    color="light"
+                    size="xs"
+                    class="w-0 {controlColor.background}"
+                    ><DotsVerticalOutline class="w-4 h-4" />
+                </Button>
+                <Dropdown
+                    placement="left"
+                    bind:open={actionDropdownOpen}
+                    class="w-96 bg-slate-100"
+                >
+                    <DropdownItem on:click={replay}>Replay</DropdownItem>
+                    {#if id != 0}
+                        <DropdownItem on:click={deleteKnot}
+                            >Delete
+                            <Helper>Delete this knot and all children</Helper>
+                        </DropdownItem>
+                    {/if}
+                    <DropdownItem on:click={bless} class={blessClass}
+                        >Bless
+                        <Helper>Accept changes</Helper>
                     </DropdownItem>
-                {/if}
-                <DropdownItem on:click={() => null}>Edit Label</DropdownItem>
-                <DropdownItem on:click={selectThis}>New Child</DropdownItem>
-                {#if children.length > 0}
-                    <DropdownDivider class="bg-black" />
+                    {#if id != 0}
+                        <DropdownItem on:click={blessTo} class={blessClass}
+                            >Bless To Here
+                            <Helper>Bless all knots from root to here</Helper>
+                        </DropdownItem>
+                    {/if}
+                    <DropdownItem on:click={() => null}>Edit Label</DropdownItem
+                    >
+                    <DropdownItem on:click={selectThis}>New Child</DropdownItem>
+                </Dropdown>
+            </div>
+            {#if children.length > 0}
+            <div class="absolute bottom-2 right-2">
+
+                <Button
+                    class="w-0 {controlColor.background}"
+                    color="light"
+                    size="xs"
+                >
+                    <CodeMergeSolid class="w-4 h-4" />
+                </Button>
+                <Dropdown
+                    placement="left"
+                    bind:open={childDropdownOpen}
+                    class="w-96 overflow-y-auto bg-slate-100"
+                >
                     {#each children as child (child.id)}
                         <DropdownItem on:click={() => setSelectedId(child.id)}>
                             {#if child.iconColor}
@@ -191,9 +224,10 @@
                             {child.label}
                         </DropdownItem>
                     {/each}
-                {/if}
-            </Dropdown>
+                </Dropdown>
+            </div>
+            {/if}
         </div>
     </KnotText>
-    <hr/>
+    <hr />
 </div>
