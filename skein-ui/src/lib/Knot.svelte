@@ -20,8 +20,6 @@
     export let id = undefined;
 
     $: knot = $knots.get(id) || {};
-    $: label = knot.label || knot.command;
-
     $: knotColor = null;
     $: controlColor = null;
 
@@ -130,7 +128,7 @@
     <KnotText response={knot.response} unblessed={knot.unblessed}>
         <div
             slot="actions"
-            class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-1"
+            class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-2"
         >
             {#if knot.label}
                 <span class="text-bold bg-gray-200 border-1 p-1 rounded-md">{knot.label}</span>
