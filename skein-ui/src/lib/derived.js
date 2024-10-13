@@ -1,14 +1,14 @@
 import { derived } from "svelte/store";
-import { traif, addTraif } from "./common.js";
+import { category, mergeCategory } from "./common.js";
 
-export function deriveKnotTraif(knots) {
+export function driveKnotCategory(knots) {
     return derived(knots, $knots => {
 
         let failedIds = [];
         let result = new Map();
 
         for (const [id, knot] of $knots) {
-            const t = traif(knot);
+            const t = category(knot);
             result.set(id, t);
 
             if (t != "ok") {
@@ -16,7 +16,7 @@ export function deriveKnotTraif(knots) {
             }
         }
 
-        // Next, we accumulate traif from errors up to root
+        // Next, we accumulate category from errors up to root
 
         for (const failedId of failedIds) {
             let t = result.get(failedId);
@@ -28,7 +28,7 @@ export function deriveKnotTraif(knots) {
 
                     if (parentId == undefined) { break; }
 
-                    t = addTraif(t, result.get(parentId));
+                    t = mergeCategory(t, result.get(parentId));
 
                     result.set(parentId, t);
 

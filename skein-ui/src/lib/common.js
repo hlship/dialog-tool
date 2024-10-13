@@ -15,7 +15,7 @@ export async function postApi(payload) {
     });
 
     // The response body is converted to JSON and returned as the result.
-   return await response.json();
+    return await response.json();
 
 }
 
@@ -26,19 +26,24 @@ export function updateStoreMap(store, f) {
     });
 }
 
-export function traif(knot) {
+export function category(knot) {
     if (knot.unblessed == undefined) { return "ok"; }
 
-    if (knot.response == undefined) { return "new" ;}
+    if (knot.response == undefined) { return "new"; }
 
     return "error";
 }
 
-export function addTraif(left, right) {
-    if (left == "error" || right == "error") { return "error";}
+export function mergeCategory(left, right) {
+    if (left == "error" || right == "error") { return "error"; }
 
     if (left == "new" || right == "new") { return "new"; }
 
     return "ok";
 }
 
+export function selectChild(selectedStore, parentId, childId) {
+    updateStoreMap(selectedStore, (_selected) => {
+        _selected.set(parentId, childId);
+    });
+}

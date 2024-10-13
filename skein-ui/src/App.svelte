@@ -1,5 +1,6 @@
 <script>
   import Knot from "./lib/Knot.svelte";
+  import NewCommand from "./lib/NewCommand.svelte";
   import ReplayAllModal from "./lib/ReplayAllModal.svelte";
   import { onMount, setContext, tick } from "svelte";
   import { writable } from "svelte/store";
@@ -9,7 +10,6 @@
     Button,
     Navbar,
     NavBrand,
-    NavHamburger,
     Dropdown,
     DropdownItem,
     Tooltip,
@@ -28,9 +28,11 @@
 
   setContext("knots", knots);
   setContext("selected", selected);
-  setContext("traif", derived.deriveKnotTraif(knots));
+  setContext("category", derived.driveKnotCategory(knots));
 
   const knotTotals = derived.deriveKnotTotals(knots);
+
+  let title = "Dialog Skein";
 
   let loaded = false;
 
@@ -63,12 +65,17 @@
 
   let displayIds = derived.deriveDisplayIds(knots, selected);
 
+  // This is provided to the NewCommand component because any new command is created as a child of that.
+  $: lastSelectedKnotId = $displayIds[$displayIds.length - 1];
+
   let labelItems = derived.deriveLabels(knots);
 
   onMount(async () => {
     let result = await load();
 
     processResult(result);
+
+    title = result.title;
 
     loaded = true;
   });
@@ -94,9 +101,7 @@
   let replayAllModal;
 
   function replayAll() {
-
     replayAllModal.run();
-
   }
 
   function selectNode(knots, id) {
@@ -132,7 +137,13 @@
   }
 
   function onResult(event) {
-     processResult(event.detail);
+    processResult(event.detail);
+  }
+
+  let newCommand;
+
+  function focusNewCommand() {
+    newCommand.focus();
   }
 </script>
 
@@ -144,7 +155,7 @@
     <NavBrand>
       <span
         class="self-center whitespace-nowrap text-xl font-semibold dark:text-white"
-        >Dialog Skein</span
+        >{title}</span
       >
     </NavBrand>
     <div class="mx-0 inline-flex">
@@ -170,8 +181,9 @@
     </div>
     <div class="flex md:order-2 space-x-2">
       <Button color="blue" size="xs" on:click={replayAll}>
-        <PlaySolid class="w-5 h-5 me-2"/>Replay All</Button>
-        <Tooltip>Replay <em>every</em> knot</Tooltip>
+        <PlaySolid class="w-5 h-5 me-2" />Replay All</Button
+      >
+      <Tooltip>Replay <em>every</em> knot</Tooltip>
       <Button color="blue" size="xs" on:click={save}>
         <FloppyDiskAltSolid class="w-5 h-5 me-2" /> Save</Button
       >
@@ -181,17 +193,18 @@
       <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}>
         <RedoOutline class="w-5 h-5 me-2" />Redo</Button
       >
-      <NavHamburger />
     </div>
   </Navbar>
 
-  <div class="container mx-lg mx-auto px-8 py-4 mt-16">
+  <div class="container mx-lg mx-auto mt-16">
     {#if loaded}
       {#each $displayIds as knotId}
-        <Knot id={knotId} on:result={onResult} />
+        <Knot id={knotId} on:result={onResult} on:focusNewCommand={focusNewCommand}/>
       {/each}
     {/if}
+
+    <NewCommand on:result={onResult} parentId={lastSelectedKnotId} bind:this={newCommand} />
   </div>
 </div>
 
-<ReplayAllModal on:result={onResult} bind:this={replayAllModal}/>
+<ReplayAllModal on:result={onResult} bind:this={replayAllModal} />

@@ -7,9 +7,9 @@
 
 (defn new-tree
   [seed]
-  {:meta     {:seed seed}
-   :knots    {0 {:id    0
-                 :label "START"}}})
+  {:meta  {:seed seed}
+   :knots {0 {:id    0
+              :label "START"}}})
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -94,9 +94,9 @@
   the indicated command string; if found, returns the child knot's id, otherwise
    returns nil."
   [tree knot-id command]
-  (let [{:keys [nodes]} tree]
-    (->> (get-in nodes [knot-id :children])
-         (map nodes)
+  (let [{:keys [knots]} tree]
+    (->> (get-in knots [knot-id :children])
+         (map knots)
          (filter #(= command (:command %)))
          first
          :id)))
