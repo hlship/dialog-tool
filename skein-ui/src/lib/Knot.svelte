@@ -1,13 +1,11 @@
 <script>
-    import { getContext, createEventDispatcher, tick } from "svelte";
+    import { getContext, createEventDispatcher } from "svelte";
     import { postApi, selectChild } from "./common.js";
     import * as common from "./common.js";
     import { Button, Dropdown, DropdownItem, Helper } from "flowbite-svelte";
     import KnotText from "./KnotText.svelte";
-    import {
-        DotsVerticalOutline,
-        CodeMergeSolid,
-    } from "flowbite-svelte-icons";
+    import EditProperty from "./EditProperty.svelte";
+    import { DotsVerticalOutline, CodeMergeSolid } from "flowbite-svelte-icons";
 
     const dispatcher = createEventDispatcher();
 
@@ -17,6 +15,7 @@
 
     let blessEnabled;
     let blessClass;
+    let editLabel;
 
     export let id = undefined;
 
@@ -117,31 +116,13 @@
         dispatcher("focusNewCommand", {});
     }
 
-    var edittingLabel;
-    var editLabelField;
-    var newLabel;
-
-    async function startLabelEdit() {
-        newLabel = label;
-        edittingLabel = true;
-
-        await tick();
-
-        editLabelField.select();
+    function startEditLabel() {
+        actionDropdownOpen = false;
+        editLabel.activate();
     }
 
-    function labelEditKeydown(event) {
-        if (event.code == "Escape") {
-            edittingLabel = false;
-            event.preventDefault();
-        }
-
-        if (event.code == "Enter") {
-            edittingLabel = false;
-            event.preventDefault();
-
-            post({ action: "label", id: id, label: newLabel });
-        }
+    function onEditLabelComplete(e) {
+        post({ action: "label", id: id, label: e.detail });
     }
 </script>
 
@@ -149,11 +130,10 @@
     <KnotText response={knot.response} unblessed={knot.unblessed}>
         <div
             slot="actions"
-            class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-1" >
+            class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-1"
+        >
             {#if knot.label}
-                <span class="text-bold bg-gray-200 border-1 p-2 rounded-md"
-                    >{knot.label}</span
-                >
+                <span class="text-bold bg-gray-200 border-1 p-1 rounded-md">{knot.label}</span>
             {/if}
             <Button
                 color="light"
@@ -194,7 +174,10 @@
                         <Helper>Bless all knots from root to here</Helper>
                     </DropdownItem>
                 {/if}
-                <DropdownItem on:click={() => null} class="hover:bg-slate-200">
+                <DropdownItem
+                    on:click={startEditLabel}
+                    class="hover:bg-slate-200"
+                >
                     Edit Label
                     <Helper>Change label for knot</Helper>
                 </DropdownItem>
@@ -219,7 +202,8 @@
                     {#each children as child (child.id)}
                         <DropdownItem
                             on:click={() => setSelectedId(child.id)}
-                            class={child.navColor.background}>
+                            class={child.navColor.background}
+                        >
                             {child.label}
                         </DropdownItem>
                     {/each}
@@ -229,3 +213,10 @@
     </KnotText>
     <hr />
 </div>
+
+<EditProperty
+    title="Edit Label"
+    on:change={onEditLabelComplete}
+    value={knot.label}
+    bind:this={editLabel}
+/>
