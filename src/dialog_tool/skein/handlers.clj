@@ -49,14 +49,14 @@
 (defn- new-command
   [session payload]
   (let [{:keys [id command]} payload
+        {:keys [active-knot-id]} session
         command' (-> command
                      (string/trim)
                      (string/replace #"\s+" " "))
-        session' (-> session
-                     (session/replay-to! id)
-                     (session/command! command'))
-        {:keys [active-knot-id]} session']
-    (assoc session' ::extra-body {:new_id active-knot-id})))
+        session' (-> (cond-> session
+                            (not= id active-knot-id) (session/replay-to! id))
+                     (session/command! command'))]
+    (assoc session' ::extra-body {:new_id (:active-knot-id session')})))
 
 (defn- save
   [session _payload]
