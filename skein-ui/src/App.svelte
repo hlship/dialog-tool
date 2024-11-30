@@ -21,7 +21,6 @@
     PlaySolid,
     ChevronDownOutline,
   } from "flowbite-svelte-icons";
-  import { animateScroll } from "svelte-scrollto-element";
 
   const knots = writable(new Map());
   const selected = writable(new Map());
@@ -130,10 +129,7 @@
       }
     }
 
-    const navBar = document.getElementById("navBar");
-    const offset = navBar?.offsetHeight || 0;
-
-    animateScroll.scrollTo({ element, offset: -offset });
+    element.scrollIntoView({behavior: "smooth", block:"end"});
   }
 
   function onResult(event) {

@@ -13,6 +13,9 @@
     let inputElement;
 
     export function focus() {
+
+        inputElement.scrollIntoView({behavior: "smooth", block:"center"});
+
       // See https://github.com/themesberg/flowbite-svelte/discussions/393
       // They think it's a A11y problem, but this is my hack workaround.
  
