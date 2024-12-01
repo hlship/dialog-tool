@@ -16,12 +16,12 @@
 
     let { knot, processResult, selectKnot, focusNewCommand }: Props = $props();
 
-    let blessEnabled = knot.category != Category.OK;
-    let blessClass = blessEnabled ? null : "text-gray-600 cursor-not-allowed";
+    let blessEnabled = $derived(knot.category != Category.OK);
+    let blessClass = $derived(blessEnabled ? null : "text-gray-600 cursor-not-allowed");
     let editLabel;
 
-    let knotColor = category2color[knot.category];
-    let controlColor = category2color[knot.treeCategory];
+    let knotColor = $derived(category2color.get(knot.category));
+    let controlColor = $derived(category2color.get(knot.treeCategory));
 
     let actionDropdownOpen = $state(false);
     let childDropdownOpen = $state(false);
@@ -128,13 +128,13 @@
                         Bless To Here
                         <Helper>Bless all knots from root to here</Helper>
                     </DropdownItem>
-                <DropdownItem
-                    on:click={startEditLabel}
-                    class="hover:bg-slate-200"
-                >
-                    Edit Label
-                    <Helper>Change label for knot</Helper>
-                </DropdownItem>
+                    <DropdownItem
+                        on:click={startEditLabel}
+                        class="hover:bg-slate-200"
+                    >
+                        Edit Label
+                        <Helper>Change label for knot</Helper>
+                    </DropdownItem>
                 {/if}
                 <DropdownItem on:click={newChild} class="hover:bg-slate-200">
                     New Child
@@ -156,8 +156,8 @@
                 >
                     {#each knot.children as child (child.id)}
                         <DropdownItem
-                            on:click={() => setSelectedId(child.id)}
-                            class={category2color[child.treeCategory]
+                            onclick={() => setSelectedId(child.id)}
+                            class={category2color.get(child.treeCategory)
                                 .background}
                         >
                             {child.label}

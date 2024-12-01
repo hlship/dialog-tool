@@ -26,10 +26,11 @@
 
   let knots = new SvelteMap<number, KnotData>();
   let id2selected = new SvelteMap<number, number>();
-  let id2category = new SvelteMap<number, Category>();
 
   let knotTotals = $derived(d.deriveKnotTotals(knots));
   let displayIds = $derived(d.deriveDisplayIds(knots, id2selected));
+
+  let id2category = $derived(d.deriveKnotCategory(knots));
 
   // This is provided to the NewCommand component because any new command is created as a child of that.
   let lastSelectedKnotId = $derived(displayIds[displayIds.length - 1]);
@@ -75,13 +76,13 @@
       data,
       category: category(data),
       treeCategory: id2category.get(id) || Category.OK,
-      selectedChildId: id2selected[id],
+      selectedChildId: id2selected.get(id),
       children: data.children.map((childId) => {
         const child = knots.get(childId);
         return {
           id: childId,
           label: child.command,
-          treeCategory: id2category.get(childId)|| Category.OK,
+          treeCategory: id2category.get(childId) || Category.OK,
         };
       }),
     };
@@ -155,11 +156,10 @@
 
   let newCommand;
 
-  function focusNewCommand(id:number) {
-
+  function focusNewCommand(id: number) {
     // id should be visible, this truncates the display list to that id
     // such that the new command will be a child of the id.
-    id2selected.delete(id); 
+    id2selected.delete(id);
 
     newCommand.focus();
   }
@@ -217,7 +217,12 @@
   <div class="container mx-lg mx-auto mt-16">
     {#if loaded}
       {#each displayIds as knotId}
-        <Knot knot={knotNode(knotId)} {processResult} {selectKnot} {focusNewCommand}/>
+        <Knot
+          knot={knotNode(knotId)}
+          {processResult}
+          {selectKnot}
+          {focusNewCommand}
+        />
       {/each}
     {/if}
 
