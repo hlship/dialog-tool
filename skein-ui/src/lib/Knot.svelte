@@ -102,8 +102,9 @@
                 class="w-96 bg-slate-100"
             >
                 <DropdownItem on:click={replay} class="hover:bg-slate-200"
-                    >Replay</DropdownItem
-                >
+                    >Replay
+                    <Helper>Run from start to here</Helper>
+                    </DropdownItem >
                 {#if knot.id != 0}
                     <DropdownItem
                         on:click={deleteKnot}
