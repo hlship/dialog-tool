@@ -131,3 +131,8 @@
   (->> tree
        all-knots
        (remove #(-> % :children seq))))
+
+(defn change-command
+  "Edits the command for a particular knot."
+  [tree knot-id new-command]
+  (assoc-in tree [:knots knot-id :command] new-command))

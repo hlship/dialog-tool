@@ -19,7 +19,10 @@ export type ActionResult = {
     // Only for new-command:
     new_id?: number,
     // Only appears for GET /api request:
-    title?: string,
+    title?: string
+    // For when an action fails; currently only
+    // applies to edit-command action
+    error?: string
 }
 
 export async function load(): Promise<ActionResult> {
