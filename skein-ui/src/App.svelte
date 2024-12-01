@@ -1,11 +1,13 @@
-<script>
+<script lang="ts">
   import Knot from "./lib/Knot.svelte";
   import NewCommand from "./lib/NewCommand.svelte";
   import ReplayAllModal from "./lib/ReplayAllModal.svelte";
-  import { onMount, setContext, tick } from "svelte";
-  import { writable } from "svelte/store";
-  import { load, postApi, updateStoreMap } from "./lib/common.js";
-  import * as derived from "./lib/derived";
+  import { onMount, tick } from "svelte";
+  import { load, category, postApi } from "./lib/common.svelte";
+  import * as d from "./lib/derived.svelte";
+  import { SvelteMap } from "svelte/reactivity";
+  import { type KnotData, type KnotNode, Category } from "./lib/types";
+  import { type ActionResult, type Payload } from "./lib/common.svelte";
   import {
     Button,
     Navbar,
@@ -22,79 +24,97 @@
     ChevronDownOutline,
   } from "flowbite-svelte-icons";
 
-  const knots = writable(new Map());
-  const selected = writable(new Map());
+  let knots = new SvelteMap<number, KnotData>();
+  let id2selected = new SvelteMap<number, number>();
+  let id2category = new SvelteMap<number, Category>();
 
-  setContext("knots", knots);
-  setContext("selected", selected);
-  setContext("category", derived.driveKnotCategory(knots));
+  let knotTotals = $derived(d.deriveKnotTotals(knots));
+  let displayIds = $derived(d.deriveDisplayIds(knots, id2selected));
 
-  const knotTotals = derived.deriveKnotTotals(knots);
+  // This is provided to the NewCommand component because any new command is created as a child of that.
+  let lastSelectedKnotId = $derived(displayIds[displayIds.length - 1]);
 
-  let title = "Dialog Skein";
+  let labelItems = $derived(d.deriveLabels(knots));
 
-  let loaded = false;
+  let title = $state("Dialog Skein");
+  let loaded = $state(false);
+  let enableUndo = $state(false);
+  let enableRedo = $state(false);
 
-  let enableUndo = false;
-  let enableRedo = false;
+  function processResult(result: ActionResult): void {
+    // The Svelte4 code did all the updates in a single block, to minimize
+    // the number of derived calculations; trusting that Svelte5 is smart about this.
+    for (const knot of result.updates) {
+      knots.set(knot.id, knot);
+      if (!loaded) {
+        id2selected.set(knot.id, knot.children[0]);
+      }
+    }
 
-  function processResult(result) {
-    updateStoreMap(knots, (_knots) => {
-      updateStoreMap(selected, (_selected) => {
-        for (const knot of result.updates) {
-          _knots.set(knot.id, knot);
-          if (!loaded) {
-            _selected.set(knot.id, knot.children[0]);
-          }
-        }
-        for (const id of result.removed_ids) {
-          let parent_id = _knots.get(id)?.parent_id;
+    // When a node is deleted, check its parent node's selected child;
+    // If they match, then delete the parent node's selected.
 
-          if (_selected.get(parent_id) == id) {
-            _selected.delete(parent_id);
-          }
-          _knots.delete(id);
-        }
-      });
-    });
+    for (const id of result.removed_ids) {
+      let parent_id = knots.get(id)?.parent_id;
+
+      if (id2selected.get(parent_id) == id) {
+        id2selected.delete(parent_id);
+      }
+      knots.delete(id);
+    }
 
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
   }
 
-  let displayIds = derived.deriveDisplayIds(knots, selected);
+  function knotNode(id: number): KnotNode {
+    const data = knots.get(id);
 
-  // This is provided to the NewCommand component because any new command is created as a child of that.
-  $: lastSelectedKnotId = $displayIds[$displayIds.length - 1];
-
-  let labelItems = derived.deriveLabels(knots);
+    return {
+      id,
+      data,
+      category: category(data),
+      treeCategory: id2category[id] || Category.OK,
+      selectedChildId: id2selected[id],
+      children: data.children.map((childId) => {
+        const child = knots.get(childId);
+        return {
+          id: childId,
+          label: child.command,
+          treeCategory: id2category[childId] || Category.OK,
+        };
+      }),
+    };
+  }
 
   onMount(async () => {
     let result = await load();
 
     processResult(result);
 
-    title = result.title;
+    if (result.title) {
+      title = result.title;
+    }
 
     loaded = true;
   });
 
-  async function doPost(request) {
+  async function postPayload(request: Payload): Promise<void> {
     let result = await postApi(request);
 
     processResult(result);
   }
 
   function save() {
-    doPost({ action: "save" });
+    postPayload({ action: "save" });
   }
 
   function undo() {
-    doPost({ action: "undo" });
+    postPayload({ action: "undo" });
   }
 
   function redo() {
-    doPost({ action: "redo" });
+    postPayload({ action: "redo" });
   }
 
   let replayAllModal;
@@ -103,25 +123,25 @@
     replayAllModal.run();
   }
 
-  function selectNode(knots, id) {
-    updateStoreMap(selected, (_selected) => {
-      let childId = id;
-      while (childId != undefined) {
-        const knot = knots.get(childId);
-        const parentId = knot.parent_id;
-        _selected.set(parentId, childId);
+  function selectNode(id:number):void {
+    let childId = id;
+    while (childId != undefined) {
+      const knot = knots.get(childId);
+      const parentId = knot.parent_id;
 
-        childId = parentId;
-      }
-    });
+      id2selected.set(parentId, childId);
+
+      childId = parentId;
+    }
   }
 
   async function jumpTo(knotId) {
+    // Wasn't happy about this before, even less so w/ Svelte5.
     let elementId = `knot_${knotId}`;
     let element = document.getElementById(elementId);
 
     if (element == undefined) {
-      selectNode($knots, knotId);
+      selectNode(knotId);
 
       while (element == undefined) {
         await tick();
@@ -129,7 +149,8 @@
       }
     }
 
-    element.scrollIntoView({behavior: "smooth", block:"end"});
+    // TODO: If the element has no children, then scroll to the command input field instead.
+    element.scrollIntoView({ behavior: "smooth", block: "end" });
   }
 
   function onResult(event) {
@@ -156,19 +177,19 @@
     </NavBrand>
     <div class="mx-0 inline-flex">
       <div class="text-black bg-green-400 p-2 font-semibold rounded-l-lg">
-        {$knotTotals.ok}
+        {knotTotals[Category.OK]}
       </div>
       <div class="text-black bg-yellow-200 p-2 font-semibold">
-        {$knotTotals.unblessed}
+        {knotTotals[Category.NEW]}
       </div>
       <div class="text-black bg-red-500 p-2 font-semibold rounded-r-lg">
-        {$knotTotals.error}
+        {knotTotals[Category.ERROR]}
       </div>
       <Button class="ml-8" color="blue" size="xs"
         >Jump <ChevronDownOutline /></Button
       >
       <Dropdown class="overflow-y-auto h-96">
-        {#each $labelItems as item}
+        {#each labelItems as item}
           <DropdownItem on:click={() => jumpTo(item.id)}
             >{item.label}</DropdownItem
           >
@@ -194,13 +215,25 @@
 
   <div class="container mx-lg mx-auto mt-16">
     {#if loaded}
-      {#each $displayIds as knotId}
-        <Knot id={knotId} on:result={onResult} on:focusNewCommand={focusNewCommand}/>
+      {#each displayIds as knotId}
+        <Knot
+          knot={knotNode(knotId)}
+          processResult={processResult}
+          selectKnot={selectNode}
+          
+        />
       {/each}
     {/if}
 
-    <NewCommand on:result={onResult} parentId={lastSelectedKnotId} bind:this={newCommand} />
+    <!--
+    <NewCommand
+      on:result={onResult}
+      parentId={lastSelectedKnotId}
+      bind:this={newCommand}
+    /> -->
   </div>
 </div>
+<!--
 
 <ReplayAllModal on:result={onResult} bind:this={replayAllModal} />
+-->

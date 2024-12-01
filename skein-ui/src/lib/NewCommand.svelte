@@ -1,12 +1,8 @@
 <script>
-    import { createEventDispatcher, tick, getContext } from "svelte";
-    import { selectChild } from "./common.js";
-    import { postApi } from "./common.js" ;
+    import {  tick, } from "svelte";
+    import { postApi } from "./common.svelte" ;
     import { Input, Label } from "flowbite-svelte";
     import { AngleRightOutline } from "flowbite-svelte-icons";
-    const dispatcher = createEventDispatcher();
-
-    const selected = getContext("selected");
 
     export let parentId;
     let newCommand = "";
@@ -34,9 +30,9 @@
             id: parentId,
         });
 
-        await dispatcher("result", result);
+        // TODO: await dispatcher("result", result);
 
-        selectChild(selected, priorParentId, result.new_id);
+        // TODO: selectChild(selected, priorParentId, result.new_id);
 
         newCommand = "";
 

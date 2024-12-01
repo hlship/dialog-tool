@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@types/diff": "^6.0.0",
     "autoprefixer": "^10.4.19",
     "flowbite": "^2.5.1",
     "flowbite-svelte": "^0.47.2",

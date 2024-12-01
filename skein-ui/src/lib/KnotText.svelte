@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
     import * as Diff from "diff";
 
-    export let response;
-    export let unblessed;
+    export let response : string;
+    export let unblessed : string;
 
     let changes;
 

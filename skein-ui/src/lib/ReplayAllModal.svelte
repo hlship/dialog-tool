@@ -1,6 +1,6 @@
 <script>
     import { getContext, createEventDispatcher } from "svelte";
-    import { postApi } from "./common.js";
+    import { postApi } from "./common.svelte";
     import { Modal, Progressbar } from "flowbite-svelte";
 
     const dispatcher = createEventDispatcher();
@@ -60,7 +60,7 @@
     title="Replay All"
     bind:open={running}
     size="sm"
-    on:close={() => abort = true}
+    on:close={() => (abort = true)}
 >
     <div class="h-3">{label}</div>
     <Progressbar {progress} size="h-1.5" color="blue" animate />
