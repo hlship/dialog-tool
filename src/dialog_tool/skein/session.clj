@@ -99,15 +99,33 @@
       capture-undo
       do-restart!))
 
+(defn- replay-to!*
+  [session knot-id]
+  (let [commands (collect-commands (:tree session) knot-id)
+        session' (reduce run-command! (do-restart! session) commands)]
+    (assoc session' :active-knot-id knot-id)))
+
 (defn replay-to!
   "Restarts the game, then plays through all the commands leading up to the knot.
   This will either verify that each knot's response is unchanged, or capture
   unblessed responses to be verified."
   [session knot-id]
-  (let [session' (capture-undo session)
-        commands (collect-commands (:tree session') knot-id)]
-    (assoc (reduce run-command! (do-restart! session') commands)
-      :active-knot-id knot-id)))
+  (replay-to!* (capture-undo session) knot-id))
+
+(defn edit-command!
+  [session knot-id new-command]
+  (let [{:keys [tree]} session
+        parent-id (get-in tree [:knots knot-id :parent-id])
+        existing-child (tree/find-child-id tree parent-id new-command)]
+    (prn `edit-command! :knot-id knot-id :parent-id parent-id :existing-child existing-child)
+    (if existing-child
+      (assoc session :error
+                     (format "Parent knot already contains a child with command '%s'"
+                             new-command))
+      (-> session
+          capture-undo
+          (update :tree tree/change-command knot-id new-command)
+          (replay-to!* knot-id)))))
 
 (defn- knot-category
   [{:keys [unblessed response]}]

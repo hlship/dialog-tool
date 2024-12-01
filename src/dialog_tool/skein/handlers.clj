@@ -46,17 +46,27 @@
   [session _payload]
   (session/bless-all session))
 
+(defn- prep-command
+  [s]
+  (-> s
+      string/trim
+      (string/replace #"\s+" " ")))
+
 (defn- new-command
   [session payload]
   (let [{:keys [id command]} payload
         {:keys [active-knot-id]} session
-        command' (-> command
-                     (string/trim)
-                     (string/replace #"\s+" " "))
+        command' (prep-command command)
         session' (-> (cond-> session
-                            (not= id active-knot-id) (session/replay-to! id))
+                             (not= id active-knot-id) (session/replay-to! id))
                      (session/command! command'))]
     (assoc session' ::extra-body {:new_id (:active-knot-id session')})))
+
+(defn- edit-command
+  [session payload]
+  (let [{:keys [id command]} payload
+        command' (prep-command command)]
+    (session/edit-command! session id command')))
 
 (defn- save
   [session _payload]
@@ -108,33 +118,33 @@
 
 (defn- invoke-handler
   [*session payload handler]
-  (let [*extra-body (atom nil)
-        [session session'] (swap-vals! *session
-                                       (fn [session]
-                                         (let [session' (handler session payload)]
-                                           (reset! *extra-body (::extra-body session'))
-                                           (dissoc session' ::extra-body))))
-        {::keys [batching?]} session'
-        extra-body @*extra-body
+  (let [session @*session
+        session' (handler session payload)
+        {:keys  [error]
+         ::keys [batching? extra-body]} session'
+        stripped-session (dissoc session' ::extra-body :error)
         body (cond-> {}
-                     (not batching?) (merge (response-body (:tree session) session'))
-                     extra-body (merge extra-body))]
+                     (not batching?) (merge (response-body (:tree session) stripped-session))
+                     extra-body (merge extra-body)
+                     error (assoc :error error))]
+    (reset! *session stripped-session)
     {:status 200
      :body   body}))
 
 (def action->handler
-  {"bless"       bless
-   "bless-all"   bless-all
-   "bless-to"    bless-to
-   "label"       label
-   "new-command" new-command
-   "start-batch" start-batch
-   "end-batch"   end-batch
-   "save"        save
-   "replay"      replay
-   "undo"        undo
-   "redo"        redo
-   "delete"      delete})
+  {"bless"        bless
+   "bless-all"    bless-all
+   "bless-to"     bless-to
+   "label"        label
+   "new-command"  new-command
+   "edit-command" edit-command
+   "start-batch"  start-batch
+   "end-batch"    end-batch
+   "save"         save
+   "replay"       replay
+   "undo"         undo
+   "redo"         redo
+   "delete"       delete})
 
 (defn- update-handler
   [request]

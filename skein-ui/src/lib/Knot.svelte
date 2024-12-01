@@ -18,13 +18,14 @@
 
     let blessEnabled = $derived(knot.category != Category.OK);
     let blessClass = $derived(blessEnabled ? null : "text-gray-600 cursor-not-allowed");
-    let editLabel;
+    let editLabel, editCommand;
 
     let knotColor = $derived(category2color.get(knot.category));
     let controlColor = $derived(category2color.get(knot.treeCategory));
 
     let actionDropdownOpen = $state(false);
     let childDropdownOpen = $state(false);
+    let editCommandError : string = $state(null);
 
     async function post(payload: common.Payload): Promise<common.ActionResult> {
         actionDropdownOpen = false;
@@ -73,9 +74,28 @@
         editLabel.activate();
     }
 
-    function onEditLabelComplete(newValue) {
-        post({ action: "label", id: knot.id, label: newValue });
+    async function onEditLabelComplete(newLabel : string) {
+        post({ action: "label", id: knot.id, label: newLabel });
+
+        return true;
     }
+
+function startEditCommand() {
+    actionDropdownOpen = false;
+    editCommandError = null;
+    editCommand.activate();
+}
+
+async function onEditCommandComplete(newCommand: string) {
+    const result = await post({ action: "edit-command", id: knot.id, command: newCommand});
+
+    if (result.error) {
+        editCommandError = result.error;
+        return false;
+    }
+    else { return true; }
+ }
+
 </script>
 
 <div class="border-x-4 {knotColor.border}" id="knot_{knot.id}">
@@ -96,23 +116,21 @@
             <Dropdown
                 placement="left"
                 bind:open={actionDropdownOpen}
-                class="w-96 bg-slate-100"
-            >
-                <DropdownItem on:click={replay} class="hover:bg-slate-200"
+                class="w-96 bg-slate-100" >
+                <DropdownItem onclick={replay} class="hover:bg-slate-200"
                     >Replay
                     <Helper>Run from start to here</Helper>
                     </DropdownItem >
                 {#if knot.id != 0}
                     <DropdownItem
-                        on:click={deleteKnot}
-                        class="hover:bg-slate-200"
-                    >
+                        onclick={deleteKnot}
+                        class="hover:bg-slate-200" >
                         Delete
                         <Helper>Delete this knot and all children</Helper>
                     </DropdownItem>
                 {/if}
                 <DropdownItem
-                    on:click={bless}
+                    onclick={bless}
                     class="{blessClass} hover:bg-slate-200"
                 >
                     Bless
@@ -120,21 +138,24 @@
                 </DropdownItem>
                 {#if knot.id != 0}
                     <DropdownItem
-                        on:click={blessTo}
+                        onclick={blessTo}
                         class="{blessClass} hover:bg-slate-200"
                     >
                         Bless To Here
                         <Helper>Bless all knots from root to here</Helper>
                     </DropdownItem>
                     <DropdownItem
-                        on:click={startEditLabel}
-                        class="hover:bg-slate-200"
-                    >
+                        onclick={startEditLabel}
+                        class="hover:bg-slate-200">
                         Edit Label
                         <Helper>Change label for knot</Helper>
                     </DropdownItem>
+                    <DropdownItem onclick={startEditCommand} class="hover:bg-slate-200">
+                        Edit Command
+                        <Helper>Change the command</Helper>
+                    </DropdownItem>
                 {/if}
-                <DropdownItem on:click={newChild} class="hover:bg-slate-200">
+                <DropdownItem onclick={newChild} class="hover:bg-slate-200">
                     New Child
                     <Helper>Add a new command after this</Helper>
                 </DropdownItem>
@@ -175,3 +196,16 @@
     value={knot.data.label}
     bind:this={editLabel}
 />
+
+<EditProperty
+title="Edit Command"
+change={onEditCommandComplete}
+value={knot.data.command}
+error={editCommandError}
+bind:this={editCommand}> 
+{#snippet sub()} 
+<span class="text-slate-500">After renaming, the Skein will replay to this knot.</span>
+{/snippet}
+</EditProperty>
+
+
