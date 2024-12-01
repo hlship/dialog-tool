@@ -16,6 +16,7 @@
      :redo-stack     []
      :process        process
      :tree           (tree/update-response tree 0 initial-response)
+     :undo-enabled? true
      :active-knot-id 0}))
 
 (defn create-new!
@@ -117,7 +118,6 @@
   (let [{:keys [tree]} session
         parent-id (get-in tree [:knots knot-id :parent-id])
         existing-child (tree/find-child-id tree parent-id new-command)]
-    (prn `edit-command! :knot-id knot-id :parent-id parent-id :existing-child existing-child)
     (if existing-child
       (assoc session :error
                      (format "Parent knot already contains a child with command '%s'"
@@ -126,6 +126,22 @@
           capture-undo
           (update :tree tree/change-command knot-id new-command)
           (replay-to!* knot-id)))))
+
+(defn insert-parent!
+  [session knot-id new-command]
+  (let [{:keys [tree]} session
+        parent-id (get-in tree [:knots knot-id :parent-id])
+        existing-child (tree/find-child-id tree parent-id new-command)]
+    (if existing-child
+      (assoc session :error
+                     (format "Parent knot already contains a child with command '%s'"
+                             new-command))
+      (let [new-id (tree/next-id)]
+        (-> session
+            capture-undo
+            (update :tree tree/insert-parent knot-id new-id new-command)
+            (replay-to!* knot-id)
+            (assoc :new-id new-id))))))
 
 (defn- knot-category
   [{:keys [unblessed response]}]

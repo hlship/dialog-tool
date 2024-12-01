@@ -64,9 +64,17 @@
 
 (defn- edit-command
   [session payload]
+  (let [{:keys [id command]} payload]
+    (session/edit-command! session id (prep-command command))))
+
+(defn- insert-parent
+  [session payload]
   (let [{:keys [id command]} payload
-        command' (prep-command command)]
-    (session/edit-command! session id command')))
+        session' (session/insert-parent! session id (prep-command command))
+        {:keys [new-id]} session']
+    (-> session'
+        (assoc ::extra-body {:new_id new-id})
+        (dissoc :new-id))))
 
 (defn- save
   [session _payload]
@@ -93,7 +101,9 @@
   (session/label session id (string/trim label)))
 
 (defn- start-batch
-  "Turns off undo tracking, so the session will start to "
+  "Turns off undo tracking, so the session will start to accumulate changes
+  from all the following commands, until end-batch, which renables undo
+  tracking and creates a single undo step for the entire batch."
   [session _]
   (-> session
       (session/enable-undo false)
@@ -138,6 +148,7 @@
    "label"        label
    "new-command"  new-command
    "edit-command" edit-command
+   "insert-parent" insert-parent
    "start-batch"  start-batch
    "end-batch"    end-batch
    "save"         save
