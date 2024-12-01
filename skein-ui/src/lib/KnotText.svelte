@@ -1,18 +1,26 @@
-<script>
+<script lang="ts">
     import * as Diff from "diff";
+	import type { Snippet } from 'svelte';
 
-    export let response;
-    export let unblessed;
-
-    let changes;
-
-    $: {
-        if (response && unblessed) {
-            changes = Diff.diffWords(response, unblessed);
-        } else if (response == undefined && unblessed) {
-            changes = [{ added: true, value: unblessed }];
-        }
+    interface Props {
+        response : string, 
+        unblessed : string | undefined,
+        actions : Snippet
     }
+
+
+    let { response, unblessed, actions } : Props = $props();
+
+    function computeChanges(response : string, unblessed : string | undefined) : Diff.Change[] {
+        if (response && unblessed) {
+            return  Diff.diffWords(response, unblessed);
+        } else if (response == undefined && unblessed) {
+            return  [{ added: true, removed: false, value: unblessed }];
+        }
+        else { return []; }
+    }
+
+    let changes = $derived(computeChanges(response, unblessed));
 
     function spanClass(change) {
         if (change.added) {
@@ -27,10 +35,9 @@
     }
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
     class="bg-yellow-50 w-full whitespace-pre relative p-2">
-    <slot name="actions"/>
+    {@render actions()}
     {#if unblessed}
         {#each changes as change}
             <span class={spanClass(change)}>{change.value}</span>

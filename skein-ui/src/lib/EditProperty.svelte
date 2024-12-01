@@ -1,17 +1,20 @@
-<script>
-    import { createEventDispatcher, tick } from "svelte";
+<script lang="ts">
+    import { tick } from "svelte";
     import { Modal } from "flowbite-svelte";
 
-    export let title;
-    export let value;
+    type Props = {
+        title: string;
+        value: string;
+        change: (newValue: string) => void;
+    };
 
-    const dispatcher = createEventDispatcher();
+    let { title, value, change }: Props = $props();
 
-    let running = false;
+    let running = $state(false);
     let field;
-    let editValue = null;
+    let editValue = $state(null);
 
-    export async function activate() {
+    export async function activate(): Promise<void> {
         running = true;
 
         editValue = value;
@@ -31,17 +34,17 @@
             running = false;
             event.preventDefault();
 
-            dispatcher("change", editValue);
+            change(editValue);
         }
     }
 </script>
 
-<Modal {title} bind:open={running} size="sm" on:close={() => null}>
+<Modal {title} bind:open={running} size="sm" onclose={() => null}>
     <input
         type="text"
         bind:this={field}
         bind:value={editValue}
-        on:keydown={keydown}
+        onkeydown={keydown}
         class="text-sm w-full"
     />
 </Modal>

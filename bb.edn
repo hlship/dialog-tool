@@ -1,9 +1,9 @@
 {:paths ["src"
-         ;; HTML and JS is copied and or generated to skein-ui/dist/public.
+         ;; HTML and JS is copied and/or generated to skein-ui/dist/public.
          ;; Resources under public are made visible.
          "skein-ui/dist"
          ;; Templates
          "resources"]
  :deps  {org.clj-commons/pretty     {:mvn/version "3.2.0"}
-         org.clj-commons/humanize   {:mvn/version "1.0"}
-         io.github.hlship/cli-tools {:mvn/version "0.13"}}}
+         org.clj-commons/humanize   {:mvn/version "1.1"}
+         io.github.hlship/cli-tools {:mvn/version "0.14"}}}

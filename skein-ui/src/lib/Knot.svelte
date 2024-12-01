@@ -1,117 +1,71 @@
-<script>
-    import { getContext, createEventDispatcher } from "svelte";
-    import { postApi, selectChild } from "./common.js";
-    import * as common from "./common.js";
+<script lang="ts">
+    import { category2color } from "./knot-color";
+    import * as common from "./common.svelte";
     import { Button, Dropdown, DropdownItem, Helper } from "flowbite-svelte";
     import KnotText from "./KnotText.svelte";
     import EditProperty from "./EditProperty.svelte";
     import { DotsVerticalOutline, CodeMergeSolid } from "flowbite-svelte-icons";
+    import { Category, type KnotNode } from "./types";
 
-    const dispatcher = createEventDispatcher();
+    interface Props {
+        knot: KnotNode;
+        processResult: (result: common.ActionResult) => void;
+        selectKnot: (id: number) => void;
+        focusNewCommand: (id: number) => void;
+    }
 
-    const knots = getContext("knots");
-    const selected = getContext("selected");
-    const category = getContext("category");
+    let { knot, processResult, selectKnot, focusNewCommand }: Props = $props();
 
-    let blessEnabled;
-    let blessClass;
+    let blessEnabled = $derived(knot.category != Category.OK);
+    let blessClass = $derived(blessEnabled ? null : "text-gray-600 cursor-not-allowed");
     let editLabel;
 
-    export let id = undefined;
+    let knotColor = $derived(category2color.get(knot.category));
+    let controlColor = $derived(category2color.get(knot.treeCategory));
 
-    $: knot = $knots.get(id) || {};
-    $: knotColor = null;
-    $: controlColor = null;
+    let actionDropdownOpen = $state(false);
+    let childDropdownOpen = $state(false);
 
-    const category2color = {
-        error: {
-            border: "border-rose-400",
-            background: "bg-rose-200 hover:bg-rose-400",
-        },
-        new: {
-            border: "border-yellow-200",
-            background: "bg-yellow-200 hover:bg-yellow-300",
-        },
-        ok: { border: "border-slate-100", background: "hover:bg-slate-200" },
-    };
-
-    $: {
-        let knotCategory = common.category(knot);
-
-        knotColor = category2color[knotCategory];
-
-        blessEnabled = knotCategory != "ok";
-
-        blessClass = blessEnabled ? null : "text-gray-600 cursor-not-allowed";
-
-        controlColor = category2color[$category.get(id)];
-    }
-
-    function computeChildren(knots, category) {
-        let result = [];
-
-        for (const childId of knot.children || []) {
-            let child = {
-                id: childId,
-                label: knots.get(childId).command,
-            };
-
-            let navCategory = category.get(childId);
-
-            child.navColor = category2color[navCategory];
-
-            result.push(child);
-        }
-
-        return result;
-    }
-
-    $: children = computeChildren($knots, $category);
-
-    let actionDropdownOpen;
-    let childDropdownOpen;
-
-    async function post(payload) {
+    async function post(payload: common.Payload): Promise<common.ActionResult> {
         actionDropdownOpen = false;
 
-        let result = await postApi(payload);
+        let result = await common.postApi(payload);
 
-        dispatcher("result", result);
+        processResult(result);
 
         return result;
     }
 
     function bless() {
         if (blessEnabled) {
-            post({ action: "bless", id: id });
+            post({ action: "bless", id: knot.id });
         }
     }
 
     function blessTo() {
         if (blessEnabled) {
-            post({ action: "bless-to", id: id });
+            post({ action: "bless-to", id: knot.id });
         }
     }
 
     function replay() {
-        post({ action: "replay", id: id });
+        post({ action: "replay", id: knot.id });
     }
 
     function setSelectedId(selectedId) {
         actionDropdownOpen = false;
         childDropdownOpen = false;
-        selectChild(selected, id, selectedId);
+        selectKnot(selectedId);
     }
 
     function deleteKnot() {
-        post({ action: "delete", id: id });
+        post({ action: "delete", id: knot.id });
     }
 
     // Select this node as the deepest selected node; which will cause the NewCommand to apply to this knot
-    function selectThis() {
+    function newChild() {
         actionDropdownOpen = false;
-        selectChild(selected, id, null);
-        dispatcher("focusNewCommand", {});
+        focusNewCommand(knot.id);
     }
 
     function startEditLabel() {
@@ -119,19 +73,19 @@
         editLabel.activate();
     }
 
-    function onEditLabelComplete(e) {
-        post({ action: "label", id: id, label: e.detail });
+    function onEditLabelComplete(newValue) {
+        post({ action: "label", id: knot.id, label: newValue });
     }
 </script>
 
-<div class="border-x-4 {knotColor.border}" id="knot_{id}">
-    <KnotText response={knot.response} unblessed={knot.unblessed}>
-        <div
-            slot="actions"
-            class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-2"
-        >
-            {#if knot.label}
-                <span class="text-bold bg-gray-200 border-1 p-1 rounded-md">{knot.label}</span>
+<div class="border-x-4 {knotColor.border}" id="knot_{knot.id}">
+    <KnotText response={knot.data.response} unblessed={knot.data.unblessed}>
+        {#snippet actions()}
+        <div class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-2">
+            {#if knot.data.label}
+                <span class="text-bold bg-gray-200 border-1 p-1 rounded-md"
+                    >{knot.data.label}</span
+                >
             {/if}
             <Button
                 color="light"
@@ -145,9 +99,10 @@
                 class="w-96 bg-slate-100"
             >
                 <DropdownItem on:click={replay} class="hover:bg-slate-200"
-                    >Replay</DropdownItem
-                >
-                {#if id != 0}
+                    >Replay
+                    <Helper>Run from start to here</Helper>
+                    </DropdownItem >
+                {#if knot.id != 0}
                     <DropdownItem
                         on:click={deleteKnot}
                         class="hover:bg-slate-200"
@@ -163,7 +118,7 @@
                     Bless
                     <Helper>Accept changes</Helper>
                 </DropdownItem>
-                {#if id != 0}
+                {#if knot.id != 0}
                     <DropdownItem
                         on:click={blessTo}
                         class="{blessClass} hover:bg-slate-200"
@@ -171,20 +126,20 @@
                         Bless To Here
                         <Helper>Bless all knots from root to here</Helper>
                     </DropdownItem>
+                    <DropdownItem
+                        on:click={startEditLabel}
+                        class="hover:bg-slate-200"
+                    >
+                        Edit Label
+                        <Helper>Change label for knot</Helper>
+                    </DropdownItem>
                 {/if}
-                <DropdownItem
-                    on:click={startEditLabel}
-                    class="hover:bg-slate-200"
-                >
-                    Edit Label
-                    <Helper>Change label for knot</Helper>
-                </DropdownItem>
-                <DropdownItem on:click={selectThis} class="hover:bg-slate-200">
+                <DropdownItem on:click={newChild} class="hover:bg-slate-200">
                     New Child
                     <Helper>Add a new command after this</Helper>
                 </DropdownItem>
             </Dropdown>
-            {#if children.length > 0}
+            {#if knot.children.length > 0}
                 <Button
                     class="w-0 {controlColor.background}"
                     color="light"
@@ -197,10 +152,11 @@
                     bind:open={childDropdownOpen}
                     class="w-96 overflow-y-auto bg-slate-100"
                 >
-                    {#each children as child (child.id)}
+                    {#each knot.children as child (child.id)}
                         <DropdownItem
-                            on:click={() => setSelectedId(child.id)}
-                            class={child.navColor.background}
+                            onclick={() => setSelectedId(child.id)}
+                            class={category2color.get(child.treeCategory)
+                                .background}
                         >
                             {child.label}
                         </DropdownItem>
@@ -208,13 +164,14 @@
                 </Dropdown>
             {/if}
         </div>
+        {/snippet}
     </KnotText>
     <hr />
 </div>
 
 <EditProperty
     title="Edit Label"
-    on:change={onEditLabelComplete}
-    value={knot.label}
+    change={onEditLabelComplete}
+    value={knot.data.label}
     bind:this={editLabel}
 />
