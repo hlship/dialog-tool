@@ -1,13 +1,15 @@
 <script lang="ts">
     import * as Diff from "diff";
+	import type { Snippet } from 'svelte';
 
     interface Props {
         response : string, 
-        unblessed : string | undefined
+        unblessed : string | undefined,
+        actions : Snippet
     }
 
 
-    let { response, unblessed } : Props = $props();
+    let { response, unblessed, actions } : Props = $props();
 
     function computeChanges(response : string, unblessed : string | undefined) : Diff.Change[] {
         if (response && unblessed) {
@@ -33,10 +35,9 @@
     }
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
     class="bg-yellow-50 w-full whitespace-pre relative p-2">
-    <slot name="actions"/>
+    {@render actions()}
     {#if unblessed}
         {#each changes as change}
             <span class={spanClass(change)}>{change.value}</span>

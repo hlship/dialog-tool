@@ -81,10 +81,8 @@
 
 <div class="border-x-4 {knotColor.border}" id="knot_{knot.id}">
     <KnotText response={knot.data.response} unblessed={knot.data.unblessed}>
-        <div
-            slot="actions"
-            class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-2"
-        >
+        {#snippet actions()}
+        <div class="whitespace-normal flex flex-row absolute top-2 right-2 gap-x-2">
             {#if knot.data.label}
                 <span class="text-bold bg-gray-200 border-1 p-1 rounded-md"
                     >{knot.data.label}</span
@@ -167,6 +165,7 @@
                 </Dropdown>
             {/if}
         </div>
+        {/snippet}
     </KnotText>
     <hr />
 </div>
