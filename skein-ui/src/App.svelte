@@ -234,7 +234,5 @@
     />
   </div>
 </div>
-<!--
 
-<ReplayAllModal on:result={onResult} bind:this={replayAllModal} />
--->
+<ReplayAllModal {knots} {processResult} bind:this={replayAllModal} />

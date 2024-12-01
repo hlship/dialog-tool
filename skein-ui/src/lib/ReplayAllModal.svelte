@@ -1,19 +1,22 @@
-<script>
-    import { getContext, createEventDispatcher } from "svelte";
-    import { postApi } from "./common.svelte";
+<script lang="ts">
+    import { postApi, type ActionResult } from "./common.svelte";
     import { Modal, Progressbar } from "flowbite-svelte";
+    import type { KnotData } from "./types";
 
-    const dispatcher = createEventDispatcher();
+    interface Props {
+        knots : Map<number, KnotData>,
+        processResult : (result: ActionResult) => void
+    }
 
-    const knots = getContext("knots");
+    let { knots, processResult } : Props = $props();
 
-    let running = false;
+    let running = $state(false);
 
-    let label = null;
-    let progress = 0;
-    let abort = false;
+    let label = $state(null);
+    let progress = $state(0);
+    let abort = $state(false);
 
-    export async function run() {
+    export async function run() : Promise<void> {
         // abort is set to true when the Modal closes, whether by clicking to close button, or when running is
         // set to false, so we ensure it is set to false before starting the operation.
         abort = false;
@@ -21,9 +24,9 @@
         label = "";
         running = true;
 
-        let leafs = [];
+        let leafs = new Array<KnotData>();
 
-        for (const [_, knot] of $knots) {
+        for (const [_, knot] of knots) {
             if (knot.children.length == 0) {
                 leafs.push(knot);
             }
@@ -49,7 +52,7 @@
 
         let result = await postApi({ action: "end-batch" });
 
-        dispatcher("result", result);
+        processResult(result);
 
         running = false;
         abort = false;
@@ -60,7 +63,7 @@
     title="Replay All"
     bind:open={running}
     size="sm"
-    on:close={() => (abort = true)}
+    onclose={() => (abort = true)}
 >
     <div class="h-3">{label}</div>
     <Progressbar {progress} size="h-1.5" color="blue" animate />
