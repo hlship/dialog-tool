@@ -1,18 +1,24 @@
 <script lang="ts">
     import * as Diff from "diff";
 
-    export let response : string;
-    export let unblessed : string;
-
-    let changes;
-
-    $: {
-        if (response && unblessed) {
-            changes = Diff.diffWords(response, unblessed);
-        } else if (response == undefined && unblessed) {
-            changes = [{ added: true, value: unblessed }];
-        }
+    interface Props {
+        response : string, 
+        unblessed : string | undefined
     }
+
+
+    let { response, unblessed } : Props = $props();
+
+    function computeChanges(response : string, unblessed : string | undefined) : Diff.Change[] {
+        if (response && unblessed) {
+            return  Diff.diffWords(response, unblessed);
+        } else if (response == undefined && unblessed) {
+            return  [{ added: true, removed: false, value: unblessed }];
+        }
+        else { return []; }
+    }
+
+    let changes = $derived(computeChanges(response, unblessed));
 
     function spanClass(change) {
         if (change.added) {
