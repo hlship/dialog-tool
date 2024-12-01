@@ -65,17 +65,17 @@ export function deriveDisplayIds(knots: Map<number, KnotData>, selected: Map<num
 export function deriveKnotTotals(knots: Map<number, KnotData>): Map<Category, number> {
 
     let result = new Map<Category, number>();
-    result[Category.OK] = 0;
-    result[Category.NEW] = 0;
-    result[Category.ERROR] = 0;
+    result.set(Category.OK, 0);
+    result.set(Category.NEW,  0);
+    result.set(Category.ERROR, 0);
 
     for (const [_, knot] of knots) {
 
         const c = category(knot);
-
-        result[c] = result[c] + 1;
+        
+        result.set(c, result.get(c) + 1);
     }
-
+    
     return result;
 }
 

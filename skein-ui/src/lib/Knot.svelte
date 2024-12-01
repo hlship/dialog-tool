@@ -5,18 +5,19 @@
     import KnotText from "./KnotText.svelte";
     import EditProperty from "./EditProperty.svelte";
     import { DotsVerticalOutline, CodeMergeSolid } from "flowbite-svelte-icons";
-    import { type KnotNode } from "./types";
+    import { Category, type KnotNode } from "./types";
 
     interface Props {
         knot: KnotNode;
         processResult: (result: common.ActionResult) => void;
         selectKnot: (id: number) => void;
+        focusNewCommand: (id: number) => void;
     }
 
-    let { knot, processResult, selectKnot }: Props = $props();
+    let { knot, processResult, selectKnot, focusNewCommand }: Props = $props();
 
-    let blessEnabled;
-    let blessClass;
+    let blessEnabled = knot.category != Category.OK;
+    let blessClass = blessEnabled ? null : "text-gray-600 cursor-not-allowed";
     let editLabel;
 
     let knotColor = category2color[knot.category];
@@ -29,9 +30,6 @@
         actionDropdownOpen = false;
 
         let result = await common.postApi(payload);
-
-        // TODO: fix this
-        // dispatcher("result", result);
 
         processResult(result);
 
@@ -61,14 +59,13 @@
     }
 
     function deleteKnot() {
-        post({ action: "delete", id: id });
+        post({ action: "delete", id: knot.id });
     }
 
     // Select this node as the deepest selected node; which will cause the NewCommand to apply to this knot
-    function selectThis() {
+    function newChild() {
         actionDropdownOpen = false;
-        selectKnot(knot.id);
-        // TODO: dispatcher("focusNewCommand", {});
+        focusNewCommand(knot.id);
     }
 
     function startEditLabel() {
@@ -107,7 +104,7 @@
                 <DropdownItem on:click={replay} class="hover:bg-slate-200"
                     >Replay</DropdownItem
                 >
-                {#if id != 0}
+                {#if knot.id != 0}
                     <DropdownItem
                         on:click={deleteKnot}
                         class="hover:bg-slate-200"
@@ -123,7 +120,7 @@
                     Bless
                     <Helper>Accept changes</Helper>
                 </DropdownItem>
-                {#if id != 0}
+                {#if knot.id != 0}
                     <DropdownItem
                         on:click={blessTo}
                         class="{blessClass} hover:bg-slate-200"
@@ -131,7 +128,6 @@
                         Bless To Here
                         <Helper>Bless all knots from root to here</Helper>
                     </DropdownItem>
-                {/if}
                 <DropdownItem
                     on:click={startEditLabel}
                     class="hover:bg-slate-200"
@@ -139,7 +135,8 @@
                     Edit Label
                     <Helper>Change label for knot</Helper>
                 </DropdownItem>
-                <DropdownItem on:click={selectThis} class="hover:bg-slate-200">
+                {/if}
+                <DropdownItem on:click={newChild} class="hover:bg-slate-200">
                     New Child
                     <Helper>Add a new command after this</Helper>
                 </DropdownItem>

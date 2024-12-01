@@ -74,14 +74,14 @@
       id,
       data,
       category: category(data),
-      treeCategory: id2category[id] || Category.OK,
+      treeCategory: id2category.get(id) || Category.OK,
       selectedChildId: id2selected[id],
       children: data.children.map((childId) => {
         const child = knots.get(childId);
         return {
           id: childId,
           label: child.command,
-          treeCategory: id2category[childId] || Category.OK,
+          treeCategory: id2category.get(childId)|| Category.OK,
         };
       }),
     };
@@ -123,7 +123,7 @@
     replayAllModal.run();
   }
 
-  function selectNode(id:number):void {
+  function selectKnot(id: number): void {
     let childId = id;
     while (childId != undefined) {
       const knot = knots.get(childId);
@@ -141,7 +141,7 @@
     let element = document.getElementById(elementId);
 
     if (element == undefined) {
-      selectNode(knotId);
+      selectKnot(knotId);
 
       while (element == undefined) {
         await tick();
@@ -153,13 +153,14 @@
     element.scrollIntoView({ behavior: "smooth", block: "end" });
   }
 
-  function onResult(event) {
-    processResult(event.detail);
-  }
-
   let newCommand;
 
-  function focusNewCommand() {
+  function focusNewCommand(id:number) {
+
+    // id should be visible, this truncates the display list to that id
+    // such that the new command will be a child of the id.
+    id2selected.delete(id); 
+
     newCommand.focus();
   }
 </script>
@@ -177,13 +178,13 @@
     </NavBrand>
     <div class="mx-0 inline-flex">
       <div class="text-black bg-green-400 p-2 font-semibold rounded-l-lg">
-        {knotTotals[Category.OK]}
+        {knotTotals.get(Category.OK)}
       </div>
       <div class="text-black bg-yellow-200 p-2 font-semibold">
-        {knotTotals[Category.NEW]}
+        {knotTotals.get(Category.NEW)}
       </div>
       <div class="text-black bg-red-500 p-2 font-semibold rounded-r-lg">
-        {knotTotals[Category.ERROR]}
+        {knotTotals.get(Category.ERROR)}
       </div>
       <Button class="ml-8" color="blue" size="xs"
         >Jump <ChevronDownOutline /></Button
@@ -216,21 +217,16 @@
   <div class="container mx-lg mx-auto mt-16">
     {#if loaded}
       {#each displayIds as knotId}
-        <Knot
-          knot={knotNode(knotId)}
-          processResult={processResult}
-          selectKnot={selectNode}
-          
-        />
+        <Knot knot={knotNode(knotId)} {processResult} {selectKnot} {focusNewCommand}/>
       {/each}
     {/if}
 
-    <!--
     <NewCommand
-      on:result={onResult}
+      {processResult}
+      {selectKnot}
       parentId={lastSelectedKnotId}
       bind:this={newCommand}
-    /> -->
+    />
   </div>
 </div>
 <!--
