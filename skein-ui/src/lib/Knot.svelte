@@ -73,9 +73,8 @@
         editLabel.activate();
     }
 
-    function onEditLabelComplete(e) {
-        // TODO: make this work
-        post({ action: "label", id: knot.id, label: e.detail });
+    function onEditLabelComplete(newValue) {
+        post({ action: "label", id: knot.id, label: newValue });
     }
 </script>
 
@@ -172,7 +171,7 @@
 
 <EditProperty
     title="Edit Label"
-    on:change={onEditLabelComplete}
+    change={onEditLabelComplete}
     value={knot.data.label}
     bind:this={editLabel}
 />
