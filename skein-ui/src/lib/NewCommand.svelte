@@ -55,7 +55,7 @@
         size="lg"
         class="x-new-command-input"
         bind:value={newCommand}
-        on:change={runNewCommand}
+        onchange={runNewCommand}
     >
         <AngleRightOutline slot="left" class="w-4 h-4" />
     </Input>
