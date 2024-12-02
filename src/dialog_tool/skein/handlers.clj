@@ -67,14 +67,20 @@
   (let [{:keys [id command]} payload]
     (session/edit-command! session id (prep-command command))))
 
+(defn- expose-new-id-in-body
+  [session]
+  (let [{:keys [new-id]} session]
+    (if new-id
+      (-> session
+          (assoc ::extra-body {:new_id new-id})
+          (dissoc :new-id))
+      session)))
+
 (defn- insert-parent
   [session payload]
-  (let [{:keys [id command]} payload
-        session' (session/insert-parent! session id (prep-command command))
-        {:keys [new-id]} session']
-    (-> session'
-        (assoc ::extra-body {:new_id new-id})
-        (dissoc :new-id))))
+  (let [{:keys [id command]} payload]
+    (-> (session/insert-parent! session id (prep-command command))
+        expose-new-id-in-body)))
 
 (defn- save
   [session _payload]
@@ -98,7 +104,8 @@
 
 (defn- splice-out
   [session {:keys [id]}]
-  (session/splice-out! session id))
+  (->> (session/splice-out! session id)
+       expose-new-id-in-body))
 
 (defn- label
   [session {:keys [id label]}]

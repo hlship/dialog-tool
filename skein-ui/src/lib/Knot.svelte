@@ -102,6 +102,10 @@ async function spliceOutKnot() {
         alert(result.error)
     }
 
+    if( result.new_id) {
+        selectKnot(result.new_id);
+    }
+
 }
 
 async function onEditCommand(newCommand: string) {
@@ -193,10 +197,12 @@ const ddcolor = "hover:bg-slate-200";
                     New Child
                     <Helper>Add a new command after this</Helper>
                 </DropdownItem>
+                {#if knot.id != 0}
                 <DropdownItem onclick={() => activateField(insertParent)} class={ddcolor}>
                     Insert Parent
                     <Helper>Insert a command before this</Helper>
                 </DropdownItem>
+                {/if}
             </Dropdown>
             {#if knot.children.length > 0}
                 <Button

@@ -245,7 +245,8 @@
       (let [replay-id (first children)]
         (cond-> (-> session
                     capture-undo
-                    (update :tree tree/splice-out knot-id))
+                    (update :tree tree/splice-out knot-id)
+                    (assoc :new-id (or replay-id parent-id)))
                 replay-id (do-replay-to! replay-id))))))
 
 
