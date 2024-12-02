@@ -89,17 +89,21 @@
   [tree knot-id new-response]
   (update-in tree [:knots knot-id] store-response new-response))
 
+(defn find-children
+  [tree knot-id]
+  (let [{:keys [knots]} tree]
+    (->> (get-in knots [knot-id :children])
+         (map knots))))
+
 (defn find-child-id
   "Looks in the children of the given knot for an existing knot with
   the indicated command string; if found, returns the child knot's id, otherwise
    returns nil."
   [tree knot-id command]
-  (let [{:keys [knots]} tree]
-    (->> (get-in knots [knot-id :children])
-         (map knots)
-         (filter #(= command (:command %)))
-         first
-         :id)))
+  (->> (find-children tree knot-id)
+       (filter #(= command (:command %)))
+       first
+       :id))
 
 (defn knot->wire
   "Converts a single knot for transfer over the wire to the browser."
@@ -144,3 +148,30 @@
         (add-child parent-id new-id new-command nil)
         (assoc-in [:knots knot-id :parent-id] new-id)
         rebuild-children)))
+
+(defn get-knot
+  [tree knot-id]
+  (get-in tree [:knots knot-id]))
+
+(defn splice-out
+  [tree knot-id]
+  (let [{:keys [parent-id children]} (get-knot tree knot-id)]
+    (-> (reduce (fn [tree child-id]
+                  (assoc-in tree [:knots child-id :parent-id] parent-id))
+                tree
+                children)
+        (update :knots dissoc knot-id)
+        rebuild-children)))
+
+(defn knots-from-root
+  "Returns a seq of knots at or above the given knot in the tree; order is from
+  knot 0 (the root) down to the initial knot."
+  [tree initial-knot-id]
+  (let [{:keys [knots]} tree]
+    (loop [knot-id initial-knot-id
+           result ()]
+      (if (nil? knot-id)
+        result
+        (let [knot (get knots knot-id)]
+          (recur (:parent-id knot)
+                 (cons knot result)))))))

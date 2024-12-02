@@ -96,6 +96,10 @@
   [session {:keys [id]}]
   (session/delete session id))
 
+(defn- splice-out
+  [session {:keys [id]}]
+  (session/splice-out! session id))
+
 (defn- label
   [session {:keys [id label]}]
   (session/label session id (string/trim label)))
@@ -155,7 +159,8 @@
    "replay"       replay
    "undo"         undo
    "redo"         redo
-   "delete"       delete})
+   "delete"       delete
+   "splice-out" splice-out})
 
 (defn- update-handler
   [request]

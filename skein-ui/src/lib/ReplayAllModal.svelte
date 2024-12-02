@@ -63,7 +63,7 @@
     title="Replay All"
     bind:open={running}
     size="sm"
-    onclose={() => (abort = true)}
+    onclose={() => abort = true}
 >
     <div class="h-3">{label}</div>
     <Progressbar {progress} size="h-1.5" color="blue" animate />

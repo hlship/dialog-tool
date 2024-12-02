@@ -2,6 +2,7 @@
   import Knot from "./lib/Knot.svelte";
   import NewCommand from "./lib/NewCommand.svelte";
   import ReplayAllModal from "./lib/ReplayAllModal.svelte";
+  import ModalAlert from "./lib/ModalAlert.svelte";
   import { onMount, tick } from "svelte";
   import { load, category, postApi } from "./lib/common.svelte";
   import * as d from "./lib/derived.svelte";
@@ -41,6 +42,13 @@
   let loaded = $state(false);
   let enableUndo = $state(false);
   let enableRedo = $state(false);
+  let alertMessage: string = $state(null);
+  let modalAlertRunning = $state(false);
+
+  function alert(message: string): void {
+    alertMessage = message;
+    modalAlertRunning = true;
+  }
 
   function processResult(result: ActionResult): void {
     // The Svelte4 code did all the updates in a single block, to minimize
@@ -222,6 +230,7 @@
           {processResult}
           {selectKnot}
           {focusNewCommand}
+          {alert}
         />
       {/each}
     {/if}
@@ -236,3 +245,4 @@
 </div>
 
 <ReplayAllModal {knots} {processResult} bind:this={replayAllModal} />
+<ModalAlert message={alertMessage} bind:running={modalAlertRunning} />

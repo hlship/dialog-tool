@@ -1,7 +1,10 @@
 (ns dialog-tool.skein.session
   "A session wraps around a Skein process, maintaining a tree, the process, and the current knot.
   In addition, there's an undo and redo stack, representing prior states of the tree."
-  (:require [dialog-tool.skein.file :as sk.file]
+  (:require [clj-commons.humanize :as h]
+            [clojure.set :as set]
+            [clj-commons.humanize.inflect :refer [pluralize-noun]]
+            [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]))
 
@@ -63,21 +66,9 @@
       capture-undo
       (run-command! command)))
 
-(defn- knots-from-root
-  "Returns a seq of knots at or above the given knot in the tree; order is from
-  knot 0 (the root) down to the initial knot."
-  [{:keys [knots]} initial-knot-id]
-  (loop [knot-id initial-knot-id
-         result ()]
-    (if (nil? knot-id)
-      result
-      (let [knot (get knots knot-id)]
-        (recur (:parent-id knot)
-               (cons knot result))))))
-
 (defn- collect-commands
   [tree initial-knot-id]
-  (->> (knots-from-root tree initial-knot-id)
+  (->> (tree/knots-from-root tree initial-knot-id)
        (drop 1)                                             ; no command for root knot
        (map :command)))
 
@@ -100,7 +91,7 @@
       capture-undo
       do-restart!))
 
-(defn- replay-to!*
+(defn- do-replay-to!
   [session knot-id]
   (let [commands (collect-commands (:tree session) knot-id)
         session' (reduce run-command! (do-restart! session) commands)]
@@ -111,12 +102,12 @@
   This will either verify that each knot's response is unchanged, or capture
   unblessed responses to be verified."
   [session knot-id]
-  (replay-to!* (capture-undo session) knot-id))
+  (do-replay-to! (capture-undo session) knot-id))
 
 (defn edit-command!
   [session knot-id new-command]
   (let [{:keys [tree]} session
-        parent-id (get-in tree [:knots knot-id :parent-id])
+        {:keys [parent-id]} (tree/get-knot tree knot-id)
         existing-child (tree/find-child-id tree parent-id new-command)]
     (if existing-child
       (assoc session :error
@@ -125,12 +116,12 @@
       (-> session
           capture-undo
           (update :tree tree/change-command knot-id new-command)
-          (replay-to!* knot-id)))))
+          (do-replay-to! knot-id)))))
 
 (defn insert-parent!
   [session knot-id new-command]
   (let [{:keys [tree]} session
-        parent-id (get-in tree [:knots knot-id :parent-id])
+        {:keys [parent-id]} (tree/get-knot tree knot-id)
         existing-child (tree/find-child-id tree parent-id new-command)]
     (if existing-child
       (assoc session :error
@@ -140,7 +131,7 @@
         (-> session
             capture-undo
             (update :tree tree/insert-parent knot-id new-id new-command)
-            (replay-to!* knot-id)
+            (do-replay-to! knot-id)
             (assoc :new-id new-id))))))
 
 (defn- knot-category
@@ -171,16 +162,18 @@
 (defn bless-to
   [session knot-id]
   (let [{:keys [tree]} session
-        ids (->> (knots-from-root tree knot-id)
+        ids (->> (tree/knots-from-root tree knot-id)
                  (map :id))]
     (-> session
         capture-undo
         (assoc :tree (reduce tree/bless-response tree ids)))))
 
+;; TODO: Not used in the UI, should be removed.
+
 (defn bless-all
   [session]
   (let [session' (capture-undo session)
-        ids (-> session' :tree :knots keys)]
+        ids (-> session' :tree tree/all-knots (map :id))]
     (assoc session :tree (reduce (fn [tree knot-id]
                                    (tree/bless-response tree knot-id))
                                  (:tree session')
@@ -224,6 +217,37 @@
   (-> session
       capture-undo
       (update :tree tree/delete-knot knot-id)))
+
+(defn q [s] (str \' s \'))
+
+(defn splice-out!
+  "Deletes a knot, reparenting its children to the knot's parent (unless there
+  are command conflicts)."
+  [session knot-id]
+  (let [{:keys [tree]} session
+        {:keys [parent-id children]} (tree/get-knot tree knot-id)
+        parent-commands (->> (tree/find-children tree parent-id)
+                             (remove #(= knot-id (:id %)))
+                             (map :command)
+                             set)
+        child-commands (->> (tree/find-children tree knot-id)
+                            (map :command)
+                            set)
+        overlaps (set/intersection parent-commands child-commands)]
+    (if (seq overlaps)
+      (assoc session :error
+                     (format "Parent already has %s %s"
+                             (pluralize-noun (count overlaps) "command")
+                             (->> overlaps
+                                  sort
+                                  (map q)
+                                  h/oxford)))
+      (let [replay-id (first children)]
+        (cond-> (-> session
+                    capture-undo
+                    (update :tree tree/splice-out knot-id))
+                replay-id (do-replay-to! replay-id))))))
+
 
 (defn kill!
   "Kills the session, and the underlying process. Returns nil."

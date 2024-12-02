@@ -8,13 +8,14 @@
     import { Category, type KnotNode } from "./types";
 
     interface Props {
-        knot: KnotNode;
-        processResult: (result: ActionResult) => void;
-        selectKnot: (id: number) => void;
-        focusNewCommand: (id: number) => void;
+        knot: KnotNode,
+        processResult: (result: ActionResult) => void,
+        selectKnot: (id: number) => void,
+        focusNewCommand: (id: number) => void,
+        alert: (message:string) => void
     }
 
-    let { knot, processResult, selectKnot, focusNewCommand }: Props = $props();
+    let { knot, processResult, selectKnot, focusNewCommand, alert }: Props = $props();
 
     let blessEnabled = $derived(knot.category != Category.OK);
     let blessClass = $derived(blessEnabled ? null : "text-gray-600 cursor-not-allowed");
@@ -92,6 +93,17 @@ async function completeEditProperty(payload : Payload) : Promise<boolean> {
     return true;
 }
 
+async function spliceOutKnot() {
+    const result = await post({action: "splice-out", id: knot.id});
+
+    processResult(result);
+
+    if (result.error) {
+        alert(result.error)
+    }
+
+}
+
 async function onEditCommand(newCommand: string) {
    return  await completeEditProperty({ action: "edit-command", id: knot.id, command: newCommand});
  }
@@ -145,6 +157,12 @@ const ddcolor = "hover:bg-slate-200";
                         Delete
                         <Helper>Delete this knot and all children</Helper>
                     </DropdownItem>
+                    <DropdownItem
+                    onclick={spliceOutKnot}
+                    class={ddcolor}>
+                    Splice Out
+                    <Helper>Delete this knot, reparent childen up</Helper>
+                </DropdownItem>
                 {/if}
                 <DropdownItem
                     onclick={bless}
