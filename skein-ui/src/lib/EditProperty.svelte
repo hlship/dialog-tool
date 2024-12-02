@@ -8,10 +8,10 @@
         value: string;
         change: (newValue: string) => Promise<boolean>,
         error?: string | null,
-        sub? : Snippet
+        help?: string
     };
 
-    let { title, value, change, error, sub }: Props = $props();
+    let { title, value, change, error, help }: Props = $props();
 
     let running = $state(false);
     let field;
@@ -61,7 +61,7 @@
         onkeydown={keydown}
         class="text-sm w-full"
     />
-    {#if sub}
-    {@render sub()}
+    {#if help}
+    <span class="text-sm text-slate-400">{help}</span>
     {/if}
 </Modal>

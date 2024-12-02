@@ -30,8 +30,6 @@
     }
 
     async function runNewCommand(_event) {
-        let priorParentId = parentId;
-
         const result = await postApi({
             action: "new-command",
             command: newCommand,

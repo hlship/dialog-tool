@@ -1,6 +1,6 @@
 <script lang="ts">
     import { category2color } from "./knot-color";
-    import * as common from "./common.svelte";
+    import { postApi, type ActionResult, type Payload } from "./common.svelte";
     import { Button, Dropdown, DropdownItem, Helper } from "flowbite-svelte";
     import KnotText from "./KnotText.svelte";
     import EditProperty from "./EditProperty.svelte";
@@ -8,29 +8,30 @@
     import { Category, type KnotNode } from "./types";
 
     interface Props {
-        knot: KnotNode;
-        processResult: (result: common.ActionResult) => void;
-        selectKnot: (id: number) => void;
-        focusNewCommand: (id: number) => void;
+        knot: KnotNode,
+        processResult: (result: ActionResult) => void,
+        selectKnot: (id: number) => void,
+        focusNewCommand: (id: number) => void,
+        alert: (message:string) => void
     }
 
-    let { knot, processResult, selectKnot, focusNewCommand }: Props = $props();
+    let { knot, processResult, selectKnot, focusNewCommand, alert }: Props = $props();
 
     let blessEnabled = $derived(knot.category != Category.OK);
     let blessClass = $derived(blessEnabled ? null : "text-gray-600 cursor-not-allowed");
-    let editLabel, editCommand;
+    let editLabel, editCommand, insertParent;
 
     let knotColor = $derived(category2color.get(knot.category));
     let controlColor = $derived(category2color.get(knot.treeCategory));
 
     let actionDropdownOpen = $state(false);
     let childDropdownOpen = $state(false);
-    let editCommandError : string = $state(null);
+    let error : string = $state(null);
 
-    async function post(payload: common.Payload): Promise<common.ActionResult> {
+    async function post(payload: Payload): Promise<ActionResult> {
         actionDropdownOpen = false;
 
-        let result = await common.postApi(payload);
+        let result = await postApi(payload);
 
         processResult(result);
 
@@ -69,32 +70,64 @@
         focusNewCommand(knot.id);
     }
 
-    function startEditLabel() {
-        actionDropdownOpen = false;
-        editLabel.activate();
-    }
-
-    async function onEditLabelComplete(newLabel : string) {
+    async function onEditLabel(newLabel : string) {
         post({ action: "label", id: knot.id, label: newLabel });
 
         return true;
     }
 
-function startEditCommand() {
+function activateField(field) {
     actionDropdownOpen = false;
-    editCommandError = null;
-    editCommand.activate();
+    error = null;
+    field.activate()   ; 
 }
 
-async function onEditCommandComplete(newCommand: string) {
-    const result = await post({ action: "edit-command", id: knot.id, command: newCommand});
+async function completeEditProperty(payload : Payload) : Promise<boolean> {
+    const result = await post(payload);
 
     if (result.error) {
-        editCommandError = result.error;
+        error = result.error;
         return false;
     }
-    else { return true; }
+
+    return true;
+}
+
+async function spliceOutKnot() {
+    const result = await post({action: "splice-out", id: knot.id});
+
+    processResult(result);
+
+    if (result.error) {
+        alert(result.error)
+    }
+
+    if( result.new_id) {
+        selectKnot(result.new_id);
+    }
+
+}
+
+async function onEditCommand(newCommand: string) {
+   return  await completeEditProperty({ action: "edit-command", id: knot.id, command: newCommand});
  }
+
+ async function onInsertParent(newCommand: string) {
+    const result =   await post({ action: "insert-parent", id: knot.id, command: newCommand});
+
+if (result.error) {
+    error = result.error;
+    return false;
+}
+
+    // This should recalculate the displayed knots to include the new parent
+    selectKnot(knot.id);
+
+return true;
+ }
+
+
+const ddcolor = "hover:bg-slate-200";
 
 </script>
 
@@ -117,48 +150,59 @@ async function onEditCommandComplete(newCommand: string) {
                 placement="left"
                 bind:open={actionDropdownOpen}
                 class="w-96 bg-slate-100" >
-                <DropdownItem onclick={replay} class="hover:bg-slate-200"
+                <DropdownItem onclick={replay} class={ddcolor}
                     >Replay
                     <Helper>Run from start to here</Helper>
                     </DropdownItem >
                 {#if knot.id != 0}
                     <DropdownItem
                         onclick={deleteKnot}
-                        class="hover:bg-slate-200" >
+                        class={ddcolor}>
                         Delete
                         <Helper>Delete this knot and all children</Helper>
                     </DropdownItem>
+                    <DropdownItem
+                    onclick={spliceOutKnot}
+                    class={ddcolor}>
+                    Splice Out
+                    <Helper>Delete this knot, reparent childen up</Helper>
+                </DropdownItem>
                 {/if}
                 <DropdownItem
                     onclick={bless}
-                    class="{blessClass} hover:bg-slate-200"
-                >
+                    class="{blessClass} {ddcolor}">
                     Bless
                     <Helper>Accept changes</Helper>
                 </DropdownItem>
                 {#if knot.id != 0}
                     <DropdownItem
                         onclick={blessTo}
-                        class="{blessClass} hover:bg-slate-200"
+                        class="{blessClass} {ddcolor}"
                     >
                         Bless To Here
                         <Helper>Bless all knots from root to here</Helper>
                     </DropdownItem>
                     <DropdownItem
-                        onclick={startEditLabel}
-                        class="hover:bg-slate-200">
+                        onclick={() => activateField(editLabel)}
+                        class={ddcolor}>
                         Edit Label
                         <Helper>Change label for knot</Helper>
                     </DropdownItem>
-                    <DropdownItem onclick={startEditCommand} class="hover:bg-slate-200">
+                    <DropdownItem onclick={() => activateField(editCommand)} class={ddcolor}>
                         Edit Command
                         <Helper>Change the command</Helper>
                     </DropdownItem>
                 {/if}
-                <DropdownItem onclick={newChild} class="hover:bg-slate-200">
+                <DropdownItem onclick={newChild} class={ddcolor}>
                     New Child
                     <Helper>Add a new command after this</Helper>
                 </DropdownItem>
+                {#if knot.id != 0}
+                <DropdownItem onclick={() => activateField(insertParent)} class={ddcolor}>
+                    Insert Parent
+                    <Helper>Insert a command before this</Helper>
+                </DropdownItem>
+                {/if}
             </Dropdown>
             {#if knot.children.length > 0}
                 <Button
@@ -192,20 +236,25 @@ async function onEditCommandComplete(newCommand: string) {
 
 <EditProperty
     title="Edit Label"
-    change={onEditLabelComplete}
+    change={onEditLabel}
     value={knot.data.label}
     bind:this={editLabel}
 />
 
 <EditProperty
 title="Edit Command"
-change={onEditCommandComplete}
+change={onEditCommand}
 value={knot.data.command}
-error={editCommandError}
-bind:this={editCommand}> 
-{#snippet sub()} 
-<span class="text-slate-500">After renaming, the Skein will replay to this knot.</span>
-{/snippet}
+error={error}
+bind:this={editCommand}
+help="After renaming, the Skein will replay to this knot"> 
 </EditProperty>
 
-
+<EditProperty
+title="Insert Parent"
+change={onInsertParent}
+value="z"
+error={error}
+bind:this={insertParent}
+help="New command will be inserted between this command and its parent"> 
+</EditProperty>

@@ -64,9 +64,23 @@
 
 (defn- edit-command
   [session payload]
-  (let [{:keys [id command]} payload
-        command' (prep-command command)]
-    (session/edit-command! session id command')))
+  (let [{:keys [id command]} payload]
+    (session/edit-command! session id (prep-command command))))
+
+(defn- expose-new-id-in-body
+  [session]
+  (let [{:keys [new-id]} session]
+    (if new-id
+      (-> session
+          (assoc ::extra-body {:new_id new-id})
+          (dissoc :new-id))
+      session)))
+
+(defn- insert-parent
+  [session payload]
+  (let [{:keys [id command]} payload]
+    (-> (session/insert-parent! session id (prep-command command))
+        expose-new-id-in-body)))
 
 (defn- save
   [session _payload]
@@ -88,12 +102,19 @@
   [session {:keys [id]}]
   (session/delete session id))
 
+(defn- splice-out
+  [session {:keys [id]}]
+  (->> (session/splice-out! session id)
+       expose-new-id-in-body))
+
 (defn- label
   [session {:keys [id label]}]
   (session/label session id (string/trim label)))
 
 (defn- start-batch
-  "Turns off undo tracking, so the session will start to "
+  "Turns off undo tracking, so the session will start to accumulate changes
+  from all the following commands, until end-batch, which renables undo
+  tracking and creates a single undo step for the entire batch."
   [session _]
   (-> session
       (session/enable-undo false)
@@ -138,13 +159,15 @@
    "label"        label
    "new-command"  new-command
    "edit-command" edit-command
+   "insert-parent" insert-parent
    "start-batch"  start-batch
    "end-batch"    end-batch
    "save"         save
    "replay"       replay
    "undo"         undo
    "redo"         redo
-   "delete"       delete})
+   "delete"       delete
+   "splice-out" splice-out})
 
 (defn- update-handler
   [request]
