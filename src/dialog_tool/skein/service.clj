@@ -43,7 +43,7 @@
                  (rand-int 10000))
         process (sk.process/start-debug-process! project seed)
         session (if tree
-                  (s/create-loaded! process skein-path tree)
+                  (s/create-loaded! process skein-path (tree/apply-default-selections tree))
                   (s/create-new! process skein-path))
         shutdown-fn (hk/run-server service-handler-proxy
                                    {:port          port
@@ -78,6 +78,7 @@
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/default.skein"
           nil)
+
 
   (@*shutdown)
 

@@ -5,7 +5,7 @@
     interface Props {
         response : string, 
         unblessed : string | undefined,
-        actions : Snippet
+        actions : Snippet | null
     }
 
 

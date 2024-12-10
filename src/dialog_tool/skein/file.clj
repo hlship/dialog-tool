@@ -27,7 +27,7 @@
 (defn- unblessed-sep?
   [s]
   (and (some? s)
-       (re-matches #"<+{4,}" s)))
+       (re-matches #"<{4,}" s)))
 
 (defn- s->long
   [s]
@@ -39,6 +39,9 @@
   (let [{:keys [meta knots]} tree]
     (p out "seed" (:seed meta))
     (doseq [knot-id (-> tree :knots keys sort)
+            ;; Purposely don't write the :selected property as that is only meaningful
+            ;; during editing and would cause many unwanted changes to the skein stored in
+            ;; version control.  We want skein changes to be reviewable.
             :let [{:keys [id parent-id response unblessed command label]} (get knots knot-id)]]
       (.println out sep)
       (p out "id" id)

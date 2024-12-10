@@ -32,7 +32,8 @@
     ;; Because we don't care about efficiency, we send the entire updated knot, rather than
     ;; sending just what's changed.
     {:updates     (mapv tree/knot->wire updates)
-     :removed_ids removed-ids}))
+     :removed_ids removed-ids
+     :selected    (:selected new-tree)}))
 
 (defn- bless
   [session payload]
@@ -111,6 +112,10 @@
   [session {:keys [id label]}]
   (session/label session id (string/trim label)))
 
+(defn- select
+  [session {:keys [id]}]
+  (session/select-knot session id))
+
 (defn- start-batch
   "Turns off undo tracking, so the session will start to accumulate changes
   from all the following commands, until end-batch, which renables undo
@@ -167,7 +172,8 @@
    "undo"         undo
    "redo"         redo
    "delete"       delete
-   "splice-out" splice-out})
+   "splice-out" splice-out
+   "select" select})
 
 (defn- update-handler
   [request]

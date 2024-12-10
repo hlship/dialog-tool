@@ -3,7 +3,8 @@
   starting at the root knot. Each knot has a unique id.
 
   Nodes have a response and optionally an unblessed response."
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [medley.core :as medley]))
 
 (defn new-tree
   [seed]
@@ -29,7 +30,9 @@
               :command   command
               :unblessed response}]
     (-> tree
+        (assoc :selected new-id)
         (assoc-in [:knots new-id] knot)
+        (assoc-in [:knots parent-id :selected] new-id)
         (update-in [:knots parent-id :children] conj* new-id))))
 
 (defn rebuild-children
@@ -108,10 +111,15 @@
 (defn knot->wire
   "Converts a single knot for transfer over the wire to the browser."
   [knot]
-  (let [{:keys [parent-id]} knot]
+  (let [{:keys [parent-id response unblessed]} knot
+        category (cond
+                   (nil? unblessed) :ok
+                   (nil? response) :new
+                   :else :error)]
     (-> knot
         (dissoc :parent-id)
-        (assoc :parent_id parent-id)
+        (assoc :parent_id parent-id
+               :category category)
         (update :children #(-> % sort vec)))))
 
 (defn ->wire
@@ -147,11 +155,28 @@
     (-> tree
         (add-child parent-id new-id new-command nil)
         (assoc-in [:knots knot-id :parent-id] new-id)
+        (assoc-in [:knots parent-id :selected] new-id)
         rebuild-children)))
 
 (defn get-knot
   [tree knot-id]
   (get-in tree [:knots knot-id]))
+
+(defn- adjust-selection-after-deletion
+  [tree parent-id child-id]
+  (let [{:keys [selected children]} (get-knot tree parent-id)]
+    (cond
+
+      (not= child-id selected)
+      tree
+
+      ;; Called after rebuild-children, so child-id will already have been
+      ;; removed from the :children key, which may be nil or empty.
+      (seq children)
+      (assoc-in tree [:knots parent-id :selected] (first children))
+
+      :else
+      (update tree [:knots parent-id] dissoc :selected))))
 
 (defn splice-out
   [tree knot-id]
@@ -161,7 +186,8 @@
                 tree
                 children)
         (update :knots dissoc knot-id)
-        rebuild-children)))
+        rebuild-children
+        (adjust-selection-after-deletion parent-id knot-id))))
 
 (defn knots-from-root
   "Returns a seq of knots at or above the given knot in the tree; order is from
@@ -175,3 +201,20 @@
         (let [knot (get knots knot-id)]
           (recur (:parent-id knot)
                  (cons knot result)))))))
+
+(defn apply-default-selections
+  "Called after loading the tree from a file, it sets up default selections for each knot as the first child."
+  [tree]
+  (update tree :knots
+          #(medley/map-vals
+             (fn [knot]
+               (let [{:keys [children]} knot]
+                 (cond-> knot
+                         (seq children) (assoc :selected (first children)))))
+             %)))
+
+(defn select-knot
+  "Updates the parent of the indicated knot to make this knot the selection."
+  [tree knot-id]
+  (let [{:keys [parent-id]} (get-knot tree knot-id)]
+    (assoc-in tree [:knots parent-id :selected] knot-id)))

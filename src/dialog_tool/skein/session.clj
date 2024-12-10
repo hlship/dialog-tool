@@ -168,6 +168,12 @@
         capture-undo
         (assoc :tree (reduce tree/bless-response tree ids)))))
 
+(defn select-knot
+  [session knot-id]
+  (-> session
+      (update :tree tree/select-knot knot-id)
+      (assoc-in [:tree :selected] knot-id)))
+
 ;; TODO: Not used in the UI, should be removed.
 
 (defn bless-all

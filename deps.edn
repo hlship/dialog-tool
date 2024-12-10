@@ -10,6 +10,7 @@
          org.clj-commons/pretty     {:mvn/version "3.2.0"}
          org.clj-commons/humanize   {:mvn/version "1.1"}
          io.github.hlship/cli-tools {:mvn/version "0.14"}
+         medley/medley              {:mvn/version "1.4.0"}
          ;; Bundled Babashka dependencies:
          selmer/selmer              {:mvn/version "1.12.61"}
          babashka/fs                {:mvn/version "0.5.22"}
