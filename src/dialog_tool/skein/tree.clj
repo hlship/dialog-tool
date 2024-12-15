@@ -218,3 +218,9 @@
   [tree knot-id]
   (let [{:keys [parent-id]} (get-knot tree knot-id)]
     (assoc-in tree [:knots parent-id :selected] knot-id)))
+
+(defn deselect
+  [tree knot-id]
+  (-> tree
+      (assoc-in [:knots knot-id :selected] nil)
+      (assoc :selected knot-id)))

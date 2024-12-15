@@ -116,6 +116,10 @@
   [session {:keys [id]}]
   (session/select-knot session id))
 
+(defn- deselect
+  [session {:keys [id]}]
+  (session/deselect session id))
+
 (defn- start-batch
   "Turns off undo tracking, so the session will start to accumulate changes
   from all the following commands, until end-batch, which renables undo
@@ -158,22 +162,23 @@
      :body   body}))
 
 (def action->handler
-  {"bless"        bless
-   "bless-all"    bless-all
-   "bless-to"     bless-to
-   "label"        label
-   "new-command"  new-command
-   "edit-command" edit-command
+  {"bless"         bless
+   "bless-all"     bless-all
+   "bless-to"      bless-to
+   "label"         label
+   "new-command"   new-command
+   "edit-command"  edit-command
    "insert-parent" insert-parent
-   "start-batch"  start-batch
-   "end-batch"    end-batch
-   "save"         save
-   "replay"       replay
-   "undo"         undo
-   "redo"         redo
-   "delete"       delete
-   "splice-out" splice-out
-   "select" select})
+   "start-batch"   start-batch
+   "end-batch"     end-batch
+   "save"          save
+   "replay"        replay
+   "undo"          undo
+   "redo"          redo
+   "delete"        delete
+   "splice-out"    splice-out
+   "select"        select
+   "deselect"      deselect})
 
 (defn- update-handler
   [request]

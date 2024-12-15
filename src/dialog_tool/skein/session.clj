@@ -260,3 +260,9 @@
   "Kills the session, and the underlying process. Returns nil."
   [session]
   (sk.process/kill! (:process session)))
+
+(defn deselect
+  [session id]
+  (-> session
+      capture-undo
+      (update :tree tree/deselect id)))

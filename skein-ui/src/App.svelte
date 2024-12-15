@@ -62,12 +62,10 @@
       knots.delete(id);
     }
 
-    if (result.selected) {
-      await jumpTo(result.selected);
-    }
-
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
+
+    await jumpTo(result.selected);
   }
 
   function knotNode(id: number): KnotNode {
@@ -152,13 +150,8 @@
 
   let newCommand;
 
-  function focusNewCommand(id: number) {
-    // id should be visible, this truncates the display list to that id
-    // such that the new command will be a child of the id.
-    // id2selected.delete(id);
-    // TODO: This should route through server
-
-    newCommand.focus();
+  async function focusNewCommand(id: number) : Promise<void> {
+    postPayload({action: "deselect", id: id})
   }
 </script>
 
