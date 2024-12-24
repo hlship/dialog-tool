@@ -32,7 +32,8 @@
     ;; Because we don't care about efficiency, we send the entire updated knot, rather than
     ;; sending just what's changed.
     {:updates     (mapv tree/knot->wire updates)
-     :removed_ids removed-ids}))
+     :removed_ids removed-ids
+     :focus       (:focus new-tree)}))
 
 (defn- bless
   [session payload]
@@ -41,10 +42,6 @@
 (defn- bless-to
   [session payload]
   (session/bless-to session (:id payload)))
-
-(defn- bless-all
-  [session _payload]
-  (session/bless-all session))
 
 (defn- prep-command
   [s]
@@ -111,6 +108,15 @@
   [session {:keys [id label]}]
   (session/label session id (string/trim label)))
 
+(defn- select
+  "Selects a knot (ensures it is visible); it may bring in its selected child as well; will be focused."
+  [session {:keys [id]}]
+  (session/select-knot session id))
+
+(defn- deselect
+  [session {:keys [id]}]
+  (session/deselect session id))
+
 (defn- start-batch
   "Turns off undo tracking, so the session will start to accumulate changes
   from all the following commands, until end-batch, which renables undo
@@ -153,21 +159,22 @@
      :body   body}))
 
 (def action->handler
-  {"bless"        bless
-   "bless-all"    bless-all
-   "bless-to"     bless-to
-   "label"        label
-   "new-command"  new-command
-   "edit-command" edit-command
+  {"bless"         bless
+   "bless-to"      bless-to
+   "label"         label
+   "new-command"   new-command
+   "edit-command"  edit-command
    "insert-parent" insert-parent
-   "start-batch"  start-batch
-   "end-batch"    end-batch
-   "save"         save
-   "replay"       replay
-   "undo"         undo
-   "redo"         redo
-   "delete"       delete
-   "splice-out" splice-out})
+   "start-batch"   start-batch
+   "end-batch"     end-batch
+   "save"          save
+   "replay"        replay
+   "undo"          undo
+   "redo"          redo
+   "delete"        delete
+   "splice-out"    splice-out
+   "select"        select
+   "deselect"      deselect})
 
 (defn- update-handler
   [request]

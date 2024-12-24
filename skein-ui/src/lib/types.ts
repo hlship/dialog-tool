@@ -3,6 +3,9 @@
 export type KnotData = {
     id: number,
     parent_id: number | null,
+    // Category is derived from response and unblessed
+    category: Category,
+    selected: number | null,
     label?: string,
     command: string,
     // When a command is first added, response is undefined, and unblessed is a string
@@ -12,11 +15,7 @@ export type KnotData = {
     children: number[];
 }
 
-// OK: response, no unblessed
-// NEW: unblessed, no response
-// ERROR: both response and unblessed, and they are not equal
-
-export enum Category { OK, NEW, ERROR }
+export type Category = "ok" | "new" | "error";
 
 export interface KnotChild {
     id: number,
@@ -27,11 +26,7 @@ export interface KnotChild {
 export interface KnotNode  {
     id: number,
     data: KnotData,
-    // Category for self:
-    category: Category,
     // Category inherited up from children:
     treeCategory: Category,
-    // Id this still needed?
-    selectedChildId: number | null,
     children: KnotChild[]
 }

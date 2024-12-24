@@ -1,4 +1,4 @@
-import { type KnotData, Category } from "./types";
+import { type KnotData, type Category } from "./types";
 
 const url = "//localhost:10140/api";
 
@@ -14,6 +14,8 @@ export type Payload = {
 export type ActionResult = {
     updates: KnotData[],
     removed_ids: number[],
+    // knot id to focus on (e.g., scroll to)
+    focus: number,
     enable_undo: boolean,
     enable_redo: boolean,
     // Only for new-command:
@@ -43,22 +45,14 @@ export async function postApi(payload: Payload): Promise<ActionResult> {
     return await response.json();
 }
 
-export function category(knot: KnotData): Category {
-    if (knot.unblessed == undefined) { return Category.OK; }
-
-    if (knot.response == undefined) { return Category.NEW; }
-
-    return Category.ERROR
-}
-
 export function mergeCategory(left: Category, right: Category): Category {
     // TODO: all this is really the max of the two inputs
 
-    if (left == Category.ERROR || right == Category.ERROR) { return Category.ERROR; }
+    if (left == "error" || right == "error") { return "error"; }
 
-    if (left == Category.NEW || right == Category.NEW) { return Category.NEW; }
+    if (left == "new" || right == "new") { return "new"; }
 
-    return Category.OK;
+    return "ok";
 }
 
 

@@ -168,16 +168,12 @@
         capture-undo
         (assoc :tree (reduce tree/bless-response tree ids)))))
 
-;; TODO: Not used in the UI, should be removed.
-
-(defn bless-all
-  [session]
-  (let [session' (capture-undo session)
-        ids (-> session' :tree tree/all-knots (map :id))]
-    (assoc session :tree (reduce (fn [tree knot-id]
-                                   (tree/bless-response tree knot-id))
-                                 (:tree session')
-                                 ids))))
+(defn select-knot
+  [session knot-id]
+  (-> session
+      capture-undo
+      (cond-> (not= knot-id 0) (update :tree tree/select-knot knot-id))
+      (assoc-in [:tree :focus] knot-id)))
 
 (defn save!
   "Saves the current tree state to the file.  Does not affect undo/redo."
@@ -254,3 +250,9 @@
   "Kills the session, and the underlying process. Returns nil."
   [session]
   (sk.process/kill! (:process session)))
+
+(defn deselect
+  [session id]
+  (-> session
+      capture-undo
+      (update :tree tree/deselect id)))

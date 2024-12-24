@@ -4,10 +4,10 @@
   import ReplayAllModal from "./lib/ReplayAllModal.svelte";
   import ModalAlert from "./lib/ModalAlert.svelte";
   import { onMount, tick } from "svelte";
-  import { load, category, postApi } from "./lib/common.svelte";
+  import { load, postApi } from "./lib/common.svelte";
   import * as d from "./lib/derived.svelte";
   import { SvelteMap } from "svelte/reactivity";
-  import { type KnotData, type KnotNode, Category } from "./lib/types";
+  import { type KnotData, type KnotNode } from "./lib/types";
   import { type ActionResult, type Payload } from "./lib/common.svelte";
   import {
     Button,
@@ -26,12 +26,11 @@
   } from "flowbite-svelte-icons";
 
   let knots = new SvelteMap<number, KnotData>();
-  let id2selected = new SvelteMap<number, number>();
+  let scrollToId = $state(null);
 
   let knotTotals = $derived(d.deriveKnotTotals(knots));
-  let displayIds = $derived(d.deriveDisplayIds(knots, id2selected));
-
-  let id2category = $derived(d.deriveKnotCategory(knots));
+  let displayIds = $derived(d.deriveDisplayIds(knots));
+  let id2TreeCategory = $derived(d.deriveId2TreeCategory(knots));
 
   // This is provided to the NewCommand component because any new command is created as a child of that.
   let lastSelectedKnotId = $derived(displayIds[displayIds.length - 1]);
@@ -55,25 +54,29 @@
     // the number of derived calculations; trusting that Svelte5 is smart about this.
     for (const knot of result.updates) {
       knots.set(knot.id, knot);
-      if (!loaded) {
-        id2selected.set(knot.id, knot.children[0]);
-      }
     }
 
     // When a node is deleted, check its parent node's selected child;
     // If they match, then delete the parent node's selected.
 
     for (const id of result.removed_ids) {
-      let parent_id = knots.get(id)?.parent_id;
-
-      if (id2selected.get(parent_id) == id) {
-        id2selected.delete(parent_id);
-      }
       knots.delete(id);
     }
 
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
+
+    const focus =  result.focus;
+
+    const focusKnot = knots.get(focus);
+
+    if (! focusKnot?.selected) {
+      newCommand.focus();
+    }
+    else {
+      scrollToId = focus;
+    }
+
   }
 
   function knotNode(id: number): KnotNode {
@@ -82,15 +85,13 @@
     return {
       id,
       data,
-      category: category(data),
-      treeCategory: id2category.get(id) || Category.OK,
-      selectedChildId: id2selected.get(id),
+      treeCategory: id2TreeCategory.get(id) || "ok",
       children: data.children.map((childId) => {
         const child = knots.get(childId);
         return {
           id: childId,
           label: child.command,
-          treeCategory: id2category.get(childId) || Category.OK,
+          treeCategory: id2TreeCategory.get(childId) || "ok",
         };
       }),
     };
@@ -132,44 +133,14 @@
     replayAllModal.run();
   }
 
-  function selectKnot(id: number): void {
-    let childId = id;
-    while (childId != undefined) {
-      const knot = knots.get(childId);
-      const parentId = knot.parent_id;
-
-      id2selected.set(parentId, childId);
-
-      childId = parentId;
-    }
-  }
-
-  async function jumpTo(knotId) {
-    // Wasn't happy about this before, even less so w/ Svelte5.
-    let elementId = `knot_${knotId}`;
-    let element = document.getElementById(elementId);
-
-    if (element == undefined) {
-      selectKnot(knotId);
-
-      while (element == undefined) {
-        await tick();
-        element = document.getElementById(elementId);
-      }
-    }
-
-    // TODO: If the element has no children, then scroll to the command input field instead.
-    element.scrollIntoView({ behavior: "smooth", block: "end" });
+  async function selectKnot(id: number): Promise<void> {
+    await postPayload({ action: "select", id: id });
   }
 
   let newCommand;
 
-  function focusNewCommand(id: number) {
-    // id should be visible, this truncates the display list to that id
-    // such that the new command will be a child of the id.
-    id2selected.delete(id);
-
-    newCommand.focus();
+  async function focusNewCommand(id: number): Promise<void> {
+    postPayload({ action: "deselect", id: id });
   }
 </script>
 
@@ -186,20 +157,20 @@
     </NavBrand>
     <div class="mx-0 inline-flex">
       <div class="text-black bg-green-400 p-2 font-semibold rounded-l-lg">
-        {knotTotals.get(Category.OK)}
+        {knotTotals.ok}
       </div>
       <div class="text-black bg-yellow-200 p-2 font-semibold">
-        {knotTotals.get(Category.NEW)}
+        {knotTotals.new}
       </div>
       <div class="text-black bg-red-500 p-2 font-semibold rounded-r-lg">
-        {knotTotals.get(Category.ERROR)}
+        {knotTotals.error}
       </div>
       <Button class="ml-8" color="blue" size="xs"
         >Jump <ChevronDownOutline /></Button
       >
       <Dropdown class="overflow-y-auto h-96">
         {#each labelItems as item}
-          <DropdownItem on:click={() => jumpTo(item.id)}
+          <DropdownItem on:click={() => selectKnot(item.id)}
             >{item.label}</DropdownItem
           >
         {/each}
@@ -231,6 +202,7 @@
           {selectKnot}
           {focusNewCommand}
           {alert}
+          scrollTo={knotId == scrollToId}
         />
       {/each}
     {/if}

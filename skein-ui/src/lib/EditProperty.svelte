@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { tick, type Snippet } from "svelte";
+    import { tick } from "svelte";
     import { Modal, Alert } from "flowbite-svelte";
     import { ExclamationCircleSolid } from "flowbite-svelte-icons";
 

@@ -49,11 +49,11 @@
 
 (defcommand skein
   "Runs the Skein UI to test the Dialog project."
-  [seed [nil "--seed NUMBER" "Random number generator seed to use, if creating a new skein."
+  [seed [nil "--seed NUMBER" "Random number generator seed to use, if creating a new skein"
          :parse-fn parse-long
          :validate [some? "Not a number"
                     pos-int? "Must be at least one"]]
-   skein ["-f" "--file SKEIN" "Path to file containing the Skein; will be created if necessary."
+   skein ["-f" "--file SKEIN" "Path to file containing the Skein; will be created if necessary"
           :default "default.skein"]]
   (let [project (pf/read-project)
         {:keys [port]} (service/start! project skein (cond-> nil
@@ -98,7 +98,7 @@
 
 (defn- run-tests
   [project width skein-path]
-  (let [tree      (sk.file/load-skein skein-path)
+  (let [tree (sk.file/load-skein skein-path)
         process   (sk.process/start-debug-process! project (get-in tree [:meta :seed]))
         session   (-> (s/create-loaded! process skein-path tree)
                       (s/enable-undo false))

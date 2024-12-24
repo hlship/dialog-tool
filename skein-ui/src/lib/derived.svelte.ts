@@ -1,7 +1,7 @@
-import { type KnotData, Category } from "./types";
-import { category, mergeCategory } from "./common.svelte";
+import { type KnotData, type Category } from "./types";
+import { mergeCategory } from "./common.svelte";
 
-export function deriveKnotCategory(knots: Map<number, KnotData>) {
+export function deriveId2TreeCategory(knots: Map<number, KnotData>) {
     let result = new Map<number, Category>();
 
     // ids of knots whose own category is not OK; used
@@ -9,9 +9,9 @@ export function deriveKnotCategory(knots: Map<number, KnotData>) {
     let failedIds = Array<number>();
 
     for (const [id, knot] of knots) {
-        const c = category(knot);
+        const c = knot.category;
 
-        if (c != Category.OK) {
+        if (c != "ok") {
             result.set(id, c);
             failedIds.push(id);
         }
@@ -21,16 +21,16 @@ export function deriveKnotCategory(knots: Map<number, KnotData>) {
     // Lots of redundant work here, but efficiency is not necessary.
 
     for (const failedId of failedIds) {
-        let c = result.get(failedId) || Category.OK;
+        let c = result.get(failedId) || "ok";
 
-        if (c != Category.OK) {
+        if (c != "ok") {
             let id = failedId;
             while (true) {
                 const parentId = knots.get(id)?.parent_id;
 
                 if (parentId == undefined) { break; }
 
-                c = mergeCategory(c, result.get(parentId) || Category.OK);
+                c = mergeCategory(c, result.get(parentId) ||"ok");
 
                 result.set(parentId, c);
 
@@ -44,7 +44,8 @@ export function deriveKnotCategory(knots: Map<number, KnotData>) {
 
 
 // derives the list of of knots ids to display, starting with 0, and working forward from each node's selected child id.
-export function deriveDisplayIds(knots: Map<number, KnotData>, selected: Map<number, number>) {
+export function deriveDisplayIds(knots: Map<number, KnotData>) {
+    
     let nodeIds = Array<number>();
     let id = 0;
 
@@ -55,39 +56,33 @@ export function deriveDisplayIds(knots: Map<number, KnotData>, selected: Map<num
 
         nodeIds.push(id);
 
-        id = selected.get(id) || -1;
+        id = knot.selected || -1;
     }
 
     return nodeIds;
 };
 
 // Using knots map, derived total number of knots
-export function deriveKnotTotals(knots: Map<number, KnotData>): Map<Category, number> {
+export function deriveKnotTotals(knots: Map<number, KnotData>): Record<Category, number> {
 
-    let result = new Map<Category, number>();
-    result.set(Category.OK, 0);
-    result.set(Category.NEW,  0);
-    result.set(Category.ERROR, 0);
+    let result = { ok: 0, new: 0, error: 0 }
 
     for (const [_, knot] of knots) {
-
-        const c = category(knot);
-        
-        result.set(c, result.get(c) + 1);
+        result[knot.category] += 1
     }
-    
+
     return result;
 }
 
-type LabelTuple = {
+type KnotLabel = {
     label: string,
     id: number
 }
 
-// Using knots map, derives a list of label tuples [String, long]
+// Using knots map, derives a list of KnotLabels
 // in sorted order.
-export function deriveLabels(knots: Map<number, KnotData>): LabelTuple[] {
-    let result = new Array<LabelTuple>();
+export function deriveLabels(knots: Map<number, KnotData>): KnotLabel[] {
+    let result = new Array<KnotLabel>();
 
     for (const [id, knot] of knots) {
         if (knot.label) {

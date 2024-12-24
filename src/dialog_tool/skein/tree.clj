@@ -3,11 +3,13 @@
   starting at the root knot. Each knot has a unique id.
 
   Nodes have a response and optionally an unblessed response."
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [medley.core :as medley]))
 
 (defn new-tree
   [seed]
   {:meta  {:seed seed}
+   :focus 0                                                 ; knot id to focus on
    :knots {0 {:id    0
               :label "START"}}})
 
@@ -29,7 +31,9 @@
               :command   command
               :unblessed response}]
     (-> tree
+        (assoc :focus new-id)
         (assoc-in [:knots new-id] knot)
+        (assoc-in [:knots parent-id :selected] new-id)
         (update-in [:knots parent-id :children] conj* new-id))))
 
 (defn rebuild-children
@@ -108,10 +112,15 @@
 (defn knot->wire
   "Converts a single knot for transfer over the wire to the browser."
   [knot]
-  (let [{:keys [parent-id]} knot]
+  (let [{:keys [parent-id response unblessed]} knot
+        category (cond
+                   (nil? unblessed) :ok
+                   (nil? response) :new
+                   :else :error)]
     (-> knot
         (dissoc :parent-id)
-        (assoc :parent_id parent-id)
+        (assoc :parent_id parent-id
+               :category category)
         (update :children #(-> % sort vec)))))
 
 (defn ->wire
@@ -142,16 +151,35 @@
   (assoc-in tree [:knots knot-id :command] new-command))
 
 (defn insert-parent
-  [tree knot-id new-id new-command]
-  (let [parent-id (get-in tree [:knots knot-id :parent-id])]
+  "Inserts a new node with id new-parent-id and command new-command as the new parent
+   of knot-id."
+  [tree knot-id new-parent-id new-command]
+  (let [{:keys [parent-id]} (get-in tree [:knots knot-id])]
     (-> tree
-        (add-child parent-id new-id new-command nil)
-        (assoc-in [:knots knot-id :parent-id] new-id)
+        (add-child parent-id new-parent-id new-command nil)
+        (update-in [:knots new-parent-id] assoc :selected knot-id :children [knot-id])
+        (assoc-in [:knots knot-id :parent-id] new-parent-id)
         rebuild-children)))
 
 (defn get-knot
   [tree knot-id]
   (get-in tree [:knots knot-id]))
+
+(defn- adjust-selection-after-deletion
+  [tree parent-id child-id]
+  (let [{:keys [selected children]} (get-knot tree parent-id)]
+    (cond
+
+      (not= child-id selected)
+      tree
+
+      ;; Called after rebuild-children, so child-id will already have been
+      ;; removed from the :children key, which may be nil or empty.
+      (seq children)
+      (assoc-in tree [:knots parent-id :selected] (first children))
+
+      :else
+      (update tree [:knots parent-id] dissoc :selected))))
 
 (defn splice-out
   [tree knot-id]
@@ -161,7 +189,9 @@
                 tree
                 children)
         (update :knots dissoc knot-id)
-        rebuild-children)))
+        (assoc :focus parent-id)
+        rebuild-children
+        (adjust-selection-after-deletion parent-id knot-id))))
 
 (defn knots-from-root
   "Returns a seq of knots at or above the given knot in the tree; order is from
@@ -175,3 +205,33 @@
         (let [knot (get knots knot-id)]
           (recur (:parent-id knot)
                  (cons knot result)))))))
+
+(defn apply-default-selections
+  "Called after loading the tree from a file, it sets up default selections for each knot as the first child."
+  [tree]
+  (update tree :knots
+          #(medley/map-vals
+             (fn [knot]
+               (let [{:keys [children]} knot]
+                 (cond-> knot
+                         (seq children) (assoc :selected (first children)))))
+             %)))
+
+(defn select-knot
+  "Updates the parent of the indicated knot to make this knot selected, then recurses upwards
+  doing the same until it hits the root."
+  [tree knot-id]
+  (loop [knot-id knot-id
+         tree tree]
+    (if (= 0 knot-id)
+      tree
+      (let [{:keys [parent-id selected]} (get-knot tree knot-id)]
+        (if (= knot-id selected)
+          tree
+          (recur parent-id (assoc-in tree [:knots parent-id :selected] knot-id)))))))
+
+(defn deselect
+  [tree knot-id]
+  (-> tree
+      (assoc-in [:knots knot-id :selected] nil)
+      (assoc :focus knot-id)))
