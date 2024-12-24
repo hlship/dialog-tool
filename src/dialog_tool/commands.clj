@@ -34,7 +34,7 @@
     (cli/exit exit)))
 
 (defcommand new-project
-  "Creates a new empty Dialog project from a template.
+  "Create a new empty Dialog project from a template.
 
   The name of the project will match the directory name, if the project name is omitted."
   [:command "new"
@@ -48,7 +48,7 @@
                                  {:project-name (or project-name project-dir)}))
 
 (defcommand skein
-  "Runs the Skein UI to test the Dialog project."
+  "Run the Skein UI to test the project."
   [seed [nil "--seed NUMBER" "Random number generator seed to use, if creating a new skein"
          :parse-fn parse-long
          :validate [some? "Not a number"
@@ -68,7 +68,7 @@
   @(promise))
 
 (defcommand build
-  "Compiles the project to a file ready to execute with an interpreter."
+  "Compile the project to a file ready to execute with an interpreter."
   [format (cli/select-option "-f" "--format FORMAT"
                              "Output format:"
                              #{:zblorb :z5 :z8 :aa})
@@ -80,7 +80,7 @@
                         :format format}))
 
 (defcommand bundle
-  "Bundles the project into a Zip archive that can be deployed to a web host."
+  "Bundle the project into a Zip archive that can be deployed to a web host."
   []
   (bundle/bundle-project (pf/read-project) nil))
 
@@ -121,7 +121,7 @@
     totals))
 
 (defcommand test-project
-  "Uses the available skein(s) to test the project.
+  "Use the available skein(s) to test the project.
 
   Outputs the number of correct knots, the number of new knots
   (no prior response), and the number of error knots (conflicting response).
