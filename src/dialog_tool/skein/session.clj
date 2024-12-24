@@ -171,19 +171,9 @@
 (defn select-knot
   [session knot-id]
   (-> session
-      (update :tree tree/select-knot knot-id)
-      (assoc-in [:tree :selected] knot-id)))
-
-;; TODO: Not used in the UI, should be removed.
-
-(defn bless-all
-  [session]
-  (let [session' (capture-undo session)
-        ids (-> session' :tree tree/all-knots (map :id))]
-    (assoc session :tree (reduce (fn [tree knot-id]
-                                   (tree/bless-response tree knot-id))
-                                 (:tree session')
-                                 ids))))
+      capture-undo
+      (cond-> (not= knot-id 0) (update :tree tree/select-knot knot-id))
+      (assoc-in [:tree :focus] knot-id)))
 
 (defn save!
   "Saves the current tree state to the file.  Does not affect undo/redo."

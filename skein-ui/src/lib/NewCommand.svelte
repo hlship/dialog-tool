@@ -25,7 +25,7 @@
         // TODO: Typescripty way to ensure is HTMLElement
         if (element as HTMLElement) {
             element.focus();
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            element.scrollIntoView({ behavior: "smooth", block: "end" });
         }
     }
 

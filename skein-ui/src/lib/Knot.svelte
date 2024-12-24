@@ -9,13 +9,16 @@
 
     interface Props {
         knot: KnotNode;
-        processResult: (result: ActionResult) => Promise<void>;
+        scrollTo: boolean;
+        processResult: (result: ActionResult) => void;
         selectKnot: (id: number) => Promise<void>;
         focusNewCommand: (id: number) => Promise<void>;
         alert: (message: string) => void;
     }
 
-    let { knot, processResult, selectKnot, focusNewCommand, alert }: Props =
+    let { knot, processResult, selectKnot, focusNewCommand, alert,
+        scrollTo
+     }: Props =
         $props();
 
     let blessEnabled = $derived(knot.data.category != "ok");
@@ -118,7 +121,7 @@
         });
     }
 
-    async function onInsertParent(newCommand: string) {
+    async function onInsertParent(newCommand: string) : Promise<boolean> {
         const result = await post({
             action: "insert-parent",
             id: knot.id,
@@ -130,16 +133,21 @@
             return false;
         }
 
-        // This should recalculate the displayed knots to include the new parent
-        selectKnot(knot.id);
-
         return true;
     }
 
     const ddcolor = "hover:bg-slate-200";
+
+    var outerDiv;
+
+    $effect(() => {
+        if (scrollTo && outerDiv) {
+            outerDiv.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+    });
 </script>
 
-<div class="border-x-4 {knotColor.border}" id="knot_{knot.id}">
+<div class="border-x-4 {knotColor.border}" bind:this={outerDiv}>
     <KnotText response={knot.data.response} unblessed={knot.data.unblessed}>
         {#snippet actions()}
             <div

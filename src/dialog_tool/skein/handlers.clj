@@ -33,7 +33,7 @@
     ;; sending just what's changed.
     {:updates     (mapv tree/knot->wire updates)
      :removed_ids removed-ids
-     :selected    (:selected new-tree)}))
+     :focus       (:focus new-tree)}))
 
 (defn- bless
   [session payload]
@@ -42,10 +42,6 @@
 (defn- bless-to
   [session payload]
   (session/bless-to session (:id payload)))
-
-(defn- bless-all
-  [session _payload]
-  (session/bless-all session))
 
 (defn- prep-command
   [s]
@@ -113,6 +109,7 @@
   (session/label session id (string/trim label)))
 
 (defn- select
+  "Selects a knot (ensures it is visible); it may bring in its selected child as well; will be focused."
   [session {:keys [id]}]
   (session/select-knot session id))
 
@@ -163,7 +160,6 @@
 
 (def action->handler
   {"bless"         bless
-   "bless-all"     bless-all
    "bless-to"      bless-to
    "label"         label
    "new-command"   new-command

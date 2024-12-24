@@ -14,8 +14,8 @@ export type Payload = {
 export type ActionResult = {
     updates: KnotData[],
     removed_ids: number[],
-    // knot id to select (scroll to)
-    selected: number | null,
+    // knot id to focus on (e.g., scroll to)
+    focus: number,
     enable_undo: boolean,
     enable_redo: boolean,
     // Only for new-command:

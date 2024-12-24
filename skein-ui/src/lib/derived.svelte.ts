@@ -44,7 +44,8 @@ export function deriveId2TreeCategory(knots: Map<number, KnotData>) {
 
 
 // derives the list of of knots ids to display, starting with 0, and working forward from each node's selected child id.
-export function deriveDisplayIds(knots: Map<number, KnotData>,) {
+export function deriveDisplayIds(knots: Map<number, KnotData>) {
+    
     let nodeIds = Array<number>();
     let id = 0;
 

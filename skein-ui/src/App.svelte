@@ -26,6 +26,7 @@
   } from "flowbite-svelte-icons";
 
   let knots = new SvelteMap<number, KnotData>();
+  let scrollToId = $state(null);
 
   let knotTotals = $derived(d.deriveKnotTotals(knots));
   let displayIds = $derived(d.deriveDisplayIds(knots));
@@ -48,7 +49,7 @@
     modalAlertRunning = true;
   }
 
-  async function processResult(result: ActionResult): Promise<void> {
+  function processResult(result: ActionResult): void {
     // The Svelte4 code did all the updates in a single block, to minimize
     // the number of derived calculations; trusting that Svelte5 is smart about this.
     for (const knot of result.updates) {
@@ -65,7 +66,17 @@
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
 
-    await jumpTo(result.selected);
+    const focus =  result.focus;
+
+    const focusKnot = knots.get(focus);
+
+    if (! focusKnot?.selected) {
+      newCommand.focus();
+    }
+    else {
+      scrollToId = focus;
+    }
+
   }
 
   function knotNode(id: number): KnotNode {
@@ -126,32 +137,10 @@
     await postPayload({ action: "select", id: id });
   }
 
-  async function jumpTo(knotId): Promise<void> {
-    const knot = knots.get(knotId);
-
-    // When selecting a knot with no children, or no selected child, then focus on the newCommand
-    // to let the user enter a command.
-    if (!knot.selected) {
-      newCommand.focus();
-      return;
-    }
-
-    // Wasn't happy about this before, even less so w/ Svelte5.
-    let elementId = `knot_${knotId}`;
-    let element = document.getElementById(elementId);
-
-    while (element == undefined) {
-      await tick();
-      element = document.getElementById(elementId);
-    }
-
-    element.scrollIntoView({ behavior: "smooth", block: "end" });
-  }
-
   let newCommand;
 
-  async function focusNewCommand(id: number) : Promise<void> {
-    postPayload({action: "deselect", id: id})
+  async function focusNewCommand(id: number): Promise<void> {
+    postPayload({ action: "deselect", id: id });
   }
 </script>
 
@@ -181,7 +170,7 @@
       >
       <Dropdown class="overflow-y-auto h-96">
         {#each labelItems as item}
-          <DropdownItem on:click={() => jumpTo(item.id)}
+          <DropdownItem on:click={() => selectKnot(item.id)}
             >{item.label}</DropdownItem
           >
         {/each}
@@ -213,6 +202,7 @@
           {selectKnot}
           {focusNewCommand}
           {alert}
+          scrollTo={knotId == scrollToId}
         />
       {/each}
     {/if}
