@@ -3,7 +3,7 @@
   (:require [babashka.fs :as fs]
             [dialog-tool.skein.tree :as tree]
             [clojure.java.io :as io])
-  (:import (java.io IOException PrintWriter)
+  (:import (java.io FileNotFoundException IOException PrintWriter)
            (clojure.lang LineNumberingPushbackReader)))
 
 (def ^:private sep
@@ -145,7 +145,7 @@
       (recur (assoc-in tree [:knots (:id knot)] knot))
       tree)))
 
-(defn read-skein
+(defn read-tree
   [^LineNumberingPushbackReader in]
   (try
     (-> (read-meta in)
@@ -159,17 +159,19 @@
                                      m line)
                              e))))))
 
-(defn load-skein
+(defn load-tree
   [path]
+  (when-not (fs/exists? path)
+    (throw (FileNotFoundException. (str "No such file: " path))))
   (with-open [reader (-> path
                          fs/path
                          fs/file
                          io/reader
                          LineNumberingPushbackReader.)]
-    (read-skein reader)))
+    (read-tree reader)))
 
-(defn save-skein
-  "Saves the Skein to the file identified by the given path.  Writes the file atomically,
+(defn save-tree
+  "Saves the Skein tree to the file identified by the given path.  Writes the file atomically,
   then returns the tree."
   [tree path]
   (let [path'     (fs/path path)

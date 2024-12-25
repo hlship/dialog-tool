@@ -235,3 +235,10 @@
   (-> tree
       (assoc-in [:knots knot-id :selected] nil)
       (assoc :focus knot-id)))
+
+(defn find-by-label
+  [tree label]
+  (->> tree
+       all-knots
+       (filter #(= label (:label %)))
+       first))

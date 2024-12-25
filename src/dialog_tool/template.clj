@@ -52,6 +52,16 @@
                       io/output-stream)]
     (io/copy in out)))
 
+(defn copy-string
+  "Write the content of a string to a file."
+  [^String s target]
+  (setup-target target)
+  (with-open [w (-> target
+                    maybe-create
+                    fs/file
+                    io/writer)]
+    (.write w s)))
+
 (defn create-from-template
   [dir opts]
   (perr [:cyan "Creating " dir " ..."])

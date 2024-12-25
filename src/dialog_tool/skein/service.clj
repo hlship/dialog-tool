@@ -37,7 +37,7 @@
   (let [{:keys [port seed]
          :or   {port 10140}} opts
         tree (when (fs/exists? skein-path)
-               (sk.file/load-skein skein-path))
+               (sk.file/load-tree skein-path))
         seed (or (get-in tree [:meta :seed])
                  seed
                  (rand-int 10000))

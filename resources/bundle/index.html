@@ -21,6 +21,9 @@
 		<li><a href="introduction-to-if.pdf">Introduction to IF</a> <span class="filetype">(pdf,&nbsp;612KB)</span></li>
 		<li><a href="play-if-card.pdf">IF in One Page</a> <span class="filetype">(pdf, 263KB)</li>
 		<li><a href="play.html">Play In-Browser</a> <span class="filetype">(link)</span></li></div>
+		{% if walkthrough-description %}
+		<li><a href="walkthrough.txt">Walkthrough</a> <span class="filetype">({{walkthrough-description}})</span></li>
+		{% endif %}
 	</ul>
 </div>
 
