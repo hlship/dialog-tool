@@ -179,7 +179,7 @@
   "Saves the current tree state to the file.  Does not affect undo/redo."
   [session]
   (let [{:keys [tree skein-path]} session]
-    (sk.file/save-skein tree skein-path)
+    (sk.file/save-tree tree skein-path)
     session))
 
 (defn undo

@@ -140,8 +140,10 @@ You are in an endless, featureless space. Just what will you create within it?
 ```
 
 Again, the title, author, release number, and other details can be configured by editing `meta.dg`.
-The file `project.dg` contains the room and player and not anything else.  From here, it is all about
+The file `magnum-opus.dg` contains the room and player and not anything else.  From here, it is all about
 your imagination.
+
+However, you are likely to spend very little time directly running the debugger; instead, you'll run the debugger indirectly, via the Skein.
 
 
 ## Running the Skein
@@ -154,7 +156,7 @@ a web-based user interface.
 
 The Skein represents your project as a tree of "knots"; each knot is a command. You can
 add new commands beneath any knot, and you can also rerun the project to any knot
-and the skein will identify anything that has changed.  You can even run *all* possible branches
+and the skein will identify any text that has changed.  You can even run *all* possible branches
 to completion.
 
 > More on this later
@@ -179,7 +181,7 @@ such as [Spatterlight](https://github.com/angstsmurf/spatterlight):
 
 ![Spatterlight Screen](images/splatterlight.png)
 
-You can see that some of the game's meta data is also presented, such as the title, and the "blurb". This is all customized in the `meta.dg` file.
+You can see that some of the game's metadata is also presented, such as the title, and the "blurb". This is all customized in the `meta.dg` file.
 
 
 You can upload your zblorb file to the [Interactive Fiction Database](https://ifdb.org/).
@@ -202,13 +204,12 @@ Bundle creates a directory and populates it with a custom page for your project;
 
 ![Bundled Web Page](images/web-bundle-loaded.png)
 
+### Walkthrough
 
+If you default skein contains a knot labeled "WALKTHROUGH", then `dgt bundle` will extract a walkthrough (the text from the start of the game to that specific knot), and include that in the bundled `index.html` page.
 
-## dgt 2.0 TODO / IDEAS
+If you like, you may have a secondary skein for the walkthrough; add a :walkthrough-skein key to `dialog.edn` to specify which skein should be used for the walkthrough.
 
-- Be able to run the Skein against compiled zcode via dumbfrotz
- - Could we generate (live?) documentation by parsing the source?
-- Would JSON format, instead of EDN, improve adoption/usability?
 
 ## License
 

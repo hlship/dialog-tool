@@ -82,7 +82,7 @@
 (defcommand bundle
   "Bundle the project into a Zip archive that can be deployed to a web host."
   []
-  (bundle/bundle-project (pf/read-project) nil))
+  (bundle/bundle-project (pf/read-project)))
 
 (defn- trim-dot
   [path]
@@ -98,7 +98,7 @@
 
 (defn- run-tests
   [project width skein-path]
-  (let [tree (sk.file/load-skein skein-path)
+  (let [tree (sk.file/load-tree skein-path)
         process   (sk.process/start-debug-process! project (get-in tree [:meta :seed]))
         session   (-> (s/create-loaded! process skein-path tree)
                       (s/enable-undo false))
