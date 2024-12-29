@@ -4,6 +4,7 @@
             [clj-commons.ansi :refer [perr]]
             [clojure.string :as str]
             [dialog-tool.project-file :as pf]
+            [dialog-tool.util :refer [fail]]
             [net.lewisship.cli-tools :as cli]))
 
 (defn- dialogc-args
@@ -54,9 +55,11 @@
 (defn build-project
   "Builds a project; returns the path of the compiled file."
   [project options]
-  (let [{:keys [format test?]} options
+  (let [{:keys [format debug?]} options
         format     (or format (:format project))
-        output-dir (fs/path "out" (if test? "test" "release"))
-        sources    (pf/expand-sources project {:debug? test?})]
+        output-dir (fs/path "out" (if debug? "test" "release"))
+        sources    (pf/expand-sources project {:debug? debug?})]
+    (when-not format
+      (fail "No :format defined for project"))
     (fs/create-dirs output-dir)
     (invoke-dialogc format project sources output-dir options)))

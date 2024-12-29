@@ -16,20 +16,22 @@
             [dialog-tool.skein.service :as service]
             [dialog-tool.project-file :as pf]))
 
+(def debug-opt ["-d" "--debug" "Include debug sources"])
+
 (defcommand debug
   "Run the project in the Dialog debugger."
   [width ["-w" "--width NUMBER" "Output width (omit to use terminal width)"
           :parse-fn parse-long
           :validate [some? "Not a number"
                      pos-int? "Must be at least one"]]]
-  (let [project    (pf/read-project)
+  (let [project (pf/read-project)
         extra-args (cond-> []
-                     width (conj "--width" width))
-        cmd        (-> ["dgdebug" "--quit"]
-                       (into extra-args)
-                       (into (pf/expand-sources project {:debug? true})))
-        *process   (p/process {:cmd     cmd
-                               :inherit true})
+                           width (conj "--width" width))
+        cmd (-> ["dgdebug" "--quit"]
+                (into extra-args)
+                (into (pf/expand-sources project {:debug? true})))
+        *process (p/process {:cmd     cmd
+                             :inherit true})
         {:keys [exit]} @*process]
     (cli/exit exit)))
 
@@ -57,8 +59,8 @@
           :default "default.skein"]]
   (let [project (pf/read-project)
         {:keys [port]} (service/start! project skein (cond-> nil
-                                                       seed (assoc :seed seed)))
-        url     (str "http://localhost:" port "/index.html")]
+                                                             seed (assoc :seed seed)))
+        url (str "http://localhost:" port "/index.html")]
     (pout [:bold (if (fs/exists? skein) "Loading" "Creating")
            " " skein " ..."])
     (pout [:faint "Skein service started on port " port " ..."])
@@ -72,12 +74,12 @@
   [format (cli/select-option "-f" "--format FORMAT"
                              "Output format:"
                              #{:zblorb :z5 :z8 :aa})
-   testing ["-t" "--testing" "Compile for testing (include debug sources)"]
+   debug? debug-opt
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
   (build/build-project (pf/read-project)
-                       {:test?    testing
+                       {:debug?   debug?
                         :verbose? verbose
-                        :format format}))
+                        :format   format}))
 
 (defcommand bundle
   "Bundle the project into a Zip archive that can be deployed to a web host."
@@ -99,23 +101,23 @@
 (defn- run-tests
   [project width skein-path]
   (let [tree (sk.file/load-tree skein-path)
-        process   (sk.process/start-debug-process! project (get-in tree [:meta :seed]))
-        session   (-> (s/create-loaded! process skein-path tree)
-                      (s/enable-undo false))
-        leaf-ids  (->> tree
-                       tree/leaf-knots
-                       (map :id))
+        process (sk.process/start-debug-process! project (get-in tree [:meta :seed]))
+        session (-> (s/create-loaded! process skein-path tree)
+                    (s/enable-undo false))
+        leaf-ids (->> tree
+                      tree/leaf-knots
+                      (map :id))
         test-leaf (fn [session id]
                     (print ".") (flush)
                     (s/replay-to! session id))
-        path'     (trim-dot skein-path)
-        spaces    (- width (count path'))
-        session'  (do
-                    (printf "Testing %s%s: "
-                            (apply str (repeat spaces " "))
-                            path')
-                    (reduce test-leaf session leaf-ids))
-        totals    (s/totals session')]
+        path' (trim-dot skein-path)
+        spaces (- width (count path'))
+        session' (do
+                   (printf "Testing %s%s: "
+                           (apply str (repeat spaces " "))
+                           path')
+                   (reduce test-leaf session leaf-ids))
+        totals (s/totals session')]
     (print " ")
     (println (compose-totals totals))
     totals))
@@ -131,15 +133,43 @@
    skein-file ["SKEIN-FILE" "Path to single skein file to test"
                :optional true]
    :command "test"]
-  (let [project     (pf/read-project)
+  (let [project (pf/read-project)
         skein-paths (if skein-file
                       [skein-file]
                       (->> (fs/glob "." "*.skein")
                            (map str)))
-        width       (->> skein-paths (map trim-dot) (map count) (apply max))
+        width (->> skein-paths (map trim-dot) (map count) (apply max))
         test-totals (map #(run-tests project width %) skein-paths)
-        totals      (apply merge-with + test-totals)]
+        totals (apply merge-with + test-totals)]
     (println "Results:" (compose-totals totals))
     (when (pos? (+ (:new totals) (:error totals)))
-      (perr [:yellow "Run " [:bold "dgt skein " [:italic "<file>"]] " to run the skein UI to investigate errors."])
+      (perr [:yellow "Run " [:bold "dgt skein " [:italic "<file>"]] " to run the skein UI to investigate errors"])
       (cli/exit 1))))
+
+(defcommand run-project
+  "Runs the project using the frotz command.
+
+  Use -- before any frotz arguments.
+  "
+  [debug? debug-opt
+   dumb? ["-D" "--dumb" "Run using dfrotz instead of frotz"]
+   :args
+   frotz-args ["ARGS" "Extra arguments passed to frotz"
+               :optional true
+               :repeatable true]
+   :in-order true
+   :command "run"]
+  (let [project (pf/read-project)
+        {:keys [format]} project
+        format' (if (= format :aa)
+                  (do
+                    (perr [:faint "Project format is aa; compiling to z8 for frotz"])
+                    :z8)
+                  format)
+        path (build/build-project project
+                                  {:format format'
+                                   :debug? debug?})
+        command (if dumb? "dfrotz" "frotz")
+        args (conj (vec frotz-args)
+                   (str path))]
+    (apply p/exec command args)))
