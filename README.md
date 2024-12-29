@@ -30,7 +30,7 @@ brew install hlship/brew/dialog-tool
 Run the command `dgt help` for a list of commands; each command has a `--help` option (abbreviated as `-h`) that gives
 specific details.
 
-> The first time you run `dgt` it will be somewhat slow, as it has to download additional libraries. After that, it will be lightning fast.
+> The first time you run `dgt` it may have to download additional libraries, which takes a second or two. Subsequently, `dgt` starts lightning fast.
 
 ## Creating a new project
 
@@ -95,8 +95,8 @@ You should be careful with glob matches, as Dialog can be sensitive to the order
 source files are loaded.
 
 * `:story` - sources specific to your project
-* `:debug` - used by the `test`, `debug` and `build --test` commands
-* `:library` - additional libraries, including the standard library
+* `:debug` - used by the commands `test`, `debug`, `skein`, etc.
+* `:library` - additional libraries, including the Dialog standard library
 
 
 ### Format
@@ -145,6 +145,10 @@ your imagination.
 
 However, you are likely to spend very little time directly running the debugger; instead, you'll run the debugger indirectly, via the Skein.
 
+You can also run your project using [frotz](https://gitlab.com/DavidGriffith/frotz) with `dgt run`.  This will compile your project first.
+
+Neither the debugger nor the Skein can present all the possible Dialog screen effects, such
+as status bar updates; to verify these, you must run using Frotz.
 
 ## Running the Skein
 
@@ -183,7 +187,6 @@ such as [Spatterlight](https://github.com/angstsmurf/spatterlight):
 
 You can see that some of the game's metadata is also presented, such as the title, and the "blurb". This is all customized in the `meta.dg` file.
 
-
 You can upload your zblorb file to the [Interactive Fiction Database](https://ifdb.org/).
 If you want to self-host your project, you can bundle it:
 
@@ -206,10 +209,9 @@ Bundle creates a directory and populates it with a custom page for your project;
 
 ### Walkthrough
 
-If you default skein contains a knot labeled "WALKTHROUGH", then `dgt bundle` will extract a walkthrough (the text from the start of the game to that specific knot), and include that in the bundled `index.html` page.
+If the project's default skein contains a knot labeled "WALKTHROUGH", then `dgt bundle` will extract a walkthrough (the text from the start of the game to that specific knot), and include that in the bundled `index.html` page.
 
 If you like, you may have a secondary skein for the walkthrough; add a :walkthrough-skein key to `dialog.edn` to specify which skein should be used for the walkthrough.
-
 
 ## License
 
