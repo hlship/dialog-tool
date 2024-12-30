@@ -12,6 +12,8 @@
 - Visual feedback is a problem, because the round-trip is often just milliseconds.
 - Add an indicator that there are invisible whitespace changes in a diff
 - Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
+- Detect/report network failures
+- Shutdown the skein window (and server)
 
 ## Releasing
 

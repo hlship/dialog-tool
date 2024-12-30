@@ -43,7 +43,8 @@
   [project]
   (let [{:keys [walkthrough-skein]
          :or   {walkthrough-skein "default.skein"}} project]
-    (when walkthrough-skein
+    (when (and walkthrough-skein
+               (fs/exists? walkthrough-skein))
       (let [tree (try
                    (file/load-tree walkthrough-skein)
                    (catch IOException e
@@ -64,54 +65,55 @@
         compiled-name (fs/file-name compiled-path)
         story (extract-story-info project)
         zip-file (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
-        bundle-path (fs/path "." "out" "web")]
+        bundle-out-dir (fs/path "." "out" "web")]
 
     ;; DELETE output tree first (for aambundle)
 
-    (when (fs/exists? bundle-path)
-      (fs/delete-tree bundle-path))
+    (when (fs/exists? bundle-out-dir)
+      (fs/delete-tree bundle-out-dir))
 
     ;; Must be first, because it will fail if the output directory already exists.
     (p/shell "aambundle --target web"
-             "--output" (str bundle-path)
+             "--output" (str bundle-out-dir)
              (str aa-path))
     (perr [:cyan "  out/web/resources/..."])
 
-    ;; Override for a wide play area in the browser
-    ;; TODO: Could we edit the file instead?
-    (t/copy-binary "bundle/play.css" (fs/path bundle-path "resources" "style.css"))
+    ;; Overwrite the default style.css with this one
+    (t/copy-file "bundle/play.css"
+                 (fs/path bundle-out-dir "resources" "style.css"))
+    (t/copy-file "bundle/style.css"
+                 (fs/path bundle-out-dir "style.css"))
 
-    (run! (fn [source]
-            (t/copy-binary (str "bundle/" source)
-                           (fs/path bundle-path source)))
-          ["introduction-to-if.pdf"
-           "play-if-card.pdf"
-           "style.css"])
+    ;; These are on the tool's classpath:
+    (doseq [source ["introduction-to-if.pdf"
+                    "play-if-card.pdf"]]
+      (t/copy-resource (str "bundle/" source)
+                       (fs/path bundle-out-dir source)))
 
-    (t/file-copy compiled-path (fs/path bundle-path compiled-name))
-    (t/file-copy "cover.png" (fs/path bundle-path "cover.png"))
+    (t/copy-file compiled-path (fs/path bundle-out-dir compiled-name))
+    (t/copy-file "cover.png" (fs/path bundle-out-dir "cover.png"))
 
     (perr [:cyan "  out/web/cover-small.jpg"])
     (p/shell "magick cover.png -resize 120 out/web/cover-small.jpg")
 
     (let [walkthrough (extract-walkthrough project)
           walkthrough-description (when walkthrough
-                                    (let [path (fs/path bundle-path "walkthrough.txt")]
+                                    (let [path (fs/path bundle-out-dir "walkthrough.txt")]
                                       (t/copy-string walkthrough path)
                                       ;; The description (part of index.html):
                                       (str "text "
                                            (-> path fs/size h/filesize))))]
-      (t/copy "bundle/index.html"
-              {:story                   story
-               :story-file              compiled-name
-               :story-file-description  (str
-                                          (-> project :format name)
-                                          " "
-                                          (-> compiled-path
-                                              fs/size
-                                              h/filesize))
-               :walkthrough-description walkthrough-description}
-              (fs/path bundle-path "index.html")))
+      (t/copy-rendered "bundle/index.html"
+                       {:story                   story
+                        :story-file              compiled-name
+                        :story-file-description  (str
+                                                   (-> project :format name)
+                                                   " "
+                                                   (-> compiled-path
+                                                       fs/size
+                                                       h/filesize))
+                        :walkthrough-description walkthrough-description}
+                       (fs/path bundle-out-dir "index.html")))
 
     (t/setup-target zip-file)
     (fs/delete-if-exists zip-file)
