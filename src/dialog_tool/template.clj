@@ -23,7 +23,9 @@
     (fs/create-file f))
   f)
 
-(defn copy
+(defn copy-rendered
+  "Copies a selmer template; the template is rendered and the result
+   written to target."
   [resource-path context target]
   (setup-target target)
   (let [content (s/render-file resource-path context)]
@@ -33,14 +35,14 @@
                       io/writer)]
       (.write w content))))
 
-(defn file-copy
+(defn copy-file
   "Copies a file to a target path."
   [from target]
   (setup-target target)
-  (fs/copy from target))
+  (fs/copy from target {:replace-existing true}))
 
-(defn copy-binary
-  "Copies a binary resource from a resource path to a target path."
+(defn copy-resource
+  "Copies binary resource path (on the classpath) to a target path."
   [resource-path target]
   (setup-target target)
   (with-open [in (-> resource-path
@@ -66,33 +68,39 @@
   [dir opts]
   (perr [:cyan "Creating " dir " ..."])
   (let [{:keys [project-name]} opts
-        dir'        (fs/path dir)
+        dir' (fs/path dir)
         src-dir (fs/path dir "src")
-        brew-root   (-> (p/sh "brew --prefix")
-                        :out
-                        string/trim)
-        dialog-root (fs/path brew-root "share" "dialog-if")]
+        brew-root (-> (p/sh "brew --prefix")
+                      :out
+                      string/trim)
+        dialog-root (fs/path brew-root "share" "dialog-if")
+        bundle-dir (fs/path dir' "bundle")]
 
-    (copy "template/dialog.edn"
-          opts
-          (fs/path dir' "dialog.edn"))
+    (copy-rendered "template/dialog.edn"
+                   opts
+                   (fs/path dir' "dialog.edn"))
 
-    (copy "template/meta.dg"
-          {:ifid (-> (random-uuid) str str/upper-case)}
-          (fs/path src-dir "meta.dg"))
+    (copy-rendered "template/meta.dg"
+                   {:ifid (-> (random-uuid) str str/upper-case)}
+                   (fs/path src-dir "meta.dg"))
 
-    (copy "template/project.dg"
-          {}
-          (fs/path src-dir  (str project-name ".dg")))
+    (copy-rendered "template/project.dg"
+                   {}
+                   (fs/path src-dir (str project-name ".dg")))
 
-    (file-copy (fs/path dialog-root "stdlib.dg")
+    (copy-file (fs/path dialog-root "stdlib.dg")
                (fs/path dir' "lib" "dialog" "stdlib.dg"))
 
-    (file-copy (fs/path dialog-root "stddebug.dg")
+    (copy-file (fs/path dialog-root "stddebug.dg")
                (fs/path dir' "lib" "dialog" "stddebug.dg"))
 
-    (copy-binary "template/default-cover.png"
-                 (fs/path dir' "cover.png"))
+    (copy-resource "template/default-cover.png"
+                   (fs/path dir' "cover.png"))
+
+    ;; These are copied over so that a project can modify them as desired.
+    (doseq [f ["index.html" "play.css" "style.css"]]
+      (copy-resource (str "bundle/" f)
+                     (fs/path bundle-dir f)))
 
     (perr "\nChange to directory " [:bold dir] " to begin work")
     (perr [:bold "dgt debug"] " to run the project in the Dialog debugger")

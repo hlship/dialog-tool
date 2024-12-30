@@ -27,6 +27,8 @@ Dialog tool is easily installed on OS X using the [Homebrew](https://brew.sh/).
 brew install hlship/brew/dialog-tool
 ```
 
+This will download and install the `dgt` command, along with all it's dependencies.
+
 Run the command `dgt help` for a list of commands; each command has a `--help` option (abbreviated as `-h`) that gives
 specific details.
 
@@ -45,7 +47,10 @@ Creating magnum-opus ...
   lib/dialog/stdlib.dg
   lib/dialog/stddebug.dg
   cover.png
-
+  bundle/index.html
+  bundle/play.css
+  bundle/style.css
+  
 Change to directory magnum-opus to begin work
 dgt debug to run the project in the Dialog debugger
 dgt skein to open a web browser to the Skein UI
@@ -209,7 +214,8 @@ Bundle creates a directory and populates it with a custom page for your project;
 
 ### Walkthrough
 
-If the project's default skein contains a knot labeled "WALKTHROUGH", then `dgt bundle` will extract a walkthrough (the text from the start of the game to that specific knot), and include that in the bundled `index.html` page.
+If the project's default skein contains a knot labeled "WALKTHROUGH", then `dgt bundle` will extract a walkthrough (the text from the start
+to that specific knot), and include a link to the walkthrough in the bundled `index.html` page.
 
 If you like, you may have a secondary skein for the walkthrough; add a :walkthrough-skein key to `dialog.edn` to specify which skein should be used for the walkthrough.
 
