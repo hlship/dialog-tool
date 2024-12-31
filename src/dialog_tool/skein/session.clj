@@ -19,14 +19,14 @@
      :redo-stack     []
      :process        process
      :tree           (tree/update-response tree 0 initial-response)
-     :undo-enabled? true
+     :undo-enabled?  true
      :active-knot-id 0}))
 
 (defn create-new!
-  "Creates a new session from an existing debug process.  The process should be
-  just started, so that we can read the initial response."
-  [process skein-path]
-  (create-loaded! process skein-path (tree/new-tree (:seed process))))
+  "Creates a new session for a new skein, using an existing process.  The process should be
+  just started, so that we can read the initial response. Creates a new tree for the session."
+  [process skein-path engine seed]
+  (create-loaded! process skein-path (tree/new-tree engine seed)))
 
 (defn enable-undo
   [session undo-enabled?]

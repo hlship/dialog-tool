@@ -34,17 +34,20 @@
 
   Returns a function that does shutdown the service."
   [project skein-path opts]
-  (let [{:keys [port seed]
+  (let [{:keys [port seed engine]
          :or   {port 10140}} opts
         tree (when (fs/exists? skein-path)
                (sk.file/load-tree skein-path))
-        seed (or (get-in tree [:meta :seed])
-                 seed
-                 (rand-int 10000))
-        process (sk.process/start-debug-process! project seed)
+        seed' (or (get-in tree [:meta :seed])
+                  seed
+                  (rand-int 100000))
+        engine' (or (get-in tree [:meta :engine])
+                    engine
+                    :dgdebug)
+        process (sk.process/start-process! project engine' seed')
         session (if tree
                   (s/create-loaded! process skein-path (tree/apply-default-selections tree))
-                  (s/create-new! process skein-path))
+                  (s/create-new! process skein-path engine seed))
         shutdown-fn (hk/run-server service-handler-proxy
                                    {:port          port
                                     :ip            "localhost"
@@ -55,7 +58,7 @@
     (reset! *session session)
     (reset! *shutdown shutdown-service-fn)
     {:shutdown-fn shutdown-service-fn
-     :port port}))
+     :port        port}))
 
 ;; Temporary
 
@@ -77,8 +80,12 @@
 
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/default.skein"
-          nil)
+          {:engine :dgdebug})
 
+  (start! (pf/read-project "../sanddancer-dialog")
+          "../sanddancer-dialog/frotz.skein"
+          {:seed   10101
+           :engine :frotz})
 
   (@*shutdown)
 

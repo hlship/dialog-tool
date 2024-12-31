@@ -104,6 +104,6 @@
 
     (perr "\nChange to directory " [:bold dir] " to begin work")
     (perr [:bold "dgt debug"] " to run the project in the Dialog debugger")
-    (perr [:bold "dgt skein"] " to open a web browser to the Skein UI")
+    (perr [:bold "dgt new-skein"] " to open a web browser to the Skein UI")
     (perr [:bold "dgt help"] " for other options")))
 

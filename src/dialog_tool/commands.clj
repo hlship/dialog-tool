@@ -1,9 +1,9 @@
 (ns dialog-tool.commands
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
-            [clj-commons.ansi :as ansi]
-            [clj-commons.ansi :refer [pout perr]]
+            [clj-commons.ansi :as ansi :refer [pout perr]]
             [clojure.string :as string]
+            [dialog-tool.util :refer [fail]]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
@@ -49,25 +49,47 @@
   (template/create-from-template project-dir
                                  {:project-name (or project-name project-dir)}))
 
+(defn- start-skein-service!
+  [skein-path start-opts]
+  (let [project (pf/read-project)
+        {:keys [port]} (service/start! project skein-path start-opts)
+        url (str "http://localhost:" port "/index.html")]
+    (pout [:bold (if (fs/exists? skein-path) "Loading" "Creating")
+           " " skein-path " ..."])
+    (pout [:faint "Skein service started on port " port " ..."])
+    (pout "Hit " [:bold "Ctrl+C"] " when done")
+    (browse/browse-url url)
+    ;; Hang forever
+    @(promise)))
+
 (defcommand skein
-  "Run the Skein UI to test the project."
-  [seed [nil "--seed NUMBER" "Random number generator seed to use, if creating a new skein"
+  "Run the Skein UI for an existing skein file."
+  [:args
+   skein ["SKEIN" "Path to skein file to run; defaults to default.skein"
+          :optional true]]
+  (let [skein-path (or skein "default.skein")]
+    (when-not (fs/exists? skein-path)
+      (fail [:bold skein-path] " does not exist"))
+    (start-skein-service! skein-path nil)))
+
+(defcommand new-skein
+  "Create a new skein, and run the Skein UI.
+
+  Note: the frotz engine has output formatting issues and is not yet ready for use."
+  [seed [nil "--seed NUMBER" "Random number generator seed to use"
          :parse-fn parse-long
          :validate [some? "Not a number"
                     pos-int? "Must be at least one"]]
-   skein ["-f" "--file SKEIN" "Path to file containing the Skein; will be created if necessary"
-          :default "default.skein"]]
-  (let [project (pf/read-project)
-        {:keys [port]} (service/start! project skein (cond-> nil
-                                                             seed (assoc :seed seed)))
-        url (str "http://localhost:" port "/index.html")]
-    (pout [:bold (if (fs/exists? skein) "Loading" "Creating")
-           " " skein " ..."])
-    (pout [:faint "Skein service started on port " port " ..."])
-    (pout "Hit " [:bold "Ctrl+C"] " when done")
-    (browse/browse-url url))
-  ;; Hang forever
-  @(promise))
+   engine (cli/select-option "-e" "--engine NAME" "Engine to use:"
+                             sk.process/engines
+                             :default :dgdebug)
+   :args
+   skein ["SKEIN" "Path to skein file to create; defaults to default.skein"
+          :optional true]]
+  (let [skein-path (or skein "default.skein")]
+    (when (fs/exists? skein-path)
+      (fail [:bold skein-path] " already exists"))
+    (start-skein-service! skein-path {:seed seed :engine engine})))
 
 (defcommand build
   "Compile the project to a file ready to execute with an interpreter."
@@ -101,7 +123,9 @@
 (defn- run-tests
   [project width skein-path]
   (let [tree (sk.file/load-tree skein-path)
-        process (sk.process/start-debug-process! project (get-in tree [:meta :seed]))
+        {:keys [engine seed]
+         :or   {engine :dgdebug}} (:meta tree)
+        process (sk.process/start-process! project engine seed)
         session (-> (s/create-loaded! process skein-path tree)
                     (s/enable-undo false))
         leaf-ids (->> tree
@@ -149,6 +173,8 @@
 (defcommand run-project
   "Runs the project using the frotz command.
 
+  Note: --dumb has output format issues.
+
   Use -- before any frotz arguments.
   "
   [debug? debug-opt
@@ -170,6 +196,9 @@
                                   {:format format'
                                    :debug? debug?})
         command (if dumb? "dfrotz" "frotz")
-        args (conj (vec frotz-args)
-                   (str path))]
+        extra-args (when dumb?
+                     ["-m"])
+        args (concat extra-args
+                     frotz-args
+                     [(str path)])]
     (apply p/exec command args)))

@@ -7,8 +7,9 @@
             [medley.core :as medley]))
 
 (defn new-tree
-  [seed]
-  {:meta  {:seed seed}
+  [engine seed]
+  {:meta  {:engine engine
+           :seed seed}
    :focus 0                                                 ; knot id to focus on
    :knots {0 {:id    0
               :label "START"}}})

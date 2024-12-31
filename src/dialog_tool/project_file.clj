@@ -13,11 +13,15 @@
          path (fs/path dir '"dialog.edn")]
      (or (fs/exists? path)
          (fail (str path) " does not exist"))
-     (-> path
-         fs/file
-         slurp
-         edn/read-string
-         (assoc ::dir dir')))))
+     (try
+       (-> path
+           fs/file
+           slurp
+           edn/read-string
+           (assoc ::dir dir'))
+       (catch Throwable t
+         (fail "Could not read " [:bold path] ": "
+               (ex-message t)))))))
 
 (defn- expand-source
   [dir glob]
@@ -39,6 +43,10 @@
      (->> globs
           (mapcat #(expand-source dir %))
           (map str)))))
+
+(defn project-dir
+  [project]
+  (::dir project))
 
 
 

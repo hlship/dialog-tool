@@ -53,7 +53,7 @@ Creating magnum-opus ...
   
 Change to directory magnum-opus to begin work
 dgt debug to run the project in the Dialog debugger
-dgt skein to open a web browser to the Skein UI
+dgt new-skein to open a web browser to the Skein UI
 dgt help for other options
 ```
 
@@ -157,8 +157,9 @@ as status bar updates; to verify these, you must run using Frotz.
 
 ## Running the Skein
 
-`dgt skein` will open up the skein UI.  By default, the file is named `default.skein`, or you can provide a different
-name (you may want to have multiple skein files).  The file will be created as needed.
+`dgt new-skein` will open up the skein UI for a new skein file.  
+By default, the file is named `default.skein`, or you can provide a different
+name, as you may want to have multiple skein files. 
 
 The Skein UI is an alternate way of running your project in the Dialog debugger; you interact through
 a web-based user interface.
@@ -167,6 +168,8 @@ The Skein represents your project as a tree of "knots"; each knot is a command. 
 add new commands beneath any knot, and you can also rerun the project to any knot
 and the skein will identify any text that has changed.  You can even run *all* possible branches
 to completion.
+
+`dgt skein` will open an existing skein.
 
 > More on this later
 
