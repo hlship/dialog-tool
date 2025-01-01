@@ -6,7 +6,8 @@
             [babashka.process :as p]
             [clojure.core.async :refer [chan close! >!! <!!]]
             [clojure.string :as string]
-            [dialog-tool.project-file :as pf])
+            [dialog-tool.project-file :as pf]
+            [dialog-tool.util :as util])
   (:import (java.io BufferedReader PrintWriter)
            (java.util List)))
 
@@ -74,8 +75,7 @@
                 (into (pf/expand-sources project {:debug? true})))]
     (start! cmd nil)))
 
-
-(def engines #{:dgdebug :frotz})
+(def engines #{:dgdebug :frotz :frotz-release})
 
 (defmulti start-process! (fn [_project engine _seed] engine))
 
@@ -83,18 +83,22 @@
   [project _ seed]
   (start-debug-process! project seed))
 
-(defmethod start-process! :frotz
-  [project _ seed]
+
+(defn- start-frotz-process
+  [project seed debug?]
   (let [{project-name :name} project
         project-dir (pf/project-dir project)
-        output-dir (fs/path project-dir "out" "skein")
+        output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
         path (fs/path output-dir (str project-name ".zblorb"))
         pre (fn []
               (p/check
                 (p/sh (into ["dialogc"
                              "--format" "zblorb"
                              "--output" (str path)]
-                            (pf/expand-sources project {:debug? true})))))
+                            ;; the dumb-patch? option prevents the status bar from being output at all
+                            ;; (otherwise it shows up inline)
+                            (pf/expand-sources project {:debug?    true
+                                                        :pre-patch [(util/root-path "resources" "dfrotz-skein-patch.dg")]})))))
         cmd ["dfrotz"
              ;; Flags: quiet, no *more*
              "-q" "-m"
@@ -104,6 +108,14 @@
     (fs/create-dirs output-dir)
     (start! cmd {:pre-flight   pre
                  :echo-command true})))
+
+(defmethod start-process! :frotz
+  [project _ seed]
+  (start-frotz-process project seed true))
+
+(defmethod start-process! :frotz-release
+  [project _ seed]
+  (start-frotz-process project seed false))
 
 (defn read-response!
   [process]

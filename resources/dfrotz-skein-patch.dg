@@ -1,0 +1,4 @@
+%% Include this file first when building for dfrotz and the skein
+
+(redraw status bar)
+    %% Do nothing; otherwise the status bar is output inline in transcript

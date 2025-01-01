@@ -82,7 +82,7 @@ A minimal example `dialog.edn` (as created by `dgt new`):
  {:zblorb
   {:options ["--cover-alt" "Magnum-opus"]}}
  :sources
- {:story   ["src/*.dg"]
+ {:main    ["src/*.dg"]
   :debug   ["lib/dialog/stddebug.dg"]
   :library ["lib/dialog/stdlib.dg"]}}
 ```                   
@@ -99,10 +99,16 @@ For each, you may specify any number of individual files, or _glob matches_.
 You should be careful with glob matches, as Dialog can be sensitive to the order in which
 source files are loaded.
 
-* `:story` - sources specific to your project
-* `:debug` - used by the commands `test`, `debug`, `skein`, etc.
-* `:library` - additional libraries, including the Dialog standard library
+* :main - sources specific to your project
+* :debug - used by the commands `test`, `debug`, `skein`, etc.
+* :library - additional libraries, including the Dialog standard library
 
+Generally, source that is specific to your project goes in :main; reusable code goes in :library and :debug; 
+this may include code obtained from others, including the standard library.
+
+It is a common practice to modify libraries as necessary, even the standard library!  Another
+good practice is to try and split out reusable code (code that could reasonably be used in an entirely different
+project) under :library (and :debug).
 
 ### Format
 
@@ -110,13 +116,12 @@ The :format key defines the output when the project is built; :zblorb is a good 
 In specific situations you may want to build for :z5, :z8, or :aa.  The differences between
 these formats are described in [the Dialog manual](https://linusakesson.net/dialog/docs/software.html#compiler).
 
-
 ### Build Config
 
-The :build key contains build configuration for each format (when publishing for the web, you may build once for the 
-project, and a second time in :aa format for the web).
+The :build key contains build configuration for each format. When bundling, you may build once according
+to the project's format, and a second time in :aa format for the web.
 
-The :options key is used to specify additional options to add to the command line.
+The :options key is used to specify additional options to add to the `dialogc` command line.
 This is typically used to set the heap size information.
 
 Under :build, the :default key contains defaults for building (any format); the specific build map (:zblorb, in our example)
@@ -124,7 +129,7 @@ is merged on top of the :default map, if present.
 
 ## Running your project
 
-`dgt debug` will start your project in the debugger so you can play interactively at the console.
+`dgt debug` will start your project in the `dgdebug` so you can explore your creation interactively at the console.
 
 ```
 > dgt debug
@@ -210,8 +215,12 @@ Building out/release/magnum-opus.aastory ...
   out/web/cover.png
   out/web/cover-small.jpg
   out/web/index.html
+  out/magnum-opus-0.zip
 ```
-Bundle creates a directory and populates it with a custom page for your project; if you open `out/web/index.html` in a web browser, you'll be provided with an option to download the game file, or play the game in-browser:
+The `bundle` command creates a directory and populates it with a custom page for your project.
+It also creates a `.zip` file of the contents of `out/web` (the name is based on the project's name, and the version number inside `src/meta.dg`)
+
+If you open `out/web/index.html` in a web browser, you'll be provided with an option to download the game file, or play the game in-browser:
 
 ![Bundled Web Page](images/web-bundle-loaded.png)
 

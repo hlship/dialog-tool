@@ -197,7 +197,7 @@
                                    :debug? debug?})
         command (if dumb? "dfrotz" "frotz")
         extra-args (when dumb?
-                     ["-m"])
+                     ["-m" "-q"])
         args (concat extra-args
                      frotz-args
                      [(str path)])]
