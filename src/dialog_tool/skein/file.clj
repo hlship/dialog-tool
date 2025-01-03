@@ -38,6 +38,7 @@
   [tree ^PrintWriter out]
   (let [{:keys [meta knots]} tree]
     (p out "seed" (:seed meta))
+    (p out "engine" (:engine meta))
     (doseq [knot-id (-> tree :knots keys sort)
             ;; Purposely don't write the :selected property as that is only meaningful
             ;; during editing and would cause many unwanted changes to the skein stored in
@@ -57,7 +58,8 @@
 
 
 (def meta-parsers
-  {"seed" s->long})
+  {"seed" s->long
+   "engine" keyword})
 
 (def kv-re #"(?x)
     (.+):   # key portion

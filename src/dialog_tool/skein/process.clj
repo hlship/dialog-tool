@@ -3,9 +3,11 @@
   sending it commands to execute, and receiving back
   the results (output) from those commands."
   (:require [babashka.fs :as fs]
+            [babashka.process :as p]
             [clojure.core.async :refer [chan close! >!! <!!]]
             [clojure.string :as string]
-            [dialog-tool.project-file :as pf])
+            [dialog-tool.project-file :as pf]
+            [dialog-tool.util :as util])
   (:import (java.io BufferedReader PrintWriter)
            (java.util List)))
 
@@ -41,21 +43,24 @@
 (defn- start-thread
   [reader output-ch]
   (let [f #(read-loop reader output-ch)]
-    (doto (Thread. ^Runnable f "dialog debugger reader")
+    (doto (Thread. ^Runnable f "skein process output reader")
       (.setDaemon true)
       .start)))
 
 (defn- start!
-  [dir ^List cmd seed]
-  (let [process (-> (ProcessBuilder. cmd)
-                    (.directory dir)
+  [^List cmd opts]
+  (let [{:keys [pre-flight]} opts
+        ;; pre-flight is optional, used to build the .zblorb file for example,
+        ;; so it must be before starting the process.
+        _ (when pre-flight
+            (pre-flight))
+        process (-> (ProcessBuilder. cmd)
                     .start)
         stdout-reader (.inputReader process)
         output-ch (chan)]
     {:process      process
-     :seed         seed
-     :dir          dir
      :cmd          cmd
+     :opts         opts
      :stdin-writer (-> process .outputWriter PrintWriter.)  ; write stdin of process
      :output-ch    output-ch
      :thread       (start-thread stdout-reader output-ch)}))
@@ -63,39 +68,94 @@
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger."
   [project seed]
-  (let [^List cmd (-> ["dgdebug"
-                       "--quit"
-                       "--seed" (str seed)
-                       "--width" "80"]
-                      (into (pf/expand-sources project {:debug? true})))
-        dir (-> project :dir fs/file)]
-    (start! dir cmd seed)))
+  (let [cmd (-> ["dgdebug"
+                 "--quit"
+                 "--seed" (str seed)
+                 "--width" "80"]
+                (into (pf/expand-sources project {:debug? true})))]
+    (start! cmd nil)))
+
+(def engines #{:dgdebug :frotz :frotz-release})
+
+(defmulti start-process! (fn [_project engine _seed] engine))
+
+(defmethod start-process! :dgdebug
+  [project _ seed]
+  (start-debug-process! project seed))
+
+
+(defn- start-frotz-process
+  [project seed debug?]
+  (let [{project-name :name} project
+        project-dir (pf/project-dir project)
+        output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
+        path (fs/path output-dir (str project-name ".zblorb"))
+        pre (fn []
+              (p/check
+                (p/sh (into ["dialogc"
+                             "--format" "zblorb"
+                             "--output" (str path)]
+                            ;; the dumb-patch? option prevents the status bar from being output at all
+                            ;; (otherwise it shows up inline)
+                            (pf/expand-sources project {:debug?    true
+                                                        :pre-patch [(util/root-path "resources" "dfrotz-skein-patch.dg")]})))))
+        cmd ["dfrotz"
+             ;; Flags: quiet, no *more*
+             "-q" "-m"
+             "-s" (str seed)
+             "-w" "80"
+             (str path)]]
+    (fs/create-dirs output-dir)
+    (start! cmd {:pre-flight   pre
+                 :echo-command true})))
+
+(defmethod start-process! :frotz
+  [project _ seed]
+  (start-frotz-process project seed true))
+
+(defmethod start-process! :frotz-release
+  [project _ seed]
+  (start-frotz-process project seed false))
 
 (defn read-response!
-  [debug-process]
-  (-> debug-process :output-ch <!!))
+  [process]
+  (-> process :output-ch <!!))
+
+(defn- inject-command
+  [command response]
+  (let [x (string/index-of response "\n")]
+    (str
+      (subs response 0 x)
+      command
+      (subs response (inc x)))))
 
 (defn send-command!
   "Sends a player command to the process, blocking until a response to the command
   is available.  Returns the response."
-  [debug-process ^String cmd]
-  (let [{:keys [^PrintWriter stdin-writer]} debug-process]
-    (doto stdin-writer
-      (.print cmd)
-      .println
-      .flush))
-  (read-response! debug-process))
+  [process ^String command]
+  (let [{:keys [^PrintWriter stdin-writer opts]} process
+        {:keys [echo-command]} opts
+        _ (doto stdin-writer
+            (.print command)
+            .println
+            .flush)
+        raw-response (read-response! process)]
+    ;; dgdebug echos back what it receives on its stdin, but dfrotz does not.
+    ;; The echo-command flag lets us fake it.
+    (if echo-command
+      (inject-command command raw-response)
+      raw-response)))
 
 (defn kill!
-  "Kills the debug process and returns nil."
-  [debug-process]
-  (let [{:keys [^Process process]} debug-process]
+  "Kills the process and returns nil."
+  [process]
+  (let [{:keys [^Process process]} process]
     (.destroy process))
   nil)
 
 (defn restart!
-  "Kills the debug process and starts a new one, returning a new process map."
-  [debug-process]
-  (kill! debug-process)
-  (let [{:keys [dir cmd seed]} debug-process]
-    (start! dir cmd seed)))
+  "Kills the process and starts a new one, returning a new process map."
+  [process]
+  (kill! process)
+  (let [{:keys [cmd opts]} process]
+    (start! cmd opts)))

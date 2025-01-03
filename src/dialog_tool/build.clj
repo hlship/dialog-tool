@@ -55,11 +55,11 @@
 (defn build-project
   "Builds a project; returns the path of the compiled file."
   [project options]
-  (let [{:keys [format debug?]} options
+  (let [{:keys [format debug? ]} options
         format     (or format (:format project))
+        _     (when-not format
+                (fail "No :format defined for project"))
         output-dir (fs/path "out" (if debug? "test" "release"))
-        sources    (pf/expand-sources project {:debug? debug?})]
-    (when-not format
-      (fail "No :format defined for project"))
+        sources    (pf/expand-sources project options)]
     (fs/create-dirs output-dir)
     (invoke-dialogc format project sources output-dir options)))

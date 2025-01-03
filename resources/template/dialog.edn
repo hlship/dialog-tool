@@ -4,6 +4,6 @@
  {:zblorb
   {:options ["--cover-alt" "{{project-name|capitalize}}"]}}
  :sources
- {:story   ["src/*.dg"]
+ {:main   ["src/*.dg"]
   :debug   ["lib/dialog/stddebug.dg"]
   :library ["lib/dialog/stdlib.dg"]}}
