@@ -202,3 +202,16 @@
                      frotz-args
                      [(str path)])]
     (apply p/exec command args)))
+
+(defcommand sources
+  "Print the sources for the project in compilation order."
+  [debug? debug-opt
+   one? ["-1" "--single-line" "Output as a single line, colon-seperated"]]
+  (let [project (pf/read-project)
+        paths (pf/expand-sources project {:debug? debug?})]
+    (if one?
+      (println (string/join ":" paths))
+      (let [longest (apply max (map count paths))]
+        (doseq [path paths]
+          (pout [{:font  :cyan
+                  :width longest} path]))))))

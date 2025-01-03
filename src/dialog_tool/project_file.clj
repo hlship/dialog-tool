@@ -8,9 +8,9 @@
 (defn read-project
   ;; 0 arity is normal, 1 arity is just for testing purposes
   ([]
-   (read-project "."))
+   (read-project ""))
   ([dir]
-   (let [dir' (fs/path (or dir "."))
+   (let [dir' (fs/path (or dir ""))
          path (fs/path dir '"dialog.edn")]
      (or (fs/exists? path)
          (fail (str path) " does not exist"))
@@ -52,7 +52,7 @@
           (mapcat #(expand-source dir %))
           (map str)))))
 
-(defn project-dir
+(defn ^Path project-dir
   [project]
   (::dir project))
 
