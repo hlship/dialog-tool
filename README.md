@@ -80,7 +80,8 @@ A minimal example `dialog.edn` (as created by `dgt new`):
  :format :zblorb
  :build
  {:zblorb
-  {:options ["--cover-alt" "Magnum-opus"]}}
+  {:options ["--cover"     "cover.png" 
+             "--cover-alt" "Magnum-opus"]}}
  :sources
  {:main    ["src/*.dg"]
   :debug   ["lib/dialog/stddebug.dg"]

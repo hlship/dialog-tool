@@ -108,12 +108,6 @@
   []
   (bundle/bundle-project (pf/read-project)))
 
-(defn- trim-dot
-  [path]
-  (if (string/starts-with? path "./")
-    (subs path 2)
-    path))
-
 (defn- compose-totals
   [totals]
   (ansi/compose [:green (:ok totals)] "/"
@@ -134,12 +128,11 @@
         test-leaf (fn [session id]
                     (print ".") (flush)
                     (s/replay-to! session id))
-        path' (trim-dot skein-path)
-        spaces (- width (count path'))
+        spaces (- width (count skein-path))
         session' (do
                    (printf "Testing %s%s: "
                            (apply str (repeat spaces " "))
-                           path')
+                           skein-path)
                    (reduce test-leaf session leaf-ids))
         totals (s/totals session')]
     (print " ")
@@ -160,9 +153,8 @@
   (let [project (pf/read-project)
         skein-paths (if skein-file
                       [skein-file]
-                      (->> (fs/glob "." "*.skein")
-                           (map str)))
-        width (->> skein-paths (map trim-dot) (map count) (apply max))
+                      (map str (fs/glob "" "*.skein")))
+        width (->> skein-paths (map count) (apply max))
         test-totals (map #(run-tests project width %) skein-paths)
         totals (apply merge-with + test-totals)]
     (println "Results:" (compose-totals totals))

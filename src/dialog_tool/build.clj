@@ -9,25 +9,17 @@
 
 (defn- dialogc-args
   [format options project output-path]
-  (let [{:keys [verbose? test?]} options
+  (let [{:keys [verbose? debug?]} options
         {:keys [build]} project
         build' (merge (:default build)
                             (get build format))
-        build-options (:options build')
-        zblorb? (= :zblorb format)]
+        build-options (:options build')]
     (cond-> ["--format" (name format)
              "--output" (str output-path)]
 
       verbose? (conj "--verbose")
 
-      (not test?) (conj "--strip")
-
-      (and zblorb? (fs/exists? "cover.png")) (conj "--cover" "cover.png")
-
-      ;; Resources are images and sounds that can be referenced in project source
-      ;; https://linusakesson.net/dialog/docs/io.html#resources
-
-      (fs/exists? "resources") (conj "--resources" "resources")
+      (not debug?) (conj "--strip")
 
       (seq build-options) (into build-options))))
 
@@ -55,11 +47,11 @@
 (defn build-project
   "Builds a project; returns the path of the compiled file."
   [project options]
-  (let [{:keys [format debug? ]} options
+  (let [{:keys [format debug?]} options
         format     (or format (:format project))
         _     (when-not format
                 (fail "No :format defined for project"))
-        output-dir (fs/path "out" (if debug? "test" "release"))
+        output-dir (fs/path "out" (if debug? "debug" "release"))
         sources    (pf/expand-sources project options)]
     (fs/create-dirs output-dir)
     (invoke-dialogc format project sources output-dir options)))
