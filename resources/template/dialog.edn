@@ -5,6 +5,6 @@
   {:options ["--cover"     "cover.png"
              "--cover-alt" "{{project-name|capitalize}}"]}}
  :sources
- {:main    ["src/*.dg"]
-  :debug   ["lib/dialog/stddebug.dg"]
-  :library ["lib/dialog/stdlib.dg"]}}
+ {:main    ["src"]
+  :debug   ["lib/dialog/debug"]
+  :library ["lib/dialog"]}}

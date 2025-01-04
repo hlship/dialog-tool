@@ -87,7 +87,7 @@
 (defn- start-frotz-process
   [project seed debug?]
   (let [{project-name :name} project
-        project-dir (pf/project-dir project)
+        project-dir (pf/root-dir project)
         output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
         path (fs/path output-dir (str project-name ".zblorb"))
         pre (fn []

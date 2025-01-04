@@ -154,6 +154,8 @@
         skein-paths (if skein-file
                       [skein-file]
                       (map str (fs/glob "" "*.skein")))
+        _ (when-not (seq skein-paths)
+            (fail "No skein files found"))
         width (->> skein-paths (map count) (apply max))
         test-totals (map #(run-tests project width %) skein-paths)
         totals (apply merge-with + test-totals)]
