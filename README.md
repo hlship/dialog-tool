@@ -45,7 +45,7 @@ Creating magnum-opus ...
   src/meta.dg
   src/magnum-opus.dg
   lib/dialog/stdlib.dg
-  lib/dialog/stddebug.dg
+  lib/dialog/debug/stddebug.dg
   cover.png
   bundle/index.html
   bundle/play.css
@@ -83,9 +83,9 @@ A minimal example `dialog.edn` (as created by `dgt new`):
   {:options ["--cover"     "cover.png" 
              "--cover-alt" "Magnum-opus"]}}
  :sources
- {:main    ["src/*.dg"]
-  :debug   ["lib/dialog/stddebug.dg"]
-  :library ["lib/dialog/stdlib.dg"]}}
+ {:main    ["src"]
+  :debug   ["lib/dialog/debug"]
+  :library ["lib/dialog"]}}
 ```                   
 
 ### Source Paths
@@ -95,16 +95,15 @@ and _in what order_ they should apply (which is very critical to how Dialog oper
 Further, during development and testing you will often include extra "debug" sources that should not 
 be included when building and packaging your project for release.
 
-`dgt` uses three sets of sources.
-For each, you may specify any number of individual files, or _glob matches_.
-You should be careful with glob matches, as Dialog can be sensitive to the order in which
-source files are loaded.
+`dgt` uses three sets of sources.  For each set, you may specify a number of directories, relative
+to your project, in which to locate source files. All Dialog source files _directly_ in each directory
+are included.
 
 * :main - sources specific to your project
 * :debug - used by the commands `test`, `debug`, `skein`, etc.
 * :library - additional libraries, including the Dialog standard library
 
-Generally, source that is specific to your project goes in :main; reusable code goes in :library and :debug; 
+Generally, source code that is specific to your project goes in :main; reusable code goes in :library and :debug; 
 this may include code obtained from others, including the standard library.
 
 It is a common practice to modify libraries as necessary, even the standard library!  Another
@@ -156,7 +155,9 @@ your imagination.
 
 However, you are likely to spend very little time directly running the debugger; instead, you'll run the debugger indirectly, via the Skein.
 
-You can also run your project using [frotz](https://gitlab.com/DavidGriffith/frotz) with `dgt run`.  This will compile your project first.
+You can also run your project using [frotz](https://gitlab.com/DavidGriffith/frotz) with `dgt run`.  
+This will compile your project first.
+By default, debug sources are excluded, but you can run with the `--debug` switch to include them as well.
 
 Neither the debugger nor the Skein can present all the possible Dialog screen effects, such
 as status bar updates; to verify these, you must run using Frotz.

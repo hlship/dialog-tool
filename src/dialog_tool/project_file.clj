@@ -9,52 +9,46 @@
   ;; 0 arity is normal, 1 arity is just for testing purposes
   ([]
    (read-project ""))
-  ([dir]
-   (let [dir' (fs/path (or dir ""))
-         path (fs/path dir '"dialog.edn")]
-     (or (fs/exists? path)
-         (fail (str path) " does not exist"))
+  ([root-dir]
+   (let [root-dir' (fs/path (or root-dir ""))
+         path (fs/path root-dir '"dialog.edn")]
+     (when-not (fs/exists? path)
+       (fail (str path) " does not exist"))
      (try
        (-> path
            fs/file
            slurp
            edn/read-string
-           (assoc ::dir dir'))
+           (assoc ::root-dir root-dir'))
        (catch Throwable t
          (fail "Could not read " [:bold path] ": "
                (ex-message t)))))))
 
 (defn- expand-source
-  [dir glob]
-  (cond
-    (instance? Path glob)
-    [(str glob)]
-
-    (string/starts-with? glob "/")
-    [glob]
-
-    :else
-    (fs/glob dir glob)))
+  [dir source]
+  (if (instance? Path source)
+    [source]
+    (fs/glob (fs/path dir source) "*.dg" {:follow-links true})))
 
 (defn expand-sources
   ([project]
    (expand-sources project nil))
   ([project {:keys [debug? pre-patch]}]
-   (let [{::keys [dir]
+   (let [{::keys [root-dir]
           :keys  [sources]} project
          {:keys [main debug library]} sources
-         globs (concat
-                 pre-patch
-                 main
-                 (when debug? debug)
-                 library)]
-     (->> globs
-          (mapcat #(expand-source dir %))
+         sources (concat
+                   pre-patch
+                   main
+                   (when debug? debug)
+                   library)]
+     (->> sources
+          (mapcat #(expand-source root-dir %))
           (map str)))))
 
-(defn ^Path project-dir
+(defn ^Path root-dir
   [project]
-  (::dir project))
+  (::root-dir project))
 
 
 

@@ -92,7 +92,7 @@
                (fs/path dir' "lib" "dialog" "stdlib.dg"))
 
     (copy-file (fs/path dialog-root "stddebug.dg")
-               (fs/path dir' "lib" "dialog" "stddebug.dg"))
+               (fs/path dir' "lib" "dialog" "debug" "stddebug.dg"))
 
     (copy-resource "template/default-cover.png"
                    (fs/path dir' "cover.png"))
