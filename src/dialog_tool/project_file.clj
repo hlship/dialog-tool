@@ -25,14 +25,10 @@
                (ex-message t)))))))
 
 (defn- expand-source
-  [dir source]
+  [root-dir source]
   (if (instance? Path source)
     [source]
-    (sort (fs/glob (fs/path dir source) "*.dg" {:follow-links true}))))
-  [dir source]
-  (if (instance? Path source)
-    [source]
-    (fs/glob (fs/path dir source) "*.dg" {:follow-links true})))
+    (sort (fs/glob (fs/path root-dir source) "*.dg" {:follow-links true}))))
 
 (defn expand-sources
   ([project]
