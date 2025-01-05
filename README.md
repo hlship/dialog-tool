@@ -45,7 +45,7 @@ Creating magnum-opus ...
   src/meta.dg
   src/magnum-opus.dg
   lib/dialog/stdlib.dg
-  lib/dialog/stddebug.dg
+  lib/dialog/debug/stddebug.dg
   cover.png
   bundle/index.html
   bundle/play.css
