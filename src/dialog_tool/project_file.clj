@@ -28,6 +28,10 @@
   [dir source]
   (if (instance? Path source)
     [source]
+    (sort (fs/glob (fs/path dir source) "*.dg" {:follow-links true}))))
+  [dir source]
+  (if (instance? Path source)
+    [source]
     (fs/glob (fs/path dir source) "*.dg" {:follow-links true})))
 
 (defn expand-sources
