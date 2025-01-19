@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.handlers
   (:require [babashka.fs :as fs]
+            [clojure.core.async :refer [thread]]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]
@@ -179,14 +180,21 @@
 
 (defn- update-handler
   [request]
-  (let [{:keys [body *session]} request
+  (let [{:keys [body *session *shutdown]} request
         payload (json/parse-string body true)
-        {:keys [action]} payload
-        handler (action->handler action)]
-    (if handler
-      (invoke-handler *session payload handler)
-      {:status 400
-       :body   (str "UNKNOWN ACTION: " action)})))
+        {:keys [action]} payload]
+    (if (= action "quit")
+      (do
+        ;; Give everything time enough to return a response
+        (thread
+          (Thread/sleep 500)
+          (@*shutdown))
+        {:status 400
+         :body   {}})
+      (if-let [handler (action->handler action)]
+        (invoke-handler *session payload handler)
+        {:status 400
+         :body   (str "UNKNOWN ACTION: " action)}))))
 
 (defn- api-handler*
   [{:keys [request-method *session] :as request}]

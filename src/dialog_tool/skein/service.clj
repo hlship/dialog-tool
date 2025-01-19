@@ -21,7 +21,8 @@
   ;; This is to allow code reloading to work correctly without restarting
   ;; the service.
   ((requiring-resolve 'dialog-tool.skein.handlers/service-handler)
-   (assoc request :*session *session)))
+   (assoc request :*session *session
+                  :*shutdown *shutdown)))
 
 (defn start!
   "Starts a service with the Skein for the given path, or a new empty skein
@@ -92,6 +93,7 @@
            :engine :frotz})
 
   (@*shutdown)
+
 
   (->> "attack-cage-with-strength.txt
 base-of-tower.txt
