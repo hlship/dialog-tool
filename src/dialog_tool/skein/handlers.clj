@@ -33,7 +33,8 @@
     ;; sending just what's changed.
     {:updates     (mapv tree/knot->wire updates)
      :removed_ids removed-ids
-     :focus       (:focus new-tree)}))
+     :focus       (:focus new-tree)
+     :dirty       (:dirty? new-tree)}))
 
 (defn- bless
   [session payload]

@@ -82,6 +82,10 @@
           "../sanddancer-dialog/default.skein"
           {:engine :dgdebug})
 
+  (start! (pf/read-project "../dialog-extensions/who")
+          "../dialog-extensions/who/default.skein"
+          nil)
+
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/frotz.skein"
           {:seed   10101

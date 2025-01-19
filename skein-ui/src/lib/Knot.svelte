@@ -235,7 +235,7 @@
                     >
                         <CodeMergeSolid class="w-4 h-4" />
                         {#if knot.children.length > 1}
-                        <Indicator size="xl" border placement="top-right">{knot.children.length}</Indicator>
+                        <Indicator class={controlColor.background} size="xl" border placement="top-right">{knot.children.length}</Indicator>
                         {/if}
                     </Button>
                     <Dropdown
