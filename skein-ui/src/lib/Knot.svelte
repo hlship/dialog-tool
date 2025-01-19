@@ -1,7 +1,7 @@
 <script lang="ts">
     import { category2color } from "./knot-color";
     import { postApi, type ActionResult, type Payload } from "./common.svelte";
-    import { Button, Dropdown, DropdownItem, Helper } from "flowbite-svelte";
+    import { Button, Dropdown, DropdownItem, Helper, Indicator } from "flowbite-svelte";
     import KnotText from "./KnotText.svelte";
     import EditProperty from "./EditProperty.svelte";
     import { DotsVerticalOutline, CodeMergeSolid } from "flowbite-svelte-icons";
@@ -236,6 +236,9 @@
                         size="xs"
                     >
                         <CodeMergeSolid class="w-4 h-4" />
+                        {#if knot.children.length > 1}
+                        <Indicator size="xl" border placement="top-right">{knot.children.length}</Indicator>
+                        {/if}
                     </Button>
                     <Dropdown
                         placement="left"
