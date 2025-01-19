@@ -18,6 +18,7 @@ export type ActionResult = {
     focus: number,
     enable_undo: boolean,
     enable_redo: boolean,
+    dirty: boolean,
     // Only for new-command:
     new_id?: number,
     // Only appears for GET /api request:
@@ -46,8 +47,6 @@ export async function postApi(payload: Payload): Promise<ActionResult> {
 }
 
 export function mergeCategory(left: Category, right: Category): Category {
-    // TODO: all this is really the max of the two inputs
-
     if (left == "error" || right == "error") { return "error"; }
 
     if (left == "new" || right == "new") { return "new"; }

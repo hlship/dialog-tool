@@ -8,11 +8,16 @@
 
 (defn new-tree
   [engine seed]
-  {:meta  {:engine engine
-           :seed seed}
-   :focus 0                                                 ; knot id to focus on
-   :knots {0 {:id    0
-              :label "START"}}})
+  {:meta   {:engine engine
+            :seed   seed}
+   :dirty? false
+   :focus  0                                                ; knot id to focus on
+   :knots  {0 {:id    0
+               :label "START"}}})
+
+(defn- dirty
+  [tree]
+  (assoc tree :dirty? true))
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -32,6 +37,7 @@
               :command   command
               :unblessed response}]
     (-> tree
+        dirty
         (assoc :focus new-id)
         (assoc-in [:knots new-id] knot)
         (assoc-in [:knots parent-id :selected] new-id)
@@ -56,16 +62,23 @@
   [tree knot-id]
   (let [knot (get-in tree [:knots knot-id])
         {:keys [children]} knot]
-    (-> (reduce delete-knot tree children)
+    (-> (reduce delete-knot (dirty tree) children)
         (update :knots dissoc knot-id)
         ;; Yes, we don't care about efficiency!
         rebuild-children)))
 
+(defn- dirty-check
+  [old-tree new-tree]
+  (if (= old-tree new-tree)
+    old-tree
+    (dirty new-tree)))
+
 (defn label-knot
   [tree knot-id label]
-  (if (string/blank? label)
-    (update-in tree [:knots knot-id] dissoc :label)
-    (assoc-in tree [:knots knot-id :label] label)))
+  (dirty-check tree
+               (if (string/blank? label)
+                 (update-in tree [:knots knot-id] dissoc :label)
+                 (assoc-in tree [:knots knot-id :label] label))))
 
 (defn- bless-knot
   [knot]
@@ -79,7 +92,8 @@
   "Blesses a knot's response by rolling the unblessed response into the main response.
   Does nothing if the knot has no unblessed response."
   [tree knot-id]
-  (update-in tree [:knots knot-id] bless-knot))
+  (dirty-check tree
+               (update-in tree [:knots knot-id] bless-knot)))
 
 (defn- store-response
   [knot response]
@@ -92,7 +106,8 @@
   the knot is unchanged, otherwise updates the knot adding :unblessed
   with the new response."
   [tree knot-id new-response]
-  (update-in tree [:knots knot-id] store-response new-response))
+  (dirty-check tree
+               (update-in tree [:knots knot-id] store-response new-response)))
 
 (defn find-children
   [tree knot-id]
@@ -149,7 +164,8 @@
 (defn change-command
   "Edits the command for a particular knot."
   [tree knot-id new-command]
-  (assoc-in tree [:knots knot-id :command] new-command))
+  (dirty-check tree
+               (assoc-in tree [:knots knot-id :command] new-command)))
 
 (defn insert-parent
   "Inserts a new node with id new-parent-id and command new-command as the new parent
@@ -157,6 +173,7 @@
   [tree knot-id new-parent-id new-command]
   (let [{:keys [parent-id]} (get-in tree [:knots knot-id])]
     (-> tree
+        dirty
         (add-child parent-id new-parent-id new-command nil)
         (update-in [:knots new-parent-id] assoc :selected knot-id :children [knot-id])
         (assoc-in [:knots knot-id :parent-id] new-parent-id)
@@ -191,6 +208,7 @@
                 children)
         (update :knots dissoc knot-id)
         (assoc :focus parent-id)
+        dirty
         rebuild-children
         (adjust-selection-after-deletion parent-id knot-id))))
 
@@ -220,7 +238,7 @@
 
 (defn select-knot
   "Updates the parent of the indicated knot to make this knot selected, then recurses upwards
-  doing the same until it hits the root."
+  doing the same until it hits the root.  Never marks the tree dirty."
   [tree knot-id]
   (loop [knot-id knot-id
          tree tree]
@@ -243,3 +261,8 @@
        all-knots
        (filter #(= label (:label %)))
        first))
+
+(defn clean
+  "Mark the tree as clean (after all changes saved externally)."
+  [tree]
+  (assoc tree :dirty? false))

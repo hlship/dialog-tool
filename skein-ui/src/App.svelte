@@ -23,7 +23,9 @@
     FloppyDiskAltSolid,
     PlaySolid,
     ChevronDownOutline,
+    CloseCircleSolid
   } from "flowbite-svelte-icons";
+    import QuitModal from "./lib/QuitModal.svelte";
 
   let knots = new SvelteMap<number, KnotData>();
   let scrollToId = $state(null);
@@ -43,6 +45,8 @@
   let enableRedo = $state(false);
   let alertMessage: string = $state(null);
   let modalAlertRunning = $state(false);
+  let dirty = $state(false);
+  let showQuit = $state(false);
 
   function alert(message: string): void {
     alertMessage = message;
@@ -65,6 +69,7 @@
 
     enableUndo = result.enable_undo;
     enableRedo = result.enable_redo;
+    dirty = result.dirty;
 
     const focus =  result.focus;
 
@@ -142,6 +147,8 @@
   async function focusNewCommand(id: number): Promise<void> {
     postPayload({ action: "deselect", id: id });
   }
+ 
+
 </script>
 
 <div class="relative px-8">
@@ -181,7 +188,7 @@
         <PlaySolid class="w-5 h-5 me-2" />Replay All</Button
       >
       <Tooltip>Replay <em>every</em> knot</Tooltip>
-      <Button color="blue" size="xs" on:click={save}>
+      <Button color={ dirty ? 'blue' : 'green'} size="xs" on:click={save}>
         <FloppyDiskAltSolid class="w-5 h-5 me-2" /> Save</Button
       >
       <Button color="blue" size="xs" on:click={undo} disabled={!enableUndo}>
@@ -190,6 +197,9 @@
       <Button color="blue" size="xs" on:click={redo} disabled={!enableRedo}>
         <RedoOutline class="w-5 h-5 me-2" />Redo</Button
       >
+      <Button color="blue" size="xs" on:click={ () => showQuit = true }>
+          <CloseCircleSolid class="w-5 h-5 me-2"/>Quit 
+      </Button>
     </div>
   </Navbar>
 
@@ -218,3 +228,4 @@
 
 <ReplayAllModal {knots} {processResult} bind:this={replayAllModal} />
 <ModalAlert message={alertMessage} bind:running={modalAlertRunning} />
+<QuitModal dirty={dirty} bind:running={showQuit}/>

@@ -74,7 +74,7 @@
 
 (defn- do-restart!
   [session]
-  ;; First pass made use of '(restart)' but that had problems, and dgdebug is so fast
+  ;; An earlier version made use of '(restart)' but that had problems, and dgdebug is so fast
   ;; to start up that it doesn't make sense.
   (let [{:keys [process]} session
         process' (sk.process/restart! process)
@@ -180,7 +180,9 @@
   [session]
   (let [{:keys [tree skein-path]} session]
     (sk.file/save-tree tree skein-path)
-    session))
+    ;; If this moves around the undo/redo stack, may not get the right
+    ;; behavior, maybe. Not sure.
+    (assoc session :tree (tree/clean tree))))
 
 (defn undo
   "Undoes the state of the tree one step; the current tree is pushed onto the

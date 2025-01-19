@@ -4,7 +4,7 @@
 
 - Visual feedback when the skein changes
 - The graph view (currently it's just a serial view, one path through the graph)
-- Collapsable text
+- Collapsable text (hide text, allow for quick navigation)
 - Buttons to jump to next/prev command
 - Animation when adding/removing nodes
 - Search the Skein
@@ -14,6 +14,9 @@
 - Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
 - Detect/report network failures
 - Shutdown the skein window (and server)
+- Color-blind indicators or mode
+- Restart should rebuild the source file list, re-read the dialog.edn
+- Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
 
 ## Releasing
 

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { category2color } from "./knot-color";
     import { postApi, type ActionResult, type Payload } from "./common.svelte";
-    import { Button, Dropdown, DropdownItem, Helper } from "flowbite-svelte";
+    import { Button, Dropdown, DropdownItem, Helper, Indicator } from "flowbite-svelte";
     import KnotText from "./KnotText.svelte";
     import EditProperty from "./EditProperty.svelte";
     import { DotsVerticalOutline, CodeMergeSolid } from "flowbite-svelte-icons";
@@ -214,12 +214,6 @@
                             Edit Command
                             <Helper>Change the command</Helper>
                         </DropdownItem>
-                    {/if}
-                    <DropdownItem onclick={newChild} class={ddcolor}>
-                        New Child
-                        <Helper>Add a new command after this</Helper>
-                    </DropdownItem>
-                    {#if knot.id != 0}
                         <DropdownItem
                             onclick={() => activateField(insertParent)}
                             class={ddcolor}
@@ -227,7 +221,11 @@
                             Insert Parent
                             <Helper>Insert a command before this</Helper>
                         </DropdownItem>
-                    {/if}
+                    {/if}                    
+                    <DropdownItem onclick={newChild} class={ddcolor}>
+                        New Child
+                        <Helper>Add a new command after this</Helper>
+                    </DropdownItem>
                 </Dropdown>
                 {#if knot.children.length > 0}
                     <Button
@@ -236,6 +234,9 @@
                         size="xs"
                     >
                         <CodeMergeSolid class="w-4 h-4" />
+                        {#if knot.children.length > 1}
+                        <Indicator class={controlColor.background} size="xl" border placement="top-right">{knot.children.length}</Indicator>
+                        {/if}
                     </Button>
                     <Dropdown
                         placement="left"
