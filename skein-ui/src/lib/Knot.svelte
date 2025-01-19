@@ -214,12 +214,6 @@
                             Edit Command
                             <Helper>Change the command</Helper>
                         </DropdownItem>
-                    {/if}
-                    <DropdownItem onclick={newChild} class={ddcolor}>
-                        New Child
-                        <Helper>Add a new command after this</Helper>
-                    </DropdownItem>
-                    {#if knot.id != 0}
                         <DropdownItem
                             onclick={() => activateField(insertParent)}
                             class={ddcolor}
@@ -227,7 +221,11 @@
                             Insert Parent
                             <Helper>Insert a command before this</Helper>
                         </DropdownItem>
-                    {/if}
+                    {/if}                    
+                    <DropdownItem onclick={newChild} class={ddcolor}>
+                        New Child
+                        <Helper>Add a new command after this</Helper>
+                    </DropdownItem>
                 </Dropdown>
                 {#if knot.children.length > 0}
                     <Button
