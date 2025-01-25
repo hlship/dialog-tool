@@ -7,13 +7,13 @@
          "skein-ui/dist"]
  :deps  {org.clojure/clojure        {:mvn/version "1.12.0"}
          ;; Keep sync'ed w/ bb.edn:
-         org.clj-commons/pretty     {:mvn/version "3.3.0"}
+         org.clj-commons/pretty     {:mvn/version "3.3.1"}
          org.clj-commons/humanize   {:mvn/version "1.1"}
-         io.github.hlship/cli-tools {:mvn/version "0.14"}
+         io.github.hlship/cli-tools {:mvn/version "0.15"}
          medley/medley              {:mvn/version "1.4.0"}
          ;; Bundled Babashka dependencies:
          selmer/selmer              {:mvn/version "1.12.61"}
-         babashka/fs                {:mvn/version "0.5.23"}
+         babashka/fs                {:mvn/version "0.5.24"}
          org.clojure/core.async     {:mvn/version "1.7.701"}
          cheshire/cheshire          {:mvn/version "5.13.0"}
          http-kit/http-kit          {:mvn/version "2.8.0"}}
