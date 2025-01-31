@@ -3,6 +3,7 @@
 (require '[net.lewisship.cli-tools :as cli])
 
 (cli/dispatch {:flat       true
-               :namespaces '[dialog-tool.commands]})
+               :namespaces '[dialog-tool.commands
+                             net.lewisship.cli-tools.completions]})
 
 
