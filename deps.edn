@@ -9,7 +9,7 @@
          ;; Keep sync'ed w/ bb.edn:
          org.clj-commons/pretty     {:mvn/version "3.3.1"}
          org.clj-commons/humanize   {:mvn/version "1.1"}
-         io.github.hlship/cli-tools {:mvn/version "0.15"}
+         io.github.hlship/cli-tools {:mvn/version "0.15.1"}
          medley/medley              {:mvn/version "1.4.0"}
          ;; Bundled Babashka dependencies:
          selmer/selmer              {:mvn/version "1.12.61"}
