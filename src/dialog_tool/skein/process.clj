@@ -123,11 +123,15 @@
 
 (defn- inject-command
   [command response]
-  (let [x (string/index-of response "\n")]
-    (str
-      (subs response 0 x)
-      command
-      (subs response (inc x)))))
+  (prn `inject-command
+       :command command
+       :response response)
+
+  (str
+    (subs response 0 2)
+    command
+    "\n"
+    (subs response 2)))
 
 (defn send-command!
   "Sends a player command to the process, blocking until a response to the command
