@@ -87,8 +87,8 @@
           "../dialog-extensions/who/default.skein"
           nil)
 
-  (start! (pf/read-project "../sanddancer-dialog")
-          "../sanddancer-dialog/frotz.skein"
+  (start! (pf/read-project "../dialog-extensions/who")
+          "../dialog-extensions/who/frotz.skein"
           {:seed   10101
            :engine :frotz})
 

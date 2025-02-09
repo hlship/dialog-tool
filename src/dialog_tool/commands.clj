@@ -3,14 +3,13 @@
             [babashka.process :as p]
             [clj-commons.ansi :as ansi :refer [pout perr]]
             [clojure.string :as string]
-            [dialog-tool.util :refer [fail]]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.template :as template]
             [dialog-tool.bundle :as bundle]
-            [net.lewisship.cli-tools :as cli :refer [defcommand]]
+            [net.lewisship.cli-tools :as cli :refer [defcommand abort]]
             [clojure.java.browse :as browse]
             [dialog-tool.build :as build]
             [dialog-tool.skein.service :as service]
@@ -69,7 +68,7 @@
           :optional true]]
   (let [skein-path (or skein "default.skein")]
     (when-not (fs/exists? skein-path)
-      (fail [:bold skein-path] " does not exist"))
+      (abort [:bold skein-path] " does not exist"))
     (start-skein-service! skein-path nil)))
 
 (defcommand new-skein
@@ -88,7 +87,7 @@
           :optional true]]
   (let [skein-path (or skein "default.skein")]
     (when (fs/exists? skein-path)
-      (fail [:bold skein-path] " already exists"))
+      (abort [:bold skein-path] " already exists"))
     (start-skein-service! skein-path {:seed seed :engine engine})))
 
 (defcommand build
@@ -115,7 +114,7 @@
                 [:red (:error totals)]))
 
 (defn- run-tests
-  [project width skein-path]
+  [project width quiet? skein-path]
   (let [tree (sk.file/load-tree skein-path)
         {:keys [engine seed]
          :or   {engine :dgdebug}} (:meta tree)
@@ -126,17 +125,20 @@
                       tree/leaf-knots
                       (map :id))
         test-leaf (fn [session id]
-                    (print ".") (flush)
+                    (when-not quiet?
+                      (print ".") (flush))
                     (s/replay-to! session id))
         spaces (- width (count skein-path))
         session' (do
-                   (printf "Testing %s%s: "
-                           (apply str (repeat spaces " "))
-                           skein-path)
+                   (when-not quiet?
+                     (printf "Testing %s%s: "
+                             (apply str (repeat spaces " "))
+                             skein-path))
                    (reduce test-leaf session leaf-ids))
         totals (s/totals session')]
-    (print " ")
-    (println (compose-totals totals))
+    (when-not quiet?
+      (print " ")
+      (println (compose-totals totals)))
     totals))
 
 (defcommand test-project
@@ -146,7 +148,7 @@
   (no prior response), and the number of error knots (conflicting response).
 
   Exits with 0 if all knots are correct, or with 1 if there are any errors."
-  [:args
+  [quiet? ["-q" "--quiet" "Minimize output"] :args
    skein-file ["SKEIN-FILE" "Path to single skein file to test"
                :optional true]
    :command "test"]
@@ -155,13 +157,17 @@
                       [skein-file]
                       (map str (fs/glob "" "*.skein")))
         _ (when-not (seq skein-paths)
-            (fail "No skein files found"))
+            (abort "No skein files found"))
         width (->> skein-paths (map count) (apply max))
-        test-totals (map #(run-tests project width %) skein-paths)
-        totals (apply merge-with + test-totals)]
-    (println "Results:" (compose-totals totals))
+        test-totals (map #(run-tests project width quiet? %) skein-paths)
+        totals (apply merge-with + test-totals)
+        pretty-totals (compose-totals totals)]
+    (if quiet?
+      (println pretty-totals)
+      (println "Results:" (compose-totals totals)))
     (when (pos? (+ (:new totals) (:error totals)))
-      (perr [:yellow "Run " [:bold "dgt skein " [:italic "<file>"]] " to run the skein UI to investigate errors"])
+      (when-not quiet?
+        (perr [:yellow "Run " [:bold "dgt skein " [:italic "<file>"]] " to run the skein UI to investigate errors"]))
       (cli/exit 1))))
 
 (defcommand run-project

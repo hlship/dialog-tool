@@ -1,8 +1,7 @@
 (ns dialog-tool.project-file
   (:require [clojure.edn :as edn]
-            [babashka.fs :as fs]
-            [dialog-tool.util :refer [fail]]
-            [clojure.string :as string])
+            [net.lewisship.cli-tools :refer [abort]]
+            [babashka.fs :as fs])
   (:import (java.nio.file Path)))
 
 (defn read-project
@@ -13,7 +12,7 @@
    (let [root-dir' (fs/path (or root-dir ""))
          path (fs/path root-dir '"dialog.edn")]
      (when-not (fs/exists? path)
-       (fail (str path) " does not exist"))
+       (abort (str path) " does not exist"))
      (try
        (-> path
            fs/file
@@ -21,7 +20,7 @@
            edn/read-string
            (assoc ::root-dir root-dir'))
        (catch Throwable t
-         (fail "Could not read " [:bold path] ": "
+         (abort "Could not read " [:bold path] ": "
                (ex-message t)))))))
 
 (defn- expand-source

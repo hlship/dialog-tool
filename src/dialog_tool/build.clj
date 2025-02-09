@@ -4,7 +4,6 @@
             [clj-commons.ansi :refer [perr]]
             [clojure.string :as str]
             [dialog-tool.project-file :as pf]
-            [dialog-tool.util :refer [fail]]
             [net.lewisship.cli-tools :as cli]))
 
 (defn- dialogc-args
@@ -50,7 +49,7 @@
   (let [{:keys [format debug?]} options
         format     (or format (:format project))
         _     (when-not format
-                (fail "No :format defined for project"))
+                (cli/abort "No :format defined for project"))
         output-dir (fs/path "out" (if debug? "debug" "release"))
         sources    (pf/expand-sources project options)]
     (fs/create-dirs output-dir)

@@ -37,6 +37,6 @@ size="sm">
         {#if dirty} 
         <Button color="blue" on:click={ save }>Save First</Button>
         {/if}
-        <Button color={ dirty ? 'red' : 'blue'}>Quit</Button>
+        <Button color={ dirty ? 'red' : 'blue'} on:click={ quit }>Quit</Button>
     </svlete:fragment>
 </Modal>
