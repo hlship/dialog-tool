@@ -3,14 +3,13 @@
             [babashka.process :as p]
             [clj-commons.ansi :as ansi :refer [pout perr]]
             [clojure.string :as string]
-            [dialog-tool.util :refer [fail]]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.template :as template]
             [dialog-tool.bundle :as bundle]
-            [net.lewisship.cli-tools :as cli :refer [defcommand]]
+            [net.lewisship.cli-tools :as cli :refer [defcommand abort]]
             [clojure.java.browse :as browse]
             [dialog-tool.build :as build]
             [dialog-tool.skein.service :as service]
@@ -69,7 +68,7 @@
           :optional true]]
   (let [skein-path (or skein "default.skein")]
     (when-not (fs/exists? skein-path)
-      (fail [:bold skein-path] " does not exist"))
+      (abort [:bold skein-path] " does not exist"))
     (start-skein-service! skein-path nil)))
 
 (defcommand new-skein
@@ -88,7 +87,7 @@
           :optional true]]
   (let [skein-path (or skein "default.skein")]
     (when (fs/exists? skein-path)
-      (fail [:bold skein-path] " already exists"))
+      (abort [:bold skein-path] " already exists"))
     (start-skein-service! skein-path {:seed seed :engine engine})))
 
 (defcommand build
@@ -158,7 +157,7 @@
                       [skein-file]
                       (map str (fs/glob "" "*.skein")))
         _ (when-not (seq skein-paths)
-            (fail "No skein files found"))
+            (abort "No skein files found"))
         width (->> skein-paths (map count) (apply max))
         test-totals (map #(run-tests project width quiet? %) skein-paths)
         totals (apply merge-with + test-totals)

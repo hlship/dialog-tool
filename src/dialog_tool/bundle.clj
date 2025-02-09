@@ -6,12 +6,12 @@
             [babashka.process :as p]
             [clj-commons.ansi :refer [perr]]
             [clj-commons.humanize :as h]
+            [net.lewisship.cli-tools :as cli]
             [clojure.string :as string]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.template :as t]
             [dialog-tool.skein.file :as file]
-            [dialog-tool.util :refer [fail]]
             [dialog-tool.build :as build])
   (:import (java.io IOException)))
 
@@ -48,7 +48,7 @@
       (let [tree (try
                    (file/load-tree walkthrough-skein)
                    (catch IOException e
-                     (fail (ex-message e))))
+                     (cli/abort e)))
             knot (tree/find-by-label tree "WALKTHROUGH")]
         (when knot
           (->> (tree/knots-from-root tree (:id knot))
