@@ -123,10 +123,6 @@
 
 (defn- inject-command
   [command response]
-  (prn `inject-command
-       :command command
-       :response response)
-
   (str
     (subs response 0 2)
     command
