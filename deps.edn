@@ -5,18 +5,21 @@
          ;; HTML and JS is copied and or generated to skein-ui/dist/public.
          ;; Resources under public are made visible.
          "skein-ui/dist"]
- :deps  {org.clojure/clojure        {:mvn/version "1.12.0"}
+ :deps  {org.clojure/clojure        {:mvn/version "1.12.2"}
          ;; Keep sync'ed w/ bb.edn:
-         org.clj-commons/pretty     {:mvn/version "3.3.1"}
-         org.clj-commons/humanize   {:mvn/version "1.1"}
-         io.github.hlship/cli-tools {:mvn/version "0.15.1"}
-         medley/medley              {:mvn/version "1.4.0"}
+         io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-1"}
          ;; Bundled Babashka dependencies:
          selmer/selmer              {:mvn/version "1.12.61"}
          babashka/fs                {:mvn/version "0.5.24"}
          org.clojure/core.async     {:mvn/version "1.7.701"}
          cheshire/cheshire          {:mvn/version "5.13.0"}
-         http-kit/http-kit          {:mvn/version "2.8.0"}}
+         http-kit/http-kit          {:mvn/version "2.8.0"}
+         org.clojure/tools.cli      {:mvn/version "1.1.230"}
+         ;;
+         ;; Bundled cli-tools dependencies
+         org.clj-commons/pretty     {:mvn/version "3.6.5"}
+         org.clj-commons/humanize   {:mvn/version "1.1"}
+         }
 
  :aliases
  {:test {:extra-paths ["dev"

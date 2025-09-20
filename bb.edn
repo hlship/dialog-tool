@@ -4,7 +4,6 @@
          "skein-ui/dist"
          ;; Templates
          "resources"]
- :deps  {org.clj-commons/pretty     {:mvn/version "3.3.1"}
+ :deps  {org.clj-commons/pretty     {:mvn/version "3.6.5"}
          org.clj-commons/humanize   {:mvn/version "1.1"}
-         medley/medley              {:mvn/version "1.4.0"}
-         io.github.hlship/cli-tools {:mvn/version "0.15.1"}}}
+         io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-1"}}}

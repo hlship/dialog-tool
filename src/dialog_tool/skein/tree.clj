@@ -3,8 +3,7 @@
   starting at the root knot. Each knot has a unique id.
 
   Nodes have a response and optionally an unblessed response."
-  (:require [clojure.string :as string]
-            [medley.core :as medley]))
+  (:require [clojure.string :as string]))
 
 (defn new-tree
   [engine seed]
@@ -228,13 +227,13 @@
 (defn apply-default-selections
   "Called after loading the tree from a file, it sets up default selections for each knot as the first child."
   [tree]
-  (update tree :knots
-          #(medley/map-vals
-             (fn [knot]
-               (let [{:keys [children]} knot]
-                 (cond-> knot
-                         (seq children) (assoc :selected (first children)))))
-             %)))
+  (update tree
+          :knots
+          update-vals
+          (fn [knot]
+            (let [{:keys [children]} knot]
+              (cond-> knot
+                      (seq children) (assoc :selected (first children)))))))
 
 (defn select-knot
   "Updates the parent of the indicated knot to make this knot selected, then recurses upwards

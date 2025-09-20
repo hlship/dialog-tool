@@ -4,7 +4,6 @@
 (defn main
   [& args]
   (cli/dispatch {:tool-name  "dgt"
-                 :flat       true
                  :namespaces '[dialog-tool.commands]
                  :arguments  args}))
 
