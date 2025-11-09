@@ -2,9 +2,7 @@
 
 (require '[net.lewisship.cli-tools :as cli])
 
-# :tool-name should default, but https://github.com/hlship/cli-tools/issues/52
-(cli/dispatch {:tool-name "dgt"
-               :namespaces '[dialog-tool.commands
+(cli/dispatch {:namespaces '[dialog-tool.commands
                              net.lewisship.cli-tools.completions]})
 
 

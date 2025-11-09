@@ -1,3 +1,5 @@
 /target/
 /gen/public/
 .DS_Store
+.clj-kondo
+.lsp
