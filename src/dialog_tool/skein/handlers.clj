@@ -275,9 +275,11 @@
   with http-kit; this middleware converts a RawString :body to a simple String."
   [f]
   (fn [request]
-    (let [response (f request)]
-      (if (-> response :body huff/raw-string?)
-        (update response :body str)
+    (let [{:keys [body headers] :as response} (f request)]
+      (if (huff/raw-string? body)
+        (cond-> (update response :body str)
+          (nil? (get headers "Content-Type"))
+          (assoc-in [:headers "Content-Type"] "text/html"))
         response))))
 
 (defn wrap-with-response-logger

@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>It's Day-One!</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="style.css" rel="stylesheet">
+    <title>Dialog Skein</title>
 </head>
 <body>
 
-<div id="root" data-init="@get('/content/root')">
-    <div id="message">Loading ...</div>
+<div class="relative px-8" id="app" data-init="@get('/app')">
+    Loading...
 </div>
-
 
 <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.6/bundles/datastar.js"></script>
 </body>
