@@ -3,9 +3,8 @@
 
 (defn main
   [& args]
-  (cli/dispatch {:tool-name  "dgt"
-                 :flat       true
-                 :namespaces '[dialog-tool.commands]
+  (cli/dispatch {:namespaces '[dialog-tool.commands
+                               net.lewisship.cli-tools.completions]
                  :arguments  args}))
 
 

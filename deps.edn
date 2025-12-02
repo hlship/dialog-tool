@@ -5,21 +5,20 @@
          ;; HTML and JS is copied and or generated to skein-ui/dist/public.
          ;; Resources under public are made visible.
          "skein-ui/dist"]
- :deps  {org.clojure/clojure        {:mvn/version "1.12.0"}
+ :deps  {org.clojure/clojure        {:mvn/version "1.12.3"}
          ;; Keep sync'ed w/ bb.edn:
-         org.clj-commons/pretty     {:mvn/version "3.3.1"}
-         org.clj-commons/humanize   {:mvn/version "1.1"}
-         io.github.hlship/cli-tools {:mvn/version "0.15.1"}
-         medley/medley              {:mvn/version "1.4.0"}
+         io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-3"}
          ;; Bundled Babashka dependencies:
-         selmer/selmer              {:mvn/version "1.12.61"}
-         babashka/fs                {:mvn/version "0.5.24"}
-         org.clojure/core.async     {:mvn/version "1.7.701"}
-         cheshire/cheshire          {:mvn/version "5.13.0"}
-         http-kit/http-kit          {:mvn/version "2.8.0"}}
+         selmer/selmer              {:mvn/version "1.12.69"}
+         babashka/fs                {:mvn/version "0.5.30"}
+         babashka/process           {:mvn/version "0.6.23"}
+         org.clojure/core.async     {:mvn/version "1.8.741"}
+         cheshire/cheshire          {:mvn/version "6.1.0"}
+         http-kit/http-kit          {:mvn/version "2.8.1"}
+         org.clojure/tools.cli      {:mvn/version "1.2.245"}}
 
  :aliases
  {:test {:extra-paths ["dev"
                        "dev-resources"]
          :extra-deps  {io.github.hlship/trace      {:mvn/version "1.4"}
-                       io.github.tonsky/clj-reload {:mvn/version "0.7.1"}}}}}
+                       io.github.tonsky/clj-reload {:mvn/version "1.0.0"}}}}}
