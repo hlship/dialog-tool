@@ -139,7 +139,7 @@
   (cond
     (nil? unblessed) :ok
 
-    (some? response) :error
+    (nil? response) :new
 
     :else :new))
 

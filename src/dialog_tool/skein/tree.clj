@@ -224,6 +224,18 @@
           (recur (:parent-id knot)
                  (cons knot result)))))))
 
+(defn selected-knots
+  "Starting at the root knot, returns a seq of each selected knot."
+  [tree]
+  (let [{:keys [knots]} tree]
+    (loop [result  []
+           knot-id 0]
+      (if-not knot-id
+        result
+        (let [knot (get knots knot-id)]
+          (recur (conj result knot)
+                 (:selected knot)))))))
+
 (defn apply-default-selections
   "Called after loading the tree from a file, it sets up default selections for each knot as the first child."
   [tree]
@@ -265,3 +277,25 @@
   "Mark the tree as clean (after all changes saved externally)."
   [tree]
   (assoc tree :dirty? false))
+
+(defn- assess-knot
+  [{:keys [unblessed response]}]
+  (cond
+    (nil? unblessed)
+    :ok
+    
+    (not= unblessed response)
+    :error
+
+    :else :ok))
+
+(defn counts
+  "Returns a map of :ok, :new, :error, each a count. :new is for new knots where there's
+  not a :response, just :unblessed.  :error is when blessed != response."
+  [tree]
+  (->> tree
+       :knots
+       vals
+       (map assess-knot)
+       frequencies
+       (merge {:ok 0 :new 0 :error 0})))
