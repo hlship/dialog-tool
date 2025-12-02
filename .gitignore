@@ -3,3 +3,6 @@
 .DS_Store
 .clj-kondo
 .lsp
+.cpcache
+.idea
+*.iml
