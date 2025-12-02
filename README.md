@@ -129,7 +129,7 @@ is merged on top of the :default map, if present.
 
 ## Running your project
 
-`dgt debug` will start your project in the `dgdebug` so you can explore your creation interactively at the console.
+`dgt debug` will run your project using `dgdebug` so you can explore your creation interactively at the console.
 
 ```
 > dgt debug

@@ -7,10 +7,10 @@
          "skein-ui/dist"]
  :deps  {org.clojure/clojure        {:mvn/version "1.12.3"}
          ;; Keep sync'ed w/ bb.edn:
-         io.github.hlship/cli-tools {:git/sha "4fa448260430daedd1d9209e17fe02e72ae25219"}
+         io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-3"}
          ;; Bundled Babashka dependencies:
-         selmer/selmer              {:mvn/version "1.12.67"}
-         babashka/fs                {:mvn/version "0.5.27"}
+         selmer/selmer              {:mvn/version "1.12.69"}
+         babashka/fs                {:mvn/version "0.5.30"}
          babashka/process           {:mvn/version "0.6.23"}
          org.clojure/core.async     {:mvn/version "1.8.741"}
          cheshire/cheshire          {:mvn/version "6.1.0"}
