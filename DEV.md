@@ -1,5 +1,13 @@
 # Developer Notes
 
+## Temporary
+
+```text
+tailwindcss -i public/style.css -o out/public/style.css --watch
+```
+
+
+
 ## TODO / Ideas / Plans/ Bugs
 
 - Visual feedback when the skein changes

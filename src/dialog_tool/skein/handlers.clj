@@ -1,15 +1,21 @@
 (ns dialog-tool.skein.handlers
   (:require [babashka.fs :as fs]
+            [clj-simple-router.core :as router]
+            [dialog-tool.skein.routes :as routes]
+            [ring.middleware.content-type :as content-type]
+            [huff2.core :as huff]
             [clojure.core.async :refer [thread]]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]
             [cheshire.core :as json]
             [dialog-tool.skein.tree :as tree]
-            [dialog-tool.skein.session :as session]))
+            [dialog-tool.skein.session :as session]
+            [ring.util.response :as response]))
 
 (def text-plain {"Content-Type" "text/plain"})
 
+(comment
 (defn- ->json
   [response]
   (-> response
@@ -262,8 +268,42 @@
        :headers text-plain
        :body    (str "NOT FOUND: " uri)})))
 
-(defn service-handler
-  [request]
+)                                                           ; comment
+
+(defn expand-raw-string-body
+  "huff returns a wrapper type, huff2.core.RawString, which is not directly compatible
+  with http-kit; this middleware converts a RawString :body to a simple String."
+  [f]
+  (fn [request]
+    (let [response (f request)]
+      (if (-> response :body huff/raw-string?)
+        (update response :body str)
+        response))))
+
+(defn wrap-with-response-logger
+  [f]
+  (fn [request]
+    (let [{:keys [uri request-method]} request
+          response (f request)]
+      (println (:status response) (-> request-method name string/upper-case) uri)
+      response)))
+
+(defn wrap-not-found
+  [f]
+  (fn [request]
+    (let [response (f request)]
+      (or response
+          (response/not-found (str "NOT FOUND: "
+                                   (:uri request)))))))
+
+(def service-handler
+  (let [router (router/router routes/routes)]
+    (-> router
+        expand-raw-string-body
+        wrap-not-found
+        content-type/wrap-content-type
+        wrap-with-response-logger))
+  #_ 
   (let [{:keys [uri request-method]} request
         request' (cond-> request
                          (= :post request-method)
