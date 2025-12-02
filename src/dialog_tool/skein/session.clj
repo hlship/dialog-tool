@@ -141,7 +141,7 @@
 
     (some? response) :error
 
-    :default :new))
+    :else :new))
 
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."
@@ -195,8 +195,8 @@
         (update :undo-stack pop))))
 
 (defn redo
-  [session]
   "Reverts an undo, restoring a prior state of the tree."
+  [session]
   (let [tree' (-> session :redo-stack peek)]
     (-> session
         (assoc :tree tree')
