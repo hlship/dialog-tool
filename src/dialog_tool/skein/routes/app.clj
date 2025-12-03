@@ -2,7 +2,28 @@
   (:require [clj-simple-router.core :as router]
             [clojure.string :as string]
             [dialog-tool.skein.tree :as tree]
+            [starfederation.datastar.clojure.api :as d*]
+            [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
+            [cheshire.core :as json]
             [huff2.core :refer [html]]))
+
+;; TODO: Refactor this into sensible namespaces!
+
+(defn- patch-elements!
+  [*session markup]
+  (d*/patch-elements! (:sse-gen @*session)
+                      ;; In likely case it's a Huff RawString
+                      (str markup)))
+
+(defn- patch-signals!
+  [*session signals]
+  (d*/patch-signals! (:sse-gen @*session)
+                     (json/generate-string signals)))
+
+(defn- patch-counts!
+  [*session]
+  (let [counts (-> *session deref :tree tree/counts)]
+    (patch-signals! *session {:counts counts})))
 
 ;; Recreating a number of things supplied by the flowbrite-svelte library
 
@@ -55,41 +76,43 @@
 
 (defn navbar
   [title tree]
-  (let [{:keys [new error ok]} (tree/counts tree)]
-    [:nav {:class        (trim "bg-white text-gray-500 border-gray-200 divide-gray-200"
-                               "px-2 sm:px-4 py-2.5"
-                               "fixed w-full z-20 top-0 start-0 border-b")
-           :data-signals "{dirty: false}"}
-     [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
-      [:a.flex.items-center
-       [:div.self-center.whitespace-nowrap.text-xl.font-semibold
-        title]]
-      [:div.mx-0.inline-flex
-       [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg ok]
-       [:div.text-black.bg-yellow-200.p-2.font-semibold new]
-       [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg error]
-       [nav-button nil "Jump"]
-       [:div.flex.md:order-2.space-x-2
-        [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> [icon-play] "Replay All"]]
-        [nav-button {:class      button-base
-                     :data-class "{'bg-blue-700': $dirty, 'hover:bg-blue-800': $dirty, 'bg-green-700': !$dirty, 'hover:bg-green-800': !$dirty}"}
-         [:<> [icon-floppy-disk] "Save"]]
-        [nav-button nil "Undo"]
-        [nav-button nil "Redo"]
-        [nav-button nil "Quit"]]]]]))
+  [:nav {:class        (trim "bg-white text-gray-500 border-gray-200 divide-gray-200"
+                             "px-2 sm:px-4 py-2.5"
+                             "fixed w-full z-20 top-0 start-0 border-b")
+         :data-signals (json/generate-string
+                         {:dirty  false
+                          :counts (tree/counts tree)})}
+   [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
+    [:a.flex.items-center
+     [:div.self-center.whitespace-nowrap.text-xl.font-semibold
+      title]]
+    [:div.mx-0.inline-flex
+     [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg {:data-text :$counts.ok}]
+     [:div.text-black.bg-yellow-200.p-2.font-semibold {:data-text :$counts.new}]
+     [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg {:data-text :$counts.error}]
+     [nav-button nil "Jump"]
+     [:div.flex.md:order-2.space-x-2
+      [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> [icon-play] "Replay All"]]
+      [nav-button {:class      button-base
+                   :data-class "{'bg-blue-700': $dirty, 'hover:bg-blue-800': $dirty, 'bg-green-700': !$dirty, 'hover:bg-green-800': !$dirty}"}
+       [:<> [icon-floppy-disk] "Save"]]
+      [nav-button nil "Undo"]
+      [nav-button nil "Redo"]
+      [nav-button nil "Quit"]]]]])
 
 (defn render-knot
   [{:keys [id response]}]
-  [:div.border-x-4.border-slate-100 {:id id}                ;; TODO: Color by category
+  [:div.border-x-4.border-slate-100 {:id (str "knot-" id)}  ;; TODO: Color by category
    [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
     ;; TODO: All the controls                                                      
     ;; TODO: Show the diff when unblessed not nil
     response]
    [:hr]])
 
-(defn app
-  [{:keys [*session]}]
-  (let [session @*session
+(defn render-app
+  [request]
+  (let [{:keys [*session]} request
+        session @*session
         {:keys [skein-path tree]} session]
     (html
       [:div#app.relative.px-8
@@ -97,8 +120,15 @@
        [:div.container.mx-lg.mx-auto.mt-16
         (map render-knot (tree/selected-knots tree))]])))
 
+(defn app
+  [{:keys [*session] :as request}]
+  (hk-gen/->sse-response request
+                         {hk-gen/on-open
+                          (fn [sse-gen]
+                            (swap! *session assoc :sse-gen sse-gen)
+                            (patch-elements! *session (render-app request)))}))
+
 (def routes
   (router/routes
     "GET /app" req
-    {:status 200
-     :body   (app req)}))
+    (app req)))
