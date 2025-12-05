@@ -305,13 +305,4 @@
         expand-raw-string-body
         wrap-not-found
         content-type/wrap-content-type
-        wrap-with-response-logger))
-  #_ 
-  (let [{:keys [uri request-method]} request
-        request' (cond-> request
-                         (= :post request-method)
-                         (update :body slurp))]
-    (println (-> request-method name string/upper-case) uri (:body request'))
-    (if (= uri "/api")
-      (api-handler request')
-      (resource-handler uri))))
+        wrap-with-response-logger)))
