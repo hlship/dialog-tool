@@ -8,3 +8,9 @@
 *.iml
 /.nrepl-port
 out
+
+# shadow-cljs
+.shadow-cljs/
+/public/js/main.js
+/public/js/cljs-runtime/
+node_modules/

@@ -1,0 +1,14 @@
+{
+  "name": "dialog-tool",
+  "private": true,
+  "scripts": {
+    "dev": "shadow-cljs watch app",
+    "release": "shadow-cljs release app"
+  },
+  "devDependencies": {
+    "shadow-cljs": "^2.28.21"
+  },
+  "dependencies": {
+    "@js-joda/core": "3.2.0"
+  }
+}
