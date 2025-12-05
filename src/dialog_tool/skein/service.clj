@@ -20,7 +20,7 @@
   [request]
   ;; This is to allow code reloading to work correctly without restarting
   ;; the service.
-  (@(requiring-resolve 'dialog-tool.skein.handlers/service-handler)
+  ((requiring-resolve 'dialog-tool.skein.handlers/service-handler)
    (assoc request :*session *session
                   :*shutdown *shutdown)))
 
