@@ -141,7 +141,9 @@
 
     (nil? response) :new
 
-    :else :new))
+    (not= unblessed response) :error
+
+    :else :ok))
 
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."
