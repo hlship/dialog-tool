@@ -22,7 +22,7 @@
   ;; the service.
   ((requiring-resolve 'dialog-tool.skein.handlers/service-handler)
    (assoc request :*session *session
-                  :*shutdown *shutdown)))
+          :*shutdown *shutdown)))
 
 (defn start!
   "Starts a service with the Skein for the given path, or a new empty skein
@@ -60,6 +60,17 @@
     (reset! *shutdown shutdown-service-fn)
     {:shutdown-fn shutdown-service-fn
      :port        port}))
+
+
+(defn main
+  "An entrypoint used for local testing."
+  [& args]
+  (let [[dir file] args
+        dir (or dir "../sanddancer-dialog")]
+    (start! (pf/read-project dir)
+            (or file
+                (str dir "/default.skein"))
+            {:engine :dgdebug})))
 
 ;; Temporary
 
@@ -116,8 +127,7 @@ waiting.txt
 "
        string/split-lines
        (mapv #(str "../sanddancer-dialog/tests/" %))
-       (run! import-script)
-       )
+       (run! import-script))
 
   (import-script "../sanddancer-dialog/tests/sand-dancer/strength-spirit.txt")
 
@@ -136,5 +146,4 @@ waiting.txt
   (swap! *session s/command! "x truck")
   (time (swap! *session s/replay-to! 1722112918940))
   (swap! *session s/save!)
-  (swap! *session s/kill!)
-  )
+  (swap! *session s/kill!))
