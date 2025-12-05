@@ -287,7 +287,8 @@
   (fn [request]
     (let [{:keys [uri request-method]} request
           response (f request)]
-      (println (:status response) (-> request-method name string/upper-case) uri)
+      (println (or (:status response) "SSE")
+               (-> request-method name string/upper-case) uri)
       response)))
 
 (defn wrap-not-found
