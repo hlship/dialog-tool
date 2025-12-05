@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "name": "shadow-cljs watch",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "node-terminal",
+      "name": "shadow-cljs release",
+      "request": "launch",
+      "command": "npm run release",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "node-terminal",
+      "name": "Tailwind CSS watch",
+      "request": "launch",
+      "command": "tailwindcss -i public/style.css -o out/public/style.css --watch",
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Dev (shadow + tailwind)",
+      "configurations": ["shadow-cljs watch", "Tailwind CSS watch"],
+      "stopAll": true
+    }
+  ]
+}
+
