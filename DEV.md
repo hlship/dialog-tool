@@ -1,12 +1,13 @@
 # Developer Notes
 
-## Temporary
+## Datastar notes
 
-```text
-tailwindcss -i public/style.css -o out/public/style.css --watch
-```
+- Datastar does not play well with Google Closure and there's no real API outside of `data-...` attributes
+- Datastar (for now) loads from a CDN and is not visible to ClojureScript
 
+## Cursor
 
+- Been using Cursor to help set up ClojureScript support and ease me into VSCode / Calva
 
 ## TODO / Ideas / Plans/ Bugs
 
