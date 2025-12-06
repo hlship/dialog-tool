@@ -15,6 +15,7 @@
         $signal (str "$" signal)]
     [:div {:class              "relative inline-block text-left"
            :data-signals       (json/generate-string {id false})
+           :data-on:click__outside (str $signal " = false")
            :data-dropdown-root true}
 
      [:button {:type                     "button"
@@ -36,7 +37,8 @@
             :role               "menu"
             :aria-labelledby    "dropdownButton"            ; purely ARIA; doesn't need to match an id
             :data-dropdown-menu true}
-      [:div {:class "py-1"}
+      [:div {:class "py-1"
+             :data-on:click (str $signal " = false")}
        items
        (for [v options]
          ^{:key v}

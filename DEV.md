@@ -8,6 +8,8 @@
 ## Cursor
 
 - Been using Cursor to help set up ClojureScript support and ease me into VSCode / Calva
+- Calva REPL: When running a service, the HttpKit service writes to the REPL's Terminal output, not to the Calva REPL output file.
+
 
 ## TODO / Ideas / Plans/ Bugs
 

@@ -14,3 +14,4 @@ out
 /public/js/main.js
 /public/js/cljs-runtime/
 node_modules/
+.calva

@@ -21,13 +21,6 @@
       "request": "launch",
       "command": "tailwindcss -i public/style.css -o out/public/style.css --watch",
       "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "node-terminal",
-      "name": "Skein Service (test)",
-      "request": "launch",
-      "command": "clojure -M -e \"(require 'dialog-tool.skein.service) (dialog-tool.skein.service/main)\"",
-      "cwd": "${workspaceFolder}"
     }
   ],
   "compounds": [
