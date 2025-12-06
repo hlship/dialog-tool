@@ -62,16 +62,6 @@
      :port        port}))
 
 
-(defn main
-  "An entrypoint used for local testing."
-  [& args]
-  (let [[dir file] args
-        dir (or dir "../sanddancer-dialog")]
-    (start! (pf/read-project dir)
-            (or file
-                (str dir "/default.skein"))
-            {:engine :dgdebug})))
-
 ;; Temporary
 
 (defn import-script [path]
@@ -105,7 +95,9 @@
 
   (@*shutdown)
 
-
+  (println "Hello, world!")
+  
+  
   (->> "attack-cage-with-strength.txt
 base-of-tower.txt
 chase.txt
@@ -146,4 +138,5 @@ waiting.txt
   (swap! *session s/command! "x truck")
   (time (swap! *session s/replay-to! 1722112918940))
   (swap! *session s/save!)
-  (swap! *session s/kill!))
+  (swap! *session s/kill!)
+  )
