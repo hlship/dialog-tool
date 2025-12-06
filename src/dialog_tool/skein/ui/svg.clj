@@ -26,3 +26,12 @@
    [:path {:fill-rule "evenodd"
            :d         "M14 17h-4v-2h4v2Z"
            :clip-rule "evenodd"}]])
+
+(defn dots-vertical
+  []
+  [svg "dots vertical outline"
+   [:path
+    {:stroke "currentColor"
+     :stroke-linecap "round"
+     :stroke-width "3"
+     :d "M12 6h.01M12 12h.01M12 18h.01"}]])
