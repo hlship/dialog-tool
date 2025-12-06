@@ -16,259 +16,257 @@
 (def text-plain {"Content-Type" "text/plain"})
 
 (comment
-(defn- ->json
-  [response]
-  (-> response
-      (assoc-in [:headers "Content-Type"] "application/json")
-      (update :body json/generate-string {:pretty true})))
+  (defn- ->json
+    [response]
+    (-> response
+        (assoc-in [:headers "Content-Type"] "application/json")
+        (update :body json/generate-string {:pretty true})))
 
-(defn- tree-delta
-  "Computes the main body of the response as a delta for any changed
+  (defn- tree-delta
+    "Computes the main body of the response as a delta for any changed
   (or deleted) knots.  This includes changes to a parent when a new child is added
   (the :children will be different)."
-  [old-tree new-tree]
-  (let [old-knots (:knots old-tree)
-        new-knots (:knots new-tree)
-        ;; This will include newly added knots as well as changed
-        updates (->> new-knots
-                     vals
-                     (remove #(= % (get old-knots (:id %)))))
-        removed-ids (set/difference
-                      (-> old-knots keys set)
-                      (-> new-knots keys set))]
-    ;; Because we don't care about efficiency, we send the entire updated knot, rather than
-    ;; sending just what's changed.
-    {:updates     (mapv tree/knot->wire updates)
-     :removed_ids removed-ids
-     :focus       (:focus new-tree)
-     :dirty       (:dirty? new-tree)}))
+    [old-tree new-tree]
+    (let [old-knots (:knots old-tree)
+          new-knots (:knots new-tree)
+          ;; This will include newly added knots as well as changed
+          updates (->> new-knots
+                       vals
+                       (remove #(= % (get old-knots (:id %)))))
+          removed-ids (set/difference
+                       (-> old-knots keys set)
+                       (-> new-knots keys set))]
+      ;; Because we don't care about efficiency, we send the entire updated knot, rather than
+      ;; sending just what's changed.
+      {:updates     (mapv tree/knot->wire updates)
+       :removed_ids removed-ids
+       :focus       (:focus new-tree)
+       :dirty       (:dirty? new-tree)}))
 
-(defn- bless
-  [session payload]
-  (session/bless session (:id payload)))
+  (defn- bless
+    [session payload]
+    (session/bless session (:id payload)))
 
-(defn- bless-to
-  [session payload]
-  (session/bless-to session (:id payload)))
+  (defn- bless-to
+    [session payload]
+    (session/bless-to session (:id payload)))
 
-(defn- prep-command
-  [s]
-  (-> s
-      string/trim
-      (string/replace #"\s+" " ")))
+  (defn- prep-command
+    [s]
+    (-> s
+        string/trim
+        (string/replace #"\s+" " ")))
 
-(defn- new-command
-  [session payload]
-  (let [{:keys [id command]} payload
-        {:keys [active-knot-id]} session
-        command' (prep-command command)
-        session' (-> (cond-> session
-                             (not= id active-knot-id) (session/replay-to! id))
-                     (session/command! command'))]
-    (assoc session' ::extra-body {:new_id (:active-knot-id session')})))
+  (defn- new-command
+    [session payload]
+    (let [{:keys [id command]} payload
+          {:keys [active-knot-id]} session
+          command' (prep-command command)
+          session' (-> (cond-> session
+                         (not= id active-knot-id) (session/replay-to! id))
+                       (session/command! command'))]
+      (assoc session' ::extra-body {:new_id (:active-knot-id session')})))
 
-(defn- edit-command
-  [session payload]
-  (let [{:keys [id command]} payload]
-    (session/edit-command! session id (prep-command command))))
+  (defn- edit-command
+    [session payload]
+    (let [{:keys [id command]} payload]
+      (session/edit-command! session id (prep-command command))))
 
-(defn- expose-new-id-in-body
-  [session]
-  (let [{:keys [new-id]} session]
-    (if new-id
-      (-> session
-          (assoc ::extra-body {:new_id new-id})
-          (dissoc :new-id))
-      session)))
+  (defn- expose-new-id-in-body
+    [session]
+    (let [{:keys [new-id]} session]
+      (if new-id
+        (-> session
+            (assoc ::extra-body {:new_id new-id})
+            (dissoc :new-id))
+        session)))
 
-(defn- insert-parent
-  [session payload]
-  (let [{:keys [id command]} payload]
-    (-> (session/insert-parent! session id (prep-command command))
-        expose-new-id-in-body)))
+  (defn- insert-parent
+    [session payload]
+    (let [{:keys [id command]} payload]
+      (-> (session/insert-parent! session id (prep-command command))
+          expose-new-id-in-body)))
 
-(defn- save
-  [session _payload]
-  (session/save! session))
+  (defn- save
+    [session _payload]
+    (session/save! session))
 
-(defn- replay
-  [session {:keys [id]}]
-  (session/replay-to! session id))
+  (defn- replay
+    [session {:keys [id]}]
+    (session/replay-to! session id))
 
-(defn- undo
-  [session _]
-  (session/undo session))
+  (defn- undo
+    [session _]
+    (session/undo session))
 
-(defn- redo
-  [session _]
-  (session/redo session))
+  (defn- redo
+    [session _]
+    (session/redo session))
 
-(defn- delete
-  [session {:keys [id]}]
-  (session/delete session id))
+  (defn- delete
+    [session {:keys [id]}]
+    (session/delete session id))
 
-(defn- splice-out
-  [session {:keys [id]}]
-  (->> (session/splice-out! session id)
-       expose-new-id-in-body))
+  (defn- splice-out
+    [session {:keys [id]}]
+    (->> (session/splice-out! session id)
+         expose-new-id-in-body))
 
-(defn- label
-  [session {:keys [id label]}]
-  (session/label session id (string/trim label)))
+  (defn- label
+    [session {:keys [id label]}]
+    (session/label session id (string/trim label)))
 
-(defn- select
-  "Selects a knot (ensures it is visible); it may bring in its selected child as well; will be focused."
-  [session {:keys [id]}]
-  (session/select-knot session id))
+  (defn- select
+    "Selects a knot (ensures it is visible); it may bring in its selected child as well; will be focused."
+    [session {:keys [id]}]
+    (session/select-knot session id))
 
-(defn- deselect
-  [session {:keys [id]}]
-  (session/deselect session id))
+  (defn- deselect
+    [session {:keys [id]}]
+    (session/deselect session id))
 
-(defn- start-batch
-  "Turns off undo tracking, so the session will start to accumulate changes
+  (defn- start-batch
+    "Turns off undo tracking, so the session will start to accumulate changes
   from all the following commands, until end-batch, which renables undo
   tracking and creates a single undo step for the entire batch."
-  [session _]
-  (-> session
-      (session/enable-undo false)
-      (assoc ::saved-tree (:tree session)
-             ::batching? true)))
-
-(defn- response-body
-  [old-tree new-session]
-  (-> (tree-delta old-tree (:tree new-session))
-      (assoc :enable_undo (-> new-session :undo-stack empty? not)
-             :enable_redo (-> new-session :redo-stack empty? not))))
-
-(defn- end-batch
-  [session _]
-  (let [{::keys [saved-tree]} session]
+    [session _]
     (-> session
-        (session/enable-undo true)
-        session/capture-undo
-        ;; This extra-body is merged on top of the fairly empty real body
-        (assoc ::extra-body (response-body saved-tree session))
-        (dissoc ::saved-tree ::batching?))))
+        (session/enable-undo false)
+        (assoc ::saved-tree (:tree session)
+               ::batching? true)))
 
-(defn- invoke-handler
-  [*session payload handler]
-  (let [session @*session
-        session' (handler session payload)
-        {:keys  [error]
-         ::keys [batching? extra-body]} session'
-        stripped-session (dissoc session' ::extra-body :error)
-        body (cond-> {}
-                     (not batching?) (merge (response-body (:tree session) stripped-session))
-                     extra-body (merge extra-body)
-                     error (assoc :error error))]
-    (reset! *session stripped-session)
-    {:status 200
-     :body   body}))
+  (defn- response-body
+    [old-tree new-session]
+    (-> (tree-delta old-tree (:tree new-session))
+        (assoc :enable_undo (-> new-session :undo-stack empty? not)
+               :enable_redo (-> new-session :redo-stack empty? not))))
 
-(def action->handler
-  {"bless"         bless
-   "bless-to"      bless-to
-   "label"         label
-   "new-command"   new-command
-   "edit-command"  edit-command
-   "insert-parent" insert-parent
-   "start-batch"   start-batch
-   "end-batch"     end-batch
-   "save"          save
-   "replay"        replay
-   "undo"          undo
-   "redo"          redo
-   "delete"        delete
-   "splice-out"    splice-out
-   "select"        select
-   "deselect"      deselect})
+  (defn- end-batch
+    [session _]
+    (let [{::keys [saved-tree]} session]
+      (-> session
+          (session/enable-undo true)
+          session/capture-undo
+          ;; This extra-body is merged on top of the fairly empty real body
+          (assoc ::extra-body (response-body saved-tree session))
+          (dissoc ::saved-tree ::batching?))))
 
-(defn- update-handler
-  [request]
-  (let [{:keys [body *session *shutdown]} request
-        payload (json/parse-string body true)
-        {:keys [action]} payload]
-    (if (= action "quit")
-      (do
-        ;; Give everything time enough to return a response
-        (thread
-          (Thread/sleep 500)
-          (@*shutdown))
-        {:status 400
-         :body   {}})
-      (if-let [handler (action->handler action)]
-        (invoke-handler *session payload handler)
-        {:status 400
-         :body   (str "UNKNOWN ACTION: " action)}))))
+  (defn- invoke-handler
+    [*session payload handler]
+    (let [session @*session
+          session' (handler session payload)
+          {:keys  [error]
+           ::keys [batching? extra-body]} session'
+          stripped-session (dissoc session' ::extra-body :error)
+          body (cond-> {}
+                 (not batching?) (merge (response-body (:tree session) stripped-session))
+                 extra-body (merge extra-body)
+                 error (assoc :error error))]
+      (reset! *session stripped-session)
+      {:status 200
+       :body   body}))
 
-(defn- api-handler*
-  [{:keys [request-method *session] :as request}]
-  (cond
-    (= :get request-method)
-    (let [session @*session]
-      (->json {:status 200
-               :body   (assoc (response-body {} session)
-                         :title (:skein-path session))}))
+  (def action->handler
+    {"bless"         bless
+     "bless-to"      bless-to
+     "label"         label
+     "new-command"   new-command
+     "edit-command"  edit-command
+     "insert-parent" insert-parent
+     "start-batch"   start-batch
+     "end-batch"     end-batch
+     "save"          save
+     "replay"        replay
+     "undo"          undo
+     "redo"          redo
+     "delete"        delete
+     "splice-out"    splice-out
+     "select"        select
+     "deselect"      deselect})
 
-    (= :post request-method)
-    (update-handler request)
+  (defn- update-handler
+    [request]
+    (let [{:keys [body *session *shutdown]} request
+          payload (json/parse-string body true)
+          {:keys [action]} payload]
+      (if (= action "quit")
+        (do
+          ;; Give everything time enough to return a response
+          (thread
+            (Thread/sleep 500)
+            (@*shutdown))
+          {:status 400
+           :body   {}})
+        (if-let [handler (action->handler action)]
+          (invoke-handler *session payload handler)
+          {:status 400
+           :body   (str "UNKNOWN ACTION: " action)}))))
 
-    ;; This is part of CORS handling, needed when developing the Skein
-    ;; against the vite development mode server.
-    (= :options request-method)
-    {:status 200}
+  (defn- api-handler*
+    [{:keys [request-method *session] :as request}]
+    (cond
+      (= :get request-method)
+      (let [session @*session]
+        (->json {:status 200
+                 :body   (assoc (response-body {} session)
+                                :title (:skein-path session))}))
 
-    :else
-    {:status  404
-     :headers text-plain
-     :body    "NOT FOUND: /api"}))
+      (= :post request-method)
+      (update-handler request)
 
-(defn bypass-cors
-  [handler]
-  (fn [request]
-    (update (handler request)
-            :headers
-            assoc
-            "Access-Control-Allow-Origin" "*"
-            "Access-Control-Allow-Methods" "*"
-            "Access-Control-Allow-Headers" "*"
-            ;; Needed?
-            "Access-Control-Allow-Credentials" "true")))
+      ;; This is part of CORS handling, needed when developing the Skein
+      ;; against the vite development mode server.
+      (= :options request-method)
+      {:status 200}
 
-(defn json-body
-  [handler]
-  (fn [request]
-    (let [response (handler request)]
-      (if (-> response :body map?)
-        (->json response)
-        response))))
-
-(def api-handler (-> api-handler* json-body bypass-cors))
-
-(defn- extension->content-type
-  [uri]
-  (let [ext (fs/extension uri)]
-    ;; May need to add a few for image types, fonts, etc.
-    (get {"css"  "text/css"
-          "html" "text/html"
-          "js"   "text/javascript"
-          "json" "application/json"}
-         ext
-         "text/plain")))
-
-(defn- resource-handler
-  [uri]
-  (let [r (io/resource (str "public" uri))]
-    (if (some? r)
-      {:status  200
-       :headers {"Content-Type" (extension->content-type uri)}
-       :body    (io/input-stream r)}
+      :else
       {:status  404
        :headers text-plain
-       :body    (str "NOT FOUND: " uri)})))
+       :body    "NOT FOUND: /api"}))
 
-)                                                           ; comment
+  (defn bypass-cors
+    [handler]
+    (fn [request]
+      (update (handler request)
+              :headers
+              assoc
+              "Access-Control-Allow-Origin" "*"
+              "Access-Control-Allow-Methods" "*"
+              "Access-Control-Allow-Headers" "*"
+              ;; Needed?
+              "Access-Control-Allow-Credentials" "true")))
+
+  (defn json-body
+    [handler]
+    (fn [request]
+      (let [response (handler request)]
+        (if (-> response :body map?)
+          (->json response)
+          response))))
+
+  (def api-handler (-> api-handler* json-body bypass-cors))
+
+  (defn- extension->content-type
+    [uri]
+    (let [ext (fs/extension uri)]
+      ;; May need to add a few for image types, fonts, etc.
+      (get {"css"  "text/css"
+            "html" "text/html"
+            "js"   "text/javascript"
+            "json" "application/json"}
+           ext
+           "text/plain")))
+
+  (defn- resource-handler
+    [uri]
+    (let [r (io/resource (str "public" uri))]
+      (if (some? r)
+        {:status  200
+         :headers {"Content-Type" (extension->content-type uri)}
+         :body    (io/input-stream r)}
+        {:status  404
+         :headers text-plain
+         :body    (str "NOT FOUND: " uri)}))))                                                           ; comment
 
 (defn expand-raw-string-body
   "huff returns a wrapper type, huff2.core.RawString, which is not directly compatible
@@ -300,6 +298,13 @@
                                    (:uri request)))))))
 
 (def service-handler
+  "The main Ring handler for the Skein web service.
+  
+  Composes a router (from routes/routes) with middleware for:
+  - Converting Huff RawString bodies to plain strings
+  - Returning 404 for unmatched routes
+  - Setting Content-Type headers
+  - Logging requests and responses"
   (let [router (router/router routes/routes)]
     (-> router
         expand-raw-string-body
