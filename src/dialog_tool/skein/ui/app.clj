@@ -2,9 +2,8 @@
   (:require [cheshire.core :as json]
             [clojure.string :as string]
             [dialog-tool.skein.ui.svg :as svg]
-            [dialog-tool.skein.ui.components :as c]
+            [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.tree :as tree]))
-
 
 (defn- trim
   [& s]
@@ -33,8 +32,8 @@
                              "px-2 sm:px-4 py-2.5"
                              "fixed w-full z-20 top-0 start-0 border-b")
          :data-signals (json/generate-string
-                         {:dirty  false
-                          :counts (tree/counts tree)})}
+                        {:dirty  false
+                         :counts (tree/counts tree)})}
    [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
     [:a.flex.items-center
      [:div.self-center.whitespace-nowrap.text-xl.font-semibold
@@ -58,10 +57,18 @@
   [:div.border-x-4.border-slate-100 {:id (str "knot-" id)}  ;; TODO: Color by category
    [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
     [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
-     [c/dropdown {:options  ["Red" "Green" "Blue"]
-                  :post-url "/actions/color"}]]
-    
-    ;; TODO: All the controls                                                      
+     [dropdown/dropdown {:post-url "/actions/color"
+                         :label [svg/dots-vertical]}
+      [dropdown/button nil "Run from start to here"]
+      [dropdown/button nil "Delete"]
+      [dropdown/button nil "Splice Out"]
+      [dropdown/button nil "Bless"]
+      [dropdown/button nil "Bless To Here"]
+      [dropdown/button nil "Edit Label"]
+      [dropdown/button nil "Edit Command"]
+      [dropdown/button nil "Insert Parent"]
+      [dropdown/button nil "New Child"]
+      [dropdown/button nil "Replay"]]]
     ;; TODO: Show the diff when unblessed not nil
     response]
    [:hr]])
