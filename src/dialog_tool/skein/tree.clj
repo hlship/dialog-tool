@@ -278,16 +278,19 @@
   [tree]
   (assoc tree :dirty? false))
 
-(defn- assess-knot
+(defn assess-knot
+  "Returns the category of a knot: :ok if blessed matches response (no unblessed),
+  :new if there's no response yet (only unblessed), or :error if they differ."
   [{:keys [unblessed response]}]
   (cond
     (nil? unblessed)
     :ok
-    
-    (not= unblessed response)
-    :error
 
-    :else :ok))
+    (nil? response)
+    :new
+    
+    :else
+    :error))
 
 (defn counts
   "Returns a map of :ok, :new, :error, each a count. :new is for new knots where there's

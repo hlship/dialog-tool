@@ -148,16 +148,9 @@
    :new   "border-yellow-200"
    :error "border-rose-400"})
 
-(defn- knot-category
-  [{:keys [response unblessed]}]
-  (cond
-    (nil? unblessed) :ok
-    (nil? response) :new
-    :else :error))
-
 (defn render-knot
   [{:keys [id response unblessed] :as knot}]
-  (let [category (knot-category knot)
+  (let [category (tree/assess-knot knot)
         border-class (category->border-class category)]
     [:div.border-x-4 {:id    (str "knot-" id)
                       :class border-class}
