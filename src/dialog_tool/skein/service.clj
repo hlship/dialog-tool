@@ -83,6 +83,11 @@
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/default.skein"
           {:engine :dgdebug})
+           
+    (start! (pf/read-project "../sanddancer-dialog")
+          "/tmp/sd.skein"
+          {:engine :dgdebug})
+
 
   (start! (pf/read-project "../dialog-extensions/who")
           "../dialog-extensions/who/default.skein"
@@ -95,35 +100,12 @@
 
   (@*shutdown)
 
+  (-> @*session :tree :knots vals)
+
   (println "Hello, world!")
   
-  
-  (->> "attack-cage-with-strength.txt
-base-of-tower.txt
-chase.txt
-cobweb.txt
-control-center-via-courage.txt
-control-center-via-strength.txt
-get-flashlight.txt
-guidebook.txt
-leave-truck.txt
-memories.txt
-no-undo.txt
-open-desert.txt
-open-with-key.txt
-rabbits-offer.txt
-radio-chat.txt
-sinister-voices.txt
-temptation.txt
-waiting.txt
-"
-       string/split-lines
-       (mapv #(str "../sanddancer-dialog/tests/" %))
-       (run! import-script))
-
   (import-script "../sanddancer-dialog/tests/sand-dancer/strength-spirit.txt")
 
-  (tree/->wire (:tree @*session))
 
   (-> @*session :tree :knots (get 1723218892802))
   (and (swap! *session s/replay-to! 1723218892802) nil)

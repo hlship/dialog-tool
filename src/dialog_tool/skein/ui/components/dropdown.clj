@@ -8,8 +8,7 @@
            id    (utils/unique-id "dropdown")}} & items]
   (let [signal  (str "_" id "_Open")
         $signal (str "$" signal)]
-    [:div {:class              "relative inline-block text-left"
-           :data-signals       (json/generate-string {id false})
+    [:div {:class              "relative inline-block text-left" 
            :data-on:click__outside (str $signal " = false")
            :data-dropdown-root true}
 

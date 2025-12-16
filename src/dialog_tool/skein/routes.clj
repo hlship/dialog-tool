@@ -9,6 +9,10 @@
       "GET /" []
       (response/redirect "/index.html")
 
+      ;; Action routes delegate to nested handler with signal parsing middleware
+      "* /action/**" req
+      (app/action-handler req)
+
       "GET /**" [path]
       (or
         ;; Search for compiled files first

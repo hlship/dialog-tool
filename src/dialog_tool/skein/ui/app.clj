@@ -1,8 +1,8 @@
 (ns dialog-tool.skein.ui.app
-  (:require [cheshire.core :as json]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
             [dialog-tool.skein.ui.svg :as svg]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
+            [dialog-tool.skein.ui.components.new-command :as new-command]
             [dialog-tool.skein.tree :as tree]))
 
 (defn- trim
@@ -28,29 +28,28 @@
 
 (defn navbar
   [title tree]
-  [:nav {:class        (trim "bg-white text-gray-500 border-gray-200 divide-gray-200"
-                             "px-2 sm:px-4 py-2.5"
-                             "fixed w-full z-20 top-0 start-0 border-b")
-         :data-signals (json/generate-string
-                        {:dirty  false
-                         :counts (tree/counts tree)})}
-   [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
-    [:a.flex.items-center
-     [:div.self-center.whitespace-nowrap.text-xl.font-semibold
-      title]]
-    [:div.mx-0.inline-flex
-     [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg {:data-text :$counts.ok}]
-     [:div.text-black.bg-yellow-200.p-2.font-semibold {:data-text :$counts.new}]
-     [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg {:data-text :$counts.error}]
-     [nav-button nil "Jump"]
-     [:div.flex.md:order-2.space-x-2
-      [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> [svg/icon-play] "Replay All"]]
-      [nav-button {:class      button-base
-                   :data-class "{'bg-blue-700': $dirty, 'hover:bg-blue-800': $dirty, 'bg-green-700': !$dirty, 'hover:bg-green-800': !$dirty}"}
-       [:<> [svg/icon-floppy-disk] "Save"]]
-      [nav-button nil "Undo"]
-      [nav-button nil "Redo"]
-      [nav-button nil "Quit"]]]]])
+  (let [{:keys [ok new error]} (tree/counts tree)]
+    [:nav {:class        (trim "bg-white text-gray-500 border-gray-200 divide-gray-200"
+                               "px-2 sm:px-4 py-2.5"
+                               "fixed w-full z-20 top-0 start-0 border-b")
+           :data-signals:dirty "false"}
+     [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
+      [:a.flex.items-center
+       [:div.self-center.whitespace-nowrap.text-xl.font-semibold
+        title]]
+      [:div.mx-0.inline-flex
+       [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg  ok]
+       [:div.text-black.bg-yellow-200.p-2.font-semibold new]
+       [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg error]
+       [nav-button nil "Jump"]
+       [:div.flex.md:order-2.space-x-2
+        [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> [svg/icon-play] "Replay All"]]
+        [nav-button {:class      button-base
+                     :data-class "{'bg-blue-700': $dirty, 'hover:bg-blue-800': $dirty, 'bg-green-700': !$dirty, 'hover:bg-green-800': !$dirty}"}
+         [:<> [svg/icon-floppy-disk] "Save"]]
+        [nav-button nil "Undo"]
+        [nav-button nil "Redo"]
+        [nav-button nil "Quit"]]]]]))
 
 (defn render-knot
   [{:keys [id response]}]
@@ -77,8 +76,10 @@
   [request]
   (let [{:keys [*session]} request
         session @*session
-        {:keys [skein-path tree]} session]
+        {:keys [skein-path tree]} session
+        selected-knots (tree/selected-knots tree)]
     [:div#app.relative.px-8
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
-      (map render-knot (tree/selected-knots tree))]]))
+      (map render-knot selected-knots)
+      [new-command/new-command-input]]]))

@@ -305,9 +305,8 @@
   - Returning 404 for unmatched routes
   - Setting Content-Type headers
   - Logging requests and responses"
-  (let [router (router/router routes/routes)]
-    (-> router
-        expand-raw-string-body
-        wrap-not-found
-        content-type/wrap-content-type
-        wrap-with-response-logger)))
+  (-> (router/router routes/routes)
+      expand-raw-string-body
+      wrap-not-found
+      content-type/wrap-content-type
+      wrap-with-response-logger))
