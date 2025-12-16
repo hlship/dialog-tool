@@ -143,9 +143,24 @@
         [nav-button nil "Redo"]
         [nav-button nil "Quit"]]]]]))
 
+(def ^:private category->border-class
+  {:ok    "border-slate-100"
+   :new   "border-yellow-200"
+   :error "border-rose-400"})
+
+(defn- knot-category
+  [{:keys [response unblessed]}]
+  (cond
+    (nil? unblessed) :ok
+    (nil? response) :new
+    :else :error))
+
 (defn render-knot
-  [{:keys [id response unblessed]}]
-  [:div.border-x-4.border-slate-100 {:id (str "knot-" id)}  ;; TODO: Color by category
+  [{:keys [id response unblessed] :as knot}]
+  (let [category (knot-category knot)
+        border-class (category->border-class category)]
+    [:div.border-x-4 {:id    (str "knot-" id)
+                      :class border-class}
    [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
     [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
      [dropdown/dropdown {:post-url "/actions/color"
@@ -161,7 +176,7 @@
       [dropdown/button nil "New Child"]
       [dropdown/button nil "Replay"]]]
     [render-diff response unblessed]]
-   [:hr]])
+     [:hr]]))
 
 (defn render-app
   [request]
