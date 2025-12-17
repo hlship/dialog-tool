@@ -157,6 +157,7 @@
    [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
     [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
      [dropdown/dropdown {:post-url "/actions/color"
+                         :id (str "actions-" id)
                          :label [svg/dots-vertical]}
       [dropdown/button nil "Run from start to here"]
       [dropdown/button nil "Delete"]
