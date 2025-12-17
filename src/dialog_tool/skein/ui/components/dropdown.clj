@@ -12,17 +12,26 @@
    [:button {:id                       id
              :type                     "button"
              :class                    "inline-flex w-full justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-             ;; Set _activeDropdown to false because null removes the signal rather than propogates a new value
-             :data-on:click            "$_activeDropdown = ($_activeDropdown === el.id) ? false : el.id"
+             ;; Set _activeDropdown to false because null removes the signal rather than propagates a new value
+             ;; When opening, also calculate if the dropdown should flip above the button
+             :data-on:click            "if ($_activeDropdown === el.id) { $_activeDropdown = false } else { $_activeDropdown = el.id; $_dropdownFlipped = shouldFlipDropdown(evt) }"
              :aria-haspopup            "true"
              :data-class:aria-expanded "$_activeDropdown === el.id"
              :data-dropdown-button     true}
     label]
-   [:div {:class             "absolute right-0 z-10 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
-          :data-class:hidden "$_activeDropdown !== el.previousElementSibling.id"
-          :role              "menu"
-          :aria-labelledby   id
-          :data-dropdown-menu true}
+   ;; Dropdown menu: positioned below by default, flipped above when near bottom edge
+   [:div {:class                  "absolute right-0 z-10 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
+          :data-class:hidden      "$_activeDropdown !== el.previousElementSibling.id"
+          ;; Below button (not flipped)
+          :data-class:top-full    "!$_dropdownFlipped"
+          :data-class:mt-2        "!$_dropdownFlipped"
+          ;; Above button (flipped) - need top-auto to reset top positioning
+          :data-class:top-auto    "$_dropdownFlipped"
+          :data-class:bottom-full "$_dropdownFlipped"
+          :data-class:mb-2        "$_dropdownFlipped"
+          :role                   "menu"
+          :aria-labelledby        id
+          :data-dropdown-menu     true}
     ;; Default is that clicking on a button inside the dropdown closes the dropdown
     [:div {:class         "py-1"
            :data-on:click "$_activeDropdown = false"}
