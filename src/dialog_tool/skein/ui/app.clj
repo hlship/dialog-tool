@@ -183,7 +183,5 @@
      [:div.container.mx-lg.mx-auto.mt-16
       (map render-knot selected-knots)
       [new-command/new-command-input] 
-      [:div
-       "Signals:"
-       [:br]
-       [:pre {:data-json-signals true}] ] ]]))
+      [:div.fixed.top-4.left-4.bg-gray-800.text-white.p-3.rounded-lg.shadow-lg.max-w-md.max-h-64.overflow-auto.z-50.text-xs
+       [:pre.whitespace-pre-wrap {:data-json-signals true}]]]]))
