@@ -181,4 +181,8 @@
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
       (map render-knot selected-knots)
-      [new-command/new-command-input]]]))
+      [new-command/new-command-input] 
+      [:div
+       "Signals:"
+       [:br]
+       [:pre {:data-json-signals true}] ] ]]))
