@@ -1,14 +1,1 @@
 @import "tailwindcss";
-
-/* Classes used dynamically by Datastar that Tailwind can't detect from source scanning */
-.top-full {
-  top: 100%;
-}
-
-.top-auto {
-  top: auto;
-}
-
-.bottom-full {
-  bottom: 100%;
-}

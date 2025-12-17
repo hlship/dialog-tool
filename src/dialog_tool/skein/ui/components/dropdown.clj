@@ -1,5 +1,22 @@
 (ns dialog-tool.skein.ui.components.dropdown
-  (:require [dialog-tool.skein.ui.utils :as utils]))
+  (:require [dialog-tool.skein.ui.utils :as utils]
+            [clojure.string :as string]))
+
+(defn- escape
+  "Escape a string for use in a CSS class name."
+  [s]
+  (if (re-matches #"(?ix) (\p{Alnum}|_)+" s)
+    s
+    (str \' s \') ; TODO: Escape any quotes?  
+    ))
+
+(defn dynamic-classes
+  [m]
+  (str "{"
+       (->> m
+            (map (fn [[k v]] (str (-> k name escape) ":" v)))
+            (string/join ","))
+       "}"))
 
 (defn dropdown
   [{:keys [label id]
@@ -16,19 +33,19 @@
              ;; When opening, also calculate if the dropdown should flip above the button
              :data-on:click            "if ($_activeDropdown === el.id) { $_activeDropdown = false } else { $_activeDropdown = el.id; $_dropdownFlipped = shouldFlipDropdown(evt) }"
              :aria-haspopup            "true"
-             :data-class:aria-expanded "$_activeDropdown === el.id"
+             :data-class (dynamic-classes {:aria-expanded "$_activeDropdown === el.id"})
              :data-dropdown-button     true}
     label]
    ;; Dropdown menu: positioned below by default, flipped above when near bottom edge
    [:div {:class                  "absolute right-0 z-10 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
           :data-class:hidden      "$_activeDropdown !== el.previousElementSibling.id"
           ;; Below button (not flipped)
-          :data-class:top-full    "!$_dropdownFlipped"
-          :data-class:mt-2        "!$_dropdownFlipped"
-          ;; Above button (flipped) - need top-auto to reset top positioning
-          :data-class:top-auto    "$_dropdownFlipped"
-          :data-class:bottom-full "$_dropdownFlipped"
-          :data-class:mb-2        "$_dropdownFlipped"
+          :data-class (dynamic-classes
+                       {:top-full "!$_dropdownFlipped"
+                        :mt-2 "!$_dropdownFlipped"
+                        :top-auto "$_dropdownFlipped"
+                        :bottom-full "$_dropdownFlipped"
+                        :mb-2 "$_dropdownFlipped"})
           :role                   "menu"
           :aria-labelledby        id
           :data-dropdown-menu     true}
