@@ -163,7 +163,8 @@
       [dropdown/button nil "Run from start to here"]
       [dropdown/button nil "Delete"]
       [dropdown/button nil "Splice Out"]
-      [dropdown/button nil "Bless"]
+      [dropdown/button {:disabled      (= category :ok)
+                        :data-on:click (str "@post('/action/bless/" id "')")} "Bless"]
       [dropdown/button nil "Bless To Here"]
       [dropdown/button nil "Edit Label"]
       [dropdown/button nil "Edit Command"]

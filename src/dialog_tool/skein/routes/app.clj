@@ -26,6 +26,13 @@
       (swap! *session session/command! command))
     (render-app request)))
 
+(defn- bless-node
+  "Blesses the specified knot, copying its unblessed response to be the blessed response."
+  [{:keys [*session path-params] :as request}]
+  (let [knot-id (-> path-params first parse-long)]
+    (swap! *session session/bless knot-id)
+    (render-app request)))
+
 (defn- wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
   [handler]
@@ -40,7 +47,10 @@
 (def ^:private action-routes
   (router/routes
     "POST /action/new-node" req
-    (new-node req)))
+    (new-node req)
+    
+    "POST /action/bless/*" req
+    (bless-node req)))
 
 (def action-handler
   "Handler for /action/* routes with signal parsing middleware applied."

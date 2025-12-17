@@ -54,14 +54,21 @@
            :data-on:click "$_activeDropdown = false"}
      items]]])
 
-;; TODO: Maybe a smarter version of merge that knows how to eliminate conflicts
+(def ^:private button-class
+  "block w-full py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent")
 
 (defn button
-  "A button styled for use inside a dropdown menu."
-  [attrs label]
-  [:button (merge {:type  "button"
-                   :class "block w-full py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                   :role  "menuitem"}
-                  attrs)
-   label])
+  "A button styled for use inside a dropdown menu.
+  
+  Options map may include:
+  - :disabled - when truthy, the button is disabled
+  - any other keys are passed through as HTML attributes"
+  [options label]
+  (let [{:keys [disabled]} options
+        attrs (cond-> (merge {:type  "button"
+                              :class button-class
+                              :role  "menuitem"}
+                             (dissoc options :disabled))
+                disabled (assoc :disabled true))]
+    [:button attrs label]))
 
