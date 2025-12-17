@@ -62,20 +62,21 @@
   "Compute word-level diff between old-text and new-text.
    Returns a sequence of {:type :added/:removed/:unchanged :value string} maps."
   [old-text new-text]
-  (let [old-tokens (tokenize old-text)
-        new-tokens (tokenize new-text)]
-    (cond
-      (and (seq old-tokens) (seq new-tokens))
-      (let [matrix (lcs-matrix old-tokens new-tokens)]
-        (backtrack-lcs matrix old-tokens new-tokens))
+  (cond
+    ;; No response yet, everything in unblessed is new
+    (nil? old-text)
+    [{:type :added :value new-text}]
 
-      ;; No response yet, everything in unblessed is new
-      (nil? old-text)
-      [{:type :added :value new-text}]
+    ;; Unblessed is nil, just show response unchanged
+    (nil? new-text)
+    [{:type :unchanged :value old-text}]
 
-      ;; Unblessed is nil, just show response unchanged
-      :else
-      [{:type :unchanged :value old-text}])))
+    ;; Both present, compute word-level diff
+    :else
+    (let [old-tokens (tokenize old-text)
+          new-tokens (tokenize new-text)
+          matrix (lcs-matrix old-tokens new-tokens)]
+      (backtrack-lcs matrix old-tokens new-tokens))))
 
 (defn render-diff
   "Render the difference between response and unblessed as hiccup markup.
