@@ -29,7 +29,8 @@
 
 (defn dots-vertical
   []
-  [svg "dots vertical outline"
+  [svg{:label "dots vertical outline" 
+       :class "w-4 h-4"}
    [:path
     {:stroke "currentColor"
      :stroke-linecap "round"

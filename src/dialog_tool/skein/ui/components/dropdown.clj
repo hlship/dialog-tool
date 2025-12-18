@@ -1,5 +1,5 @@
 (ns dialog-tool.skein.ui.components.dropdown
-  (:require [dialog-tool.skein.ui.utils :as utils]
+  (:require [dialog-tool.skein.ui.utils :as utils :refer [classes]]
             [clojure.string :as string]))
 
 (defn- escape
@@ -28,8 +28,13 @@
   [{:keys [id label class]}]
   [:button {:id            id
             :type          "button"
-            :class         (str "inline-flex items-center justify-center w-8 h-8 rounded-md bg-white text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                (when class (str " " class)))
+            :class         (classes "text-center font-medium focus-within:ring-4"
+                                    "focus-within:outline-none"
+                                    "inline-flex items-center justify-center px-3 py-2"
+                                    "text-xs text-gray-900 bg-white"
+                                    "border border-gray-300 focus-within:ring-gray-200"
+                                    "rounded-lg w-0 hover:bg-slate-200"
+                                    class)
             :data-on:click "const r = toggleDropdown(el, evt, $_activeDropdown); $_activeDropdown = r.activeDropdown; $_dropdownFlipped = r.dropdownFlipped"
             :aria-haspopup "true"
             :data-class    (dynamic-classes {:aria-expanded "$_activeDropdown === el.id"})}
@@ -45,7 +50,9 @@
   [{:keys [id placement]
     :or   {placement :left}} & items]
   (let [position-class (if (= placement :right) "left-0" "right-0")]
-    [:div {:class             (str "absolute z-10 w-96 rounded-md bg-slate-100 shadow-lg ring-1 ring-black/5 focus:outline-none hidden " position-class)
+    [:div {:class             (classes "absolute z-10 w-96 rounded-md bg-slate-100 shadow-lg"
+                                       "ring-1 ring-black/5 focus:outline-none hidden"
+                                       position-class)
            :data-class        (dynamic-classes
                                {:top-full "!$_dropdownFlipped"
                                 :mt-2     "!$_dropdownFlipped"
@@ -74,7 +81,10 @@
    (into [dropdown-menu {:id id}] items)])
 
 (def ^:private button-class
-  "block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-slate-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent")
+  (classes "block text-left w-full text-gray-700"
+           "px-4 py-2 text-sm"
+           "hover:bg-slate-200"
+           "disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"))
 
 (defn button
   "A button styled for use inside a dropdown menu.

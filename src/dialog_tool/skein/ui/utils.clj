@@ -1,8 +1,8 @@
 (ns dialog-tool.skein.ui.utils
   (:require [cheshire.core :as json]
-            [dialog-tool.skein.tree :as tree]
             [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
-            [starfederation.datastar.clojure.api :as d*]))
+            [starfederation.datastar.clojure.api :as d*]
+            [clojure.string :as string]))
 
 (defn patch-elements!
   [*session markup]
@@ -28,3 +28,12 @@
                           (fn [sse-gen]
                             (swap! *session assoc :sse-gen sse-gen)
                             (on-open-fn sse-gen))}))
+
+(defn classes
+  "Combines multiple class strings into a single string, skipping nils, and reducing spaces to a single space.
+   "
+  [& s]
+  (-> (string/join " " s)
+      (string/replace #"\s+" " ")
+      string/trim))
+

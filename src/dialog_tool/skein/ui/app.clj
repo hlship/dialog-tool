@@ -1,6 +1,6 @@
 (ns dialog-tool.skein.ui.app
-  (:require [clojure.string :as string]
-            [dialog-tool.skein.ui.svg :as svg]
+  (:require [dialog-tool.skein.ui.svg :as svg]
+            [dialog-tool.skein.ui.utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
             [dialog-tool.skein.tree :as tree]))
@@ -98,17 +98,12 @@
     ;; No unblessed, just show response as-is
     response))
 
-(defn- trim
-  [& s]
-  (-> (string/join " " s)
-      (string/replace #"\s+" " ")))
-
 (def button-base
-  (trim "text-center font-medium"
-        "focus-within:ring-4 focus-within:outline-none"
-        "inline-flex items-center"
-        "justify-center px-3 py-2 text-xs text-white"
-        "rounded-lg ml-8"))
+  (classes "text-center font-medium"
+           "focus-within:ring-4 focus-within:outline-none"
+           "inline-flex items-center"
+           "justify-center px-3 py-2 text-xs text-white"
+           "rounded-lg ml-8"))
 
 (def blue-button
   (str button-base " bg-blue-700 hover:bg-blue-800"))
@@ -122,9 +117,9 @@
 (defn navbar
   [title tree]
   (let [{:keys [ok new error]} (tree/counts tree)]
-    [:nav {:class        (trim "bg-white text-gray-500 border-gray-200 divide-gray-200"
-                               "px-2 sm:px-4 py-2.5"
-                               "fixed w-full z-20 top-0 start-0 border-b")
+    [:nav {:class        (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
+                                  "px-2 sm:px-4 py-2.5"
+                                  "fixed w-full z-20 top-0 start-0 border-b")
            :data-signals:dirty "false"}
      [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
       [:a.flex.items-center
@@ -182,8 +177,8 @@
            [dropdown/button nil "Edit Command" "Change the knot's command"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]])
         [dropdown/button nil "New Child" "Add a new command after this"]]]
-      [render-diff response unblessed]
-      [:hr]]]))
+      [render-diff response unblessed]]
+     [:hr]]))
 
 (defn- compute-bless-to-flags
   "Returns a seq of [knot, enable-bless-to?] pairs. enable-bless-to? is true if any knot
