@@ -28,7 +28,10 @@
         command (some-> newCommand str string/trim not-empty)]
     (when command
       (swap! *session session/command! command))
-    (render-app request)))
+    {:status 200
+     :body (html [:<>
+                  (ui.app/render-app request)
+                  [:div#patches {:data-signals "{newCommand:'',frob:true}"}]])}))
 
 (defn- bless-node
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
