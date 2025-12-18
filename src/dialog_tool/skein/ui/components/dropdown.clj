@@ -37,7 +37,7 @@
              :data-dropdown-button     true}
     label]
    ;; Dropdown menu: positioned below by default, flipped above when near bottom edge
-   [:div {:class                  "absolute right-0 z-10 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
+   [:div {:class                  "absolute right-0 z-10 w-96 rounded-md bg-slate-100 shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
           :data-class:hidden      "$_activeDropdown !== el.previousElementSibling.id"
           ;; Below button (not flipped)
           :data-class (dynamic-classes
@@ -55,20 +55,27 @@
      items]]])
 
 (def ^:private button-class
-  "block w-full py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent")
+  "block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-slate-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent")
 
 (defn button
   "A button styled for use inside a dropdown menu.
+   
+   The sub-label, if provided, is placed in a paragraph tag below the main label.
   
   Options map may include:
   - :disabled - when truthy, the button is disabled
   - any other keys are passed through as HTML attributes"
-  [options label]
-  (let [{:keys [disabled]} options
-        attrs (cond-> (merge {:type  "button"
-                              :class button-class
-                              :role  "menuitem"}
-                             (dissoc options :disabled))
-                disabled (assoc :disabled true))]
-    [:button attrs label]))
-
+  ([options label]
+   (button options label nil))
+  ([options label sub-label]
+   (let [{:keys [disabled]} options
+         attrs (cond-> (merge {:type  "button"
+                               :class button-class
+                               :role  "menuitem"}
+                              (dissoc options :disabled))
+                 disabled (assoc :disabled true))]
+     [:button attrs label
+      (when sub-label
+        [:p.text-xs.font-normal
+         {:class (if  disabled "text-gray-400" "text-gray-700")}
+         sub-label])])))

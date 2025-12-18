@@ -155,24 +155,31 @@
         border-class (category->border-class category)]
     [:div.border-x-4 {:id    (str "knot-" id)
                       :class border-class}
-   [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
-    [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
-     [dropdown/dropdown {:post-url "/actions/color"
-                         :id (str "actions-" id)
-                         :label [svg/dots-vertical]}
-      [dropdown/button nil "Run from start to here"]
-      [dropdown/button nil "Delete"]
-      [dropdown/button nil "Splice Out"]
-      [dropdown/button {:disabled      (= category :ok)
-                        :data-on:click (str "@post('/action/bless/" id "')")} "Bless"]
-      [dropdown/button nil "Bless To Here"]
-      [dropdown/button nil "Edit Label"]
-      [dropdown/button nil "Edit Command"]
-      [dropdown/button nil "Insert Parent"]
-      [dropdown/button nil "New Child"]
-      [dropdown/button nil "Replay"]]]
-    [render-diff response unblessed]]
-     [:hr]]))
+     [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
+      [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
+       [dropdown/dropdown {:post-url "/actions/color"
+                           :id (str "actions-" id)
+                           :label [svg/dots-vertical]}
+        [dropdown/button nil "Replay" "Run from start to here"]
+        (when (not= 0 id)
+          [:<>
+           [dropdown/button nil "Bless To Here" "Accept changes from root to here"]
+           [dropdown/button nil "Insert Parent" "Insert a command before this"]
+           [dropdown/button nil "Delete" "Delete this knot and all children"]
+           [dropdown/button nil "Splice Out" "Delete this knot, reparent childen up"]
+           [dropdown/button nil "Edit Command" "Change the knot's command"]])
+        [dropdown/button {:disabled      (= category :ok)
+                          :data-on:click (str "@post('/action/bless/" id "')")}
+         "Bless" "Accept changes"]
+        (when (not= 0 id)
+          [:<>
+           [dropdown/button nil "Edit Label" "Change label for knot"]
+           [dropdown/button nil "Bless To Here" "Accept changes from root to here"]
+           [dropdown/button nil "Edit Command" "Change the knot's command"]
+           [dropdown/button nil "Insert Parent" "Insert a command before this"]])
+        [dropdown/button nil "New Child" "Add a new command after this"]]]
+      [render-diff response unblessed]
+      [:hr]]]))
 
 (defn render-app
   [request]
@@ -184,6 +191,6 @@
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
       (map render-knot selected-knots)
-      [new-command/new-command-input] 
+      [new-command/new-command-input]
       [:div.fixed.top-4.left-4.bg-gray-800.text-white.p-3.rounded-lg.shadow-lg.max-w-md.max-h-64.overflow-auto.z-50.text-xs
        [:pre.whitespace-pre-wrap {:data-json-signals true}]]]]))
