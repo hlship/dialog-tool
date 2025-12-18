@@ -5,7 +5,7 @@
 (defn- escape
   "Escape a string for use in a CSS class name."
   [s]
-  (if (re-matches #"(?ix) (\p{Alnum}|_)+" s)
+  (if (re-matches #"(?ix) (_|a-z)(_|a-z|0-9)*" s)
     s
     (str \' s \') ; TODO: Escape any quotes?  
     ))
