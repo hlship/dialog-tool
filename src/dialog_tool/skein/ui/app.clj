@@ -150,7 +150,7 @@
    :error "border-rose-400"})
 
 (defn render-knot
-  [{:keys [id response unblessed] :as knot}]
+  [{:keys [id response unblessed] :as knot} enable-bless-to?]
   (let [category (tree/assess-knot knot)
         border-class (category->border-class category)]
     [:div.border-x-4 {:id    (str "knot-" id)
@@ -163,7 +163,8 @@
         [dropdown/button nil "Replay" "Run from start to here"]
         (when (not= 0 id)
           [:<>
-           [dropdown/button {:data-on:click (str "@post('/action/bless-to/" id "')")}
+           [dropdown/button {:disabled (not enable-bless-to?)
+                             :data-on:click (str "@post('/action/bless-to/" id "')")}
             "Bless To Here" "Accept changes from root to here"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]
            [dropdown/button nil "Delete" "Delete this knot and all children"]
@@ -175,7 +176,8 @@
         (when (not= 0 id)
           [:<>
            [dropdown/button nil "Edit Label" "Change label for knot"]
-           [dropdown/button {:data-on:click (str "@post('/action/bless-to/" id "')")}
+           [dropdown/button {:disabled (not enable-bless-to?)
+                             :data-on:click (str "@post('/action/bless-to/" id "')")}
             "Bless To Here" "Accept changes from root to here"]
            [dropdown/button nil "Edit Command" "Change the knot's command"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]])
@@ -183,16 +185,28 @@
       [render-diff response unblessed]
       [:hr]]]))
 
+(defn- compute-bless-to-flags
+  "Returns a seq of [knot, enable-bless-to?] pairs. enable-bless-to? is true if any knot
+   from root to this knot (inclusive) is not :ok."
+  [knots]
+  (second
+   (reduce (fn [[any-not-ok? result] knot]
+             (let [not-ok? (not= :ok (tree/assess-knot knot))
+                   any-not-ok?' (or any-not-ok? not-ok?)]
+               [any-not-ok?' (conj result [knot any-not-ok?'])]))
+           [false []]
+           knots)))
+
 (defn render-app
   [request]
   (let [{:keys [*session]} request
         session @*session
         {:keys [skein-path tree]} session
-        selected-knots (tree/selected-knots tree)]
+        knots-with-flags (-> tree tree/selected-knots compute-bless-to-flags)]
     [:div#app.relative.px-8
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
-      (map render-knot selected-knots)
+      (map (fn [[knot enable-bless-to?]] (render-knot knot enable-bless-to?)) knots-with-flags)
       [new-command/new-command-input]
       [:div.fixed.top-4.left-4.bg-gray-800.text-white.p-3.rounded-lg.shadow-lg.max-w-md.max-h-64.overflow-auto.z-50.text-xs
        [:pre.whitespace-pre-wrap {:data-json-signals true}]]]]))
