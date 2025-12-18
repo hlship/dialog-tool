@@ -31,7 +31,7 @@
     {:status 200
      :body (html [:<>
                   (ui.app/render-app request)
-                  [:div#patches {:data-signals "{newCommand:'',frob:true}"}]])}))
+                  [:div.hidden#patches {:data-signals "{newCommand:''}"}]])}))
 
 (defn- bless-node
   "Blesses the specified knot, copying its unblessed response to be the blessed response."

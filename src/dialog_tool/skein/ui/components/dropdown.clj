@@ -18,41 +18,60 @@
             (string/join ","))
        "}"))
 
+(defn dropdown-trigger
+  "A small button to trigger a dropdown menu. Returns just the button element.
+   
+   Options:
+   - :id - unique id for the button (required, used to link to dropdown-menu)
+   - :label - content to display in the button (typically an icon)
+   - :class - additional CSS classes for the button"
+  [{:keys [id label class]}]
+  [:button {:id            id
+            :type          "button"
+            :class         (str "inline-flex items-center justify-center w-8 h-8 rounded-md bg-white text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                (when class (str " " class)))
+            :data-on:click "const r = toggleDropdown(el, evt, $_activeDropdown); $_activeDropdown = r.activeDropdown; $_dropdownFlipped = r.dropdownFlipped"
+            :aria-haspopup "true"
+            :data-class    (dynamic-classes {:aria-expanded "$_activeDropdown === el.id"})}
+   label])
+
+(defn dropdown-menu
+  "A dropdown menu that appears when triggered. Returns just the menu element.
+   Should be a sibling of dropdown-trigger.
+   
+   Options:
+   - :id - the id of the associated dropdown-trigger button
+   - :placement - :left or :right (default :left)"
+  [{:keys [id placement]
+    :or   {placement :left}} & items]
+  (let [position-class (if (= placement :right) "left-0" "right-0")]
+    [:div {:class             (str "absolute z-10 w-96 rounded-md bg-slate-100 shadow-lg ring-1 ring-black/5 focus:outline-none hidden " position-class)
+           :data-class        (dynamic-classes
+                               {:top-full "!$_dropdownFlipped"
+                                :mt-2     "!$_dropdownFlipped"
+                                :top-auto "$_dropdownFlipped"
+                                :bottom-full "$_dropdownFlipped"
+                                :mb-2     "$_dropdownFlipped"
+                                :hidden (str "$_activeDropdown != '" id "'")})
+           :role              "menu"
+           :aria-labelledby   id
+           :data-on:click__outside (str "$_activeDropdown = closeDropdownOutside(evt, '" id "', $_activeDropdown)")}
+     [:div {:class         "py-1"
+            :data-on:click "$_activeDropdown = false"}
+      items]]))
+
 (defn dropdown
+  "A combined dropdown with trigger button and menu. Wraps both in a relative container.
+   
+   Options:
+   - :label - content to display in the trigger button
+   - :id - unique id (auto-generated if not provided)"
   [{:keys [label id]
     :or   {label "Drop Down"
            id    (utils/unique-id "dropdown")}} & items]
-  [:div {:class              "relative inline-block text-left"
-         :data-on:click__outside "if ($_activeDropdown === el.firstChild.id) { $_activeDropdown = false }"
-         :data-dropdown-root true}
-
-   [:button {:id                       id
-             :type                     "button"
-             :class                    "inline-flex w-full justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-             ;; Set _activeDropdown to false because null removes the signal rather than propagates a new value
-             ;; When opening, also calculate if the dropdown should flip above the button
-             :data-on:click            "if ($_activeDropdown === el.id) { $_activeDropdown = false } else { $_activeDropdown = el.id; $_dropdownFlipped = shouldFlipDropdown(evt) }"
-             :aria-haspopup            "true"
-             :data-class (dynamic-classes {:aria-expanded "$_activeDropdown === el.id"})
-             :data-dropdown-button     true}
-    label]
-   ;; Dropdown menu: positioned below by default, flipped above when near bottom edge
-   [:div {:class                  "absolute right-0 z-10 w-96 rounded-md bg-slate-100 shadow-lg ring-1 ring-black/5 focus:outline-none hidden"
-          :data-class:hidden      "$_activeDropdown !== el.previousElementSibling.id"
-          ;; Below button (not flipped)
-          :data-class (dynamic-classes
-                       {:top-full "!$_dropdownFlipped"
-                        :mt-2 "!$_dropdownFlipped"
-                        :top-auto "$_dropdownFlipped"
-                        :bottom-full "$_dropdownFlipped"
-                        :mb-2 "$_dropdownFlipped"})
-          :role                   "menu"
-          :aria-labelledby        id
-          :data-dropdown-menu     true}
-    ;; Default is that clicking on a button inside the dropdown closes the dropdown
-    [:div {:class         "py-1"
-           :data-on:click "$_activeDropdown = false"}
-     items]]])
+  [:div.relative
+   [dropdown-trigger {:id id :label label}]
+   (into [dropdown-menu {:id id}] items)])
 
 (def ^:private button-class
   "block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-slate-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent")
