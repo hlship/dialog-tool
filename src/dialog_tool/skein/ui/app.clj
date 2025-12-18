@@ -163,7 +163,8 @@
         [dropdown/button nil "Replay" "Run from start to here"]
         (when (not= 0 id)
           [:<>
-           [dropdown/button nil "Bless To Here" "Accept changes from root to here"]
+           [dropdown/button {:data-on:click (str "@post('/action/bless-to/" id "')")}
+            "Bless To Here" "Accept changes from root to here"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]
            [dropdown/button nil "Delete" "Delete this knot and all children"]
            [dropdown/button nil "Splice Out" "Delete this knot, reparent childen up"]
@@ -174,7 +175,8 @@
         (when (not= 0 id)
           [:<>
            [dropdown/button nil "Edit Label" "Change label for knot"]
-           [dropdown/button nil "Bless To Here" "Accept changes from root to here"]
+           [dropdown/button {:data-on:click (str "@post('/action/bless-to/" id "')")}
+            "Bless To Here" "Accept changes from root to here"]
            [dropdown/button nil "Edit Command" "Change the knot's command"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]])
         [dropdown/button nil "New Child" "Add a new command after this"]]]
