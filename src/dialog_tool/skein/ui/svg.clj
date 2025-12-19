@@ -25,3 +25,12 @@
 
 (def icon-dots-vertical
   (read-svg "ellipsis-vertical-solid"))
+
+(def icon-undo
+  (read-svg "arrow-uturn-left"))
+
+(def icon-redo
+  (read-svg "arrow-uturn-right"))
+
+(def icon-quit
+  (read-svg "x-circle-solid"))

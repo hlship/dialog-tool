@@ -135,9 +135,9 @@
         [nav-button {:class      button-base
                      :data-class "{'bg-blue-700': $dirty, 'hover:bg-blue-800': $dirty, 'bg-green-700': !$dirty, 'hover:bg-green-800': !$dirty}"}
          [:<> svg/icon-save "Save"]]
-        [nav-button nil "Undo"]
-        [nav-button nil "Redo"]
-        [nav-button nil "Quit"]]]]]))
+        [nav-button nil [:<> svg/icon-undo "Undo"]]
+        [nav-button nil [:<> svg/icon-redo "Redo"]]
+        [nav-button nil [:<> svg/icon-quit "Quit"]]]]]]))
 
 (def ^:private category->border-class
   {:ok    "border-slate-100"
