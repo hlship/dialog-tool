@@ -15,12 +15,6 @@
   (d*/patch-signals! (:sse-gen @*session)
                      (json/generate-string signals)))
 
-(def *id (atom 0))
-
-(defn unique-id
-  [prefix]
-  (str prefix (swap! *id inc)))
-
 (defn start-sse
   [{:keys [*session] :as request} on-open-fn]
   (hk-gen/->sse-response request

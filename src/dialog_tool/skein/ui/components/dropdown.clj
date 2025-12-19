@@ -1,93 +1,78 @@
 (ns dialog-tool.skein.ui.components.dropdown
-  (:require [dialog-tool.skein.ui.utils :as utils :refer [classes]]
-            [clojure.string :as string]))
+  (:require [dialog-tool.skein.ui.utils :refer [classes]]))
 
-(defn- escape
-  "Escape a string for use in a CSS class name."
-  [s]
-  (if (re-matches #"(?ix) (_|a-z)(_|a-z|0-9)*" s)
-    s
-    (str \' s \') ; TODO: Escape any quotes?  
-    ))
+;; Tailwind Plus web components dropdown
+;; Uses el-dropdown and el-menu from @tailwindplus/elements
+;; See: https://tailwindcss.com/plus/ui-blocks/application-ui/elements/dropdowns
 
-(defn dynamic-classes
-  [m]
-  (str "{"
-       (->> m
-            (map (fn [[k v]] (str (-> k name escape) ":" v)))
-            (string/join ","))
-       "}"))
+(def ^:private trigger-class
+  "Tailwind Plus style trigger button."
+  (classes
+   ;; Base layout
+   "inline-flex items-center justify-center gap-x-1.5"
+   ;; Sizing & typography
+   "rounded-md px-3 py-2 text-sm font-semibold"
+   ;; Colors - white background with subtle border
+   "bg-white text-gray-900 shadow-sm"
+   "ring-1 ring-inset ring-gray-300"
+   ;; Hover state
+   "hover:bg-gray-50"
+   ;; Focus state - Tailwind Plus style ring
+   "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"))
 
-(defn dropdown-trigger
-  "A small button to trigger a dropdown menu. Returns just the button element.
-   
-   Options:
-   - :id - unique id for the button (required, used to link to dropdown-menu)
-   - :label - content to display in the button (typically an icon)
-   - :class - additional CSS classes for the button"
-  [{:keys [id label class]}]
-  [:button {:id            id
-            :type          "button"
-            :class         (classes "text-center font-medium focus-within:ring-4"
-                                    "focus-within:outline-none"
-                                    "inline-flex items-center justify-center py-2"
-                                    "text-xs text-gray-900 bg-white"
-                                    "border border-gray-300 focus-within:ring-gray-200"
-                                    "rounded-lg hover:bg-slate-200"
-                                    class)
-            :data-on:click "const r = toggleDropdown(el, evt, $_activeDropdown); $_activeDropdown = r.activeDropdown; $_dropdownFlipped = r.dropdownFlipped"
-            :aria-haspopup "true"
-            :data-class    (dynamic-classes {:aria-expanded "$_activeDropdown === el.id"})}
-   label])
-
-(defn dropdown-menu
-  "A dropdown menu that appears when triggered. Returns just the menu element.
-   Should be a sibling of dropdown-trigger.
-   
-   Options:
-   - :id - the id of the associated dropdown-trigger button
-   - :placement - :left or :right (default :left)"
-  [{:keys [id placement]
-    :or   {placement :left}} & items]
-  (let [position-class (if (= placement :right) "left-0" "right-0")]
-    [:div {:class             (classes "absolute z-10 w-96 rounded-md bg-slate-100 shadow-lg"
-                                       "ring-1 ring-black/5 focus:outline-none hidden"
-                                       position-class)
-           :data-class        (dynamic-classes
-                               {:top-full "!$_dropdownFlipped"
-                                :mt-2     "!$_dropdownFlipped"
-                                :top-auto "$_dropdownFlipped"
-                                :bottom-full "$_dropdownFlipped"
-                                :mb-2     "$_dropdownFlipped"
-                                :hidden (str "$_activeDropdown != '" id "'")})
-           :role              "menu"
-           :aria-labelledby   id
-           :data-on:click__outside (str "$_activeDropdown = closeDropdownOutside(evt, '" id "', $_activeDropdown)")}
-     [:div {:class         "py-1"
-            :data-on:click "$_activeDropdown = false"}
-      items]]))
+(def ^:private menu-class
+  "Tailwind Plus style dropdown menu."
+  (classes
+   ;; Width
+   "w-56"
+   ;; Max height with scrolling
+   "max-h-64 overflow-y-auto"
+   ;; Appearance - Tailwind Plus style
+   "rounded-md bg-white shadow-lg"
+   "ring-1 ring-black/5"
+   ;; Focus handling
+   "focus:outline-none"
+   ;; Padding for menu items
+   "py-1"))
 
 (defn dropdown
-  "A combined dropdown with trigger button and menu. Wraps both in a relative container.
+  "A dropdown using Tailwind Plus el-dropdown and el-menu web components.
    
    Options:
    - :label - content to display in the trigger button
-   - :id - unique id (auto-generated if not provided)"
-  [{:keys [label id]
-    :or   {label "Drop Down"
-           id    (utils/unique-id "dropdown")}} & items]
-  [:div.relative
-   [dropdown-trigger {:id id :label label}]
-   (into [dropdown-menu {:id id}] items)])
+   - :placement - :left or :right (default :left), controls menu anchor position
+   - :class - additional classes for the trigger button"
+  [{:keys [label placement class]
+    :or   {label     "Drop Down"
+           placement :left}} & items]
+  (let [anchor (if (= placement :right) "bottom start" "bottom end")]
+    [:el-dropdown
+     [:button {:type  "button"
+               :class (classes trigger-class class)}
+      label]
+     (into [:el-menu {:popover true
+                      :anchor  anchor
+                      :class   menu-class}]
+           items)]))
 
+;; Tailwind Plus-style menu item button
 (def ^:private button-class
-  (classes "block text-left w-full text-gray-700"
-           "px-4 py-2 text-sm"
-           "hover:bg-slate-200"
-           "disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"))
+  (classes
+   ;; Layout
+   "block w-full text-left"
+   ;; Sizing & typography  
+   "px-4 py-2 text-sm"
+   ;; Colors - Tailwind Plus style
+   "text-gray-700"
+   ;; Hover state - subtle gray background
+   "hover:bg-gray-100 hover:text-gray-900"
+   ;; Focus state
+   "focus:bg-gray-100 focus:text-gray-900 focus:outline-none"
+   ;; Disabled state
+   "disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"))
 
 (defn button
-  "A button styled for use inside a dropdown menu.
+  "A button styled for use inside a dropdown menu. Styled per Tailwind Plus patterns.
    
    The sub-label, if provided, is placed in a paragraph tag below the main label.
   
@@ -98,13 +83,15 @@
    (button options label nil))
   ([options label sub-label]
    (let [{:keys [disabled]} options
-         attrs (cond-> (merge {:type  "button"
-                               :class button-class
-                               :role  "menuitem"}
+         attrs (cond-> (merge {:type     "button"
+                               :class    button-class
+                               :role     "menuitem"
+                               :tabindex "-1"}
                               (dissoc options :disabled))
                  disabled (assoc :disabled true))]
-     [:button attrs label
+     [:button attrs
+      [:span label]
       (when sub-label
-        [:p.text-xs.font-normal
-         {:class (if  disabled "text-gray-400" "text-gray-700")}
+        [:p.text-xs.mt-0.5
+         {:class (if disabled "text-gray-400" "text-gray-500")}
          sub-label])])))
