@@ -144,9 +144,32 @@
    :new   "border-yellow-200"
    :error "border-rose-400"})
 
-(defn render-knot
-  [{:keys [id label response unblessed] :as knot} enable-bless-to?]
-  (let [category (tree/assess-knot knot)
+(defn- render-children-navigation
+  [tree knot]
+  (let [children (tree/children tree knot)
+        {:keys [id]} knot]
+    (when (seq children)
+      [dropdown/dropdown {:id (str "nav-" id)
+                          :label [:<> svg/icon-children
+                                  (when (< 1 (count children))
+                                    [:div
+                                     {:class (classes
+                                              "flex-shrink-0 rounded-full border-2 border-white"
+                                              "w-6 h-6 bg-gray-200 inline-flex items-center justify-center"
+                                              "absolute top-0 end-0"
+                                              "translate-x-1/3 -translate-y-1/3"
+                                              "hover:bg-slate-200"
+                                              )}
+                                     (count children)])]}
+       (map (fn [{:keys [id label command]}]
+              [dropdown/button {:data-on:click (str "@post('/action/select/" id "')")}
+               (or label command)])
+            children)])))
+
+(defn- render-knot
+  [tree knot enable-bless-to?]
+  (let [{:keys [id label response unblessed]} knot
+        category (tree/assess-knot knot)
         border-class (category->border-class category)]
     [:div.border-x-4 {:id    (str "knot-" id)
                       :class border-class}
@@ -177,7 +200,8 @@
             "Bless To Here" "Accept changes from root to here"]
            [dropdown/button nil "Edit Command" "Change the knot's command"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]])
-        [dropdown/button nil "New Child" "Add a new command after this"]]]
+        [dropdown/button nil "New Child" "Add a new command after this"]]
+       (render-children-navigation tree knot)]
       [render-diff response unblessed]]
      [:hr]]))
 
@@ -202,7 +226,7 @@
     [:div#app.relative.px-8
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
-      (map (fn [[knot enable-bless-to?]] (render-knot knot enable-bless-to?)) knots-with-flags)
+      (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to?)) knots-with-flags)
       [new-command/new-command-input]
       [:div.fixed.top-4.left-4.bg-gray-800.text-white.p-3.rounded-lg.shadow-lg.max-w-md.max-h-64.overflow-auto.z-50.text-xs
        [:pre.whitespace-pre-wrap {:data-json-signals true}]]]]))

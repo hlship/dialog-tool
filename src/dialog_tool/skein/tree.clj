@@ -124,30 +124,6 @@
        first
        :id))
 
-(defn knot->wire
-  "Converts a single knot for transfer over the wire to the browser."
-  [knot]
-  (let [{:keys [parent-id response unblessed]} knot
-        category (cond
-                   (nil? unblessed) :ok
-                   (nil? response) :new
-                   :else :error)]
-    (-> knot
-        (dissoc :parent-id)
-        (assoc :parent_id parent-id
-               :category category)
-        (update :children #(-> % sort vec)))))
-
-(defn ->wire
-  "Convert the knots of a tree to a format suitable for transfer over the wire
-  to the UI."
-  [tree]
-  (->> tree
-       :knots
-       vals
-       (map #(knot->wire %))
-       (sort-by :id)))
-
 (defn all-knots
   "Returns all knots in the tree, in an unspecified order."
   [tree]
@@ -245,7 +221,7 @@
           (fn [knot]
             (let [{:keys [children]} knot]
               (cond-> knot
-                      (seq children) (assoc :selected (first children)))))))
+                (seq children) (assoc :selected (first children)))))))
 
 (defn select-knot
   "Updates the parent of the indicated knot to make this knot selected, then recurses upwards
@@ -288,7 +264,7 @@
 
     (nil? response)
     :new
-    
+
     :else
     :error))
 
@@ -302,3 +278,9 @@
        (map assess-knot)
        frequencies
        (merge {:ok 0 :new 0 :error 0})))
+
+(defn children
+  "Returns the children of the knot, or nil if no children."
+  [tree knot]
+  (when-let [ids (:children knot)]
+    (map #(get-in tree [:knots %]) ids))) 

@@ -34,3 +34,6 @@
 
 (def icon-quit
   (read-svg "x-circle-solid"))
+
+(def icon-children
+  (read-svg "command-line-solid"))

@@ -45,6 +45,12 @@
   (swap! *session session/bless-to (knot-id request))
   (render-app request))
 
+(defn- select-knot
+  "Selects the specified knot, making it and its ancestors the active path."
+  [{:keys [*session] :as request}]
+  (swap! *session session/select-knot (knot-id request))
+  (render-app request))
+
 (defn- wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
   [handler]
@@ -65,7 +71,10 @@
    (bless-node req)
 
    "POST /action/bless-to/*" req
-   (bless-to-node req)))
+   (bless-to-node req)
+
+   "POST /action/select/*" req
+   (select-knot req)))
 
 (def action-handler
   "Handler for /action/* routes with signal parsing middleware applied."
