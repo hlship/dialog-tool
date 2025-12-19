@@ -10,10 +10,12 @@
          :view-box   "0 0 24 24"}
    body])
 
-(defn- read-svg
+(defn- read-svg*
   [name]
   (let [file (str "icons/" name ".svg")]
     (-> file io/resource slurp h/raw-string)))
+
+(def read-svg (memoize read-svg*))
 
 (def icon-play 
   (read-svg "play-solid"))
