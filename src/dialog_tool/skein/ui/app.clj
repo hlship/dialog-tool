@@ -131,10 +131,10 @@
        [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg error]
        [nav-button nil "Jump"]
        [:div.flex.md:order-2.space-x-2
-        [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> [svg/icon-play] "Replay All"]]
+        [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
         [nav-button {:class      button-base
                      :data-class "{'bg-blue-700': $dirty, 'hover:bg-blue-800': $dirty, 'bg-green-700': !$dirty, 'hover:bg-green-800': !$dirty}"}
-         [:<> [svg/icon-floppy-disk] "Save"]]
+         [:<> svg/icon-save "Save"]]
         [nav-button nil "Undo"]
         [nav-button nil "Redo"]
         [nav-button nil "Quit"]]]]]))
@@ -155,7 +155,7 @@
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
        [dropdown/dropdown {:id (str "actions-" id)
-                           :label [svg/dots-vertical]}
+                           :label svg/icon-dots-vertical}
         [dropdown/button nil "Replay" "Run from start to here"]
         (when (not= 0 id)
           [:<>

@@ -30,10 +30,10 @@
             :type          "button"
             :class         (classes "text-center font-medium focus-within:ring-4"
                                     "focus-within:outline-none"
-                                    "inline-flex items-center justify-center px-3 py-2"
+                                    "inline-flex items-center justify-center py-2"
                                     "text-xs text-gray-900 bg-white"
                                     "border border-gray-300 focus-within:ring-gray-200"
-                                    "rounded-lg w-0 hover:bg-slate-200"
+                                    "rounded-lg hover:bg-slate-200"
                                     class)
             :data-on:click "const r = toggleDropdown(el, evt, $_activeDropdown); $_activeDropdown = r.activeDropdown; $_dropdownFlipped = r.dropdownFlipped"
             :aria-haspopup "true"
