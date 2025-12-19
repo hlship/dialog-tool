@@ -145,15 +145,16 @@
    :error "border-rose-400"})
 
 (defn render-knot
-  [{:keys [id response unblessed] :as knot} enable-bless-to?]
+  [{:keys [id label response unblessed] :as knot} enable-bless-to?]
   (let [category (tree/assess-knot knot)
         border-class (category->border-class category)]
     [:div.border-x-4 {:id    (str "knot-" id)
                       :class border-class}
      [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
       [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
-       [dropdown/dropdown {:post-url "/actions/color"
-                           :id (str "actions-" id)
+       (when label
+         [:span.font-bold.bg-gray-200.p-1.rounded-md label])
+       [dropdown/dropdown {:id (str "actions-" id)
                            :label [svg/dots-vertical]}
         [dropdown/button nil "Replay" "Run from start to here"]
         (when (not= 0 id)
