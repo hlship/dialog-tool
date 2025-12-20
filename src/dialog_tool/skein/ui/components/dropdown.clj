@@ -24,15 +24,19 @@
   "Tailwind Plus style dropdown menu."
   (classes
    ;; Width
-   "w-56"
+   "w-64"
    ;; Max height with scrolling
-   "max-h-64 overflow-y-auto"
-   ;; Appearance - Tailwind Plus style
+   "max-h-96 overflow-y-auto"
    "rounded-md bg-white shadow-lg"
    "ring-1 ring-black/5"
    ;; Focus handling
    "focus:outline-none"
-   ;; Padding for menu items
+   ;; Spacing between trigger and menu
+   "[--anchor-gap:--spacing(2)]"
+   ;; Animate
+   "transition-opacity"
+   "data-closed:opacity-0 data-enter:duration-200 data-enter:ease-out"
+   "data-leave:duration-75 data-leave:ease-in"
    "py-1"))
 
 (defn dropdown
@@ -40,20 +44,17 @@
    
    Options:
    - :label - content to display in the trigger button
-   - :placement - :left or :right (default :left), controls menu anchor position
    - :class - additional classes for the trigger button"
-  [{:keys [label placement class]
-    :or   {label     "Drop Down"
-           placement :left}} & items]
-  (let [anchor (if (= placement :right) "bottom start" "bottom end")]
-    [:el-dropdown
-     [:button {:type  "button"
-               :class (classes trigger-class class)}
-      label]
-     (into [:el-menu {:popover true
-                      :anchor  anchor
-                      :class   menu-class}]
-           items)]))
+  [{:keys [label class]
+    :or   {label "Drop Down"}} & items]
+  [:el-dropdown.inline-block
+   [:button {:type  "button"
+             :class (classes trigger-class class)}
+    label]
+   (into [:el-menu {:popover true
+                    :anchor  "left"
+                    :class   menu-class}]
+         items)])
 
 ;; Tailwind Plus-style menu item button
 (def ^:private button-class
