@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+/* Prevent layout shift when popovers/modals set overflow:hidden on body */
+html {
+  scrollbar-gutter: stable;
+}
