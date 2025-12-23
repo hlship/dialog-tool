@@ -203,7 +203,7 @@
         [dropdown/button nil "New Child" "Add a new command after this"]]
        (render-children-navigation tree knot)]
       [render-diff response unblessed]]
-     [:hr]]))
+     [:hr.clear-right.text-stone-200]]))
 
 (defn- compute-bless-to-flags
   "Returns a seq of [knot, enable-bless-to?] pairs. enable-bless-to? is true if any knot
