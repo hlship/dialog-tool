@@ -116,11 +116,11 @@
 
 (defn navbar
   [title tree]
-  (let [{:keys [ok new error]} (tree/counts tree)]
+  (let [{:keys [ok new error]} (tree/counts tree)
+        {:keys [dirty?]} tree]
     [:nav {:class        (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
                                   "px-2 sm:px-4 py-2.5"
-                                  "fixed w-full z-20 top-0 start-0 border-b")
-           :data-signals:dirty "false"}
+                                  "fixed w-full z-20 top-0 start-0 border-b")}
      [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
       [:a.flex.items-center
        [:div.self-center.whitespace-nowrap.text-xl.font-semibold
@@ -132,8 +132,10 @@
        [nav-button nil "Jump"]
        [:div.flex.md:order-2.space-x-2
         [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
-        [nav-button {:class      button-base
-                     :data-class "{'bg-blue-700': $dirty, 'hover:bg-blue-800': $dirty, 'bg-green-700': !$dirty, 'hover:bg-green-800': !$dirty}"}
+        [nav-button {:class      (classes button-base
+                                          (if dirty?
+                                            "bg-green-700 hover:bg-green-800"
+                                            "bg-blue-700 hover:bg-blue-800"))}
          [:<> svg/icon-save "Save"]]
         [nav-button nil [:<> svg/icon-undo "Undo"]]
         [nav-button nil [:<> svg/icon-redo "Redo"]]
