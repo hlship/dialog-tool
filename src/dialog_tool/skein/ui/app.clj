@@ -88,8 +88,7 @@
                                               "w-6 h-6 bg-gray-200 inline-flex items-center justify-center"
                                               "absolute top-0 end-0"
                                               "translate-x-1/3 -translate-y-1/3"
-                                              "hover:bg-slate-200"
-                                              )}
+                                              "hover:bg-slate-200")}
                                      (count children)])]}
        (map (fn [{:keys [id label command]}]
               [dropdown/button {:data-on:click (str "@post('/action/select/" id "')")}
@@ -128,8 +127,7 @@
            [dropdown/button {:disabled (not enable-bless-to?)
                              :data-on:click (str "@post('/action/bless-to/" id "')")}
             "Bless To Here" "Accept changes from root to here"]
-           [dropdown/button nil "Edit Command" "Change the knot's command"]
-           [dropdown/button nil "Insert Parent" "Insert a command before this"]])
+           [dropdown/button nil "Edit Command" "Change the knot's command"]])
         [dropdown/button nil "New Child" "Add a new command after this"]]
        (render-children-navigation tree knot)]
       [render-diff response unblessed]]
@@ -158,5 +156,6 @@
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to?)) knots-with-flags)
       [new-command/new-command-input]
+      ;; TODO: This should only show when in some kind of development mode
       [:div.fixed.top-4.left-4.bg-gray-800.text-white.p-3.rounded-lg.shadow-lg.max-w-md.max-h-64.overflow-auto.z-50.text-xs
        [:pre.whitespace-pre-wrap {:data-json-signals true}]]]]))
