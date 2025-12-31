@@ -21,25 +21,22 @@
   [{:keys [path-params]}]
   (-> path-params first parse-long))
 
-(defn- new-node
-  "Adds a new node to the tree as a child of the active knot."
+(defn- new-command
+  "Adds a new command to the tree as a child of the active knot."
   [{:keys [*session signals] :as request}]
   (let [{:keys [newCommand]} signals
         command (some-> newCommand str string/trim not-empty)]
     (when command
       (swap! *session session/command! command))
-    {:status 200
-     :body (html [:<>
-                  (ui.app/render-app request)
-                  [:div.hidden#patches {:data-signals "{newCommand:''}"}]])}))
+    (render-app request)))
 
-(defn- bless-node
+(defn- bless-knot
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
   [{:keys [*session] :as request}]
   (swap! *session session/bless (knot-id request))
   (render-app request))
 
-(defn- bless-to-node
+(defn- bless-to-knot
   "Blesses all knots from root to the specified knot, inclusive."
   [{:keys [*session] :as request}]
   (swap! *session session/bless-to (knot-id request))
@@ -71,14 +68,14 @@
 
 (def ^:private action-routes
   (router/routes
-   "POST /action/new-node" req
-   (new-node req)
+   "POST /action/new-command" req
+   (new-command req)
 
    "POST /action/bless/*" req
-   (bless-node req)
+   (bless-knot req)
 
    "POST /action/bless-to/*" req
-   (bless-to-node req)
+   (bless-to-knot req)
 
    "POST /action/select/*" req
    (select-knot req)

@@ -111,8 +111,9 @@
   [session knot-id]
   (-> session
       capture-undo
-      (cond-> (not= knot-id 0) (update :tree tree/select-knot knot-id))
-      (update :tree tree/deselect knot-id)))
+      (update :tree tree/select-knot knot-id)
+      (update :tree tree/deselect knot-id)
+      (assoc :active-knot-id knot-id)))
 
 (defn edit-command!
   [session knot-id new-command]
@@ -224,9 +225,11 @@
 (defn delete
   "Deletes a knot from the tree, including any descendants of the knot."
   [session knot-id]
-  (-> session
-      capture-undo
-      (update :tree tree/delete-knot knot-id)))
+  (let [parent-id (tree/get-parent-id (:tree session) knot-id)]
+    (-> session
+        capture-undo
+        (update :tree tree/delete-knot knot-id)
+        (assoc :active-knot-id parent-id))))
 
 (defn q [s] (str \' s \'))
 

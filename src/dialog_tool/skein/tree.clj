@@ -28,6 +28,11 @@
   [set k]
   (conj (or set #{}) k))
 
+(defn get-parent-id
+  "Returns the parent knot id of the indicated knot, or nil if knot-id is the root knot (0)."
+  [tree knot-id]
+  (get-in tree [:knots knot-id :parent-id]))
+
 (defn add-child
   "Adds a child knot.  The response is initially unblessed."
   [tree parent-id new-id command response]

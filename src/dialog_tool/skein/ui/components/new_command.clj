@@ -15,9 +15,6 @@
              :name        "command"
              :placeholder "Enter command..."
              :class       "flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-             :data-bind   "newCommand"
-             ;; This still needs a bit of work
-             :data-on-signal-patch "el.parentElement.parentElement.scrollIntoView({ behavior: 'smooth', block: 'end' }); el.focus()"
-             :data-on-signal-patch-filter "{include:/newCommand/}"
-             :data-on:change "@post('/action/new-node')"}]]])
+             :data-bind   "newCommand" 
+             :data-on:change "@post('/action/new-command')"}]]])
 
