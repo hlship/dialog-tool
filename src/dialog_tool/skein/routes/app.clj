@@ -51,6 +51,13 @@
   (swap! *session session/select-knot (knot-id request))
   (render-app request))
 
+(defn- prepare-new-child
+  "Prepares for adding a new child to the specified knot.
+   Replays to the knot and deselects its children."
+  [{:keys [*session] :as request}]
+  (swap! *session session/prepare-new-child! (knot-id request))
+  (render-app request))
+
 (defn- wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
   [handler]
@@ -74,7 +81,10 @@
    (bless-to-node req)
 
    "POST /action/select/*" req
-   (select-knot req)))
+   (select-knot req)
+
+   "POST /action/new-child/*" req
+   (prepare-new-child req)))
 
 (def action-handler
   "Handler for /action/* routes with signal parsing middleware applied."

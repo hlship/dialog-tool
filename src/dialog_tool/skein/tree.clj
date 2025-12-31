@@ -2,7 +2,7 @@
   "Tree of Skein nodes.  Each knot represents one command in a chain of commands
   starting at the root knot. Each knot has a unique id.
 
-  Nodes have a response and optionally an unblessed response."
+  Knots usually have a response (unless newly created) and optionally an unblessed response."
   (:require [clojure.string :as string]))
 
 (defn new-tree

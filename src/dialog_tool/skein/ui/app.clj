@@ -128,7 +128,8 @@
                              :data-on:click (str "@post('/action/bless-to/" id "')")}
             "Bless To Here" "Accept changes from root to here"]
            [dropdown/button nil "Edit Command" "Change the knot's command"]])
-        [dropdown/button nil "New Child" "Add a new command after this"]]
+        [dropdown/button {:data-on:click (str "@post('/action/new-child/" id "')")}
+         "New Child" "Add a new command after this"]]
        (render-children-navigation tree knot)]
       [render-diff response unblessed]]
      [:hr.clear-right.text-stone-200]]))

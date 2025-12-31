@@ -104,6 +104,16 @@
   [session knot-id]
   (do-replay-to! (capture-undo session) knot-id))
 
+(defn prepare-new-child!
+  "Prepares the session to add a new child to the specified knot.
+   Selects the knot and clears its :selected so it becomes the leaf of the selected path.
+   The actual replay will happen when the command is added."
+  [session knot-id]
+  (-> session
+      capture-undo
+      (cond-> (not= knot-id 0) (update :tree tree/select-knot knot-id))
+      (update :tree tree/deselect knot-id)))
+
 (defn edit-command!
   [session knot-id new-command]
   (let [{:keys [tree]} session
