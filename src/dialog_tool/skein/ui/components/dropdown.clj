@@ -51,8 +51,7 @@
    [:button {:type  "button"
              :class (classes trigger-class class)}
     label]
-   (into [:el-menu {:popover "manual"
-                    :anchor  "left"
+   (into [:el-menu {:anchor  "left"
                     :class   menu-class}]
          items)])
 
