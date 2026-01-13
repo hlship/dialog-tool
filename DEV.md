@@ -9,6 +9,7 @@
 
 - Been using Cursor to help set up ClojureScript support and ease me into VSCode / Calva
 - Calva REPL: When running a service, the HttpKit service writes to the REPL's Terminal output, not to the Calva REPL output file.
+- Agent note: the skein-ui folder contains the Svelte version of the app that we're replacing with Datastar.  It is read-only and still exists only for reference.
 
 
 ## TODO / Ideas / Plans/ Bugs
