@@ -9,9 +9,11 @@
             [starfederation.datastar.clojure.api :as d*]))
 
 (defn- render-app
-  [request]
-  {:status 200
-   :body (html (ui.app/render-app request))})
+  ([request]
+   (render-app request nil))
+  ([request opts]
+   {:status 200
+    :body (html (ui.app/render-app request opts))}))
 
 ;;; Action handlers
 ;;; Each receives :signals (parsed Datastar signals) in the request
@@ -28,7 +30,7 @@
         command (some-> newCommand str string/trim not-empty)]
     (when command
       (swap! *session session/command! command))
-    (render-app request)))
+    (render-app request {:scroll-to-new-command? true})))
 
 (defn- bless-knot
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
@@ -53,7 +55,7 @@
    Replays to the knot and deselects its children."
   [{:keys [*session] :as request}]
   (swap! *session session/prepare-new-child! (knot-id request))
-  (render-app request))
+  (render-app request {:scroll-to-new-command? true}))
 
 (defn- wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
