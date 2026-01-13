@@ -1,10 +1,23 @@
 (ns dialog-tool.skein.handlers
-  (:require [clj-simple-router.core :as router]
+  (:require [cheshire.core :as json]
+            [clj-simple-router.core :as router]
             [dialog-tool.skein.routes :as routes]
             [ring.middleware.content-type :as content-type]
             [huff2.core :as huff]
             [clojure.string :as string]
             [ring.util.response :as response]))
+
+(defn wrap-signals-header
+  "Middleware that extracts :signals from the response, encodes it as JSON,
+  and adds it as a datastar-signals header."
+  [f]
+  (fn [request]
+    (let [{:keys [signals] :as response} (f request)]
+      (if signals
+        (-> response
+            (dissoc :signals)
+            (assoc-in [:headers "datastar-signals"] (json/generate-string signals)))
+        response))))
 
 (defn expand-raw-string-body
   "huff returns a wrapper type, huff2.core.RawString, which is not directly compatible
@@ -44,9 +57,9 @@
         (println "Error: " e)
         {:status 500
          :headers {"content-type" "text/plain"}
-         :body (str "INTERNAL SERVER ERROR: " (ex-message e))})))
+         :body (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
 
-  (def service-handler
+(def service-handler
     "The main Ring handler for the Skein web service.
   
   Composes a router (from routes/routes) with middleware for:
@@ -55,6 +68,7 @@
   - Setting Content-Type headers
   - Logging requests and responses"
     (-> (router/router routes/routes)
+        wrap-signals-header
         expand-raw-string-body
         wrap-not-found
         content-type/wrap-content-type
