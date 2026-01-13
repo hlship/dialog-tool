@@ -9,6 +9,7 @@
     "shadow-cljs": "^2.28.21"
   },
   "dependencies": {
-    "@js-joda/core": "3.2.0"
+    "@js-joda/core": "3.2.0",
+    "@tailwindplus/elements": "^1.0.21"
   }
 }

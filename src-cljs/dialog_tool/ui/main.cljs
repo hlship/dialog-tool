@@ -1,7 +1,9 @@
-(ns dialog-tool.ui.main)
-
-;; Dropdown functionality is now handled by @tailwindplus/elements
-;; (el-dropdown and el-menu web components)
+(ns dialog-tool.ui.main
+  (:require
+   ;; Import for side effects - registers web components (el-dropdown, el-menu, etc.)
+   ["@tailwindplus/elements"]
+   ;; Import for side effects - initializes Datastar data-* attribute handling
+   ["/vendor/datastar.js"]))
 
 (defn init
   "Called once when the app loads."
