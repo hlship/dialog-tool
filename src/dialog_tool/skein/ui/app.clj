@@ -99,7 +99,8 @@
   [tree knot enable-bless-to?]
   (let [{:keys [id label response unblessed]} knot
         category (tree/assess-knot knot)
-        border-class (category->border-class category)]
+        border-class (category->border-class category)
+        root? (zero? id)]
     [:div.border-x-4 {:id    (str "knot-" id)
                       :class border-class}
      [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
@@ -108,31 +109,26 @@
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
        [dropdown/dropdown {:id (str "actions-" id)
                            :label svg/icon-dots-vertical}
-        [dropdown/button nil "Replay" "Run from start to here"]
-        (when (not= 0 id)
-          [:<>
-           [dropdown/button {:disabled (not enable-bless-to?)
-                             :data-on:click (str "@post('/action/bless-to/" id "')")}
-            "Bless To Here" "Accept changes from root to here"]
-           [dropdown/button nil "Insert Parent" "Insert a command before this"]
-           [dropdown/button nil "Delete" "Delete this knot and all children"]
-           [dropdown/button nil "Splice Out" "Delete this knot, reparent childen up"]
-           [dropdown/button nil "Edit Command" "Change the knot's command"]])
         [dropdown/button {:disabled      (= category :ok)
                           :data-on:click (str "@post('/action/bless/" id "')")}
          "Bless" "Accept changes"]
-        (when (not= 0 id)
+        (when-not root?
+          [dropdown/button {:disabled (not enable-bless-to?)
+                            :data-on:click (str "@post('/action/bless-to/" id "')")}
+           "Bless To Here" "Accept changes from root to here"])
+        [dropdown/button nil "Replay" "Run from start to here"]
+        [dropdown/button {:data-on:click (str "@post('/action/new-child/" id "')")}
+         "New Child" "Add a new command after this"]
+        (when-not root?
           [:<>
            [dropdown/button nil "Edit Label" "Change label for knot"]
-           [dropdown/button {:disabled (not enable-bless-to?)
-                             :data-on:click (str "@post('/action/bless-to/" id "')")}
-            "Bless To Here" "Accept changes from root to here"]
-           [dropdown/button nil "Edit Command" "Change the knot's command"]])
-        [dropdown/button {:data-on:click (str "@post('/action/new-child/" id "')")}
-         "New Child" "Add a new command after this"]]
+           [dropdown/button nil "Edit Command" "Change the knot's command"]
+           [dropdown/button nil "Insert Parent" "Insert a command before this"]
+           [dropdown/button nil "Delete" "Delete this knot and all children"]
+           [dropdown/button nil "Splice Out" "Delete this knot, reparent childen up"]])]
        (render-children-navigation tree knot)]
-      [render-diff response unblessed]]
-     [:hr.clear-right.text-stone-200]]))
+      [render-diff response unblessed]
+      [:hr.clear-right.text-stone-200]]]))
 
 (defn- compute-bless-to-flags
   "Returns a seq of [knot, enable-bless-to?] pairs. enable-bless-to? is true if any knot
