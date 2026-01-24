@@ -7,7 +7,6 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.components.modal :as modal]
-            [dialog-tool.skein.ui.utils :as ui.utils]
             [huff2.core :refer [html]]
             [starfederation.datastar.clojure.api :as d*]))
 
@@ -72,6 +71,7 @@
     {:status 200
      :body (html
             [:div#modal-container
+             {:data-signals (json/generate-string {:editCommand command})}
              [modal/modal
               {:title "Edit Command"
                :content
@@ -81,7 +81,6 @@
                   "Command:"]
                  [:input#edit-command-input
                   {:type "text"
-                   :value command
                    :data-bind "editCommand"
                    :data-init "el.select()"
                    :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
