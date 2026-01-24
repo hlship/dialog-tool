@@ -15,3 +15,6 @@ out
 /public/js/cljs-runtime/
 node_modules/
 .calva
+
+# Claude Code documentation
+.claude/

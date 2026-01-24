@@ -1,0 +1,14 @@
+{:paths ["src"
+         "src-cljs"
+         "resources"
+         ;; HTML and JS is copied and or generated to skein-ui/dist/public.
+         ;; Resources under public are made visible.
+         "skein-ui/dist"]
+ ;; Keep these synced with deps.edn:
+ :deps  {io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-3"}
+         io.github.escherize/huff           {:mvn/version "0.2.21"}
+         io.github.tonsky/clj-simple-router {:mvn/version "0.1.2"}
+         ring/ring-core                     {:mvn/version "1.15.3"}
+         dev.data-star.clojure/sdk          {:mvn/version "1.0.0-RC4"}
+         dev.data-star.clojure/http-kit     {:mvn/version "1.0.0-RC4"
+                                             :exclusions [http-kit/http-kit]}}}

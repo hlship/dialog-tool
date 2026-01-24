@@ -1,5 +1,5 @@
 ;; Lots of testing using Clojure and REPL, but the final tool is Babashka
-
+;; Keep bb.edn in sync with this.
 {:paths ["src"
          "src-cljs"
          "resources"
