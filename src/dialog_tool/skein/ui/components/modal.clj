@@ -30,11 +30,12 @@
    - :title - Dialog title
    - :content - Hiccup content to render in the modal body
    - :signals - Optional map of signals to initialize (will be JSON-encoded as data-signals)
+   - :error - Optional error message to display at the top of the modal
 
    The modal:
    - Can be dismissed by pressing ESC
    - Centers content and provides standard styling"
-  [{:keys [title content signals]}]
+  [{:keys [title content signals error]}]
   [:div#modal-container
    (merge
     {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
@@ -46,6 +47,11 @@
     ;; Header
     [:div.px-6.py-4.border-b.border-gray-200
      [:h3.text-lg.font-medium.text-gray-900 title]]
+    ;; Error message (if present)
+    (when error
+      [:div.px-6.pt-4
+       [:div.bg-red-50.border.border-red-200.text-red-800.px-4.py-3.rounded
+        [:p.text-sm error]]])
     ;; Body
     [:div.px-6.py-4
      content]]])

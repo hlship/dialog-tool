@@ -98,6 +98,29 @@
                     (ui.app/render-app request {})
                     [:div#modal-container]])}))
 
+(defn- render-edit-label-modal
+  "Renders the edit label modal with optional error message."
+  [id label error]
+  {:status 200
+   :body (html
+          [modal/modal
+           (cond-> {:title   "Edit Label"
+                    :signals {:editLabel label}
+                    :content
+                    [:form {:data-on:submit__stop (str "@post('/action/edit-label/" id "')")}
+                     [:div.mb-4
+                      [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-label-input"}
+                       "Label:"]
+                      [:input#edit-label-input
+                       {:type      "text"
+                        :data-bind "editLabel"
+                        :data-init "el.select()"
+                        :class     "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+                     [:div.flex.justify-end.gap-2
+                      [modal/cancel-button {}]
+                      [modal/ok-button {}]]]}
+             error (assoc :error error))])})
+
 (defn open-edit-label
   "Opens the edit label modal for the specified knot."
   [{:keys [*session] :as request}]
@@ -105,37 +128,28 @@
         tree  (:tree @*session)
         knot  (tree/get-knot tree id)
         label (or (:label knot) "")]
-    {:status 200
-     :body   (html
-               [modal/modal
-                {:title   "Edit Label"
-                 :signals {:editLabel label}
-                 :content
-                 [:form {:data-on:submit__stop (str "@post('/action/edit-label/" id "')")}
-                  [:div.mb-4
-                   [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-label-input"}
-                    "Label:"]
-                   [:input#edit-label-input
-                    {:type      "text"
-                     :data-bind "editLabel"
-                     :data-init "el.select()"
-                     :class     "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
-                  [:div.flex.justify-end.gap-2
-                   [modal/cancel-button {}]
-                   [modal/ok-button {}]]]}])}))
+    (render-edit-label-modal id label nil)))
 
 (defn edit-label
   "Submits the edited label for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
-  (let [id    (knot-id request)
+  (let [id            (knot-id request)
         {:keys [editLabel]} signals
-        label (some-> editLabel str string/trim)]
-    (swap! *session session/label id label)
-    ;; Return both updated app and cleared modal - Datastar patches both by id
-    {:status 200
-     :body (html [:<>
-                  (ui.app/render-app request {})
-                  [:div#modal-container]])}))
+        label         (some-> editLabel str string/trim)
+        tree          (:tree @*session)
+        existing-knot (when-not (string/blank? label)
+                        (tree/find-by-label tree label))
+        is-duplicate? (and existing-knot (not= id (:id existing-knot)))]
+    (if is-duplicate?
+      ;; Duplicate found in a different knot - return modal with error
+      (render-edit-label-modal id label (str "Label \"" label "\" is already used by another knot."))
+      ;; No duplicate or same knot - proceed with update
+      (do
+        (swap! *session session/label id label)
+        {:status 200
+         :body (html [:<>
+                      (ui.app/render-app request {})
+                      [:div#modal-container]])}))))
 
 (defn dismiss-modal
   "Dismisses any open modal by clearing the modal-container."
