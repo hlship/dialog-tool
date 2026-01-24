@@ -4,7 +4,10 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [dialog-tool.skein.session :as session]
+            [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
+            [dialog-tool.skein.ui.components.modal :as modal]
+            [dialog-tool.skein.ui.utils :as ui.utils]
             [huff2.core :refer [html]]
             [starfederation.datastar.clojure.api :as d*]))
 
@@ -59,6 +62,58 @@
   (render-app request {:scroll-to-new-command? true
                        :reset-command-input? true}))
 
+(defn- open-edit-command
+  "Opens the edit command modal for the specified knot."
+  [{:keys [*session] :as request}]
+  (let [id (knot-id request)
+        tree (:tree @*session)
+        knot (tree/get-knot tree id)
+        command (:command knot)]
+    {:status 200
+     :body (html
+            [:div#modal-container
+             [modal/modal
+              {:title "Edit Command"
+               :content
+               [:form {:data-on:submit__stop (str "@post('/action/edit-command/" id "')")}
+                [:div.mb-4
+                 [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-command-input"}
+                  "Command:"]
+                 [:input#edit-command-input
+                  {:type "text"
+                   :value command
+                   :data-bind "editCommand"
+                   :data-init "el.select()"
+                   :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+                [:div.flex.justify-end.gap-2
+                 [:button.px-4.py-2.text-sm.font-medium.text-gray-700.bg-white.border.border-gray-300.rounded-md.hover:bg-gray-50
+                  {:type "button"
+                   :data-on:click__stop "@post('/action/dismiss-modal')"}
+                  "Cancel"]
+                 [:button.px-4.py-2.text-sm.font-medium.text-white.bg-blue-700.rounded-md.hover:bg-blue-800
+                  {:type "submit"}
+                  "OK"]]]}]])}))
+
+(defn- edit-command
+  "Submits the edited command for the knot and re-renders the app."
+  [{:keys [*session signals] :as request}]
+  (let [id (knot-id request)
+        {:keys [editCommand]} signals
+        command (some-> editCommand str string/trim not-empty)]
+    (when command
+      (swap! *session session/edit-command! id command))
+    ;; Return both updated app and cleared modal - Datastar patches both by id
+    {:status 200
+     :body (html [:<>
+                  (ui.app/render-app request {})
+                  [:div#modal-container]])}))
+
+(defn- dismiss-modal
+  "Dismisses any open modal by clearing the modal-container."
+  [request]
+  {:status 200
+   :body (html [:div#modal-container])})
+
 (defn- wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
   [handler]
@@ -85,7 +140,16 @@
    (select-knot req)
 
    "POST /action/new-child/*" req
-   (prepare-new-child req)))
+   (prepare-new-child req)
+
+   "POST /action/open-edit-command/*" req
+   (open-edit-command req)
+
+   "POST /action/edit-command/*" req
+   (edit-command req)
+
+   "POST /action/dismiss-modal" req
+   (dismiss-modal req)))
 
 (def action-handler
   "Handler for /action/* routes with signal parsing middleware applied."
@@ -97,4 +161,3 @@
   (router/routes
    "GET /app" req
    (render-app req)))
-

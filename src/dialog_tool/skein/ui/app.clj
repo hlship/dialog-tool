@@ -3,6 +3,7 @@
             [dialog-tool.skein.ui.utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
+            [dialog-tool.skein.ui.components.modal :as modal]
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.tree :as tree]))
 
@@ -122,7 +123,8 @@
         (when-not root?
           [:<>
            [dropdown/button nil "Edit Label" "Change label for knot"]
-           [dropdown/button nil "Edit Command" "Change the knot's command"]
+           [dropdown/button {:data-on:click (str "@post('/action/open-edit-command/" id "')")}
+            "Edit Command" "Change the knot's command"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]
            [dropdown/button nil "Delete" "Delete this knot and all children"]
            [dropdown/button nil "Splice Out" "Delete this knot, reparent childen up"]])]
