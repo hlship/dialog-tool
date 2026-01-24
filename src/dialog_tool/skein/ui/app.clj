@@ -143,7 +143,7 @@
            knots)))
 
 (defn render-app
-  [request {:keys [scroll-to-new-command?] :as _opts}]
+  [request {:keys [scroll-to-new-command? reset-command-input?] :as _opts}]
   (let [{:keys [*session]} request
         session @*session
         {:keys [skein-path tree]} session
@@ -152,7 +152,8 @@
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to?)) knots-with-flags)
-      [new-command/new-command-input scroll-to-new-command?]
+      [new-command/new-command-input {:scroll-to? scroll-to-new-command?
+                                      :reset-command-input? reset-command-input?}]
       ;; TODO: This should only show when in some kind of development mode
       [:div.fixed.top-4.left-4.bg-gray-800.text-white.p-3.rounded-lg.shadow-lg.max-w-md.max-h-64.overflow-auto.z-50.text-xs
        [:pre.whitespace-pre-wrap {:data-json-signals true}]]]]))

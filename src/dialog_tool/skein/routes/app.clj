@@ -30,7 +30,8 @@
         command (some-> newCommand str string/trim not-empty)]
     (when command
       (swap! *session session/command! command))
-    (render-app request {:scroll-to-new-command? true})))
+    (render-app request {:scroll-to-new-command? true
+                         :reset-command-input? true})))
 
 (defn- bless-knot
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
@@ -55,7 +56,8 @@
    Replays to the knot and deselects its children."
   [{:keys [*session] :as request}]
   (swap! *session session/prepare-new-child! (knot-id request))
-  (render-app request {:scroll-to-new-command? true}))
+  (render-app request {:scroll-to-new-command? true
+                       :reset-command-input? true}))
 
 (defn- wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
