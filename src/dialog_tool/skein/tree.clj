@@ -7,12 +7,12 @@
 
 (defn new-tree
   [engine seed]
-  {:meta   {:engine engine
-            :seed   seed}
+  {:meta {:engine engine
+          :seed seed}
    :dirty? false
-   :focus  0                                                ; knot id to focus on
-   :knots  {0 {:id    0
-               :label "START"}}})
+   :focus 0 ; knot id to focus on
+   :knots {0 {:id 0
+              :label "START"}}})
 
 (defn- dirty
   [tree]
@@ -36,9 +36,9 @@
 (defn add-child
   "Adds a child knot.  The response is initially unblessed."
   [tree parent-id new-id command response]
-  (let [knot {:id        new-id
+  (let [knot {:id new-id
               :parent-id parent-id
-              :command   command
+              :command command
               :unblessed response}]
     (-> tree
         dirty
@@ -209,7 +209,7 @@
   "Starting at the root knot, returns a seq of each selected knot."
   [tree]
   (let [{:keys [knots]} tree]
-    (loop [result  []
+    (loop [result []
            knot-id 0]
       (if-not knot-id
         result
@@ -288,4 +288,31 @@
   "Returns the children of the knot, or nil if no children."
   [tree knot]
   (when-let [ids (:children knot)]
-    (map #(get-in tree [:knots %]) ids))) 
+    (map #(get-in tree [:knots %]) ids)))
+
+(defn compute-descendant-status
+  "Returns a map of knot-id -> worst status among all descendants.
+   Status is :error if any descendant has an error, :new if any is new, :ok otherwise.
+   Uses post-order traversal to bubble up worst status from leaves."
+  [tree]
+  (let [knots (:knots tree)]
+    (letfn [(compute-status [knot-id]
+              (let [knot (knots knot-id)
+                    own-status (assess-knot knot)
+                    child-ids (:children knot)
+                    child-statuses (map compute-status child-ids)
+                    worst-child-status (cond
+                                         (some #{:error} child-statuses) :error
+                                         (some #{:new} child-statuses) :new
+                                         :else :ok)
+                    worst-status (cond
+                                   (= :error own-status) :error
+                                   (= :error worst-child-status) :error
+                                   (= :new own-status) :new
+                                   (= :new worst-child-status) :new
+                                   :else :ok)]
+                worst-status))]
+      (into {}
+            (map (fn [knot-id]
+                   [knot-id (compute-status knot-id)]))
+            (keys knots)))))

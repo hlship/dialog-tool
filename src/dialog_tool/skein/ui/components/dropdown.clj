@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.ui.components.dropdown
-  (:require [dialog-tool.skein.ui.utils :refer [classes]]))
+  (:require [clojure.string :as string]
+            [dialog-tool.skein.ui.utils :refer [classes]]))
 
 ;; Tailwind Plus web components dropdown
 ;; Uses el-dropdown and el-menu from @tailwindplus/elements
@@ -44,15 +45,19 @@
    
    Options:
    - :label - content to display in the trigger button
-   - :class - additional classes for the trigger button"
-  [{:keys [label class]
-    :or   {label "Drop Down"}} & items]
+   - :class - additional classes for the trigger button
+   - :bg-class - background color class to override default bg-white (e.g., 'bg-red-500')"
+  [{:keys [label class bg-class]
+    :or {label "Drop Down"
+         bg-class "bg-white"}} & items]
   [:el-dropdown.inline-block
-   [:button {:type  "button"
-             :class (classes trigger-class class)}
+   [:button {:type "button"
+             :class (-> trigger-class
+                        (string/replace #"bg-white" bg-class)
+                        (classes class))}
     label]
-   (into [:el-menu {:anchor  "left"
-                    :class   menu-class}]
+   (into [:el-menu {:anchor "left"
+                    :class menu-class}]
          items)])
 
 ;; Tailwind Plus-style menu item button
@@ -83,9 +88,9 @@
    (button options label nil))
   ([options label sub-label]
    (let [{:keys [disabled]} options
-         attrs (cond-> (merge {:type     "button"
-                               :class    button-class
-                               :role     "menuitem"
+         attrs (cond-> (merge {:type "button"
+                               :class button-class
+                               :role "menuitem"
                                :tabindex "-1"}
                               (dissoc options :disabled))
                  disabled (assoc :disabled true))]

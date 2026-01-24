@@ -76,28 +76,37 @@
    :error "border-rose-400"})
 
 (defn- render-children-navigation
-  [tree knot]
+  [tree knot descendant-status]
   (let [children (tree/children tree knot)
         {:keys [id]} knot]
     (when (seq children)
-      [dropdown/dropdown {:id (str "nav-" id)
-                          :label [:<> svg/icon-children
-                                  (when (< 1 (count children))
-                                    [:div
-                                     {:class (classes
-                                              "flex-shrink-0 rounded-full border-2 border-white"
-                                              "w-6 h-6 bg-gray-200 inline-flex items-center justify-center"
-                                              "absolute top-0 end-0"
-                                              "translate-x-1/3 -translate-y-1/3"
-                                              "hover:bg-slate-200")}
-                                     (count children)])]}
-       (map (fn [{:keys [id label command]}]
-              [dropdown/button {:data-on:click (str "@post('/action/select/" id "')")}
-               (or label command)])
-            children)])))
+      (let [;; Check descendant status for each child to find worst status
+            child-statuses (map #(descendant-status (:id %)) children)
+            has-error? (some #{:error} child-statuses)
+            has-new? (some #{:new} child-statuses)
+            bg-class (cond
+                       has-error? "bg-red-500"
+                       has-new? "bg-yellow-200"
+                       :else "bg-white")]
+        [dropdown/dropdown {:id (str "nav-" id)
+                            :bg-class bg-class
+                            :label [:<> svg/icon-children
+                                    (when (< 1 (count children))
+                                      [:div
+                                       {:class (classes
+                                                "flex-shrink-0 rounded-full border-2 border-white"
+                                                "w-6 h-6 bg-gray-200 inline-flex items-center justify-center"
+                                                "absolute top-0 end-0"
+                                                "translate-x-1/3 -translate-y-1/3"
+                                                "hover:bg-slate-200")}
+                                       (count children)])]}
+         (map (fn [{:keys [id label command]}]
+                [dropdown/button {:data-on:click (str "@post('/action/select/" id "')")}
+                 (or label command)])
+              children)]))))
 
 (defn- render-knot
-  [tree knot enable-bless-to?]
+  [tree knot enable-bless-to? descendant-status]
   (let [{:keys [id label response unblessed]} knot
         category (tree/assess-knot knot)
         border-class (category->border-class category)
@@ -129,7 +138,7 @@
            [dropdown/button nil "Insert Parent" "Insert a command before this"]
            [dropdown/button nil "Delete" "Delete this knot and all children"]
            [dropdown/button nil "Splice Out" "Delete this knot, reparent childen up"]])]
-       (render-children-navigation tree knot)]
+       (render-children-navigation tree knot descendant-status)]
       [render-diff response unblessed]
       [:hr.clear-right.text-stone-200]]]))
 
@@ -150,11 +159,12 @@
   (let [{:keys [*session]} request
         session @*session
         {:keys [skein-path tree]} session
-        knots-with-flags (-> tree tree/selected-knots compute-bless-to-flags)]
+        knots-with-flags (-> tree tree/selected-knots compute-bless-to-flags)
+        descendant-status (tree/compute-descendant-status tree)]
     [:div#app.relative.px-8
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
-      (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to?)) knots-with-flags)
+      (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to? descendant-status)) knots-with-flags)
       [new-command/new-command-input {:scroll-to? scroll-to-new-command?
                                       :reset-command-input? reset-command-input?}]
       ;; TODO: This should only show when in some kind of development mode
