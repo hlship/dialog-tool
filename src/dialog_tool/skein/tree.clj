@@ -10,7 +10,6 @@
   {:meta {:engine engine
           :seed seed}
    :dirty? false
-   :focus 0 ; knot id to focus on
    :knots {0 {:id 0
               :label "START"}}})
 
@@ -42,7 +41,6 @@
               :unblessed response}]
     (-> tree
         dirty
-        (assoc :focus new-id)
         (assoc-in [:knots new-id] knot)
         (assoc-in [:knots parent-id :selected] new-id)
         (update-in [:knots parent-id :children] conj* new-id))))
@@ -187,7 +185,6 @@
                 tree
                 children)
         (update :knots dissoc knot-id)
-        (assoc :focus parent-id)
         dirty
         rebuild-children
         (adjust-selection-after-deletion parent-id knot-id))))
@@ -243,9 +240,7 @@
 
 (defn deselect
   [tree knot-id]
-  (-> tree
-      (assoc-in [:knots knot-id :selected] nil)
-      (assoc :focus knot-id)))
+  (assoc-in tree [:knots knot-id :selected] nil))
 
 (defn find-by-label
   [tree label]
