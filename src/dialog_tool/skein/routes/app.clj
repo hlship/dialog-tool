@@ -46,8 +46,9 @@
 (defn select-knot
   "Selects the specified knot, making it and its ancestors the active path."
   [{:keys [*session] :as request}]
-  (swap! *session session/select-knot (knot-id request))
-  (render-app request))
+  (let [id (knot-id request)]
+    (swap! *session session/select-knot id)
+    (render-app request {:scroll-to-knot-id id})))
 
 (defn prepare-new-child
   "Prepares for adding a new child to the specified knot.

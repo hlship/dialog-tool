@@ -58,7 +58,15 @@
        [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-yellow-200.p-2.font-semibold new]
        [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg error]
-       [nav-button nil "Jump"]
+       (let [labeled-knots (tree/labeled-knots-sorted tree)]
+         [dropdown/dropdown {:id "jump-dropdown"
+                             :button-class blue-button
+                             :disabled (<= (count labeled-knots) 1)
+                             :label [:<> svg/icon-jump "Jump"]}
+          (map (fn [{:keys [id label]}]
+                 [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
+                  label])
+               labeled-knots)])
        [:div.flex.md:order-2.space-x-2
         [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
         [nav-button {:class (classes button-base
@@ -101,18 +109,20 @@
                                                 "hover:bg-slate-200")}
                                        (count children)])]}
          (map (fn [{:keys [id label command]}]
-                [dropdown/button {:data-on:click (str "@post('/action/select/" id "')")}
+                [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
                  (or label command)])
               children)]))))
 
 (defn- render-knot
-  [tree knot enable-bless-to? descendant-status]
+  [tree knot enable-bless-to? descendant-status scroll-to-knot-id]
   (let [{:keys [id label response unblessed]} knot
         category (tree/assess-knot knot)
         border-class (category->border-class category)
         root? (zero? id)]
-    [:div.border-x-4 {:id (str "knot-" id)
-                      :class border-class}
+    [:div.border-x-4 (cond-> {:id (str "knot-" id)
+                              :class border-class}
+                       (= id scroll-to-knot-id)
+                       (assoc :data-scroll-into-view true))
      [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
       [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
        (when label
@@ -155,7 +165,7 @@
            knots)))
 
 (defn render-app
-  [request {:keys [scroll-to-new-command? reset-command-input?] :as _opts}]
+  [request {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id] :as _opts}]
   (let [{:keys [*session]} request
         session @*session
         {:keys [skein-path tree]} session
@@ -164,7 +174,7 @@
     [:div#app.relative.px-8
      [navbar skein-path tree]
      [:div.container.mx-lg.mx-auto.mt-16
-      (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to? descendant-status)) knots-with-flags)
+      (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to? descendant-status scroll-to-knot-id)) knots-with-flags)
       [new-command/new-command-input {:scroll-to? scroll-to-new-command?
                                       :reset-command-input? reset-command-input?}]
       ;; TODO: This should only show when in some kind of development mode

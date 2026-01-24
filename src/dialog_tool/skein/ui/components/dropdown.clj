@@ -42,19 +42,24 @@
 
 (defn dropdown
   "A dropdown using Tailwind Plus el-dropdown and el-menu web components.
-   
+
    Options:
    - :label - content to display in the trigger button
-   - :class - additional classes for the trigger button
-   - :bg-class - background color class to override default bg-white (e.g., 'bg-red-500')"
-  [{:keys [label class bg-class]
+   - :class - additional classes to merge with default trigger-class
+   - :button-class - completely replaces the default trigger-class styling
+   - :bg-class - background color class to override default bg-white (e.g., 'bg-red-500')
+   - :disabled - when truthy, the dropdown button is disabled"
+  [{:keys [label class button-class bg-class disabled]
     :or {label "Drop Down"
          bg-class "bg-white"}} & items]
   [:el-dropdown.inline-block
-   [:button {:type "button"
-             :class (-> trigger-class
-                        (string/replace #"bg-white" bg-class)
-                        (classes class))}
+   [:button (cond-> {:type "button"
+                     :class (if button-class
+                              button-class
+                              (-> trigger-class
+                                  (string/replace #"bg-white" bg-class)
+                                  (classes class)))}
+              disabled (assoc :disabled true))
     label]
    (into [:el-menu {:anchor "left"
                     :class menu-class}]

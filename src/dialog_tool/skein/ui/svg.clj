@@ -29,3 +29,6 @@
 
 (def icon-children
   (read-svg "command-line-solid"))
+
+(def icon-jump
+  (read-svg "bookmark-solid"))

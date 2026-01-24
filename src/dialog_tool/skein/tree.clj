@@ -254,6 +254,17 @@
        (filter #(= label (:label %)))
        first))
 
+(defn labeled-knots-sorted
+  "Returns a seq of knots that have non-blank labels, sorted alphabetically by label.
+   The START knot (root knot with id 0) is always first."
+  [tree]
+  (let [start-knot (get-knot tree 0)
+        other-knots (->> (dissoc (:knots tree) 0)
+                         vals
+                         (remove #(string/blank? (:label %)))
+                         (sort-by :label))]
+    (cons start-knot other-knots)))
+
 (defn clean
   "Mark the tree as clean (after all changes saved externally)."
   [tree]
