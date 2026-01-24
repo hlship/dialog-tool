@@ -5,52 +5,55 @@
 
 (def routes
   (router/routes
-    "GET /" []
-    (response/redirect "/index.html")
+   "GET /" []
+   (response/redirect "/index.html")
 
-    "POST /action/new-command" req
-    (app/new-command req)
+   "POST /action/new-command" req
+   (app/new-command req)
 
-    "POST /action/bless/*" req
-    (app/bless-knot req)
+   "POST /action/bless/*" req
+   (app/bless-knot req)
 
-    "POST /action/bless-to/*" req
-    (app/bless-to-knot req)
+   "POST /action/bless-to/*" req
+   (app/bless-to-knot req)
 
-    "GET /action/select/*" req
-    (app/select-knot req)
+   "GET /action/select/*" req
+   (app/select-knot req)
 
-    "POST /action/new-child/*" req
-    (app/prepare-new-child req)
+   "POST /action/new-child/*" req
+   (app/prepare-new-child req)
 
-    "GET /action/edit-command/*" req
-    (app/open-edit-command req)
+   "GET /action/edit-command/*" req
+   (app/open-edit-command req)
 
-    "POST /action/edit-command/*" req
-    (app/edit-command req)
+   "POST /action/edit-command/*" req
+   (app/edit-command req)
 
-    "GET /action/edit-label/*" req
-    (app/open-edit-label req)
+   "GET /action/edit-label/*" req
+   (app/open-edit-label req)
 
-    "POST /action/edit-label/*" req
-    (app/edit-label req)
+   "POST /action/edit-label/*" req
+   (app/edit-label req)
 
-    "POST /action/dismiss-modal" req
-    (app/dismiss-modal req)
+   "POST /action/dismiss-modal" req
+   (app/dismiss-modal req)
 
-    "GET /action/undo" req
-    (app/undo req)
+   "GET /action/undo" req
+   (app/undo req)
 
-    "GET /action/redo" req
-    (app/redo req)
+   "GET /action/redo" req
+   (app/redo req)
 
-    "GET /app" req
-    (app/render-app req)
+   "POST /action/save" req
+   (app/save req)
 
-    "GET /**" [path]
-    (or
+   "GET /app" req
+   (app/render-app req)
+
+   "GET /**" [path]
+   (or
       ;; Search for compiled files first
-      (response/file-response path {:root "out/public"})
+    (response/file-response path {:root "out/public"})
       ;; And source files second
-      (response/file-response path {:root         "public"
-                                    :index-files? true}))))
+    (response/file-response path {:root "public"
+                                  :index-files? true}))))

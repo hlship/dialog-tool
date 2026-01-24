@@ -3,7 +3,7 @@
             [dialog-tool.skein.ui.utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
-            [dialog-tool.skein.ui.components.modal :as modal]
+            [dialog-tool.skein.ui.components.flash :as flash]
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.tree :as tree]))
 
@@ -73,7 +73,8 @@
                labeled-knots)])
        [:div.flex.md:order-2.space-x-2
         [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
-        [nav-button {:class (classes button-base
+        [nav-button {:data-on:click "@post('/action/save')"
+                     :class (classes button-base
                                      (if dirty?
                                        "bg-green-700 hover:bg-green-800"
                                        "bg-blue-700 hover:bg-blue-800"))}
@@ -173,13 +174,15 @@
            knots)))
 
 (defn render-app
-  [request {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id] :as _opts}]
+  [request {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash] :as _opts}]
   (let [{:keys [*session]} request
         session @*session
         {:keys [skein-path tree]} session
         knots-with-flags (-> tree tree/selected-knots compute-bless-to-flags)
         descendant-status (tree/compute-descendant-status tree)]
     [:div#app.relative.px-8
+     (when flash
+       [flash/flash-message flash])
      [navbar skein-path tree
       (not-empty (:undo-stack session))
       (not-empty (:redo-stack session))]

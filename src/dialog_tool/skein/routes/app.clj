@@ -35,13 +35,13 @@
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
   [{:keys [*session] :as request}]
   (swap! *session session/bless (knot-id request))
-  (render-app request))
+  (render-app request {:flash "Blessed"}))
 
 (defn bless-to-knot
   "Blesses all knots from root to the specified knot, inclusive."
   [{:keys [*session] :as request}]
   (swap! *session session/bless-to (knot-id request))
-  (render-app request))
+  (render-app request {:flash "Blessed to here"}))
 
 (defn select-knot
   "Selects the specified knot, making it and its ancestors the active path."
@@ -94,9 +94,9 @@
       (swap! *session session/edit-command! id command))
     ;; Return both updated app and cleared modal - Datastar patches both by id
     {:status 200
-     :body   (html [:<>
-                    (ui.app/render-app request {})
-                    [:div#modal-container]])}))
+     :body (html [:<>
+                  (ui.app/render-app request {})
+                  [:div#modal-container]])}))
 
 (defn- render-edit-label-modal
   "Renders the edit label modal with optional error message."
@@ -104,7 +104,7 @@
   {:status 200
    :body (html
           [modal/modal
-           (cond-> {:title   "Edit Label"
+           (cond-> {:title "Edit Label"
                     :signals {:editLabel label}
                     :content
                     [:form {:data-on:submit__stop (str "@post('/action/edit-label/" id "')")}
@@ -112,10 +112,10 @@
                       [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-label-input"}
                        "Label:"]
                       [:input#edit-label-input
-                       {:type      "text"
+                       {:type "text"
                         :data-bind "editLabel"
                         :data-init "el.select()"
-                        :class     "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+                        :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
                      [:div.flex.justify-end.gap-2
                       [modal/cancel-button {}]
                       [modal/ok-button {}]]]}
@@ -124,19 +124,19 @@
 (defn open-edit-label
   "Opens the edit label modal for the specified knot."
   [{:keys [*session] :as request}]
-  (let [id    (knot-id request)
-        tree  (:tree @*session)
-        knot  (tree/get-knot tree id)
+  (let [id (knot-id request)
+        tree (:tree @*session)
+        knot (tree/get-knot tree id)
         label (or (:label knot) "")]
     (render-edit-label-modal id label nil)))
 
 (defn edit-label
   "Submits the edited label for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
-  (let [id            (knot-id request)
+  (let [id (knot-id request)
         {:keys [editLabel]} signals
-        label         (some-> editLabel str string/trim)
-        tree          (:tree @*session)
+        label (some-> editLabel str string/trim)
+        tree (:tree @*session)
         existing-knot (when-not (string/blank? label)
                         (tree/find-by-label tree label))
         is-duplicate? (and existing-knot (not= id (:id existing-knot)))]
@@ -161,10 +161,18 @@
   "Undoes the last action by restoring the previous tree state."
   [{:keys [*session] :as request}]
   (swap! *session session/undo)
-  (render-app request))
+  (render-app request {:flash "Undo"}))
 
 (defn redo
   "Redoes the last undone action by restoring the next tree state."
   [{:keys [*session] :as request}]
   (swap! *session session/redo)
-  (render-app request))
+  (render-app request {:flash "Redo"}))
+
+(defn save
+  "Saves the current tree state to the file."
+  [{:keys [*session] :as request}]
+  (swap! *session session/save!)
+  (render-app request {:flash "Saved"}))
+
+
