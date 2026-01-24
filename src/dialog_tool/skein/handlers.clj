@@ -4,6 +4,7 @@
             [ring.middleware.content-type :as content-type]
             [huff2.core :as huff]
             [clojure.string :as string]
+            [dialog-tool.skein.ui.utils :as utils]
             [ring.util.response :as response]))
 
 
@@ -52,6 +53,7 @@
 
   Composes a router (from routes/routes) with middleware for:
   - Converting Huff RawString bodies to plain strings
+  - Extracting Datastar signals from the incoming request
   - Returning 404 for unmatched routes
   - Setting Content-Type headers
   - Logging requests and responses"
@@ -60,4 +62,5 @@
         wrap-not-found
         content-type/wrap-content-type
         wrap-with-response-logger
+        utils/wrap-parse-signals
         log-errors))

@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.ui.utils
   (:require [cheshire.core :as json]
+            [clojure.java.io :as io]
             [starfederation.datastar.clojure.adapter.http-kit :as hk-gen]
             [starfederation.datastar.clojure.api :as d*]
             [clojure.string :as string]))
@@ -31,3 +32,19 @@
       (string/replace #"\s+" " ")
       string/trim))
 
+(defn wrap-parse-signals
+  "Middleware that parses Datastar signals and adds them to the request as :signals."
+  [handler]
+  (fn [request]
+    (let [data (d*/get-signals request)
+          signals (cond
+                    (string? data)
+                    (json/parse-string data true)
+                    
+                    (nil? data)
+                    nil
+                    
+                    :else
+                    (with-open [r (io/reader data)]
+                      (json/parse-stream r true)))]
+      (handler (assoc request :signals signals)))))

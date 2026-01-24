@@ -38,7 +38,7 @@
   (str button-base " bg-blue-700 hover:bg-blue-800"))
 
 (defn nav-button [attrs body]
-  [:button (merge {:type  "button"
+  [:button (merge {:type "button"
                    :class blue-button}
                   attrs)
    body])
@@ -47,32 +47,32 @@
   [title tree]
   (let [{:keys [ok new error]} (tree/counts tree)
         {:keys [dirty?]} tree]
-    [:nav {:class        (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
-                                  "px-2 sm:px-4 py-2.5"
-                                  "fixed w-full z-20 top-0 start-0 border-b")}
+    [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
+                           "px-2 sm:px-4 py-2.5"
+                           "fixed w-full z-20 top-0 start-0 border-b")}
      [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
       [:a.flex.items-center
        [:div.self-center.whitespace-nowrap.text-xl.font-semibold
         title]]
       [:div.mx-0.inline-flex
-       [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg  ok]
+       [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-yellow-200.p-2.font-semibold new]
        [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg error]
        [nav-button nil "Jump"]
        [:div.flex.md:order-2.space-x-2
         [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
-        [nav-button {:class      (classes button-base
-                                          (if dirty?
-                                            "bg-green-700 hover:bg-green-800"
-                                            "bg-blue-700 hover:bg-blue-800"))}
+        [nav-button {:class (classes button-base
+                                     (if dirty?
+                                       "bg-green-700 hover:bg-green-800"
+                                       "bg-blue-700 hover:bg-blue-800"))}
          [:<> svg/icon-save "Save"]]
         [nav-button nil [:<> svg/icon-undo "Undo"]]
         [nav-button nil [:<> svg/icon-redo "Redo"]]
         [nav-button nil [:<> svg/icon-quit "Quit"]]]]]]))
 
 (def ^:private category->border-class
-  {:ok    "border-slate-100"
-   :new   "border-yellow-200"
+  {:ok "border-slate-100"
+   :new "border-yellow-200"
    :error "border-rose-400"})
 
 (defn- render-children-navigation
@@ -102,7 +102,7 @@
         category (tree/assess-knot knot)
         border-class (category->border-class category)
         root? (zero? id)]
-    [:div.border-x-4 {:id    (str "knot-" id)
+    [:div.border-x-4 {:id (str "knot-" id)
                       :class border-class}
      [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
       [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
@@ -110,7 +110,7 @@
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
        [dropdown/dropdown {:id (str "actions-" id)
                            :label svg/icon-dots-vertical}
-        [dropdown/button {:disabled      (= category :ok)
+        [dropdown/button {:disabled (= category :ok)
                           :data-on:click (str "@post('/action/bless/" id "')")}
          "Bless" "Accept changes"]
         (when-not root?
@@ -122,8 +122,9 @@
          "New Child" "Add a new command after this"]
         (when-not root?
           [:<>
-           [dropdown/button nil "Edit Label" "Change label for knot"]
-           [dropdown/button {:data-on:click (str "@post('/action/open-edit-command/" id "')")}
+           [dropdown/button {:data-on:click (str "@get('/action/edit-label/" id "')")}
+            "Edit Label" "Change label for knot"]
+           [dropdown/button {:data-on:click (str "@get('/action/edit-command/" id "')")}
             "Edit Command" "Change the knot's command"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]
            [dropdown/button nil "Delete" "Delete this knot and all children"]
