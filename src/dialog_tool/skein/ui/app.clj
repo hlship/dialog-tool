@@ -37,14 +37,18 @@
 (def blue-button
   (str button-base " bg-blue-700 hover:bg-blue-800"))
 
+(def disabled-button
+  (str button-base " bg-blue-400 cursor-not-allowed"))
+
 (defn nav-button [attrs body]
-  [:button (merge {:type "button"
-                   :class blue-button}
-                  attrs)
-   body])
+  (let [disabled? (:disabled attrs)]
+    [:button (merge {:type "button"
+                     :class (if disabled? disabled-button blue-button)}
+                    attrs)
+     body]))
 
 (defn navbar
-  [title tree]
+  [title tree can-undo? can-redo?]
   (let [{:keys [ok new error]} (tree/counts tree)
         {:keys [dirty?]} tree]
     [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
@@ -74,8 +78,12 @@
                                        "bg-green-700 hover:bg-green-800"
                                        "bg-blue-700 hover:bg-blue-800"))}
          [:<> svg/icon-save "Save"]]
-        [nav-button nil [:<> svg/icon-undo "Undo"]]
-        [nav-button nil [:<> svg/icon-redo "Redo"]]
+        [nav-button {:data-on:click "@get('/action/undo')"
+                     :disabled (not can-undo?)}
+         [:<> svg/icon-undo "Undo"]]
+        [nav-button {:data-on:click "@get('/action/redo')"
+                     :disabled (not can-redo?)}
+         [:<> svg/icon-redo "Redo"]]
         [nav-button nil [:<> svg/icon-quit "Quit"]]]]]]))
 
 (def ^:private category->border-class
@@ -172,7 +180,9 @@
         knots-with-flags (-> tree tree/selected-knots compute-bless-to-flags)
         descendant-status (tree/compute-descendant-status tree)]
     [:div#app.relative.px-8
-     [navbar skein-path tree]
+     [navbar skein-path tree
+      (not-empty (:undo-stack session))
+      (not-empty (:redo-stack session))]
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to? descendant-status scroll-to-knot-id)) knots-with-flags)
       [new-command/new-command-input {:scroll-to? scroll-to-new-command?

@@ -38,6 +38,12 @@
     "POST /action/dismiss-modal" req
     (app/dismiss-modal req)
 
+    "GET /action/undo" req
+    (app/undo req)
+
+    "GET /action/redo" req
+    (app/redo req)
+
     "GET /app" req
     (app/render-app req)
 

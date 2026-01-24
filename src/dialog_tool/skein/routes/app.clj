@@ -156,3 +156,15 @@
   [request]
   {:status 200
    :body (html [:div#modal-container])})
+
+(defn undo
+  "Undoes the last action by restoring the previous tree state."
+  [{:keys [*session] :as request}]
+  (swap! *session session/undo)
+  (render-app request))
+
+(defn redo
+  "Redoes the last undone action by restoring the next tree state."
+  [{:keys [*session] :as request}]
+  (swap! *session session/redo)
+  (render-app request))
