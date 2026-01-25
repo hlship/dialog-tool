@@ -48,17 +48,6 @@
             (assoc :active-knot-id new-knot-id)
             (update :tree tree/add-child active-knot-id new-knot-id command response))))))
 
-(defn command!
-  "Sends a player command to the process at the current knot. This will either
-  update a child of the current knot (with a possibly unblessed response) or
-  will create a new child knot.
-
-  Returns the updated session."
-  [session command]
-  (-> session
-      capture-undo
-      (run-command! command)))
-
 (defn- collect-commands
   [tree initial-knot-id]
   (->> (tree/knots-from-root tree initial-knot-id)
@@ -77,19 +66,36 @@
                :process process')
         (update :tree tree/update-response 0 new-initial-response))))
 
-(defn restart!
-  "Restarts the game, sets the active knot to 0."
-  [session]
-  (-> session
-      capture-undo
-      do-restart!))
-
 (defn do-replay-to!
   "Replays to a knot without capturing undo. Used internally by replay-to! and for batch operations."
   [session knot-id]
   (let [commands (collect-commands (:tree session) knot-id)
         session' (reduce run-command! (do-restart! session) commands)]
     (assoc session' :active-knot-id knot-id)))
+
+(defn command!
+  "Sends a player command to the process at the current knot. This will either
+  update a child of the current knot (with a possibly unblessed response) or
+  will create a new child knot.
+
+  Returns the updated session."
+  [session command]
+  (let [{:keys [tree active-knot-id]} session
+        selected-leaf-id (-> (tree/selected-knots tree) last :id)
+        ;; Replay if process position doesn't match where we want to execute the command
+        session' (if (= active-knot-id selected-leaf-id)
+                   session
+                   (do-replay-to! session selected-leaf-id))]
+    (-> session'
+        capture-undo
+        (run-command! command))))
+
+(defn restart!
+  "Restarts the game, sets the active knot to 0."
+  [session]
+  (-> session
+      capture-undo
+      do-restart!))
 
 (defn replay-to!
   "Restarts the game, then plays through all the commands leading up to the knot.
@@ -219,15 +225,15 @@
   "Deletes a knot from the tree, including any descendants of the knot."
   [session knot-id]
   (let [{:keys [tree active-knot-id]} session
-        parent-id (tree/get-parent-id tree knot-id)
         ;; Check if active knot is the one being deleted or a descendant
         active-knot-deleted? (some #(= active-knot-id (:id %))
                                    (tree/knots-from-root tree knot-id))]
-    (-> session
-        capture-undo
-        (update :tree tree/delete-knot knot-id)
-        (cond-> active-knot-deleted?
-          (assoc :active-knot-id parent-id)))))
+    (cond-> (-> session
+                capture-undo
+                (update :tree tree/delete-knot knot-id))
+      ;; If we deleted the active knot, clear it so we'll replay on next command
+      active-knot-deleted?
+      (dissoc :active-knot-id))))
 
 (defn q [s] (str \' s \'))
 
@@ -258,10 +264,11 @@
         (cond-> (-> session
                     capture-undo
                     (update :tree tree/splice-out knot-id)
-                    (assoc :new-id (or replay-id parent-id))
-                    (cond-> active-is-spliced?
-                      (assoc :active-knot-id parent-id)))
-          replay-id (do-replay-to! replay-id))))))
+                    (assoc :new-id (or replay-id parent-id)))
+          ;; Replay to first child if exists (process state still valid for that path)
+          replay-id (do-replay-to! replay-id)
+          ;; If we spliced the active knot and no children, clear active-knot-id
+          (and active-is-spliced? (not replay-id)) (dissoc :active-knot-id))))))
 
 (defn kill!
   "Kills the session, and the underlying process. Returns nil."
