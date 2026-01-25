@@ -59,15 +59,36 @@
                        knots)]
     (assoc tree :knots knots')))
 
+(defn get-knot
+  [tree knot-id]
+  (get-in tree [:knots knot-id]))
+
+(defn- adjust-selection-after-deletion
+  [tree parent-id child-id]
+  (let [{:keys [selected children]} (get-knot tree parent-id)]
+    (cond
+
+      (not= child-id selected)
+      tree
+
+      ;; Called after rebuild-children, so child-id will already have been
+      ;; removed from the :children key, which may be nil or empty.
+      (seq children)
+      (assoc-in tree [:knots parent-id :selected] (first children))
+
+      :else
+      (update-in tree [:knots parent-id] dissoc :selected))))
+
 (defn delete-knot
   "Deletes a previously added knot, and any children below it."
   [tree knot-id]
   (let [knot (get-in tree [:knots knot-id])
-        {:keys [children]} knot]
+        {:keys [parent-id children]} knot]
     (-> (reduce delete-knot (dirty tree) children)
         (update :knots dissoc knot-id)
         ;; Yes, we don't care about efficiency!
-        rebuild-children)))
+        rebuild-children
+        (adjust-selection-after-deletion parent-id knot-id))))
 
 (defn- dirty-check
   [old-tree new-tree]
@@ -156,26 +177,6 @@
         (update-in [:knots new-parent-id] assoc :selected knot-id :children [knot-id])
         (assoc-in [:knots knot-id :parent-id] new-parent-id)
         rebuild-children)))
-
-(defn get-knot
-  [tree knot-id]
-  (get-in tree [:knots knot-id]))
-
-(defn- adjust-selection-after-deletion
-  [tree parent-id child-id]
-  (let [{:keys [selected children]} (get-knot tree parent-id)]
-    (cond
-
-      (not= child-id selected)
-      tree
-
-      ;; Called after rebuild-children, so child-id will already have been
-      ;; removed from the :children key, which may be nil or empty.
-      (seq children)
-      (assoc-in tree [:knots parent-id :selected] (first children))
-
-      :else
-      (update tree [:knots parent-id] dissoc :selected))))
 
 (defn splice-out
   [tree knot-id]

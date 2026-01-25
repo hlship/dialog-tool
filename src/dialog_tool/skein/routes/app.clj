@@ -211,3 +211,18 @@
         (html [:<>
                (ui.app/render-app request {:flash "Replay complete"})
                [:div#modal-container]]))))))
+
+(defn delete-knot
+  "Deletes the specified knot and all its descendants."
+  [{:keys [*session] :as request}]
+  (swap! *session session/delete (knot-id request))
+  (render-app request {:flash "Deleted"}))
+
+(defn splice-out-knot
+  "Splices out the specified knot, reparenting its children."
+  [{:keys [*session] :as request}]
+  (let [session' (swap! *session session/splice-out! (knot-id request))]
+    (if-let [error (:error session')]
+      ;; TODO: Display error to user properly
+      (render-app request {:flash error})
+      (render-app request {:flash "Spliced out"}))))

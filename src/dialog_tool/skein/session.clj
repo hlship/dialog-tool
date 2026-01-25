@@ -218,11 +218,16 @@
 (defn delete
   "Deletes a knot from the tree, including any descendants of the knot."
   [session knot-id]
-  (let [parent-id (tree/get-parent-id (:tree session) knot-id)]
+  (let [{:keys [tree active-knot-id]} session
+        parent-id (tree/get-parent-id tree knot-id)
+        ;; Check if active knot is the one being deleted or a descendant
+        active-knot-deleted? (some #(= active-knot-id (:id %))
+                                   (tree/knots-from-root tree knot-id))]
     (-> session
         capture-undo
         (update :tree tree/delete-knot knot-id)
-        (assoc :active-knot-id parent-id))))
+        (cond-> active-knot-deleted?
+          (assoc :active-knot-id parent-id)))))
 
 (defn q [s] (str \' s \'))
 
@@ -230,7 +235,7 @@
   "Deletes a knot, reparenting its children to the knot's parent (unless there
   are command conflicts)."
   [session knot-id]
-  (let [{:keys [tree]} session
+  (let [{:keys [tree active-knot-id]} session
         {:keys [parent-id children]} (tree/get-knot tree knot-id)
         parent-commands (->> (tree/find-children tree parent-id)
                              (remove #(= knot-id (:id %)))
@@ -248,11 +253,14 @@
                           sort
                           (map q)
                           h/oxford)))
-      (let [replay-id (first children)]
+      (let [replay-id (first children)
+            active-is-spliced? (= active-knot-id knot-id)]
         (cond-> (-> session
                     capture-undo
                     (update :tree tree/splice-out knot-id)
-                    (assoc :new-id (or replay-id parent-id)))
+                    (assoc :new-id (or replay-id parent-id))
+                    (cond-> active-is-spliced?
+                      (assoc :active-knot-id parent-id)))
           replay-id (do-replay-to! replay-id))))))
 
 (defn kill!

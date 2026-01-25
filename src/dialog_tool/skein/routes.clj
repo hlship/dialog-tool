@@ -50,6 +50,12 @@
    "POST /action/replay-all" req
    (app/replay-all req)
 
+   "POST /action/delete/*" req
+   (app/delete-knot req)
+
+   "POST /action/splice-out/*" req
+   (app/splice-out-knot req)
+
    "GET /app" req
    (app/render-app req)
 

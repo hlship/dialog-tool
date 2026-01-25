@@ -155,8 +155,10 @@
            [dropdown/button {:data-on:click (str "@get('/action/edit-command/" id "')")}
             "Edit Command" "Change the knot's command"]
            [dropdown/button nil "Insert Parent" "Insert a command before this"]
-           [dropdown/button nil "Delete" "Delete this knot and all children"]
-           [dropdown/button nil "Splice Out" "Delete this knot, reparent childen up"]])]
+           [dropdown/button {:data-on:click (str "@post('/action/delete/" id "')")}
+            "Delete" "Delete this knot and all children"]
+           [dropdown/button {:data-on:click (str "@post('/action/splice-out/" id "')")}
+            "Splice Out" "Delete this knot, reparent children up"]])]
        (render-children-navigation tree knot descendant-status)]
       [render-diff response unblessed]
       [:hr.clear-right.text-stone-200]]]))
