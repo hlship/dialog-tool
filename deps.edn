@@ -2,10 +2,7 @@
 ;; Keep bb.edn in sync with this.
 {:paths ["src"
          "src-cljs"
-         "resources"
-         ;; HTML and JS is copied and or generated to skein-ui/dist/public.
-         ;; Resources under public are made visible.
-         "skein-ui/dist"]
+         "resources"]
  :deps  {org.clojure/clojure        {:mvn/version "1.12.3"}
          org.clojure/clojurescript  {:mvn/version "1.11.132"}
          thheller/shadow-cljs       {:mvn/version "2.28.21"}
