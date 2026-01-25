@@ -1,12 +1,11 @@
 (ns dialog-tool.skein.handlers
   (:require [clj-simple-router.core :as router]
-            [dialog-tool.skein.routes :as routes]
+            [dialog-tool.skein.routes.app :as app]
             [ring.middleware.content-type :as content-type]
             [huff2.core :as huff]
             [clojure.string :as string]
             [dialog-tool.skein.ui.utils :as utils]
             [ring.util.response :as response]))
-
 
 (defn expand-raw-string-body
   "huff returns a wrapper type, huff2.core.RawString, which is not directly compatible
@@ -48,8 +47,81 @@
          :headers {"content-type" "text/plain"}
          :body (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
 
+(def routes
+  (router/routes
+   "GET /" []
+   (response/redirect "/index.html")
+
+   "POST /action/new-command" req
+   (app/new-command req)
+
+   "POST /action/bless/*" req
+   (app/bless-knot req)
+
+   "POST /action/bless-to/*" req
+   (app/bless-to-knot req)
+
+   "POST /action/replay-to/*" req
+   (app/replay-to-knot req)
+
+   "GET /action/select/*" req
+   (app/select-knot req)
+
+   "POST /action/new-child/*" req
+   (app/prepare-new-child req)
+
+   "GET /action/edit-command/*" req
+   (app/open-edit-command req)
+
+   "POST /action/edit-command/*" req
+   (app/edit-command req)
+
+   "GET /action/insert-parent/*" req
+   (app/open-insert-parent req)
+
+   "POST /action/insert-parent/*" req
+   (app/insert-parent req)
+
+   "GET /action/edit-label/*" req
+   (app/open-edit-label req)
+
+   "POST /action/edit-label/*" req
+   (app/edit-label req)
+
+   "POST /action/dismiss-modal" req
+   (app/dismiss-modal req)
+
+   "GET /action/undo" req
+   (app/undo req)
+
+   "GET /action/redo" req
+   (app/redo req)
+
+   "POST /action/save" req
+   (app/save req)
+
+   "POST /action/replay-all" req
+   (app/replay-all req)
+
+   "POST /action/delete/*" req
+   (app/delete-knot req)
+
+   "POST /action/splice-out/*" req
+   (app/splice-out-knot req)
+
+   "GET /app" req
+   (app/render-app req)
+
+   "GET /**" [path]
+   (or
+      ;; Search for compiled files first
+    (response/file-response path {:root "out/public"})
+      ;; And source files second
+    (response/file-response path {:root "public"
+                                  :index-files? true}))))
+
 (def service-handler
-    "The main Ring handler for the Skein web service.
+  "The main Ring handler for the Skein web service.
 
   Composes a router (from routes/routes) with middleware for:
   - Converting Huff RawString bodies to plain strings
@@ -57,10 +129,10 @@
   - Returning 404 for unmatched routes
   - Setting Content-Type headers
   - Logging requests and responses"
-    (-> (router/router routes/routes)
-        expand-raw-string-body
-        wrap-not-found
-        content-type/wrap-content-type
-        wrap-with-response-logger
-        utils/wrap-parse-signals
-        log-errors))
+  (-> (router/router routes)
+      expand-raw-string-body
+      wrap-not-found
+      content-type/wrap-content-type
+      wrap-with-response-logger
+      utils/wrap-parse-signals
+      log-errors))
