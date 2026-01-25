@@ -102,7 +102,7 @@
             has-error? (some #{:error} child-statuses)
             has-new? (some #{:new} child-statuses)
             bg-class (cond
-                       has-error? "bg-red-500"
+                       has-error? "bg-red-300"
                        has-new? "bg-yellow-200"
                        :else "bg-white")]
         [dropdown/dropdown {:id (str "nav-" id)

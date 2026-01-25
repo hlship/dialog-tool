@@ -47,23 +47,29 @@
    - :label - content to display in the trigger button
    - :class - additional classes to merge with default trigger-class
    - :button-class - completely replaces the default trigger-class styling
-   - :bg-class - background color class to override default bg-white (e.g., 'bg-red-500')
+   - :bg-class - background color class to override default bg-white (e.g., 'bg-red-300')
    - :disabled - when truthy, the dropdown button is disabled"
   [{:keys [label class button-class bg-class disabled]
     :or {label "Drop Down"
          bg-class "bg-white"}} & items]
-  [:el-dropdown.inline-block
-   [:button (cond-> {:type "button"
-                     :class (if button-class
-                              button-class
-                              (-> trigger-class
-                                  (string/replace #"bg-white" bg-class)
-                                  (classes class)))}
-              disabled (assoc :disabled true))
-    label]
-   (into [:el-menu {:anchor "left"
-                    :class menu-class}]
-         items)])
+  (let [;; Map background colors to their hover states
+        hover-class (case bg-class
+                      "bg-red-300" "hover:bg-red-400"
+                      "bg-yellow-200" "hover:bg-yellow-300"
+                      "hover:bg-gray-50")]
+    [:el-dropdown.inline-block
+     [:button (cond-> {:type "button"
+                       :class (if button-class
+                                button-class
+                                (-> trigger-class
+                                    (string/replace #"bg-white" bg-class)
+                                    (string/replace #"hover:bg-gray-50" hover-class)
+                                    (classes class)))}
+                disabled (assoc :disabled true))
+      label]
+     (into [:el-menu {:anchor "left"
+                      :class menu-class}]
+           items)]))
 
 ;; Tailwind Plus-style menu item button
 (def ^:private button-class
