@@ -5,6 +5,7 @@
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.components.modal :as modal]
             [dialog-tool.skein.ui.components.progress :as progress]
+            [dialog-tool.skein.ui.components.quit-modal :as quit-modal]
             [dialog-tool.skein.ui.utils :as utils]
             [huff2.core :refer [html]]))
 
@@ -243,7 +244,7 @@
   [{:keys [*session] :as request}]
   (utils/start-sse
    request
-   (fn [sse-gen]
+   (fn [_sse-gen]
      (let [initial-tree (:tree @*session)
            leaf-knots (tree/leaf-knots initial-tree)
            total (count leaf-knots)]
@@ -287,3 +288,40 @@
       ;; TODO: Display error to user properly
       (render-app request {:flash error})
       (render-app request {:flash "Spliced out"}))))
+
+(defn- close-and-shutdown
+  "Closes the browser window and shuts down the service."
+  [request]
+  (let [{:keys [*shutdown]} request]
+    (future
+      ;; Give browser a moment to process the close command
+      (Thread/sleep 200)
+      ;; Shut down the service
+      (@*shutdown))
+    {:status 200
+     :body   (html [:div#app
+                    [:script "dialog_tool.ui.main.close_window();"]])}))
+
+(defn open-quit
+  "Checks if session is dirty. If so, shows quit confirmation modal.
+   If not dirty, proceeds directly to quit."
+  [{:keys [*session] :as request}]
+  (let [session @*session
+        dirty?  (:dirty? session)]
+    (if dirty?
+      ;; Show confirmation modal
+      {:status 200
+       :body   (html [quit-modal/quit-modal])}
+      ;; Not dirty, quit immediately
+      (close-and-shutdown request))))
+
+(defn save-and-quit
+  "Saves the session and quits the service."
+  [{:keys [*session] :as request}]
+  (swap! *session session/save!)
+  (close-and-shutdown request))
+
+(defn quit-without-saving
+  "Quits the service without saving."
+  [request]
+  (close-and-shutdown request))

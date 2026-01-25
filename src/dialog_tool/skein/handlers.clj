@@ -109,6 +109,15 @@
    "POST /action/splice-out/*" req
    (app/splice-out-knot req)
 
+   "GET /action/quit" req
+   (app/open-quit req)
+
+   "POST /action/save-and-quit" req
+   (app/save-and-quit req)
+
+   "POST /action/quit-without-saving" req
+   (app/quit-without-saving req)
+
    "GET /app" req
    (app/render-app req)
 

@@ -55,3 +55,12 @@
   []
   (js/console.log "Hot reload complete"))
 
+(defn ^:export close-window
+  "Closes the browser window or navigates to about:blank if closing is not allowed."
+  []
+  (js/window.close)
+  ;; Fallback in case window.close() didn't work
+  (js/setTimeout
+   #(set! (.-location js/window) "about:blank")
+   100))
+

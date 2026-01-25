@@ -48,9 +48,8 @@
      body]))
 
 (defn navbar
-  [title tree can-undo? can-redo?]
-  (let [{:keys [ok new error]} (tree/counts tree)
-        {:keys [dirty?]} tree]
+  [title tree {:keys [can-undo? can-redo? dirty?]}]
+  (let [{:keys [ok new error]} (tree/counts tree)]
     [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
                            "px-2 sm:px-4 py-2.5"
                            "fixed w-full z-20 top-0 start-0 border-b")}
@@ -85,7 +84,7 @@
         [nav-button {:data-on:click "@get('/action/redo')"
                      :disabled (not can-redo?)}
          [:<> svg/icon-redo "Redo"]]
-        [nav-button nil [:<> svg/icon-quit "Quit"]]]]]]))
+        [nav-button {:data-on:click "@get('/action/quit')"} [:<> svg/icon-quit "Quit"]]]]]]))
 
 (def ^:private category->border-class
   {:ok "border-slate-100"
@@ -188,8 +187,9 @@
      (when flash
        [flash/flash-message flash])
      [navbar skein-path tree
-      (not-empty (:undo-stack session))
-      (not-empty (:redo-stack session))]
+      {:can-undo? (not-empty (:undo-stack session))
+       :can-redo? (not-empty (:redo-stack session))
+       :dirty? (:dirty? session)}]
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [[knot enable-bless-to?]] (render-knot tree knot enable-bless-to? descendant-status scroll-to-knot-id)) knots-with-flags)
       [new-command/new-command-input {:scroll-to? scroll-to-new-command?

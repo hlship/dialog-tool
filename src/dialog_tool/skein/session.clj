@@ -32,7 +32,8 @@
   (-> session
       (update :undo-stack conj (:tree session))
       ;; TODO: Really shouldn't clear it unless :tree changed at end; macro time?
-      (update :redo-stack empty)))
+      (update :redo-stack empty)
+      (assoc :dirty? true)))
 
 (defn- run-command!
   [session command]
@@ -190,13 +191,11 @@
       (cond-> (not= knot-id 0) (update :tree tree/select-knot knot-id))))
 
 (defn save!
-  "Saves the current tree state to the file.  Does not affect undo/redo."
+  "Saves the current tree state to the file."
   [session]
   (let [{:keys [tree skein-path]} session]
     (sk.file/save-tree tree skein-path)
-    ;; If this moves around the undo/redo stack, may not get the right
-    ;; behavior, maybe. Not sure.
-    (assoc session :tree (tree/clean tree))))
+    (assoc session :dirty? false)))
 
 (defn undo
   "Undoes the state of the tree one step; the current tree is pushed onto the

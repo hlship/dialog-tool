@@ -9,13 +9,8 @@
   [engine seed]
   {:meta {:engine engine
           :seed seed}
-   :dirty? false
    :knots {0 {:id 0
               :label "START"}}})
-
-(defn- dirty
-  [tree]
-  (assoc tree :dirty? true))
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -40,7 +35,6 @@
               :command command
               :unblessed response}]
     (-> tree
-        dirty
         (assoc-in [:knots new-id] knot)
         (assoc-in [:knots parent-id :selected] new-id)
         (update-in [:knots parent-id :children] conj* new-id))))
@@ -84,24 +78,17 @@
   [tree knot-id]
   (let [knot (get-in tree [:knots knot-id])
         {:keys [parent-id children]} knot]
-    (-> (reduce delete-knot (dirty tree) children)
+    (-> (reduce delete-knot tree children)
         (update :knots dissoc knot-id)
         ;; Yes, we don't care about efficiency!
         rebuild-children
         (adjust-selection-after-deletion parent-id knot-id))))
 
-(defn- dirty-check
-  [old-tree new-tree]
-  (if (= old-tree new-tree)
-    old-tree
-    (dirty new-tree)))
-
 (defn label-knot
   [tree knot-id label]
-  (dirty-check tree
-               (if (string/blank? label)
-                 (update-in tree [:knots knot-id] dissoc :label)
-                 (assoc-in tree [:knots knot-id :label] label))))
+  (if (string/blank? label)
+    (update-in tree [:knots knot-id] dissoc :label)
+    (assoc-in tree [:knots knot-id :label] label)))
 
 (defn- bless-knot
   [knot]
@@ -115,8 +102,7 @@
   "Blesses a knot's response by rolling the unblessed response into the main response.
   Does nothing if the knot has no unblessed response."
   [tree knot-id]
-  (dirty-check tree
-               (update-in tree [:knots knot-id] bless-knot)))
+  (update-in tree [:knots knot-id] bless-knot))
 
 (defn- store-response
   [knot response]
@@ -129,8 +115,7 @@
   the knot is unchanged, otherwise updates the knot adding :unblessed
   with the new response."
   [tree knot-id new-response]
-  (dirty-check tree
-               (update-in tree [:knots knot-id] store-response new-response)))
+  (update-in tree [:knots knot-id] store-response new-response))
 
 (defn find-children
   [tree knot-id]
@@ -163,8 +148,7 @@
 (defn change-command
   "Edits the command for a particular knot."
   [tree knot-id new-command]
-  (dirty-check tree
-               (assoc-in tree [:knots knot-id :command] new-command)))
+  (assoc-in tree [:knots knot-id :command] new-command))
 
 (defn insert-parent
   "Inserts a new node with id new-parent-id and command new-command as the new parent
@@ -172,7 +156,6 @@
   [tree knot-id new-parent-id new-command]
   (let [{:keys [parent-id]} (get-in tree [:knots knot-id])]
     (-> tree
-        dirty
         (add-child parent-id new-parent-id new-command nil)
         (update-in [:knots new-parent-id] assoc :selected knot-id :children [knot-id])
         (assoc-in [:knots knot-id :parent-id] new-parent-id)
@@ -186,7 +169,6 @@
                 tree
                 children)
         (update :knots dissoc knot-id)
-        dirty
         rebuild-children
         (adjust-selection-after-deletion parent-id knot-id))))
 
@@ -260,11 +242,6 @@
                          (remove #(string/blank? (:label %)))
                          (sort-by :label))]
     (cons start-knot other-knots)))
-
-(defn clean
-  "Mark the tree as clean (after all changes saved externally)."
-  [tree]
-  (assoc tree :dirty? false))
 
 (defn assess-knot
   "Returns the category of a knot: :ok if blessed matches response (no unblessed),
