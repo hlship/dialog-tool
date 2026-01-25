@@ -19,7 +19,6 @@
      :redo-stack []
      :process process
      :tree (tree/update-response tree 0 initial-response)
-     :undo-enabled? true
      :active-knot-id 0}))
 
 (defn create-new!
@@ -28,18 +27,12 @@
   [process skein-path engine seed]
   (create-loaded! process skein-path (tree/new-tree engine seed)))
 
-(defn enable-undo
-  [session undo-enabled?]
-  (assoc session :undo-enabled? undo-enabled?))
-
 (defn capture-undo
   [session]
-  (if-not (:undo-enabled? session)
-    session
-    (-> session
-        (update :undo-stack conj (:tree session))
-        ;; TODO: Really shouldn't clear it unless :tree changed at end; macro time?
-        (update :redo-stack empty))))
+  (-> session
+      (update :undo-stack conj (:tree session))
+      ;; TODO: Really shouldn't clear it unless :tree changed at end; macro time?
+      (update :redo-stack empty)))
 
 (defn- run-command!
   [session command]
@@ -91,7 +84,8 @@
       capture-undo
       do-restart!))
 
-(defn- do-replay-to!
+(defn do-replay-to!
+  "Replays to a knot without capturing undo. Used internally by replay-to! and for batch operations."
   [session knot-id]
   (let [commands (collect-commands (:tree session) knot-id)
         session' (reduce run-command! (do-restart! session) commands)]

@@ -72,7 +72,7 @@
                   label])
                labeled-knots)])
        [:div.flex.md:order-2.space-x-2
-        [nav-button {:data-on:click "@get('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
+        [nav-button {:data-on:click "@post('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
         [nav-button {:data-on:click "@post('/action/save')"
                      :class (classes button-base
                                      (if dirty?

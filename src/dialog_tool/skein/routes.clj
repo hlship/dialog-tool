@@ -47,6 +47,9 @@
    "POST /action/save" req
    (app/save req)
 
+   "POST /action/replay-all" req
+   (app/replay-all req)
+
    "GET /app" req
    (app/render-app req)
 

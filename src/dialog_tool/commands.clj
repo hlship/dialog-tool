@@ -23,11 +23,11 @@
                      pos-int? "Must be at least one"]]]
   (let [project (pf/read-project)
         extra-args (cond-> []
-                           width (conj "--width" width))
+                     width (conj "--width" width))
         cmd (-> ["dgdebug" "--quit"]
                 (into extra-args)
                 (into (pf/expand-sources project {:debug? true})))
-        *process (p/process {:cmd     cmd
+        *process (p/process {:cmd cmd
                              :inherit true})
         {:keys [exit]} @*process]
     (cli/exit exit)))
@@ -54,9 +54,9 @@
    debug? debug-opt
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
   (build/build-project (pf/read-project)
-                       {:debug?   debug?
+                       {:debug? debug?
                         :verbose? verbose
-                        :format   format}))
+                        :format format}))
 
 (defcommand bundle
   "Bundle the project into a Zip archive that can be deployed to a web host."
@@ -73,17 +73,16 @@
   [project width quiet? skein-path]
   (let [tree (sk.file/load-tree skein-path)
         {:keys [engine seed]
-         :or   {engine :dgdebug}} (:meta tree)
+         :or {engine :dgdebug}} (:meta tree)
         process (sk.process/start-process! project engine seed)
-        session (-> (s/create-loaded! process skein-path tree)
-                    (s/enable-undo false))
+        session (s/create-loaded! process skein-path tree)
         leaf-ids (->> tree
                       tree/leaf-knots
                       (map :id))
         test-leaf (fn [session id]
                     (when-not quiet?
                       (print ".") (flush))
-                    (s/replay-to! session id))
+                    (s/do-replay-to! session id))
         spaces (- width (count skein-path))
         session' (do
                    (when-not quiet?
@@ -169,5 +168,5 @@
       (println (string/join ":" paths))
       (let [longest (apply max (map count paths))]
         (doseq [path paths]
-          (pout [{:font  :cyan
+          (pout [{:font :cyan
                   :width longest} path]))))))

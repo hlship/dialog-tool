@@ -4,6 +4,8 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.components.modal :as modal]
+            [dialog-tool.skein.ui.components.progress :as progress]
+            [dialog-tool.skein.ui.utils :as utils]
             [huff2.core :refer [html]]))
 
 (defn render-app
@@ -175,4 +177,37 @@
   (swap! *session session/save!)
   (render-app request {:flash "Saved"}))
 
+(defn replay-all
+  "Replays to all leaf knots with SSE progress updates."
+  [{:keys [*session] :as request}]
+  (utils/start-sse
+   request
+   (fn [sse-gen]
+     (let [initial-tree (:tree @*session)
+           leaf-knots (tree/leaf-knots initial-tree)
+           total (count leaf-knots)]
+       ;; Capture initial state for undo (once for entire operation)
+       (swap! *session session/capture-undo)
 
+       ;; Replay to each leaf knot
+       (doseq [[idx knot] (map-indexed vector leaf-knots)]
+         (let [current (inc idx)
+               {:keys [id label]} knot]
+           ;; Update progress
+           (utils/patch-elements!
+            *session
+            (html (progress/progress-modal
+                   {:current current
+                    :total total
+                    :label label
+                    :operation "Replaying All"})))
+
+           ;; Replay to this leaf (using do-replay-to! to avoid capturing undo)
+           (swap! *session #(session/do-replay-to! % id))))
+
+       ;; Close progress modal and render final state
+       (utils/patch-elements!
+        *session
+        (html [:<>
+               (ui.app/render-app request {:flash "Replay complete"})
+               [:div#modal-container]]))))))
