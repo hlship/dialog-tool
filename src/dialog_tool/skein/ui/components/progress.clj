@@ -27,7 +27,7 @@
       ;; Progress bar
       [:div {:class "w-full bg-gray-200 rounded-full h-2.5"}
        [:div {:class "bg-blue-600 h-2.5 rounded-full"
-              :style (str "width: " (* 100 (/ current total)) "%")}]]]
+              :style (str "width: " (int (* 100 (/ (double current) total))) "%")}]]]
      [:div {:class "flex justify-end"}
       [:button {:type "button"
                 :disabled true
