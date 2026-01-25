@@ -25,10 +25,29 @@
 (defn package
   "Packages distribution files into a zip; the file is returned."
   [tag]
-  (let [target-dir (fs/file "target")
-        _ (fs/create-dirs target-dir)
-        zip-file (fs/file target-dir (str "dialog-tool-" tag ".zip"))]
-    (pout "Writing: " [:bold zip-file] " ...")
+  (let [out-dir   (fs/file "out")
+        build-dir (fs/file out-dir "build")
+        _         (do
+                    (fs/create-dirs out-dir)
+                    (fs/delete-tree build-dir)
+                    (fs/create-dirs build-dir))
+        zip-file  (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
+    (sh "cp -R"
+        "src"
+        "dgt"
+        "bb.edn"
+        "LICENSE"
+        "README.md"
+        "CHANGES.md"
+        "resources"
+        build-dir)
+    (sh "cp -R public" (fs/file build-dir "resources"))
+    (sh "tailwindcss --minimize --map"
+        "--input" "public/style.css"
+        "--output" "out/build/resources/public/style.css")
+    (sh "npx shadow-cljs release build")
+    #_(pout "Writing: " [:bold zip-file] " ...")
+    #_
     (fs/zip zip-file
             ["src"
              "dgt"
@@ -36,8 +55,7 @@
              "LICENSE"
              "README.md"
              "CHANGES.md"
-             "resources"
-             "skein-ui/dist"])
+             "resources"])
     zip-file))
 
 (defn sha256

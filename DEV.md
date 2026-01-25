@@ -10,7 +10,7 @@ Developing the UI requires two additional windows.
 - Compiles all JavaScript in (dev mode) to `out/public/js`
 - Watches for changes and recompiles
 
-`npx shadow-cljs release app`
+`npx shadow-cljs release build`
 - Used by release process to create single JavaScript output for distribution
 
 
@@ -18,20 +18,6 @@ Developing the UI requires two additional windows.
 
 `tailwindcss -i public/style.css -o out/public/style.css --watch`
 - Watches source folders, identifies CSS classes, regenerates `out/public/style.css`
-
-
-
-
-## Build Deploy
-
-Here:
-
-- `npm run build`
-
-This generates all files to the `dist` directory.  These files will be packaged along with the Babashka scripts.  Ultimately, `dgt skein` will run
-a server on port 10140 to serve these files as well as the `/api` endpoint.
-
-
 
 ## Tailwind
 

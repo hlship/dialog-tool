@@ -1,6 +1,6 @@
 # 2.0 -- UNRELEASED 2024
 
-Rewritten in Babashka. Added the Skein for debugging.
+Rewritten in Babashka. Added the Skein for development and testing support.
 
 # 1.4 -- 29 Sep 2020
 

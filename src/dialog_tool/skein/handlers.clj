@@ -114,7 +114,10 @@
 
    "GET /**" [path]
    (or
-      ;; Search for compiled files first
+     ;; This is where resources come from in the deployed app
+     (response/resource-response path {:root "public"})
+     ;; For local development, it's a mix
+      ;; Search for local-development compiled files first
     (response/file-response path {:root "out/public"})
       ;; And source files second
     (response/file-response path {:root "public"
