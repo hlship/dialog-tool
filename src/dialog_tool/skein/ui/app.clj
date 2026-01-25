@@ -154,7 +154,8 @@
             "Edit Label" "Change label for knot"]
            [dropdown/button {:data-on:click (str "@get('/action/edit-command/" id "')")}
             "Edit Command" "Change the knot's command"]
-           [dropdown/button nil "Insert Parent" "Insert a command before this"]
+           [dropdown/button {:data-on:click (str "@get('/action/insert-parent/" id "')")}
+            "Insert Parent" "Insert a command before this"]
            [dropdown/button {:data-on:click (str "@post('/action/delete/" id "')")}
             "Delete" "Delete this knot and all children"]
            [dropdown/button {:data-on:click (str "@post('/action/splice-out/" id "')")}

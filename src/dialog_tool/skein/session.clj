@@ -125,6 +125,7 @@
              (format "Parent knot already contains a child with command '%s'"
                      new-command))
       (-> session
+          (dissoc :error)
           capture-undo
           (update :tree tree/change-command knot-id new-command)
           (do-replay-to! knot-id)))))
@@ -140,6 +141,7 @@
                      new-command))
       (let [new-id (tree/next-id)]
         (-> session
+            (dissoc :error)
             capture-undo
             (update :tree tree/insert-parent knot-id new-id new-command)
             (do-replay-to! knot-id)
@@ -262,6 +264,7 @@
       (let [replay-id (first children)
             active-is-spliced? (= active-knot-id knot-id)]
         (cond-> (-> session
+                    (dissoc :error)
                     capture-undo
                     (update :tree tree/splice-out knot-id)
                     (assoc :new-id (or replay-id parent-id)))

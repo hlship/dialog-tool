@@ -29,6 +29,12 @@
    "POST /action/edit-command/*" req
    (app/edit-command req)
 
+   "GET /action/insert-parent/*" req
+   (app/open-insert-parent req)
+
+   "POST /action/insert-parent/*" req
+   (app/insert-parent req)
+
    "GET /action/edit-label/*" req
    (app/open-edit-label req)
 

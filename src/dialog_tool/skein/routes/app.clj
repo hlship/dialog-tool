@@ -60,6 +60,29 @@
   (render-app request {:scroll-to-new-command? true
                        :reset-command-input? true}))
 
+(defn- render-edit-command-modal
+  "Renders the edit command modal with optional error message."
+  [id command error]
+  {:status 200
+   :body (html
+          [modal/modal
+           (cond-> {:title "Edit Command"
+                    :signals {:editCommand command}
+                    :content
+                    [:form {:data-on:submit__stop (str "@post('/action/edit-command/" id "')")}
+                     [:div.mb-4
+                      [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-command-input"}
+                       "Command:"]
+                      [:input#edit-command-input
+                       {:type "text"
+                        :data-bind "editCommand"
+                        :data-init "el.select()"
+                        :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+                     [:div.flex.justify-end.gap-2
+                      [modal/cancel-button {}]
+                      [modal/ok-button {}]]]}
+             error (assoc :error error))])})
+
 (defn open-edit-command
   "Opens the edit command modal for the specified knot."
   [{:keys [*session] :as request}]
@@ -67,38 +90,70 @@
         tree (:tree @*session)
         knot (tree/get-knot tree id)
         command (:command knot)]
-    {:status 200
-     :body (html
-            [modal/modal
-             {:title "Edit Command"
-              :signals {:editCommand command}
-              :content
-              [:form {:data-on:submit__stop (str "@post('/action/edit-command/" id "')")}
-               [:div.mb-4
-                [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-command-input"}
-                 "Command:"]
-                [:input#edit-command-input
-                 {:type "text"
-                  :data-bind "editCommand"
-                  :data-init "el.select()"
-                  :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
-               [:div.flex.justify-end.gap-2
-                [modal/cancel-button {}]
-                [modal/ok-button {}]]]}])}))
+    (render-edit-command-modal id command nil)))
 
 (defn edit-command
   "Submits the edited command for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
   (let [id (knot-id request)
         {:keys [editCommand]} signals
-        command (some-> editCommand str string/trim not-empty)]
-    (when command
-      (swap! *session session/edit-command! id command))
-    ;; Return both updated app and cleared modal - Datastar patches both by id
-    {:status 200
-     :body (html [:<>
-                  (ui.app/render-app request {})
-                  [:div#modal-container]])}))
+        command (some-> editCommand str string/trim not-empty)
+        session' (when command
+                   (swap! *session session/edit-command! id command))]
+    (if-let [error (:error session')]
+      ;; Error occurred - redisplay modal with error
+      (render-edit-command-modal id command error)
+      ;; Success - return both updated app and cleared modal
+      {:status 200
+       :body (html [:<>
+                    (ui.app/render-app request {})
+                    [:div#modal-container]])})))
+
+(defn- render-insert-parent-modal
+  "Renders the insert parent modal with optional error message."
+  [id command error]
+  {:status 200
+   :body (html
+          [modal/modal
+           (cond-> {:title "Insert Parent"
+                    :signals {:insertCommand command}
+                    :content
+                    [:form {:data-on:submit__stop (str "@post('/action/insert-parent/" id "')")}
+                     [:div.mb-4
+                      [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "insert-parent-input"}
+                       "Command:"]
+                      [:input#insert-parent-input
+                       {:type "text"
+                        :data-bind "insertCommand"
+                        :data-init "el.select()"
+                        :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+                     [:div.flex.justify-end.gap-2
+                      [modal/cancel-button {}]
+                      [modal/ok-button {}]]]}
+             error (assoc :error error))])})
+
+(defn open-insert-parent
+  "Opens the insert parent modal for the specified knot."
+  [{:keys [*session] :as request}]
+  (let [id (knot-id request)]
+    (render-insert-parent-modal id "" nil)))
+
+(defn insert-parent
+  "Submits the insert parent command for the knot and re-renders the app."
+  [{:keys [*session signals] :as request}]
+  (let [id (knot-id request)
+        {:keys [insertCommand]} signals
+        command (some-> insertCommand str string/trim not-empty)
+        session' (when command
+                   (swap! *session session/insert-parent! id command))]
+    (if-let [error (:error session')]
+      ;; Error occurred - redisplay modal with error
+      (render-insert-parent-modal id command error)
+      ;; Success - return both updated app and cleared modal
+      {:status 200
+       :body (html [:<>
+                    (ui.app/render-app request {})
+                    [:div#modal-container]])})))
 
 (defn- render-edit-label-modal
   "Renders the edit label modal with optional error message."
