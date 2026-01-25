@@ -17,6 +17,9 @@
    "POST /action/bless-to/*" req
    (app/bless-to-knot req)
 
+   "POST /action/replay-to/*" req
+   (app/replay-to-knot req)
+
    "GET /action/select/*" req
    (app/select-knot req)
 

@@ -145,7 +145,8 @@
           [dropdown/button {:disabled (not enable-bless-to?)
                             :data-on:click (str "@post('/action/bless-to/" id "')")}
            "Bless To Here" "Accept changes from root to here"])
-        [dropdown/button nil "Replay" "Run from start to here"]
+        [dropdown/button {:data-on:click (str "@post('/action/replay-to/" id "')")}
+         "Replay" "Run from start to here"]
         [dropdown/button {:data-on:click (str "@post('/action/new-child/" id "')")}
          "New Child" "Add a new command after this"]
         (when-not root?

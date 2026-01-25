@@ -45,6 +45,12 @@
   (swap! *session session/bless-to (knot-id request))
   (render-app request {:flash "Blessed to here"}))
 
+(defn replay-to-knot
+  "Replays from the start to the specified knot."
+  [{:keys [*session] :as request}]
+  (swap! *session session/replay-to! (knot-id request))
+  (render-app request {:flash "Replayed"}))
+
 (defn select-knot
   "Selects the specified knot, making it and its ancestors the active path."
   [{:keys [*session] :as request}]
