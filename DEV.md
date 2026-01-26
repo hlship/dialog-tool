@@ -1,5 +1,9 @@
 # Developer Notes
  
+## Tests
+
+Run tests with `clojure -M:test`.
+
 ## UI Notes
 
 Developing the UI requires two additional windows.
