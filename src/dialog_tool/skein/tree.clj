@@ -10,7 +10,9 @@
   {:meta {:engine engine
           :seed seed}
    :knots {0 {:id 0
-              :label "START"}}})
+              :label "START"}}
+   :children {}
+   :selected {}})
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -21,6 +23,38 @@
 (defn- conj*
   [set k]
   (conj (or set #{}) k))
+
+;; Helper functions for accessing/updating :children and :selected maps
+
+(defn- get-children
+  "Gets the set of child IDs for a parent knot."
+  [tree parent-id]
+  (get-in tree [:children parent-id]))
+
+(defn- add-child-id
+  "Adds a child ID to the parent's children set."
+  [tree parent-id child-id]
+  (update-in tree [:children parent-id] conj* child-id))
+
+(defn- remove-child-id
+  "Removes a child ID from the parent's children set."
+  [tree parent-id child-id]
+  (update-in tree [:children parent-id] disj child-id))
+
+(defn- get-selected
+  "Gets the selected child ID for a parent knot."
+  [tree parent-id]
+  (get-in tree [:selected parent-id]))
+
+(defn- set-selected
+  "Sets the selected child ID for a parent knot."
+  [tree parent-id child-id]
+  (assoc-in tree [:selected parent-id] child-id))
+
+(defn- clear-selected
+  "Removes the selection for a parent knot."
+  [tree parent-id]
+  (update tree :selected dissoc parent-id))
 
 (defn get-parent-id
   "Returns the parent knot id of the indicated knot, or nil if knot-id is the root knot (0)."
@@ -36,22 +70,18 @@
               :unblessed response}]
     (-> tree
         (assoc-in [:knots new-id] knot)
-        (assoc-in [:knots parent-id :selected] new-id)
-        (update-in [:knots parent-id :children] conj* new-id))))
+        (add-child-id parent-id new-id)
+        (set-selected parent-id new-id))))
 
 (defn rebuild-children
-  "Rebuild the :children of each knot from the :parent-id of all other knots."
+  "Rebuild the :children map from the :parent-id of all knots. Preserves existing :selected map."
   [tree]
   (let [knots (-> tree :knots vals)
         parent->children (->> knots
                               (reduce (fn [m {:keys [id parent-id]}]
                                         (update m parent-id conj* id))
-                                      {}))
-        knots' (reduce (fn [m {:keys [id] :as knot}]
-                         (assoc m id (assoc knot :children (parent->children id))))
-                       {}
-                       knots)]
-    (assoc tree :knots knots')))
+                                      {}))]
+    (assoc tree :children parent->children)))
 
 (defn get-knot
   [tree knot-id]
@@ -59,25 +89,27 @@
 
 (defn- adjust-selection-after-deletion
   [tree parent-id child-id]
-  (let [{:keys [selected children]} (get-knot tree parent-id)]
+  (let [selected (get-selected tree parent-id)
+        children (get-children tree parent-id)]
     (cond
 
       (not= child-id selected)
       tree
 
       ;; Called after rebuild-children, so child-id will already have been
-      ;; removed from the :children key, which may be nil or empty.
+      ;; removed from the :children map, which may be nil or empty.
       (seq children)
-      (assoc-in tree [:knots parent-id :selected] (first children))
+      (set-selected tree parent-id (first children))
 
       :else
-      (update-in tree [:knots parent-id] dissoc :selected))))
+      (clear-selected tree parent-id))))
 
 (defn delete-knot
   "Deletes a previously added knot, and any children below it."
   [tree knot-id]
   (let [knot (get-in tree [:knots knot-id])
-        {:keys [parent-id children]} knot]
+        {:keys [parent-id]} knot
+        children (get-children tree knot-id)]
     (-> (reduce delete-knot tree children)
         (update :knots dissoc knot-id)
         ;; Yes, we don't care about efficiency!
@@ -119,9 +151,9 @@
 
 (defn find-children
   [tree knot-id]
-  (let [{:keys [knots]} tree]
-    (->> (get-in knots [knot-id :children])
-         (map knots))))
+  (let [{:keys [knots]} tree
+        child-ids (get-children tree knot-id)]
+    (map knots child-ids)))
 
 (defn find-child-id
   "Looks in the children of the given knot for an existing knot with
@@ -141,9 +173,10 @@
 (defn leaf-knots
   "Returns just the leaf knots (nodes without children), in an unspecified order."
   [tree]
-  (->> tree
-       all-knots
-       (remove #(-> % :children seq))))
+  (let [parent-ids (set (keys (:children tree)))]
+    (->> tree
+         all-knots
+         (remove #(contains? parent-ids (:id %))))))
 
 (defn change-command
   "Edits the command for a particular knot."
@@ -157,13 +190,14 @@
   (let [{:keys [parent-id]} (get-in tree [:knots knot-id])]
     (-> tree
         (add-child parent-id new-parent-id new-command nil)
-        (update-in [:knots new-parent-id] assoc :selected knot-id :children [knot-id])
         (assoc-in [:knots knot-id :parent-id] new-parent-id)
-        rebuild-children)))
+        rebuild-children
+        (set-selected new-parent-id knot-id))))
 
 (defn splice-out
   [tree knot-id]
-  (let [{:keys [parent-id children]} (get-knot tree knot-id)]
+  (let [{:keys [parent-id]} (get-knot tree knot-id)
+        children (get-children tree knot-id)]
     (-> (reduce (fn [tree child-id]
                   (assoc-in tree [:knots child-id :parent-id] parent-id))
                 tree
@@ -195,18 +229,17 @@
         result
         (let [knot (get knots knot-id)]
           (recur (conj result knot)
-                 (:selected knot)))))))
+                 (get-selected tree knot-id)))))))
 
 (defn apply-default-selections
   "Called after loading the tree from a file, it sets up default selections for each knot as the first child."
   [tree]
-  (update tree
-          :knots
-          update-vals
-          (fn [knot]
-            (let [{:keys [children]} knot]
-              (cond-> knot
-                (seq children) (assoc :selected (first children)))))))
+  (reduce (fn [tree [parent-id child-ids]]
+            (if (seq child-ids)
+              (set-selected tree parent-id (first child-ids))
+              tree))
+          tree
+          (:children tree)))
 
 (defn select-knot
   "Updates the parent of the indicated knot to make this knot selected, then recurses upwards
@@ -216,14 +249,15 @@
          tree tree]
     (if (= 0 knot-id)
       tree
-      (let [{:keys [parent-id selected]} (get-knot tree knot-id)]
+      (let [{:keys [parent-id]} (get-knot tree knot-id)
+            selected (get-selected tree parent-id)]
         (if (= knot-id selected)
           tree
-          (recur parent-id (assoc-in tree [:knots parent-id :selected] knot-id)))))))
+          (recur parent-id (set-selected tree parent-id knot-id)))))))
 
 (defn deselect
   [tree knot-id]
-  (assoc-in tree [:knots knot-id :selected] nil))
+  (clear-selected tree knot-id))
 
 (defn find-by-label
   [tree label]
@@ -271,7 +305,7 @@
 (defn children
   "Returns the children of the knot, or nil if no children."
   [tree knot]
-  (when-let [ids (:children knot)]
+  (when-let [ids (get-children tree (:id knot))]
     (map #(get-in tree [:knots %]) ids)))
 
 (defn compute-descendant-status
@@ -283,7 +317,7 @@
     (letfn [(compute-status [knot-id]
               (let [knot (knots knot-id)
                     own-status (assess-knot knot)
-                    child-ids (:children knot)
+                    child-ids (get-children tree knot-id)
                     child-statuses (map compute-status child-ids)
                     worst-child-status (cond
                                          (some #{:error} child-statuses) :error

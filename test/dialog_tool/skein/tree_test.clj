@@ -23,15 +23,15 @@
       (is (= "look" (get-in tree' [:knots 1 :command])))
       (is (= "You see a room." (get-in tree' [:knots 1 :unblessed])))
       (is (nil? (get-in tree' [:knots 1 :response])))
-      (is (= 1 (get-in tree' [:knots 0 :selected])))
-      (is (= #{1} (get-in tree' [:knots 0 :children])))))
+      (is (= 1 (get-in tree' [:selected 0])))
+      (is (= #{1} (get-in tree' [:children 0])))))
 
   (testing "adds multiple children to same parent"
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/add-child 0 2 "inventory" "Empty."))]
-      (is (= #{1 2} (get-in tree [:knots 0 :children])))
-      (is (= 2 (get-in tree [:knots 0 :selected]))))))
+      (is (= #{1 2} (get-in tree [:children 0])))
+      (is (= 2 (get-in tree [:selected 0]))))))
 
 (deftest delete-knot-test
   (testing "deletes a leaf knot"
@@ -39,8 +39,8 @@
                    (tree/add-child 0 1 "look" "Room."))
           tree' (tree/delete-knot tree 1)]
       (is (nil? (tree/get-knot tree' 1)))
-      (is (nil? (get-in tree' [:knots 0 :children])))
-      (is (nil? (get-in tree' [:knots 0 :selected])))))
+      (is (nil? (get-in tree' [:children 0])))
+      (is (nil? (get-in tree' [:selected 0])))))
 
   (testing "deletes a knot and all its descendants"
     (let [tree (-> (make-tree)
@@ -51,14 +51,14 @@
       (is (nil? (tree/get-knot tree' 1)))
       (is (nil? (tree/get-knot tree' 2)))
       (is (nil? (tree/get-knot tree' 3)))
-      (is (nil? (get-in tree' [:knots 0 :children])))))
+      (is (nil? (get-in tree' [:children 0])))))
 
   (testing "adjusts selection when deleting selected child"
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/add-child 0 2 "inventory" "Empty."))
           tree' (tree/delete-knot tree 2)]
-      (is (= 1 (get-in tree' [:knots 0 :selected]))))))
+      (is (= 1 (get-in tree' [:selected 0]))))))
 
 (deftest label-knot-test
   (testing "adds a label to a knot"
@@ -141,15 +141,15 @@
           knot-2 (tree/get-knot tree 2)]
       (is (= 0 (:parent-id knot-2)))
       (is (= "inventory" (:command knot-2)))
-      (is (= #{1} (:children knot-2)))
+      (is (= #{1} (get-in tree [:children 2])))
       (is (= 2 (get-in tree [:knots 1 :parent-id])))))
 
   (testing "updates children relationships correctly"
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/insert-parent 1 2 "inventory"))]
-      (is (= #{2} (get-in tree [:knots 0 :children])))
-      (is (= #{1} (get-in tree [:knots 2 :children]))))))
+      (is (= #{2} (get-in tree [:children 0])))
+      (is (= #{1} (get-in tree [:children 2]))))))
 
 (deftest splice-out-test
   (testing "splices out a knot connecting children to parent"
@@ -159,7 +159,7 @@
                    (tree/splice-out 1))]
       (is (nil? (tree/get-knot tree 1)))
       (is (= 0 (get-in tree [:knots 2 :parent-id])))
-      (is (= #{2} (get-in tree [:knots 0 :children])))))
+      (is (= #{2} (get-in tree [:children 0])))))
 
   (testing "splices out with multiple children"
     (let [tree (-> (make-tree)
@@ -170,7 +170,7 @@
       (is (nil? (tree/get-knot tree 1)))
       (is (= 0 (get-in tree [:knots 2 :parent-id])))
       (is (= 0 (get-in tree [:knots 3 :parent-id])))
-      (is (= #{2 3} (get-in tree [:knots 0 :children]))))))
+      (is (= #{2 3} (get-in tree [:children 0]))))))
 
 (deftest knots-from-root-test
   (testing "returns path from root to knot"
@@ -210,8 +210,8 @@
                    (tree/add-child 0 2 "inventory" "Empty.")
                    (tree/add-child 2 3 "north" "Hallway."))
           tree' (tree/select-knot tree 3)]
-      (is (= 2 (get-in tree' [:knots 0 :selected])))
-      (is (= 3 (get-in tree' [:knots 2 :selected])))))
+      (is (= 2 (get-in tree' [:selected 0])))
+      (is (= 3 (get-in tree' [:selected 2])))))
 
   (testing "does nothing when already selected"
     (let [tree (-> (make-tree)
@@ -271,8 +271,8 @@
                    (tree/bless-response 3)
                    (tree/update-response 3 "Different."))
           counts (tree/counts tree)]
-      (is (= 2 (:ok counts)))     ;; root and knot 1
-      (is (= 1 (:new counts)))    ;; knot 2
+      (is (= 2 (:ok counts))) ;; root and knot 1
+      (is (= 1 (:new counts))) ;; knot 2
       (is (= 1 (:error counts))))));; knot 3
 
 (deftest compute-descendant-status-test
@@ -284,8 +284,8 @@
                    (tree/bless-response 2)
                    (tree/update-response 2 "Different."))
           status-map (tree/compute-descendant-status tree)]
-      (is (= :error (status-map 0)))   ;; root has error descendant
-      (is (= :error (status-map 1)))   ;; has error child
+      (is (= :error (status-map 0))) ;; root has error descendant
+      (is (= :error (status-map 1))) ;; has error child
       (is (= :error (status-map 2))))) ;; is itself error
 
   (testing "bubbles up :new status when no errors"
@@ -294,16 +294,16 @@
                    (tree/bless-response 1)
                    (tree/add-child 1 2 "north" "Hallway."))
           status-map (tree/compute-descendant-status tree)]
-      (is (= :new (status-map 0)))     ;; has new descendant
-      (is (= :new (status-map 1)))     ;; has new child
-      (is (= :new (status-map 2)))))   ;; is itself new
+      (is (= :new (status-map 0))) ;; has new descendant
+      (is (= :new (status-map 1))) ;; has new child
+      (is (= :new (status-map 2))))) ;; is itself new
 
   (testing "returns :ok when all blessed"
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/bless-response 1))
           status-map (tree/compute-descendant-status tree)]
-      (is (= :ok (status-map 0)))      ;; root is ok
+      (is (= :ok (status-map 0))) ;; root is ok
       (is (= :ok (status-map 1))))))
 
 (deftest apply-default-selections-test
@@ -313,7 +313,7 @@
                    (tree/add-child 0 2 "inventory" "Empty.")
                    (tree/deselect 0))
           tree' (tree/apply-default-selections tree)]
-      (is (= 1 (get-in tree' [:knots 0 :selected]))))))
+      (is (= 1 (get-in tree' [:selected 0]))))))
 
 (deftest leaf-knots-test
   (testing "returns only knots without children"
