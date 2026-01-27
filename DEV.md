@@ -23,17 +23,12 @@ Developing the UI requires two additional windows.
 `tailwindcss -i public/style.css -o out/public/style.css --watch`
 - Watches source folders, identifies CSS classes, regenerates `out/public/style.css`
 
-## Tailwind
-
-## ClojureScript
-
 
 ## TODO / Ideas / Plans/ Bugs
 
 - The graph view (currently it's just a serial view, one path through the graph)
 - Collapsable text (hide text, allow for quick navigation)
 - Buttons to jump to next/prev command
-- Animation when adding/removing nodes
 - Search the Skein
 - Jump to "nearest" unblessed node
 - Add an indicator that there are invisible whitespace changes in a diff
@@ -42,6 +37,10 @@ Developing the UI requires two additional windows.
 - Color-blind indicators or mode
 - Restart should rebuild the source file list, re-read the dialog.edn
 - Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
+- Don't try to close the window on quit; just refresh with a "You may close the window now" and shutdown.
+- In child navigation, identify the status or descendent status of each child (to help navigate to problem nodes)
+- Jump seems broken
+
 
 ## Releasing
 

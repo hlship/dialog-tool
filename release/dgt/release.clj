@@ -46,16 +46,8 @@
         "--input" "public/style.css"
         "--output" "out/build/resources/public/style.css")
     (sh "npx shadow-cljs release build")
-    #_(pout "Writing: " [:bold zip-file] " ...")
-    #_
-    (fs/zip zip-file
-            ["src"
-             "dgt"
-             "bb.edn"
-             "LICENSE"
-             "README.md"
-             "CHANGES.md"
-             "resources"])
+    (perr "Writing: " [:bold zip-file] " ...")
+    (fs/zip zip-file build-dir {:root "out/build"})
     zip-file))
 
 (defn sha256
