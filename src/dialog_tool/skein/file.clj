@@ -151,8 +151,7 @@
   (try
     (-> (read-meta in)
         (read-knots in)
-        tree/rebuild-children
-        tree/apply-default-selections)
+        tree/rebuild)
     (catch Exception e
       (let [m (or (ex-message e)
                   (-> e class .getName))

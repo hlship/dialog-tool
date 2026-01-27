@@ -1,18 +1,27 @@
 (ns dialog-tool.skein.tree
   "Tree of Skein nodes.  Each knot represents one command in a chain of commands
-  starting at the root knot. Each knot has a unique id.
+  starting at the root knot. Each knot has a unique numeric id.
+  
+  A knot is a map with keys :id, :parent-id, :command, :label (optional string),
+  :response, and :unblessed.
 
   Knots usually have a response (unless newly created) and optionally an unblessed response."
   (:require [clojure.string :as string]))
 
 (defn new-tree
   [engine seed]
-  {:meta {:engine engine
-          :seed seed}
-   :knots {0 {:id 0
-              :label "START"}}
-   :children {}
-   :selected {}})
+  {:meta              {:engine engine
+                       :seed   seed}
+   :knots             {0 {:id    0
+                          :label "START"}}
+   ;; knot-id -> #{knot-id}
+   :children          {}
+   ;; knot-id -> knot-id (selected child)
+   :selected          {}
+   ;; knot-id -> status (just for knot)
+   :status            {0 :new}
+   ;; knot-id -> status (derived from children of knot)
+   :descendent-status {}})
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -36,11 +45,6 @@
   [tree parent-id child-id]
   (update-in tree [:children parent-id] conj* child-id))
 
-(defn- remove-child-id
-  "Removes a child ID from the parent's children set."
-  [tree parent-id child-id]
-  (update-in tree [:children parent-id] disj child-id))
-
 (defn- get-selected
   "Gets the selected child ID for a parent knot."
   [tree parent-id]
@@ -56,34 +60,115 @@
   [tree parent-id]
   (update tree :selected dissoc parent-id))
 
-(defn get-parent-id
-  "Returns the parent knot id of the indicated knot, or nil if knot-id is the root knot (0)."
+(defn- get-parent-id
   [tree knot-id]
   (get-in tree [:knots knot-id :parent-id]))
 
+(defn- greatest-status
+  [s1 s2]
+  (cond
+    (= :error s1)
+    :error
+
+    (= :error s2)
+    :error
+
+    (= :ok s1)
+    (or s2 :ok)
+
+    (nil? s1)
+    (or s2 :ok)
+
+    :else                                                   ; (= :new s1)
+    (if (= :error s2) :error :new)))
+
+(defn- compute-descendent-status
+  [tree knot-id]
+  (let [{:keys [children status descendent-status]} tree
+        child-ids (get children knot-id)]
+    (reduce (fn [result child-id]
+              (if (= result :error)
+                (reduced :error)
+                (let [child-status (greatest-status (descendent-status child-id) (status child-id))]
+                  (greatest-status child-status result))))
+            :ok
+            child-ids)))
+
+(defn- propagate-status
+  "Updates the :descendent-status of the indicated knot and its parents, to the root.
+  
+  The descendent-status of a knot is the greatest of any of its childrens' status
+  or descendent-status."
+  [tree knot-id]
+  (let [existing (get-in tree [:descendent-status knot-id])
+        computed (compute-descendent-status tree knot-id)]
+    (let [tree'     (if (= existing computed)
+                      tree
+                      (assoc-in tree [:descendent-status knot-id] computed))
+          parent-id (get-parent-id tree' knot-id)]
+      (if parent-id
+        (recur tree' parent-id)
+        tree'))))
+
+(defn- compute-knot-status
+  "Returns the status of a knot: :ok if blessed matches response (no unblessed),
+  :new if there's no response yet (only unblessed), or :error if they differ."
+  [{:keys [unblessed response]}]
+  (cond
+    (nil? unblessed)
+    :ok
+
+    (nil? response)
+    :new
+
+    :else
+    :error))
+
 (defn add-child
-  "Adds a child knot.  The response is initially unblessed."
+  "Adds a child knot.  The response is initially unblessed, and the knot's status is :new."
   [tree parent-id new-id command response]
-  (let [knot {:id new-id
+  (let [knot {:id        new-id
               :parent-id parent-id
-              :command command
+              :command   command
               :unblessed response}]
     (-> tree
         (assoc-in [:knots new-id] knot)
+        (assoc-in [:status new-id] :new)
         (add-child-id parent-id new-id)
-        (set-selected parent-id new-id))))
+        (set-selected parent-id new-id)
+        (propagate-status parent-id))))
 
-(defn rebuild-children
-  "Rebuild the :children map from the :parent-id of all knots. Preserves existing :selected map."
+(defn rebuild
+  "Rebuilds a tree as loaded from a file, populating the :children, :selected, :status, 
+  and :descendent-status maps."
   [tree]
-  (let [knots (-> tree :knots vals)
+  (let [knots            (-> tree :knots vals)
         parent->children (->> knots
                               (reduce (fn [m {:keys [id parent-id]}]
-                                        (update m parent-id conj* id))
-                                      {}))]
-    (assoc tree :children parent->children)))
+                                        (if parent-id
+                                          (update m parent-id conj* id)
+                                          m))
+                                      {}))
+        selected         (reduce-kv
+                           (fn [selected parent-id child-ids]
+                             (assoc selected parent-id (first child-ids)))
+                           {}
+                           parent->children)
+        status           (reduce (fn [status {:keys [id] :as knot}]
+                                   (assoc status id (compute-knot-status knot)))
+                                 {}
+                                 knots)
+        leaf-ids         (->> knots
+                              (map :id)
+                              (remove #(-> % parent->children seq)))
+        tree'            (assoc tree
+                                :children parent->children
+                                :status status
+                                :selected selected)]
+    (reduce propagate-status tree' leaf-ids)))
 
 (defn get-knot
+  "Returns the knot with the given id."
   [tree knot-id]
   (get-in tree [:knots knot-id]))
 
@@ -96,25 +181,30 @@
       (not= child-id selected)
       tree
 
-      ;; Called after rebuild-children, so child-id will already have been
-      ;; removed from the :children map, which may be nil or empty.
       (seq children)
       (set-selected tree parent-id (first children))
 
       :else
       (clear-selected tree parent-id))))
 
+(defn- delete-knot*
+  [tree knot-id]
+  (let [children (get-children tree knot-id)]
+    (-> (reduce delete-knot* tree children)
+        (update :children dissoc knot-id)
+        (update :selected dissoc knot-id)
+        (update :knots dissoc knot-id)
+        (update :status dissoc knot-id)
+        (update :descendent-status dissoc knot-id))))
+
 (defn delete-knot
   "Deletes a previously added knot, and any children below it."
   [tree knot-id]
-  (let [knot (get-in tree [:knots knot-id])
-        {:keys [parent-id]} knot
-        children (get-children tree knot-id)]
-    (-> (reduce delete-knot tree children)
-        (update :knots dissoc knot-id)
-        ;; Yes, we don't care about efficiency!
-        rebuild-children
-        (adjust-selection-after-deletion parent-id knot-id))))
+  (let [parent-id (get-parent-id tree knot-id)]
+    (-> (delete-knot* tree knot-id)
+        (update-in [:children parent-id] disj knot-id)
+        (adjust-selection-after-deletion parent-id knot-id)
+        (propagate-status parent-id))))
 
 (defn label-knot
   [tree knot-id label]
@@ -130,11 +220,21 @@
         (assoc :response (:unblessed knot)))
     knot))
 
+(defn- update-status
+  [tree knot-id]
+  (let [knot   (get-in tree [:knots knot-id])
+        status (compute-knot-status knot)]
+    (-> tree
+        (assoc-in [:status knot-id] status)
+        (propagate-status knot-id))))
+
 (defn bless-response
   "Blesses a knot's response by rolling the unblessed response into the main response.
   Does nothing if the knot has no unblessed response."
   [tree knot-id]
-  (update-in tree [:knots knot-id] bless-knot))
+  (-> tree
+      (update-in [:knots knot-id] bless-knot)
+      (update-status knot-id)))
 
 (defn- store-response
   [knot response]
@@ -147,9 +247,14 @@
   the knot is unchanged, otherwise updates the knot adding :unblessed
   with the new response."
   [tree knot-id new-response]
-  (update-in tree [:knots knot-id] store-response new-response))
+  (let [tree'  (update-in tree [:knots knot-id] store-response new-response)
+        status (compute-knot-status (get-in tree' [:knots knot-id]))]
+    (-> tree'
+        (assoc-in [:status knot-id] status)
+        (propagate-status knot-id))))
 
 (defn find-children
+  "Finds all the immediate children knots of the provided knot (in an unspecified order)."
   [tree knot-id]
   (let [{:keys [knots]} tree
         child-ids (get-children tree knot-id)]
@@ -179,7 +284,8 @@
          (remove #(contains? parent-ids (:id %))))))
 
 (defn change-command
-  "Edits the command for a particular knot."
+  "Edits the command for a particular knot.  This does not immediately affect the status of the knot,
+  until the command is re-executed and a new response is applied."
   [tree knot-id new-command]
   (assoc-in tree [:knots knot-id :command] new-command))
 
@@ -187,24 +293,32 @@
   "Inserts a new node with id new-parent-id and command new-command as the new parent
    of knot-id."
   [tree knot-id new-parent-id new-command]
-  (let [{:keys [parent-id]} (get-in tree [:knots knot-id])]
+  (let [old-parent-id (get-parent-id tree knot-id)]
     (-> tree
-        (add-child parent-id new-parent-id new-command nil)
+        (update-in [:children old-parent-id] disj knot-id)
+        (update-in [:children new-parent-id] conj* knot-id)
+        (add-child old-parent-id new-parent-id new-command nil)
         (assoc-in [:knots knot-id :parent-id] new-parent-id)
-        rebuild-children
-        (set-selected new-parent-id knot-id))))
+        (set-selected old-parent-id new-parent-id)
+        (set-selected new-parent-id knot-id)
+        (propagate-status knot-id))))
 
 (defn splice-out
+  "Delete a knot, reparenting any children of the knot to the current parent of the knot.
+  Does not check for command collisions."
   [tree knot-id]
-  (let [{:keys [parent-id]} (get-knot tree knot-id)
-        children (get-children tree knot-id)]
-    (-> (reduce (fn [tree child-id]
-                  (assoc-in tree [:knots child-id :parent-id] parent-id))
-                tree
-                children)
-        (update :knots dissoc knot-id)
-        rebuild-children
-        (adjust-selection-after-deletion parent-id knot-id))))
+  (let [parent-id (get-parent-id tree knot-id)
+        child-ids (get-children tree knot-id)
+        tree'     (-> (reduce (fn [tree child-id]
+                                (assoc-in tree [:knots child-id :parent-id] parent-id))
+                              tree
+                              child-ids)
+                      (update :children dissoc knot-id)
+                      (update-in [:children parent-id] into child-ids)
+                      (update-in [:children parent-id] disj knot-id)
+                      (delete-knot* knot-id)
+                      (adjust-selection-after-deletion parent-id knot-id))]
+    (reduce propagate-status tree' child-ids)))
 
 (defn knots-from-root
   "Returns a seq of knots at or above the given knot in the tree; order is from
@@ -212,7 +326,7 @@
   [tree initial-knot-id]
   (let [{:keys [knots]} tree]
     (loop [knot-id initial-knot-id
-           result ()]
+           result  ()]
       (if (nil? knot-id)
         result
         (let [knot (get knots knot-id)]
@@ -223,7 +337,7 @@
   "Starting at the root knot, returns a seq of each selected knot."
   [tree]
   (let [{:keys [knots]} tree]
-    (loop [result []
+    (loop [result  []
            knot-id 0]
       (if-not knot-id
         result
@@ -231,31 +345,20 @@
           (recur (conj result knot)
                  (get-selected tree knot-id)))))))
 
-(defn apply-default-selections
-  "Called after loading the tree from a file, it sets up default selections for each knot as the first child."
-  [tree]
-  (reduce (fn [tree [parent-id child-ids]]
-            (if (seq child-ids)
-              (set-selected tree parent-id (first child-ids))
-              tree))
-          tree
-          (:children tree)))
-
 (defn select-knot
   "Updates the parent of the indicated knot to make this knot selected, then recurses upwards
   doing the same until it hits the root.  Never marks the tree dirty."
   [tree knot-id]
-  (loop [knot-id knot-id
-         tree tree]
-    (if (= 0 knot-id)
-      tree
-      (let [{:keys [parent-id]} (get-knot tree knot-id)
-            selected (get-selected tree parent-id)]
-        (if (= knot-id selected)
-          tree
-          (recur parent-id (set-selected tree parent-id knot-id)))))))
+  (if (= 0 knot-id)
+    tree
+    (let [{:keys [parent-id]} (get-knot tree knot-id)
+          selected (get-selected tree parent-id)]
+      (if (= knot-id selected)
+        tree
+        (recur (set-selected tree parent-id knot-id) parent-id)))))
 
 (defn deselect
+  "Unselects any child as the selection for the indicated parent knot."
   [tree knot-id]
   (clear-selected tree knot-id))
 
@@ -270,67 +373,38 @@
   "Returns a seq of knots that have non-blank labels, sorted alphabetically by label.
    The START knot (root knot with id 0) is always first."
   [tree]
-  (let [start-knot (get-knot tree 0)
+  (let [start-knot  (get-knot tree 0)
         other-knots (->> (dissoc (:knots tree) 0)
                          vals
                          (remove #(string/blank? (:label %)))
                          (sort-by :label))]
     (cons start-knot other-knots)))
 
-(defn assess-knot
-  "Returns the category of a knot: :ok if blessed matches response (no unblessed),
+(defn knot-status
+  "Returns the status of a knot: :ok if blessed matches response (no unblessed),
   :new if there's no response yet (only unblessed), or :error if they differ."
-  [{:keys [unblessed response]}]
-  (cond
-    (nil? unblessed)
-    :ok
-
-    (nil? response)
-    :new
-
-    :else
-    :error))
+  [tree knot-id]
+  (get-in tree [:status knot-id]))
 
 (defn counts
   "Returns a map of :ok, :new, :error, each a count. :new is for new knots where there's
   not a :response, just :unblessed.  :error is when blessed != response."
   [tree]
   (->> tree
-       :knots
+       :status
        vals
-       (map assess-knot)
        frequencies
        (merge {:ok 0 :new 0 :error 0})))
 
 (defn children
-  "Returns the children of the knot, or nil if no children."
+  "Returns the children of the knot, or nil if no children. Children are returned in no specific order."
   [tree knot]
   (when-let [ids (get-children tree (:id knot))]
-    (map #(get-in tree [:knots %]) ids)))
+    (mapv #(get-in tree [:knots %]) ids)))
 
-(defn compute-descendant-status
-  "Returns a map of knot-id -> worst status among all descendants.
-   Status is :error if any descendant has an error, :new if any is new, :ok otherwise.
-   Uses post-order traversal to bubble up worst status from leaves."
-  [tree]
-  (let [knots (:knots tree)]
-    (letfn [(compute-status [knot-id]
-              (let [knot (knots knot-id)
-                    own-status (assess-knot knot)
-                    child-ids (get-children tree knot-id)
-                    child-statuses (map compute-status child-ids)
-                    worst-child-status (cond
-                                         (some #{:error} child-statuses) :error
-                                         (some #{:new} child-statuses) :new
-                                         :else :ok)
-                    worst-status (cond
-                                   (= :error own-status) :error
-                                   (= :error worst-child-status) :error
-                                   (= :new own-status) :new
-                                   (= :new worst-child-status) :new
-                                   :else :ok)]
-                worst-status))]
-      (into {}
-            (map (fn [knot-id]
-                   [knot-id (compute-status knot-id)]))
-            (keys knots)))))
+(defn descendent-status
+  "Returns the descendent status of the knot as :ok, :new, or :error.
+  This is calculated as the most severe value of any of the children's
+  statuses, or any of the children's descendent-statuses."
+  [tree knot-id]
+  (get-in tree [:descendent-status knot-id]))

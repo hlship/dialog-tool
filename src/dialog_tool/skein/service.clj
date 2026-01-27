@@ -2,12 +2,10 @@
   "Wraps the Skein session in an HTTP service, exposing static resources and an
   API."
   (:require [babashka.fs :as fs]
-            [clojure.string :as string]
             [dialog-tool.project-file :as pf]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
-            [dialog-tool.skein.tree :as tree]
             [org.httpkit.server :as hk]))
 
 ^:clj-reload/keep
@@ -47,7 +45,7 @@
                     :dgdebug)
         process (sk.process/start-process! project engine' seed')
         session (if tree
-                  (s/create-loaded! process skein-path (tree/apply-default-selections tree))
+                  (s/create-loaded! process skein-path tree)
                   (s/create-new! process skein-path engine seed))
         shutdown-fn (hk/run-server service-handler-proxy
                                    {:port          port
@@ -61,24 +59,12 @@
     {:shutdown-fn shutdown-service-fn
      :port        port}))
 
-
-;; Temporary
-
-(defn import-script [path]
-  (println path)
-  (let [lines (->> path
-                   slurp
-                   string/split-lines
-                   (remove #(string/starts-with? % "%%")))
-        f (fn [line]
-            (println "  " line)
-            (swap! *session s/command! line))]
-    (swap! *session s/replay-to! 0)
-    (run! f lines)))
-
 (comment
 
   @*session
+
+  (@*shutdown)
+
 
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/default.skein"
@@ -97,28 +83,7 @@
           "../dialog-extensions/who/frotz.skein"
           {:seed   10101
            :engine :frotz})
-
-  (@*shutdown)
-
-  (-> @*session :tree :knots vals)
-
-  (println "Hello, world!")
   
-  (import-script "../sanddancer-dialog/tests/sand-dancer/strength-spirit.txt")
 
-
-  (-> @*session :tree :knots (get 1723218892802))
-  (and (swap! *session s/replay-to! 1723218892802) nil)
-
-  (swap! *session s/command! "open glove")
-  (time (swap! *session s/command! "x pack"))
-  (swap! *session s/command! "smoke")
-  (swap! *session s/command! "cigarette")
-  (swap! *session s/bless 0)
-  (swap! *session s/bless-all)
-  (swap! *session s/restart!)
-  (swap! *session s/command! "x truck")
-  (time (swap! *session s/replay-to! 1722112918940))
-  (swap! *session s/save!)
-  (swap! *session s/kill!)
+  ;;
   )
