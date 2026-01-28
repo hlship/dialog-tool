@@ -39,8 +39,9 @@ Developing the UI requires two additional windows.
 - Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
 - Don't try to close the window on quit; just refresh with a "You may close the window now" and shutdown.
 - In child navigation, identify the status or descendent status of each child (to help navigate to problem nodes)
-- Jump seems broken
 - Clear out signals when no longer needed
+- Present source file warnings/errors in a modal when detected?
+- Only display the signals JSON in the UI when in development mode
 
 ## Releasing
 

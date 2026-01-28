@@ -347,15 +347,12 @@
 
 (defn select-knot
   "Updates the parent of the indicated knot to make this knot selected, then recurses upwards
-  doing the same until it hits the root.  Never marks the tree dirty."
+  doing the same until it hits the root."
   [tree knot-id]
   (if (= 0 knot-id)
     tree
-    (let [{:keys [parent-id]} (get-knot tree knot-id)
-          selected (get-selected tree parent-id)]
-      (if (= knot-id selected)
-        tree
-        (recur (set-selected tree parent-id knot-id) parent-id)))))
+    (let [parent-id (get-parent-id tree knot-id)]
+      (recur (set-selected tree parent-id knot-id) parent-id))))
 
 (defn deselect
   "Unselects any child as the selection for the indicated parent knot."

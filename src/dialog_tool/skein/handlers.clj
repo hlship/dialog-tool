@@ -96,7 +96,7 @@
   (render-app request {:flash "Replayed"}))
 
 (defn- select-knot
-  "Selects the specified knot, making it and its ancestors the active path."
+  "Selects the specified knot, making it and its ancestors the active path, and scrolls to the selected knot."
   [{:keys [*session] :as request}]
   (let [id (knot-id request)]
     (swap! *session session/select-knot id)

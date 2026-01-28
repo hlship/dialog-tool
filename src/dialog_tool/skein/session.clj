@@ -188,7 +188,7 @@
   [session knot-id]
   (-> session
       capture-undo
-      (cond-> (not= knot-id 0) (update :tree tree/select-knot knot-id))))
+      (update :tree tree/select-knot knot-id)))
 
 (defn save!
   "Saves the current tree state to the file."
