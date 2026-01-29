@@ -21,7 +21,7 @@
    ;; knot-id -> status (just for knot)
    :status            {0 :new}
    ;; knot-id -> status (derived from children of knot)
-   :descendent-status {}})
+   :descendant-status {}})
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -64,7 +64,8 @@
   [tree knot-id]
   (get-in tree [:knots knot-id :parent-id]))
 
-(defn- greatest-status
+(defn greatest-status
+  "Compares two status values and returns the greatest (:error, then :new, then :ok)."
   [s1 s2]
   (cond
     (= :error s1)
@@ -82,29 +83,29 @@
     :else                                                   ; (= :new s1)
     (if (= :error s2) :error :new)))
 
-(defn- compute-descendent-status
+(defn- compute-descendant-status
   [tree knot-id]
-  (let [{:keys [children status descendent-status]} tree
+  (let [{:keys [children status descendant-status]} tree
         child-ids (get children knot-id)]
     (reduce (fn [result child-id]
               (if (= result :error)
                 (reduced :error)
-                (let [child-status (greatest-status (descendent-status child-id) (status child-id))]
+                (let [child-status (greatest-status (descendant-status child-id) (status child-id))]
                   (greatest-status child-status result))))
             :ok
             child-ids)))
 
 (defn- propagate-status
-  "Updates the :descendent-status of the indicated knot and its parents, to the root.
+  "Updates the :descendant-status of the indicated knot and its parents, to the root.
   
-  The descendent-status of a knot is the greatest of any of its childrens' status
-  or descendent-status."
+  The descendant-status of a knot is the greatest of any of its childrens' status
+  or descendant-status."
   [tree knot-id]
-  (let [existing (get-in tree [:descendent-status knot-id])
-        computed (compute-descendent-status tree knot-id)]
+  (let [existing (get-in tree [:descendant-status knot-id])
+        computed (compute-descendant-status tree knot-id)]
     (let [tree'     (if (= existing computed)
                       tree
-                      (assoc-in tree [:descendent-status knot-id] computed))
+                      (assoc-in tree [:descendant-status knot-id] computed))
           parent-id (get-parent-id tree' knot-id)]
       (if parent-id
         (recur tree' parent-id)
@@ -140,7 +141,7 @@
 
 (defn rebuild
   "Rebuilds a tree as loaded from a file, populating the :children, :selected, :status, 
-  and :descendent-status maps."
+  and :descendant-status maps."
   [tree]
   (let [knots            (-> tree :knots vals)
         parent->children (->> knots
@@ -195,7 +196,7 @@
         (update :selected dissoc knot-id)
         (update :knots dissoc knot-id)
         (update :status dissoc knot-id)
-        (update :descendent-status dissoc knot-id))))
+        (update :descendant-status dissoc knot-id))))
 
 (defn delete-knot
   "Deletes a previously added knot, and any children below it."
@@ -399,9 +400,9 @@
   (when-let [ids (get-children tree (:id knot))]
     (mapv #(get-in tree [:knots %]) ids)))
 
-(defn descendent-status
-  "Returns the descendent status of the knot as :ok, :new, or :error.
+(defn descendant-status
+  "Returns the descendant status of the knot as :ok, :new, or :error.
   This is calculated as the most severe value of any of the children's
-  statuses, or any of the children's descendent-statuses."
+  statuses, or any of the children's descendant-statuses."
   [tree knot-id]
-  (get-in tree [:descendent-status knot-id]))
+  (get-in tree [:descendant-status knot-id]))

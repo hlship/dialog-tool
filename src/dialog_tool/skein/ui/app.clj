@@ -91,15 +91,17 @@
    :new   "border-yellow-200"
    :error "border-rose-400"})
 
+(def ^:private status->button-class
+  {:ok    "bg-white hover:bg-grey-50"
+   :new   "bg-yellow-200 hover:bg-yellow-300"
+   :error "bg-red-300 hover:bg-red-400"})
+
 (defn- render-children-navigation
   [tree knot]
   (let [children (tree/children tree knot)
         {:keys [id]} knot]
     (when (seq children)
-      (let [bg-class (case (tree/descendent-status tree id)
-                       :error "bg-red-300"
-                       :new "bg-yellow-200"
-                       "bg-white")]
+      (let [bg-class (status->button-class (tree/descendant-status tree id))]
         [dropdown/dropdown {:id       (str "nav-" id)
                             :bg-class bg-class
                             :label    [:<> svg/icon-children
@@ -113,8 +115,11 @@
                                                     "hover:bg-slate-200")}
                                           (count children)])]}
          (map (fn [{:keys [id label command]}]
-                [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
-                 (or label command)])
+                (let [status (tree/greatest-status (tree/knot-status tree id)
+                                                   (tree/descendant-status tree id))]
+                  [dropdown/button {:bg-class      (status->button-class status)
+                                    :data-on:click (str "@get('/action/select/" id "')")}
+                   (or label command)]))
               children)]))))
 
 (defn- render-knot

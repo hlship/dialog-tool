@@ -19,7 +19,7 @@
               :children          {}
               :selected          {}
               :status            {0 :new}
-              :descendent-status {}}
+              :descendant-status {}}
              tree)))))
 
 (deftest add-child-test
@@ -59,7 +59,7 @@
                    :knots             {1 m/absent}
                    :selected          (m/equals {})
                    :status            (m/equals {0 :new})
-                   :descendent-status (m/equals {0 :ok})}
+                   :descendant-status (m/equals {0 :ok})}
                   tree))))
 
   (testing "deletes a knot and all its descendants"
@@ -72,7 +72,7 @@
                                        2 m/absent
                                        3 m/absent}
                    :status            (m/equals {0 :new})
-                   :descendent-status (m/equals {0 :ok})
+                   :descendant-status (m/equals {0 :ok})
                    :children          (m/equals {0 #{}})
                    :selected          (m/equals {})}
                   tree))))
@@ -134,7 +134,7 @@
                                           :unblessed "Different room."}}
                    :status            {0 :new
                                        1 :error}
-                   :descendent-status {0 :error}}
+                   :descendant-status {0 :error}}
                   tree))))
 
   (testing "removes unblessed when response matches blessed"
@@ -218,17 +218,17 @@
                  (tree/update-response 0 "Initial game text.")
                  (tree/bless-response 0)
                  (tree/add-child 0 100 "look" "Room."))]
-    (testing "new status propogates up"
+    (testing "new status propagates up"
       (is (match? {:status            {0   :ok
                                        100 :new}
-                   :descendent-status {0 :new}}
+                   :descendant-status {0 :new}}
                   tree)))
 
     (testing "error status overrides new"
       (is (match? {:status            {0   :ok
                                        100 :new
                                        200 :error}
-                   :descendent-status {0   :error
+                   :descendant-status {0   :error
                                        100 :error}}
                   (-> tree
                       (tree/add-child 100 200 "i" "inv")
