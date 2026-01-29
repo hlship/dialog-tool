@@ -49,7 +49,7 @@
 
 (defn navbar
   [title tree {:keys [can-undo? can-redo? dirty?]}]
-  (let [{:keys [ok new error]} (tree/counts tree)]
+  (let [{:keys [ok new error]} (tree/totals tree)]
     [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
                            "px-2 sm:px-4 py-2.5"
                            "fixed w-full z-20 top-0 start-0 border-b")}

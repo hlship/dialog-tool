@@ -11,7 +11,8 @@
             [dialog-tool.skein.ui.components.modal :as modal]
             [dialog-tool.skein.ui.components.progress :as progress]
             [dialog-tool.skein.ui.components.quit-modal :as quit-modal]
-            [dialog-tool.skein.ui.utils :as utils]))
+            [dialog-tool.skein.ui.utils :as utils]
+            [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
 
 (defn- expand-raw-string-body
   "huff returns a wrapper type, huff2.core.RawString, which is not directly compatible
@@ -73,10 +74,14 @@
   [{:keys [*session signals] :as request}]
   (let [{:keys [newCommand]} signals
         command (some-> newCommand str string/trim not-empty)]
-    (when command
-      (swap! *session session/command! command))
-    (render-app request {:scroll-to-new-command? true
-                         :reset-command-input?   true})))
+    (utils/with-short-sse
+      request
+      (fn [sse-gen]
+        (when command
+          (swap! *session session/command! command)
+          (utils/patch-elements! sse-gen
+                                 (ui.app/render-app request {:scroll-to-new-command? true}))
+          (utils/patch-signals! sse-gen {:newCommand ""}))))))
 
 (defn- bless-knot
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
@@ -105,11 +110,14 @@
 
 (defn- prepare-new-child
   "Prepares for adding a new child to the specified knot.
-   Replays to the knot and deselects its children."
+   Selected the knot and clears and focuses on the new command input."
   [{:keys [*session] :as request}]
   (swap! *session session/prepare-new-child! (knot-id request))
-  (render-app request {:scroll-to-new-command? true
-                       :reset-command-input?   true}))
+  (utils/with-short-sse
+    request
+    (fn [sse-gen]
+      (utils/patch-elements! sse-gen (ui.app/render-app request {:scroll-to-new-command? true}))
+      (utils/patch-signals! sse-gen {:newCommand ""}))))
 
 (defn- render-edit-command-modal
   "Renders the edit command modal with optional error message."
@@ -155,10 +163,14 @@
       ;; Error occurred - redisplay modal with error
       (render-edit-command-modal id command error)
       ;; Success - return both updated app and cleared modal
-      {:status 200
-       :body   (html [:<>
-                      (ui.app/render-app request {})
-                      [:div#modal-container]])})))
+      (utils/with-short-sse
+        request
+        (fn [sse-gen]
+          (utils/patch-elements! sse-gen
+                                 [:<>
+                                  (ui.app/render-app request {})
+                                  [:div#modal-container]])
+          (utils/patch-signals! sse-gen {:editCommand nil}))))))
 
 (defn- render-insert-parent-modal
   "Renders the insert parent modal with optional error message."
@@ -252,12 +264,14 @@
       ;; Duplicate found in a different knot - return modal with error
       (render-edit-label-modal id label (str "Label \"" label "\" is already used by another knot."))
       ;; No duplicate or same knot - proceed with update
-      (do
-        (swap! *session session/label id label)
-        {:status 200
-         :body   (html [:<>
-                        (ui.app/render-app request {})
-                        [:div#modal-container]])}))))
+      (utils/with-short-sse
+        request
+        (fn [sse-gen]
+          (swap! *session session/label id label)
+          (utils/patch-signals! sse-gen {:editLabel nil})
+          (utils/patch-elements! sse-gen [:<>
+                                          (ui.app/render-app request {})
+                                          [:div#modal-container]]))))))
 
 (defn- dismiss-modal
   "Dismisses any open modal by clearing the modal-container."
@@ -286,9 +300,9 @@
 (defn- replay-all
   "Replays to all leaf knots with SSE progress updates."
   [{:keys [*session] :as request}]
-  (utils/start-sse
+  (utils/with-short-sse
     request
-    (fn [_sse-gen]
+    (fn [sse-gen]
       (let [initial-tree (:tree @*session)
             leaf-knots   (tree/leaf-knots initial-tree)
             total        (count leaf-knots)]
@@ -301,7 +315,7 @@
                 {:keys [id label]} knot]
             ;; Update progress
             (utils/patch-elements!
-              *session
+              sse-gen
               (html (progress/progress-modal
                       {:current   current
                        :total     total
@@ -313,7 +327,7 @@
 
         ;; Close progress modal and render final state
         (utils/patch-elements!
-          *session
+          sse-gen
           (html [:<>
                  (ui.app/render-app request {:flash "Replay complete"})
                  [:div#modal-container]]))))))
@@ -374,10 +388,10 @@
   "Renders the template index.html file."
   [{:keys [*session]}]
   (let [{:keys [development-mode?]} @*session]
-    {:status 200
+    {:status  200
      :headers {"Content-Type" "text/html"}
-     :body   (s/render-file "skein/index.html"
-                            {:dev development-mode?})}))
+     :body    (s/render-file "skein/index.html"
+                             {:dev development-mode?})}))
 
 (def ^:private routes
   (router/routes
@@ -428,7 +442,7 @@
 
     "GET /action/redo" req
     (redo req)
-    
+
     "POST /action/save" req
     (save req)
 
@@ -475,4 +489,5 @@
       content-type/wrap-content-type
       wrap-with-response-logger
       utils/wrap-parse-signals
+      hk-gen/wrap-start-responding
       log-errors))

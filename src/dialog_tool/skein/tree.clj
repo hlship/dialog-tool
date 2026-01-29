@@ -384,7 +384,7 @@
   [tree knot-id]
   (get-in tree [:status knot-id]))
 
-(defn counts
+(defn totals
   "Returns a map of :ok, :new, :error, each a count. :new is for new knots where there's
   not a :response, just :unblessed.  :error is when blessed != response."
   [tree]

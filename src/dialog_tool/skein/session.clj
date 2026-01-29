@@ -148,26 +148,12 @@
             (do-replay-to! knot-id)
             (assoc :new-id new-id))))))
 
-(defn- knot-category
-  [{:keys [unblessed response]}]
-  (cond
-    (nil? unblessed) :ok
-
-    (nil? response) :new
-
-    (not= unblessed response) :error
-
-    :else :ok))
-
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."
   [session]
   (->> session
        :tree
-       tree/all-knots
-       (reduce (fn [counts knot]
-                 (update counts (knot-category knot) inc))
-               {:ok 0 :new 0 :error 0})))
+       tree/totals))
 
 (defn bless
   [session knot-id]

@@ -322,7 +322,7 @@
                      (tree/add-child 2 3 "east" "Kitchen.")
                      (tree/bless-response 3)
                      (tree/update-response 3 "Different."))
-          counts (tree/counts tree)]
+          counts (tree/totals tree)]
       (is (match? {:ok    1
                    :new   2
                    :error 1}

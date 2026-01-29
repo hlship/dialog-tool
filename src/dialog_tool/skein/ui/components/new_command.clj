@@ -10,16 +10,12 @@
 
    Options:
    - :scroll-to? - When true, the component will be scrolled into view
-                   after rendering (typically after a new command is submitted).
-   - :reset-command-input? - When true, the newCommand signal will be reset to empty string
-                             when this element is patched into the DOM."
-  [{:keys [scroll-to? reset-command-input?]}]
+                   after rendering (typically after a new command is submitted)."
+  [{:keys [scroll-to? ]}]
   [:div.mt-4.mb-8
    (merge
     (when scroll-to?
-      {:data-scroll-into-view true})
-    (when reset-command-input?
-      {:data-signals:new-command "''"}))
+      {:data-scroll-into-view true}))
    [:div.flex.items-center.gap-2
     [:span.text-gray-400 ">"]
     [:input {:type        "text"
@@ -28,4 +24,3 @@
              :class       "flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
              :data-bind   "newCommand"
              :data-on:change "@post('/action/new-command')"}]]])
-

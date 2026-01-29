@@ -63,6 +63,8 @@
 
   @*session
 
+  (-> (:dialog-tool.skein.ui.utils/sse-gen @*session) bean)
+  (swap! *session dissoc :dialog-tool.skein.ui.utils/sse-gen)
   (@*shutdown)
 
 
