@@ -40,7 +40,6 @@ Developing the UI requires two additional windows.
 - Don't try to close the window on quit; just refresh with a "You may close the window now" and shutdown.
 - Clear out signals when no longer needed
 - Present source file warnings/errors in a modal when detected?
-- Only display the signals JSON in the UI when in development mode
 - "Debug to here", runs, collects game state after each command (via @dynamic)
   - Show a delta from one command to the other (what globals, flags, per-objects changed)
 - Consider *always* running from start, even when adding a new command at end?

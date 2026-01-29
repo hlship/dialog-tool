@@ -33,7 +33,7 @@
 
   Returns a function that does shutdown the service."
   [project skein-path opts]
-  (let [{:keys [port seed engine]
+  (let [{:keys [port seed engine development-mode?]
          :or   {port 10140}} opts
         tree (when (fs/exists? skein-path)
                (sk.file/load-tree skein-path))
@@ -54,7 +54,7 @@
         shutdown-service-fn (fn []
                               (shutdown-fn)
                               (println "Shut down"))]
-    (reset! *session session)
+    (reset! *session (assoc session :development-mode? development-mode?))
     (reset! *shutdown shutdown-service-fn)
     {:shutdown-fn shutdown-service-fn
      :port        port}))
@@ -68,7 +68,8 @@
 
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/default.skein"
-          {:engine :dgdebug})
+          {:engine :dgdebug
+           :development-mode? true})
            
     (start! (pf/read-project "../sanddancer-dialog")
           "/tmp/sd.skein"

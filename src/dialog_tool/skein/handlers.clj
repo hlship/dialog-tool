@@ -4,6 +4,7 @@
             [huff2.core :as huff :refer [html]]
             [ring.util.response :as response]
             [clojure.string :as string]
+            [selmer.parser :as s]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
@@ -48,9 +49,9 @@
       (f request)
       (catch Exception e
         (println "Error: " e)
-        {:status 500
+        {:status  500
          :headers {"content-type" "text/plain"}
-         :body (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
+         :body    (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
 
 (defn- render-app
   ([request]
@@ -369,90 +370,95 @@
   [request]
   (close-and-shutdown request))
 
+(defn- render-index
+  "Renders the template index.html file."
+  [{:keys [*session]}]
+  (let [{:keys [development-mode?]} @*session]
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body   (s/render-file "skein/index.html"
+                            {:dev development-mode?})}))
+
 (def ^:private routes
   (router/routes
-   "GET /" []
-   (response/redirect "/index.html")
+    "GET /" req
+    (render-index req)
 
-   "POST /action/new-command" req
-   (new-command req)
+    "POST /action/new-command" req
+    (new-command req)
 
-   "POST /action/bless/*" req
-   (bless-knot req)
+    "POST /action/bless/*" req
+    (bless-knot req)
 
-   "POST /action/bless-to/*" req
-   (bless-to-knot req)
+    "POST /action/bless-to/*" req
+    (bless-to-knot req)
 
-   "POST /action/replay-to/*" req
-   (replay-to-knot req)
+    "POST /action/replay-to/*" req
+    (replay-to-knot req)
 
-   "GET /action/select/*" req
-   (select-knot req)
+    "GET /action/select/*" req
+    (select-knot req)
 
-   "POST /action/new-child/*" req
-   (prepare-new-child req)
+    "POST /action/new-child/*" req
+    (prepare-new-child req)
 
-   "GET /action/edit-command/*" req
-   (open-edit-command req)
+    "GET /action/edit-command/*" req
+    (open-edit-command req)
 
-   "POST /action/edit-command/*" req
-   (edit-command req)
+    "POST /action/edit-command/*" req
+    (edit-command req)
 
-   "GET /action/insert-parent/*" req
-   (open-insert-parent req)
+    "GET /action/insert-parent/*" req
+    (open-insert-parent req)
 
-   "POST /action/insert-parent/*" req
-   (insert-parent req)
+    "POST /action/insert-parent/*" req
+    (insert-parent req)
 
-   "GET /action/edit-label/*" req
-   (open-edit-label req)
+    "GET /action/edit-label/*" req
+    (open-edit-label req)
 
-   "POST /action/edit-label/*" req
-   (edit-label req)
+    "POST /action/edit-label/*" req
+    (edit-label req)
 
-   "POST /action/dismiss-modal" req
-   (dismiss-modal req)
+    "POST /action/dismiss-modal" req
+    (dismiss-modal req)
 
-   "GET /action/undo" req
-   (undo req)
+    "GET /action/undo" req
+    (undo req)
 
-   "GET /action/redo" req
-   (redo req)
+    "GET /action/redo" req
+    (redo req)
+    
+    "POST /action/save" req
+    (save req)
 
-   "POST /action/save" req
-   (save req)
+    "POST /action/replay-all" req
+    (replay-all req)
 
-   "POST /action/replay-all" req
-   (replay-all req)
+    "POST /action/delete/*" req
+    (delete-knot req)
 
-   "POST /action/delete/*" req
-   (delete-knot req)
+    "POST /action/splice-out/*" req
+    (splice-out-knot req)
 
-   "POST /action/splice-out/*" req
-   (splice-out-knot req)
+    "GET /action/quit" req
+    (open-quit req)
 
-   "GET /action/quit" req
-   (open-quit req)
+    "POST /action/save-and-quit" req
+    (save-and-quit req)
 
-   "POST /action/save-and-quit" req
-   (save-and-quit req)
+    "POST /action/quit-without-saving" req
+    (quit-without-saving req)
 
-   "POST /action/quit-without-saving" req
-   (quit-without-saving req)
+    "GET /app" req
+    (render-app req)
 
-   "GET /app" req
-   (render-app req)
-
-   "GET /**" [path]
-   (or
-     ;; This is where resources come from in the deployed app
-     (response/resource-response path {:root "public"})
-     ;; For local development, it's a mix
-      ;; Search for local-development compiled files first
-    (response/file-response path {:root "out/public"})
-      ;; And source files second
-    (response/file-response path {:root "public"
-                                  :index-files? true}))))
+    "GET /**" [path]
+    (or
+      ;; This is where resources come from in the deployed app
+      (response/resource-response path {:root "public"})
+      ;; Search for local-development compiled files
+      (response/file-response path {:root "out/public"}))))
 
 (def service-handler
   "The main Ring handler for the Skein web service.

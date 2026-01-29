@@ -64,6 +64,7 @@
        (let [labeled-knots (tree/labeled-knots-sorted tree)]
          [dropdown/dropdown {:id           "jump-dropdown"
                              :button-class blue-button
+                             :bg-class     nil
                              :disabled     (<= (count labeled-knots) 1)
                              :label        [:<> svg/icon-jump "Jump"]}
           (map (fn [{:keys [id label]}]
@@ -184,7 +185,4 @@
       (map (fn [knot]
              (render-knot tree knot scroll-to-knot-id)) knots)
       [new-command/new-command-input {:scroll-to?           scroll-to-new-command?
-                                      :reset-command-input? reset-command-input?}]
-      ;; TODO: This should only show when in some kind of development mode
-      [:div.fixed.top-4.left-4.bg-gray-800.text-white.p-3.rounded-lg.shadow-lg.max-w-md.max-h-64.overflow-auto.z-50.text-xs
-       [:pre.whitespace-pre-wrap {:data-json-signals true}]]]]))
+                                      :reset-command-input? reset-command-input?}]]]))
