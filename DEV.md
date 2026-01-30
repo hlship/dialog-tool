@@ -20,6 +20,8 @@ Developing the UI requires two additional windows.
 
 ### Tailwind
 
+`brew install tailwindcss`
+
 `tailwindcss -i public/style.css -o out/public/style.css --watch`
 - Watches source folders, identifies CSS classes, regenerates `out/public/style.css`
 
