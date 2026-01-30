@@ -6,6 +6,7 @@
     "release": "shadow-cljs release app"
   },
   "devDependencies": {
+    "daisyui": "^5.5.14",
     "shadow-cljs": "^2.28.21"
   },
   "dependencies": {
