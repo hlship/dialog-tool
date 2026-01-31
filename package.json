@@ -2,15 +2,10 @@
   "name": "dialog-tool",
   "private": true,
   "scripts": {
-    "dev": "shadow-cljs watch app",
-    "release": "shadow-cljs release app"
+    "dev": "echo 'No compilation needed - using vanilla JS'",
+    "release": "echo 'JavaScript files ready in resources/public/js/'"
   },
   "devDependencies": {
-    "daisyui": "^5.5.14",
-    "shadow-cljs": "^2.28.21"
-  },
-  "dependencies": {
-    "@js-joda/core": "3.2.0",
-    "@tailwindplus/elements": "^1.0.21"
+    "daisyui": "^5.5.14"
   }
 }

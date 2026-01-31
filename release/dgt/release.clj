@@ -45,7 +45,6 @@
     (sh "tailwindcss --minimize --map"
         "--input" "public/style.css"
         "--output" "out/build/resources/public/style.css")
-    (sh "npx shadow-cljs release build")
     (perr "Writing: " [:bold zip-file] " ...")
     (fs/zip zip-file build-dir {:root "out/build"})
     zip-file))

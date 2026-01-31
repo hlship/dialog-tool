@@ -6,17 +6,7 @@ Run tests with `clojure -M:test`.
 
 ## UI Notes
 
-Developing the UI requires two additional windows.
-
-### Shadow-CLJS
-
-`npx shadow-cljs watch app`
-- Compiles all JavaScript in (dev mode) to `out/public/js`
-- Watches for changes and recompiles
-
-`npx shadow-cljs release build`
-- Used by release process to create single JavaScript output for distribution
-
+Developing the UI requires an additional window.
 
 ### Tailwind
 

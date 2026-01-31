@@ -1,11 +1,8 @@
 ;; Lots of testing using Clojure and REPL, but the final tool is Babashka
 ;; Keep bb.edn in sync with this.
 {:paths ["src"
-         "src-cljs"
          "resources"]
  :deps  {org.clojure/clojure                {:mvn/version "1.12.4"}
-         org.clojure/clojurescript          {:mvn/version "1.12.134"}
-         thheller/shadow-cljs               {:mvn/version "3.3.5"}
          ;; Keep sync'ed w/ bb.edn:
          io.github.hlship/cli-tools         {:mvn/version "0.16.0-beta-3"}
          io.github.escherize/huff           {:mvn/version "0.2.21"}

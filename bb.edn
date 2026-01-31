@@ -1,5 +1,4 @@
 {:paths ["src"
-         "src-cljs"
          "resources"]
  ;; Keep these synced with deps.edn:
  :deps  {io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-3"}
