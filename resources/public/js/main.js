@@ -73,5 +73,16 @@ window.closeWindow = function() {
   }, 100);
 };
 
+window.dropdownSetup = function(element) {
+if (element.open) {
+  const listener = (e) => {
+     if (!element.contains(e.target)) {
+       element.open = false;
+       document.removeEventListener('click', listener);
+     }
+   };
+   setTimeout(() => document.addEventListener('click', listener), 0)}
+}
+
 // Initialize on load
 init();

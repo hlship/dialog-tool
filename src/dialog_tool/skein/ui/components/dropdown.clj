@@ -15,15 +15,7 @@
            button-class "btn-primary"}} & items]
   [:details.dropdown
    {:class          dropdown-class
-    :data-on:toggle "if (el.open) {
-                       const listener = (e) => {
-                         if (!el.contains(e.target)) {
-                           el.open = false;
-                           document.removeEventListener('click', listener);
-                         }
-                       };
-                       setTimeout(() => document.addEventListener('click', listener), 0);
-                     }"}
+    :data-on:toggle "dropdownSetup(el)"}
    [:summary {:class    (classes "btn m-0" button-class)
               :disabled disabled}
     label]
