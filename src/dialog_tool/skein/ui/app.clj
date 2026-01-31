@@ -27,29 +27,10 @@
     ;; No unblessed, just show response as-is
     response))
 
-(def button-base
-  (classes "text-center font-medium"
-           "focus-within:ring-4 focus-within:outline-none"
-           "inline-flex items-center"
-           "justify-center px-3 py-2 text-xs text-white"
-           "rounded-lg ml-8"))
-
-(def blue-button
-  (str button-base " bg-blue-700 hover:bg-blue-800"))
-
-(def disabled-button
-  (str button-base " bg-blue-400 cursor-not-allowed"))
-
-(defn nav-button [attrs body]
-  (let [disabled? (:disabled attrs)]
-    [:button (merge {:type  "button"
-                     :class (if disabled? disabled-button blue-button)}
-                    attrs)
-     body]))
-
 (defn navbar
   [title tree {:keys [can-undo? can-redo? dirty?]}]
-  (let [{:keys [ok new error]} (tree/totals tree)]
+  (let [{:keys [ok new error]} (tree/totals tree)
+        labeled-knots (tree/labeled-knots-sorted tree)]
     [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
                            "px-2 sm:px-4 py-2.5"
                            "fixed w-full z-20 top-0 start-0 border-b")}
@@ -58,34 +39,29 @@
        [:div.self-center.whitespace-nowrap.text-xl.font-semibold
         title]]
       [:div.mx-0.inline-flex
-       [:div.text-black.bg-green-400.p-2.font-semibold.rounded-l-lg ok]
-       [:div.text-black.bg-yellow-200.p-2.font-semibold new]
-       [:div.text-black.bg-red-500.p-2.font-semibold.rounded-r-lg error]
-       (let [labeled-knots (tree/labeled-knots-sorted tree)]
-         [dropdown/dropdown {:id           "jump-dropdown"
-                             :button-class blue-button
-                             :bg-class     nil
-                             :disabled     (<= (count labeled-knots) 1)
-                             :label        [:<> svg/icon-jump "Jump"]}
-          (map (fn [{:keys [id label]}]
-                 [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
-                  label])
-               labeled-knots)])
+       [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
+       [:div.text-black.bg-warning.p-2.font-semibold new]
+       [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg.mr-2 error]
        [:div.flex.md:order-2.space-x-2
-        [nav-button {:data-on:click "@post('/action/replay-all')"} [:<> svg/icon-play "Replay All"]]
-        [nav-button {:data-on:click "@post('/action/save')"
-                     :class         (classes button-base
-                                             (if dirty?
-                                               "bg-green-700 hover:bg-green-800"
-                                               "bg-blue-700 hover:bg-blue-800"))}
-         [:<> svg/icon-save "Save"]]
-        [nav-button {:data-on:click "@get('/action/undo')"
-                     :disabled      (not can-undo?)}
-         [:<> svg/icon-undo "Undo"]]
-        [nav-button {:data-on:click "@get('/action/redo')"
-                     :disabled      (not can-redo?)}
-         [:<> svg/icon-redo "Redo"]]
-        [nav-button {:data-on:click "@get('/action/quit')"} [:<> svg/icon-quit "Quit"]]]]]]))
+        [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
+                            :label    [:<> svg/icon-jump "Jump"]}
+         (for [{:keys [id label]} labeled-knots]
+           [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
+            label])]
+        [:div.btn.btn-primary {:data-on:click "@post('/action/replay-all')"}
+         svg/icon-play "Replay All"]
+        [:div.btn
+         {:data-on:click "@post('/action/save')"
+          :class         (if dirty? "btn-warning" "btn-primary")}
+         svg/icon-save "Save"]
+        [:div.btn.btn-primary {:data-on:click "@get('/action/undo')"
+                               :disabled      (not can-undo?)}
+         svg/icon-undo "Undo"]
+        [:div.btn.btn-primary {:data-on:click "@get('/action/redo')"
+                               :disabled      (not can-redo?)}
+         svg/icon-redo "Redo"]
+        [:div.btn.btn-primary {:data-on:click "@get('/action/quit')"}
+         svg/icon-quit "Quit"]]]]]))
 
 (def ^:private status->border-class
   {:ok    "border-slate-100"
@@ -93,35 +69,32 @@
    :error "border-rose-400"})
 
 (def ^:private status->button-class
-  {:ok    "bg-white hover:bg-grey-50"
-   :new   "bg-yellow-200 hover:bg-yellow-300"
-   :error "bg-red-300 hover:bg-red-400"})
+  {:ok    nil
+   :new   "bg-warning"
+   :error "bg-error"})
 
 (defn- render-children-navigation
   [tree knot]
   (let [children (tree/children tree knot)
         {:keys [id]} knot]
-    (when (seq children)
-      (let [bg-class (status->button-class (tree/descendant-status tree id))]
-        [dropdown/dropdown {:id       (str "nav-" id)
-                            :bg-class bg-class
-                            :label    [:<> svg/icon-children
-                                       (when (< 1 (count children))
-                                         [:div
-                                          {:class (classes
-                                                    "flex-shrink-0 rounded-full border-2 border-white"
-                                                    "w-6 h-6 bg-gray-200 inline-flex items-center justify-center"
-                                                    "absolute top-0 end-0"
-                                                    "translate-x-1/3 -translate-y-1/3"
-                                                    "hover:bg-slate-200")}
-                                          (count children)])]}
-         (map (fn [{:keys [id label command]}]
-                (let [status (tree/greatest-status (tree/knot-status tree id)
-                                                   (tree/descendant-status tree id))]
-                  [dropdown/button {:bg-class      (status->button-class status)
-                                    :data-on:click (str "@get('/action/select/" id "')")}
-                   (or label command)]))
-              children)]))))
+    (when (< 1 (count children))
+      [:div.indicator
+       [dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class (tree/descendant-status tree id)))
+                           :label        svg/icon-children}
+        (map (fn [{:keys [id label command]}]
+               (let [status (tree/greatest-status (tree/knot-status tree id)
+                                                  (tree/descendant-status tree id))]
+                 [dropdown/button {:bg-class      (status->button-class status)
+                                   :data-on:click (str "@get('/action/select/" id "')")}
+                  (or label command)]))
+             children)]
+       [:div
+        {:class (classes
+                  "indicator-item indicator-top indicator-right"
+                  "rounded-full text-sm border-2 bg-base-300 border-base-100"
+                  "flex items-center justify-center"
+                  "w-8 h-8")}
+        (count children)]])))
 
 (defn- render-knot
   [tree knot scroll-to-knot-id]
@@ -138,8 +111,8 @@
       [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
-       [dropdown/dropdown {:id    (str "actions-" id)
-                           :label svg/icon-dots-vertical}
+       [dropdown/dropdown {:label        svg/icon-dots-vertical
+                           :button-class "btn p-0"}
         [dropdown/button {:disabled      disable-bless?
                           :data-on:click (str "@post('/action/bless/" id "')")}
          "Bless" "Accept changes"]
