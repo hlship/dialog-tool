@@ -1,6 +1,5 @@
 (ns dialog-tool.template
   (:require [babashka.fs :as fs]
-            [clojure.string :as str]
             [selmer.parser :as s]
             [babashka.process :as p]
             [clj-commons.ansi :refer [perr]]
@@ -81,7 +80,7 @@
                    (fs/path dir' "dialog.edn"))
 
     (copy-rendered "template/meta.dg"
-                   {:ifid (-> (random-uuid) str str/upper-case)}
+                   {:ifid (-> (random-uuid) str string/upper-case)}
                    (fs/path src-dir "meta.dg"))
 
     (copy-rendered "template/project.dg"
@@ -106,4 +105,3 @@
     (perr [:bold "dgt debug"] " to run the project in the Dialog debugger")
     (perr [:bold "dgt new-skein"] " to open a web browser to the Skein UI")
     (perr [:bold "dgt help"] " for other options")))
-

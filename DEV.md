@@ -1,22 +1,40 @@
 # Developer Notes
+ 
+## Tests
+
+Run tests with `clojure -M:test`.
+
+## UI Notes
+
+Developing the UI requires an additional window.
+
+### Tailwind
+
+`brew install tailwindcss`
+
+`tailwindcss -i public/style.css -o out/public/style.css --watch`
+- Watches source folders, identifies CSS classes, regenerates `out/public/style.css`
 
 ## TODO / Ideas / Plans/ Bugs
 
-- Visual feedback when the skein changes
 - The graph view (currently it's just a serial view, one path through the graph)
 - Collapsable text (hide text, allow for quick navigation)
 - Buttons to jump to next/prev command
-- Animation when adding/removing nodes
 - Search the Skein
 - Jump to "nearest" unblessed node
-- Visual feedback is a problem, because the round-trip is often just milliseconds.
 - Add an indicator that there are invisible whitespace changes in a diff
 - Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
 - Detect/report network failures
-- Shutdown the skein window (and server)
 - Color-blind indicators or mode
 - Restart should rebuild the source file list, re-read the dialog.edn
 - Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
+- Don't try to close the window on quit; just refresh with a "You may close the window now" and shutdown.
+- Present source file warnings/errors in a modal when detected?
+- "Debug to here", runs, collects game state after each command (via @dynamic)
+  - Show a delta from one command to the other (what globals, flags, per-objects changed)
+- Consider *always* running from start, even when adding a new command at end?
+- Disallow splice-out if no children
+- new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
 
 ## Releasing
 

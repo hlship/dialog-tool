@@ -8,8 +8,8 @@
              [clojure.string :as string]
              [babashka.fs :as fs]
              [dgt.release :as r :refer [sh]])
+  package   (r/package "test")
   release   (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
-                  _ (sh {:dir "skein-ui"} "npm run build")
                   zip-file (r/package tag)
                   sha (r/sha256 zip-file)
                   create-opts (cond-> ["--verify-tag" "--generate-notes"]

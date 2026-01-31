@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/style.css" rel="stylesheet">
+    <title>Dialog Skein</title>
+</head>
+<body>
+
+<div class="relative px-8" id="app" data-init="@get('/app')">
+    <div class="text-center text-gray-500">Loading...</div>
+</div>
+
+{% if dev %}
+<div class="fixed top-4 left-4 bg-gray-800 text-white p-3 rounded-lg shadow-lg max-w-md max-h-64 overflow-auto z-50 text-xs">
+    <pre class="whitespace-pre-wrap" data-json-signals></pre>
+</div>
+{% endif %}
+
+<div id="modal-container"></div>
+
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>

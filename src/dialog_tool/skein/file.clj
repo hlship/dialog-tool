@@ -56,7 +56,6 @@
         (.println out unblessed-sep)
         (.print out unblessed)))))
 
-
 (def meta-parsers
   {"seed" s->long
    "engine" keyword})
@@ -90,10 +89,10 @@
             (recur meta)))))))
 
 (def knot-parsers
-  {"id"        s->long
+  {"id" s->long
    "parent-id" s->long
-   "command"   identity
-   "label"     identity})
+   "command" identity
+   "label" identity})
 
 (defn- apply-content
   [knot k ^StringBuilder sb]
@@ -152,7 +151,7 @@
   (try
     (-> (read-meta in)
         (read-knots in)
-        tree/rebuild-children)
+        tree/rebuild)
     (catch Exception e
       (let [m (or (ex-message e)
                   (-> e class .getName))
@@ -176,7 +175,7 @@
   "Saves the Skein tree to the file identified by the given path.  Writes the file atomically,
   then returns the tree."
   [tree path]
-  (let [path'     (fs/path path)
+  (let [path' (fs/path path)
         temp-path (-> path'
                       fs/canonicalize
                       fs/parent
@@ -190,6 +189,6 @@
                         PrintWriter.)]
       (write-skein tree out))
     (fs/move temp-path path' {:replace-existing true
-                              :atomic-move      true})
+                              :atomic-move true})
 
     tree))

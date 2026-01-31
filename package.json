@@ -1,0 +1,7 @@
+{
+  "name": "dialog-tool",
+  "private": true,
+  "devDependencies": {
+    "daisyui": "^5.5.14"
+  }
+}

@@ -6,3 +6,12 @@
 .cpcache
 .idea
 *.iml
+/.nrepl-port
+out
+
+# Node modules
+node_modules/
+.calva
+
+# Claude Code documentation
+.claude/

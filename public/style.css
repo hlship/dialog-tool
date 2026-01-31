@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Prevent layout shift when popovers/modals set overflow:hidden on body */
+html {
+  scrollbar-gutter: stable;
+}

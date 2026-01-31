@@ -45,9 +45,6 @@
           (mapcat #(expand-source root-dir %))
           (map str)))))
 
-(defn ^Path root-dir
-  [project]
+(defn root-dir
+  ^Path [project]
   (::root-dir project))
-
-
-
