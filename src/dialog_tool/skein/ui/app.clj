@@ -108,7 +108,7 @@
                        (= id scroll-to-knot-id)
                        (assoc :data-scroll-into-view true))
      [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
-      [:div.whitespace-normal.flex.flex-row.absolute.top-2.right-2.gap-x-2
+      [:div.whitespace-normal.flex.flex-row.items-center.absolute.top-2.right-2.gap-x-2
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
        [dropdown/dropdown {:label        svg/icon-dots-vertical
