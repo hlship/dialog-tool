@@ -15,7 +15,6 @@ Developing the UI requires an additional window.
 `tailwindcss -i public/style.css -o out/public/style.css --watch`
 - Watches source folders, identifies CSS classes, regenerates `out/public/style.css`
 
-
 ## TODO / Ideas / Plans/ Bugs
 
 - The graph view (currently it's just a serial view, one path through the graph)

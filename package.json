@@ -1,10 +1,6 @@
 {
   "name": "dialog-tool",
   "private": true,
-  "scripts": {
-    "dev": "echo 'No compilation needed - using vanilla JS'",
-    "release": "echo 'JavaScript files ready in resources/public/js/'"
-  },
   "devDependencies": {
     "daisyui": "^5.5.14"
   }
