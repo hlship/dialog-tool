@@ -1,0 +1,280 @@
+{:global-flags {"(narrator's it is protected)"              "off",
+                "(memory threatened)"                       "off",
+                "(last action was conversationally active)" "off (changed)",
+                "(inhibiting next tick)"                    "off",
+                "(score notifications are on)"              "off",
+                "(fixed pursuit path)"                      "off",
+                "(talent threatened)"                       "off",
+                "(implicit action wants direction)"         "off (changed)",
+                "(just smoked)"                             "off (changed)",
+                "(final threatened)"                        "off",
+                "(player can see)"                          "on (changed)",
+                "(tracing actions)"                         "off",
+                "(force rainstorm complete)"                "off",
+                "(scene debugging enabled)"                 "off",
+                "(photo is noted)"                          "off",
+                "(allowing parse errors)"                   "off (changed)",
+                "(photo has been opened)"                   "off",
+                "(barrel is placed)"                        "off",
+                "(head noun is required)"                   "off (changed)",
+                "(inhibit conversation suggestions)"        "off",
+                "(sand-dancer is named)"                    "on (changed)",
+                "(tried to leave)"                          "off",
+                "(radio kicked over)"                       "off",
+                "(player acts cowardly)"                    "off",
+                "(caught by shadows)"                       "off",
+                "(plan threatened)"                         "off",
+                "(force shadow)"                            "off",
+                "(prevent about lizards quip)"              "off",
+                "(truck damage is known)"                   "off",
+                "(radio smashed)"                           "off"},
+ :object-flags {"($ has spoken this tick)" nil,
+                "($ is exposed)"           nil,
+                "($ is traded)"            ("#road-trips" "#last-day-of-high-school" "#your-shit-job"),
+                "($ is choice-exhausted)"  nil,
+                "($ is noted useful)"      ("#duct-tape"
+                                             "#canned-oranges"
+                                             "#flashlight"
+                                             "#gas-can"
+                                             "#scent"
+                                             "#blanket"
+                                             "#strength"),
+                "($ is visited)"           ("#crumbling-concrete" "#roof" "#storage-room" "#middle-of-nowhere"),
+                "($ is off)"               ("#radio"),
+                "($ is closed)"            ("#drawer"
+                                             "#dust-covered-window"
+                                             "#glove-compartment"
+                                             "#photo"
+                                             "#wallet"
+                                             "#pickup-truck"
+                                             "#pane-of-cracked-glass"
+                                             "#gas-can"
+                                             "#tiny-frosted-window"
+                                             "#cage"),
+                "($ in progress)"          nil,
+                "($ is retrieved)"         nil,
+                "($ has completed)"        ("#sand-dancers-offer" "#sand-dancers-arrival"),
+                "($ has traded)"           ("#sand-dancer"),
+                "($ has started)"          ("#sand-dancers-offer" "#sand-dancers-arrival"),
+                "($ is locked)"            ("#cage"),
+                "($ is handled)"           ("#canned-oranges"
+                                             "#flashlight"
+                                             "#gas-can"
+                                             "#scent"
+                                             "#blanket"
+                                             "#strength"
+                                             "#emotional-baggage"
+                                             "#wallet"
+                                             "#lighter"),
+                "($ is hidden)"            nil},
+ :global-vars  {"(player's it refers to $)"      "<unset>",
+                "(current room $)"               "#crumbling-concrete",
+                "(previous room $)"              "#crumbling-concrete",
+                "(remaining cigarettes $)"       "6",
+                "(them refers to $)"             "[#canned-oranges]",
+                "(her refers to $)"              "<unset>",
+                "(grandparent quip $)"           "<unset>",
+                "(visible flotsam $)"            "<unset>",
+                "(him refers to $)"              "<unset>",
+                "(conversation partner $)"       "<unset>",
+                "(current visibility ceiling $)" "#crumbling-concrete",
+                "(current player $)"             "#knock",
+                "(pursuit direction $)"          "<unset>",
+                "(turns in current room $)"      "1",
+                "(pursuit duration $)"           "<unset>",
+                "(last command was $)"           "[s]",
+                "(current node $)"               "<unset>",
+                "(previous quip $)"              "<unset>",
+                "(reported score is $)"          "0",
+                "(deferred commandline $)"       "<unset>",
+                "(current actor $)"              "#knock",
+                "(current quip $)"               "<unset>",
+                "(current score $)"              "0",
+                "(previous node $)"              "<unset>",
+                "(discussable quips $)"          "[]",
+                "(narrator's it refers to $)"    "<unset>",
+                "(implicit action is $)"         "<unset>"},
+ :object-vars  {"($ has parent $)"             (["#strength" "#knock"]
+                                                ["#flashlight" "#knock"]
+                                                ["#pack" "#glove-compartment"]
+                                                ["#scent" "#knock"]
+                                                ["#emergency-lights" "#storage-room"]
+                                                ["#rabbit" "#burrow"]
+                                                ["#radio" "#break-room"]
+                                                ["#lizards" "#roof"]
+                                                ["#sand-dancer" "#roof"]
+                                                ["#spirit" "#knock"]
+                                                ["#freedom" "#roof"]
+                                                ["#knock" "#crumbling-concrete"]
+                                                ["#emotional-baggage" "#knock"]
+                                                ["#cigarette" "#coyote"]
+                                                ["#denim-jacket" "#coyote"]
+                                                ["#sunglasses" "#coyote"]
+                                                ["#withered-cactus" "#backtracking"]
+                                                ["#rusty-can" "#base-of-tower"]
+                                                ["#tumbleweed" "#base-of-tower"]
+                                                ["#girder" "#base-of-tower"]
+                                                ["#scrawny-weeds" "#base-of-tower"]
+                                                ["#bits-of-trash" "#base-of-tower"]
+                                                ["#red-warning-light" "#base-of-tower"]
+                                                ["#electrical-tower" "#base-of-tower"]
+                                                ["#cage" "#break-room"]
+                                                ["#tiny-frosted-window" "#break-room"]
+                                                ["#tables" "#break-room"]
+                                                ["#crumbling-trash" "#break-room"]
+                                                ["#rusted-key" "#foremans-desk"]
+                                                ["#blanket" "#knock"]
+                                                ["#dial" "#radio"]
+                                                ["#roots" "#burrow"]
+                                                ["#can-opener" "#control-center"]
+                                                ["#piles-of-trash" "#control-center"]
+                                                ["#smell-of-gasoline" "#control-center"]
+                                                ["#metal-sheet" "#control-center"]
+                                                ["#gas-can" "#knock"]
+                                                ["#pane-of-cracked-glass" "#crumbling-concrete"]
+                                                ["#boarded-up-door" "#crumbling-concrete"]
+                                                ["#pickup-truck" "#middle-of-nowhere"]
+                                                ["#canned-oranges" "#knock"]
+                                                ["#lighter" "#knock"]
+                                                ["#wallet" "#knock"]
+                                                ["#jacket" "#knock"]
+                                                ["#license" "#wallet"]
+                                                ["#receipt" "#wallet"]
+                                                ["#photo" "#wallet"]
+                                                ["#ultrasound" "#photo"]
+                                                ["#headlights" "#pickup-truck"]
+                                                ["#grandmas-stories" "#emotional-baggage"]
+                                                ["#jade" "#pickup-truck"]
+                                                ["#meeting-ocean" "#emotional-baggage"]
+                                                ["#watching-family-guy" "#emotional-baggage"]
+                                                ["#lizard" "#middle-of-nowhere"]
+                                                ["#whiffs-of-gasoline" "#middle-of-nowhere"]
+                                                ["#saguaro" "#middle-of-nowhere"]
+                                                ["#glove-compartment" "#pickup-truck"]
+                                                ["#layers-of-sand" "#storage-room"]
+                                                ["#foremans-desk" "#office"]
+                                                ["#dust-covered-window" "#office"]
+                                                ["#poster" "#office"]
+                                                ["#hole" "#staging-area"]
+                                                ["#shafts-of-light" "#staging-area"]
+                                                ["#holes-in-roof" "#staging-area"]
+                                                ["#patches-of-mold" "#staging-area"]
+                                                ["#metal-desk" "#staging-area"]
+                                                ["#drawer" "#metal-desk"]
+                                                ["#cobwebs" "#hole"]
+                                                ["#shelves" "#storage-room"]
+                                                ["#ladder" "#storage-room"]
+                                                ["#skylight" "#storage-room"]
+                                                ["#panel" "#storage-room"]
+                                                ["#cans-of-food" "#shelves"]
+                                                ["#desert-sand" "#crumbling-concrete"]
+                                                ["#sagebrush" "#crumbling-concrete"]
+                                                ["#tower" "#crumbling-concrete"]
+                                                ["#tire-tracks" "#middle-of-nowhere"]
+                                                ["#overturned-barrel" "#weed-strewn-rust"]
+                                                ["#newspapers" "#weed-strewn-rust"]
+                                                ["#leaking-pipe" "#weed-strewn-rust"]
+                                                ["#rusted-barrels" "#weed-strewn-rust"]
+                                                ["#weeds" "#weed-strewn-rust"]
+                                                ["#guidebook" "#overturned-barrel"]),
+                "($ has relation $)"           (["#strength" "#heldby"]
+                                                ["#flashlight" "#heldby"]
+                                                ["#pack" "#in"]
+                                                ["#scent" "#heldby"]
+                                                ["#emergency-lights" "#in"]
+                                                ["#rabbit" "#in"]
+                                                ["#radio" "#in"]
+                                                ["#lizards" "#in"]
+                                                ["#sand-dancer" "#in"]
+                                                ["#rungs" "#in"]
+                                                ["#huge-barrel" "#in"]
+                                                ["#spirit" "#heldby"]
+                                                ["#freedom" "#in"]
+                                                ["#knock" "#in"]
+                                                ["#emotional-baggage" "#heldby"]
+                                                ["#cigarette" "#heldby"]
+                                                ["#denim-jacket" "#wornby"]
+                                                ["#sunglasses" "#wornby"]
+                                                ["#withered-cactus" "#in"]
+                                                ["#rusty-can" "#in"]
+                                                ["#tumbleweed" "#in"]
+                                                ["#girder" "#in"]
+                                                ["#scrawny-weeds" "#in"]
+                                                ["#bits-of-trash" "#in"]
+                                                ["#red-warning-light" "#in"]
+                                                ["#electrical-tower" "#in"]
+                                                ["#cage" "#in"]
+                                                ["#tiny-frosted-window" "#in"]
+                                                ["#tables" "#in"]
+                                                ["#crumbling-trash" "#in"]
+                                                ["#rusted-key" "#on"]
+                                                ["#blanket" "#heldby"]
+                                                ["#dial" "#partof"]
+                                                ["#roots" "#in"]
+                                                ["#can-opener" "#in"]
+                                                ["#piles-of-trash" "#in"]
+                                                ["#smell-of-gasoline" "#in"]
+                                                ["#metal-sheet" "#in"]
+                                                ["#gas-can" "#heldby"]
+                                                ["#pane-of-cracked-glass" "#in"]
+                                                ["#boarded-up-door" "#in"]
+                                                ["#pickup-truck" "#in"]
+                                                ["#duct-tape" "#in"]
+                                                ["#canned-oranges" "#heldby"]
+                                                ["#lighter" "#heldby"]
+                                                ["#wallet" "#heldby"]
+                                                ["#jacket" "#wornby"]
+                                                ["#license" "#in"]
+                                                ["#receipt" "#in"]
+                                                ["#photo" "#in"]
+                                                ["#ultrasound" "#in"]
+                                                ["#headlights" "#partof"]
+                                                ["#last-day-of-high-school" "#in"]
+                                                ["#your-shit-job" "#in"]
+                                                ["#grandmas-stories" "#in"]
+                                                ["#jade" "#in"]
+                                                ["#meeting-ocean" "#in"]
+                                                ["#road-trips" "#in"]
+                                                ["#watching-family-guy" "#in"]
+                                                ["#lizard" "#in"]
+                                                ["#whiffs-of-gasoline" "#in"]
+                                                ["#saguaro" "#in"]
+                                                ["#glove-compartment" "#partof"]
+                                                ["#layers-of-sand" "#in"]
+                                                ["#foremans-desk" "#in"]
+                                                ["#dust-covered-window" "#in"]
+                                                ["#poster" "#in"]
+                                                ["#hole" "#in"]
+                                                ["#shafts-of-light" "#in"]
+                                                ["#holes-in-roof" "#in"]
+                                                ["#patches-of-mold" "#in"]
+                                                ["#metal-desk" "#in"]
+                                                ["#drawer" "#partof"]
+                                                ["#cobwebs" "#in"]
+                                                ["#shelves" "#in"]
+                                                ["#ladder" "#in"]
+                                                ["#skylight" "#in"]
+                                                ["#panel" "#in"]
+                                                ["#cans-of-food" "#on"]
+                                                ["#desert-sand" "#in"]
+                                                ["#sagebrush" "#in"]
+                                                ["#tower" "#in"]
+                                                ["#tire-tracks" "#in"]
+                                                ["#overturned-barrel" "#in"]
+                                                ["#newspapers" "#in"]
+                                                ["#leaking-pipe" "#in"]
+                                                ["#rusted-barrels" "#in"]
+                                                ["#weeds" "#in"]
+                                                ["#guidebook" "#on"]),
+                "($ is $)"                     nil,
+                "($ number of trades $)"       (["#sand-dancer" "3"]),
+                "($ is tuned to $)"            nil,
+                "($ is recollected by $)"      (["#final-choice" "[#sand-dancer]"]
+                                                ["#greet-sd" "[#sand-dancer #knock]"]
+                                                ["#about-sand-dancer" "[#sand-dancer #knock]"]
+                                                ["#path-selection" "[#sand-dancer #knock]"]
+                                                ["#start-sd-trade" "[#sand-dancer]"]
+                                                ["#final-not-sure" "[#sand-dancer #knock]"]
+                                                ["#about-spirit" "[#sand-dancer #knock]"]
+                                                ["#about-freedom" "[#sand-dancer #knock]"]),
+                "($ has conversation queue $)" (["#sand-dancer" "[]"])}}
