@@ -1,7 +1,8 @@
-(ns dialog-tool.skein.dyn.parser-test
+(ns dialog-tool.skein.dynamic-test
   (:require [clojure.java.io :as io]
             [matcher-combinators.test :refer [match?]]
-            [dialog-tool.skein.dyn.parser :refer [parse]]
+            [dialog-tool.skein.dynamic :refer [parse flatten-predicates]]
+            [matcher-combinators.matchers :as m]
             [clojure.test :refer [deftest is]]
             [clojure.edn :as edn]))
 
@@ -40,3 +41,43 @@
                 parsed))))
 
 ;; Will need later tests when we have good examples of word wrapping of @dynamic output
+
+(comment
+  (-> "dynamic-1.txt"
+      file-contents
+      parse
+      flatten-predicates)
+
+
+  ;
+  )
+
+
+(deftest flatten-test
+  ;; Spot check some of this
+  (let [parsed    (-> "dynamic-1.txt"
+                      file-contents
+                      parse)
+        flattened (flatten-predicates parsed)]
+    (is (identical? (:global-flags flattened)
+                    (:global-flags parsed)))
+    (is (match? {:global-vars  (m/embeds ["(implicit action is <unset>)"
+                                          "(last command was [s])"
+                                          "(narrator's it refers to <unset>)"
+                                          "(player's it refers to <unset>)"
+                                          "(previous node <unset>)"
+                                          "(previous quip <unset>)"
+                                          "(previous room #crumbling-concrete)"])
+                 :object-vars  (m/embeds ["(#about-spirit is recollected by [#sand-dancer #knock])"
+                                          "(#bits-of-trash is #in #base-of-tower)"
+                                          "(#blanket is #heldby #knock)"
+                                          "(#boarded-up-door is #in #crumbling-concrete)"
+                                          "(#sand-dancer number of trades 3)"])
+                 :object-flags (m/embeds ["(#sand-dancer has traded)"
+                                          "(#sand-dancers-arrival has completed)"
+                                          "(#sand-dancers-arrival has started)"
+                                          "(#sand-dancers-offer has completed)"
+                                          "(#sand-dancers-offer has started)"
+                                          "(#scent is handled)"
+                                          "(#last-day-of-high-school is traded)"])}
+                flattened))))

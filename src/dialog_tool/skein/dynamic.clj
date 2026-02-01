@@ -1,4 +1,4 @@
-(ns dialog-tool.skein.dyn.parser
+(ns dialog-tool.skein.dynamic
   "Parses the dgdebug response for @dynamic into a Clojure datastructure."
   (:require [clojure.string :as string]))
 
@@ -107,3 +107,44 @@
        (map string/trim)
        ;; TODO: Could we "unwrap" wrapped lines to simplify logic?
        (parse* :global-flags {})))
+
+(defn- flatten-pred
+  ([pred-name value]
+   (string/replace-first pred-name "$" value)))
+
+(defn- flatten-pred+
+  [pred-name & values]
+  (reduce #(flatten-pred %1 %2)
+          pred-name
+          values))
+
+(def ^:private parent-pred "($ has parent $)")
+(def ^:private relation-pred "($ has relation $)")
+
+(defn flatten-predicates
+  [dynamic]
+  (let [{:keys [object-flags global-flags global-vars object-vars]} dynamic
+        parent-preds   (get object-vars parent-pred)
+        obj->relation  (reduce (fn [m [k v]]
+                                 (assoc m k v))
+                               {}
+                               (get object-vars relation-pred))
+        location-preds (map (fn [[what where]]
+                              (flatten-pred+ "($ is $ $)"
+                                             what
+                                             (get obj->relation what "<unset>")
+                                             where))
+                            parent-preds)]
+    {:global-flags global-flags                             ;; Fine like it is
+     :global-vars  (map (fn [[pred-name value]]
+                          (flatten-pred pred-name value))
+                        global-vars)
+     :object-flags (mapcat (fn [[pred-name objects]]
+                             (map #(flatten-pred pred-name %) objects))
+                           object-flags)
+     :object-vars  (->> (dissoc object-vars parent-pred relation-pred)
+                        (mapcat (fn [[pred-name obj+value-pairs]]
+                                  (map (fn [[obj value]]
+                                         (flatten-pred+ pred-name obj value))
+                                       obj+value-pairs)))
+                        (concat location-preds))}))
