@@ -1,6 +1,10 @@
 (ns dialog-tool.skein.dynamic
-  "Parses the dgdebug response for @dynamic into a Clojure datastructure."
-  (:require [clojure.string :as string]))
+  "Parses the dgdebug response for @dynamic into map of predicates, and makes it possible
+  to present what changed between commands.
+  
+  The noun 'dynamic' refers to the "
+  (:require [clojure.set :as set]
+            [clojure.string :as string]))
 
 ;; Assuming that word breaks will *NOT* occur mid-object name
 
@@ -60,7 +64,6 @@
             (recur (conj values obj+val)
                    (next lines))))))))
 
-
 (defn- parse*
   [state output lines]
   (if-not lines
@@ -98,7 +101,8 @@
           (let [[output' remaining-lines] (object-var output lines)]
             (recur state output' remaining-lines)))))))
 
-(defn parse
+(defn parse->predicates
+  "Parse the captured response for the command \"@dynamic\" into a predicates map that can be further processed."
   [response]
   (->> response
        string/split-lines
@@ -122,8 +126,10 @@
 (def ^:private relation-pred "($ has relation $)")
 
 (defn flatten-predicates
-  [dynamic]
-  (let [{:keys [object-flags global-flags global-vars object-vars]} dynamic
+  "Flattens the predicates map into a form that can be used to identify added/removed/changed
+  predicates and flags."
+  [predicates]
+  (let [{:keys [object-flags global-flags global-vars object-vars]} predicates
         parent-preds   (get object-vars parent-pred)
         obj->relation  (reduce (fn [m [k v]]
                                  (assoc m k v))
@@ -148,3 +154,42 @@
                                          (flatten-pred+ pred-name obj value))
                                        obj+value-pairs)))
                         (concat location-preds))}))
+
+(defn- compare-tuples
+  [left right]
+  (let [result (compare (second left) (second right))]
+    (if (zero? result)
+      (if (= :removed (first left)) -1 1)
+      result)))
+
+(defn- diff*
+  [k before after]
+  (let [before-preds  (set (get before k))
+        after-preds   (set (get after k))
+        added-preds   (set/difference after-preds before-preds)
+        removed-preds (set/difference before-preds after-preds)
+        added         (map #(vector :added %) added-preds)
+        removed       (map #(vector :removed %) removed-preds)]
+    (->> (concat added removed)
+         (sort compare-tuples))))
+
+(defn diff-flattened
+  "Compares two flattened predicates maps and returns a map of differences. 
+  
+  :global-flags is a sorted mapu the global flags with any unchanged values removed (maybe empty).
+  :global-vars, :object-vars, and :object-flags are sorted seq of tuples; each tuple
+  is of the form [:removed predicate-name] or [:added predicate-name], sorted first by predicate name, 
+  then :removed before :added."
+  [before after]
+  (let [before-flags (:global-flags before)
+        after-flags  (:global-flags after)]
+    {:global-vars  (diff* :global-vars before after)
+     :object-vars  (diff* :object-vars before after)
+     :object-flags (diff* :object-flags before after)
+     ;; unlike predicates, global flags always have a value
+     :global-flags (reduce-kv (fn [m k v]
+                                (if (= (get before-flags k) v)
+                                  m
+                                  (assoc m k v)))
+                              (sorted-map)
+                              after-flags)}))

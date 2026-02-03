@@ -1,7 +1,7 @@
 (ns dialog-tool.skein.dynamic-test
   (:require [clojure.java.io :as io]
             [matcher-combinators.test :refer [match?]]
-            [dialog-tool.skein.dynamic :refer [parse flatten-predicates]]
+            [dialog-tool.skein.dynamic :refer [parse->predicates flatten-predicates diff-flattened]]
             [matcher-combinators.matchers :as m]
             [clojure.test :refer [deftest is]]
             [clojure.edn :as edn]))
@@ -16,10 +16,10 @@
 (deftest basic-parse
   ;; This is more of a canary test
   (is (= (-> "dynamic-1.edn" file-contents edn/read-string)
-         (-> "dynamic-1.txt" file-contents parse))))
+         (-> "dynamic-1.txt" file-contents parse->predicates))))
 
 (deftest spot-checks
-  (let [parsed (-> "dynamic-1.txt" file-contents parse)]
+  (let [parsed (-> "dynamic-1.txt" file-contents parse->predicates)]
     (is (match? {:global-flags {"(inhibiting next tick)" "off"
                                 "(sand-dancer is named)" "on (changed)"}
                  :object-flags {"($ is exposed)" nil
@@ -40,24 +40,13 @@
                                                            ["#about-freedom" "[#sand-dancer #knock]"]]}}
                 parsed))))
 
-;; Will need later tests when we have good examples of word wrapping of @dynamic output
-
-(comment
-  (-> "dynamic-1.txt"
-      file-contents
-      parse
-      flatten-predicates)
-
-
-  ;
-  )
-
+;; Will need more tests later when we have good examples of word wrapping of @dynamic output
 
 (deftest flatten-test
   ;; Spot check some of this
   (let [parsed    (-> "dynamic-1.txt"
                       file-contents
-                      parse)
+                      parse->predicates)
         flattened (flatten-predicates parsed)]
     (is (identical? (:global-flags flattened)
                     (:global-flags parsed)))
@@ -81,3 +70,34 @@
                                           "(#scent is handled)"
                                           "(#last-day-of-high-school is traded)"])}
                 flattened))))
+
+(deftest flattened-diff
+  (let [before (-> "dynamic-before.txt"
+                   file-contents
+                   parse->predicates
+                   flatten-predicates)
+        after  (-> "dynamic-after.txt"
+                   file-contents
+                   parse->predicates
+                   flatten-predicates)
+        diff   (diff-flattened before after)]
+    (is (match?
+          {:object-flags (m/equals [[:removed "(#duct-tape is hidden)"]
+                                    [:added "(#duct-tape is noted useful)"]])
+           :global-vars  (m/equals [[:removed "(last command was [light web])"]
+                                    [:added "(last command was [x hole])"]
+                                    [:added "(player's it refers to #hole)"]
+                                    [:removed "(player's it refers to #lighter)"]
+                                    [:removed "(turns in current room 5)"]
+                                    [:added "(turns in current room 6)"]])}
+          diff))))
+
+(deftest flattened-diff-global-flags
+
+  (let [before {:global-flags {"(does not change)" "false"
+                               "(about to change)" "true"}}
+        after  {:global-flags {"(does not change)" "false"
+                               "(about to change)" "false (changed)"}}]
+    (is (match?
+          {:global-flags (m/equals {"(about to change)" "false (changed)"})}
+          (diff-flattened before after)))))
