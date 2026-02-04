@@ -35,26 +35,27 @@
   [project skein-path opts]
   (let [{:keys [port seed engine development-mode?]
          :or   {port 10140}} opts
-        tree (when (fs/exists? skein-path)
-               (sk.file/load-tree skein-path))
-        seed' (or (get-in tree [:meta :seed])
-                  seed
-                  (rand-int 100000))
-        engine' (or (get-in tree [:meta :engine])
-                    engine
-                    :dgdebug)
-        process (sk.process/start-process! project engine' seed')
-        session (if tree
-                  (s/create-loaded! process skein-path tree)
-                  (s/create-new! process skein-path engine seed))
-        shutdown-fn (hk/run-server service-handler-proxy
-                                   {:port          port
-                                    :ip            "localhost"
-                                    :server-header "Dialog Skein Service"})
+        tree                (when (fs/exists? skein-path)
+                              (sk.file/load-tree skein-path))
+        seed'               (or (get-in tree [:meta :seed])
+                                seed
+                                (rand-int 100000))
+        engine'             (or (get-in tree [:meta :engine])
+                                engine
+                                :dgdebug)
+        process             (sk.process/start-process! project engine' seed')
+        session             (if tree
+                              (s/create-loaded! process skein-path tree)
+                              (s/create-new! process skein-path engine seed))
+        shutdown-fn         (hk/run-server service-handler-proxy
+                                           {:port          port
+                                            :ip            "localhost"
+                                            :server-header "Dialog Skein Service"})
         shutdown-service-fn (fn []
                               (shutdown-fn)
                               (println "Shut down"))]
-    (reset! *session (assoc session :development-mode? development-mode?))
+    (reset! *session (assoc session :development-mode? development-mode?
+                            :debug-enabled? (= engine' :dgdebug)))
     (reset! *shutdown shutdown-service-fn)
     {:shutdown-fn shutdown-service-fn
      :port        port}))
@@ -62,18 +63,20 @@
 (comment
 
   @*session
+  
+  (-> @*session :debug-enabled?)
 
-  (-> (:dialog-tool.skein.ui.utils/sse-gen @*session) bean)
-  (swap! *session dissoc :dialog-tool.skein.ui.utils/sse-gen)
+  (spit "test-resources/dynamic-object-flag-wrap.txt"
+    (-> @*session :tree :dynamic (get 1724606254696) :response))
+
   (@*shutdown)
-
 
   (start! (pf/read-project "../sanddancer-dialog")
           "../sanddancer-dialog/default.skein"
-          {:engine :dgdebug
+          {:engine            :dgdebug
            :development-mode? true})
-           
-    (start! (pf/read-project "../sanddancer-dialog")
+
+  (start! (pf/read-project "../sanddancer-dialog")
           "/tmp/sd.skein"
           {:engine :dgdebug})
 
@@ -86,7 +89,7 @@
           "../dialog-extensions/who/frotz.skein"
           {:seed   10101
            :engine :frotz})
-  
+
 
   ;;
   )
