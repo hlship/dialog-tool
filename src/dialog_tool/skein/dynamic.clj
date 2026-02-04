@@ -25,19 +25,28 @@
     (assoc-in output [:global-flags fact] value)))
 
 (defn- global-var
-  ;; TODO: For vars that contain lists, the list may word wrap
   [output lines]
   (let [line (first lines)
         [_ fact value] (re-matches #"(?ix)
     \s*
     (\(.+\)) # fact
     \s+
-    (.*) # value
-    \s*"
+    (.*) # start of values (may span lines)"
                                    line)]
-    ;; TODO: Special case for lists?
-    [(assoc-in output [:global-vars fact] value)
-     (rest lines)]))
+    (loop [fact-value      value
+           remaining-lines (next lines)]
+      (let [line (first remaining-lines)]
+        (if (soft-end? line)
+          [(assoc-in output [:global-vars fact] fact-value)
+           remaining-lines]
+          ;; It may break mid-word at a dash, or between words.
+          ;; This may need to be revisited if a dictionary words list
+          ;; (such as '(last command was $)') is split across lines. 
+          (recur (str fact-value
+                      ;; Add a space between object names, but not when a name is split at a dash
+                      (when (string/starts-with? line "#") " ")
+                      line)
+                 (next remaining-lines)))))))
 
 
 (defn- object-flag
@@ -113,11 +122,16 @@
        (parse* :global-flags {})))
 
 (defn- flatten-pred
-  ([pred-name value]
-   (string/replace-first pred-name "$" value)))
+  [pred-name value]
+  (assert (some? pred-name))
+  (assert (some? value))
+  (string/replace-first pred-name "$" value))
 
 (defn- flatten-pred+
   [pred-name & values]
+  (assert (some? pred-name))
+  (assert (seq values))
+  (assert (every? some? values))
   (reduce #(flatten-pred %1 %2)
           pred-name
           values))
@@ -142,18 +156,21 @@
                                              where))
                             parent-preds)]
     {:global-flags global-flags                             ;; Fine like it is
-     :global-vars  (map (fn [[pred-name value]]
-                          (flatten-pred pred-name value))
-                        global-vars)
-     :object-flags (mapcat (fn [[pred-name objects]]
-                             (map #(flatten-pred pred-name %) objects))
-                           object-flags)
+     ;; The next few we do strict, not lazy, because it's really hard to debug otherwise.
+     :global-vars  (mapv (fn [[pred-name value]]
+                           (flatten-pred pred-name value))
+                         global-vars)
+     :object-flags (->> (mapcat (fn [[pred-name objects]]
+                                  (map #(flatten-pred pred-name %) objects))
+                                object-flags)
+                        vec)
      :object-vars  (->> (dissoc object-vars parent-pred relation-pred)
                         (mapcat (fn [[pred-name obj+value-pairs]]
                                   (map (fn [[obj value]]
                                          (flatten-pred+ pred-name obj value))
                                        obj+value-pairs)))
-                        (concat location-preds))}))
+                        vec
+                        (into location-preds))}))
 
 (defn- compare-tuples
   [left right]
@@ -176,7 +193,7 @@
 (defn diff-flattened
   "Compares two flattened predicates maps and returns a map of differences. 
   
-  :global-flags is a sorted mapu the global flags with any unchanged values removed (maybe empty).
+  :global-flags is a sorted map the global flags with any unchanged values removed (maybe empty).
   :global-vars, :object-vars, and :object-flags are sorted seq of tuples; each tuple
   is of the form [:removed predicate-name] or [:added predicate-name], sorted first by predicate name, 
   then :removed before :added."

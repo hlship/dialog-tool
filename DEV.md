@@ -35,6 +35,7 @@ Developing the UI requires an additional window.
 - Consider *always* running from start, even when adding a new command at end?
 - Disallow splice-out if no children
 - new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
+- modals don't cancel, and an SSE that fails repeats forever (from client side?)
 
 ## Releasing
 

@@ -101,3 +101,13 @@
     (is (match?
           {:global-flags (m/equals {"(about to change)" "false (changed)"})}
           (diff-flattened before after)))))
+
+
+(deftest parse-when-global-var-wraps
+
+  (let [predicates (-> "dynamic-global-var-wrap.txt"
+                       file-contents
+                       parse->predicates)]
+    ;; In the debug output, this line has a word break after "#about-"
+    (is (match? {:global-vars {"(discussable quips $)" "[#about-sand-dancer #about-lizards]",}}
+                predicates))))

@@ -1,0 +1,17 @@
+> @dynamic
+GLOBAL FLAGS
+        (caught by shadows)                      off
+        (sand-dancer is named)                   on (changed)
+
+PER-OBJECT FLAGS
+        ($ is closed)                           
+                #drawer                          
+
+GLOBAL VARIABLES
+        (remaining cigarettes $)                6
+ 
+PER-OBJECT VARIABLES
+        ($ has parent $)                        
+                #flashlight                     #knock
+        ($ has relation $)                      
+                #flashlight                     #heldby
