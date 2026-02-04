@@ -55,7 +55,7 @@
   (fn [request]
     (try
       (f request)
-      (catch Exception e
+      (catch Throwable e
         (println "Error: " e)
         {:status  500
          :headers {"content-type" "text/plain"}
