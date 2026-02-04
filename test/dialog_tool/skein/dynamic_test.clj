@@ -111,3 +111,27 @@
     ;; In the debug output, this line has a word break after "#about-"
     (is (match? {:global-vars {"(discussable quips $)" "[#about-sand-dancer #about-lizards]",}}
                 predicates))))
+
+(deftest parse-when-object-flag-wraps
+
+  (let [predicates (-> "dynamic-object-flag-wrap.txt"
+                       file-contents
+                       parse->predicates)]
+    ;; In the debug output, this line has a word break after "#pane-of-"
+    (is (match? {:object-flags {"($ is closed)" ["#drawer"
+                                                 "#dust-covered-window"
+                                                 "#glove-compartment"
+                                                 "#photo"
+                                                 "#pane-of-cracked-glass"
+                                                 "#gas-can"
+                                                 "#tiny-frosted-window"
+                                                 "#cage"],}}
+                predicates))))
+
+(comment
+  (-> "dynamic-object-flag-wrap.txt"
+      file-contents
+      parse->predicates)
+  
+  
+  )

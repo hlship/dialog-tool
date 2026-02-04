@@ -57,8 +57,17 @@
       (let [line (first lines)]
         (if (soft-end? line)
           [(assoc-in output [:object-flags fact] (seq values)) lines]
-          (recur (into values (string/split line #"\s+"))
-                 (next lines)))))))
+          (let [object-names (string/split line #"\s+")
+                values'      (if (string/starts-with? line "#")
+                               (into values object-names)
+                               ;; Handle ugly case where an object name was split at a dash
+                               (let [last-value        (last values)
+                                     replacement-value (str last-value (first object-names))]
+                                 (-> values
+                                     pop
+                                     (conj replacement-value)
+                                     (into (rest object-names)))))]
+            (recur values' (next lines))))))))
 
 (defn- object-var
   [output lines]
