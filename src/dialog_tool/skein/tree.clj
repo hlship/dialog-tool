@@ -6,7 +6,8 @@
   :response, and :unblessed.
 
   Knots usually have a response (unless newly created) and optionally an unblessed response."
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [dialog-tool.skein.dynamic :as dynamic]))
 
 (defn new-tree
   [engine seed]
@@ -168,11 +169,6 @@
                                 :selected selected)]
     (reduce propagate-status tree' leaf-ids)))
 
-(defn get-knot
-  "Returns the knot with the given id."
-  [tree knot-id]
-  (get-in tree [:knots knot-id]))
-
 (defn- adjust-selection-after-deletion
   [tree parent-id child-id]
   (let [selected (get-selected tree parent-id)
@@ -254,6 +250,17 @@
         (assoc-in [:status knot-id] status)
         (propagate-status knot-id))))
 
+(defn update-dynamic
+  "Records the state of the dynamic predicates for the knot; this is the result
+  of executing the @dynamic command (in the debugger) immediately after the primary command."
+  [tree knot-id dynamic]
+  (let [predicate-state (-> dynamic
+                            dynamic/parse->predicates
+                            dynamic/flatten-predicates)]
+    (update-in tree [:dynamic knot-id]
+               assoc :response dynamic
+               :state predicate-state)))
+
 (defn find-children
   "Finds all the immediate children knots of the provided knot (in an unspecified order)."
   [tree knot-id]
@@ -321,30 +328,40 @@
                       (adjust-selection-after-deletion parent-id knot-id))]
     (reduce propagate-status tree' child-ids)))
 
+
+(defn get-knot
+  "Returns the knot with the given id."
+  [tree knot-id]
+  (when-let [knot (get-in tree [:knots knot-id])]
+    (assoc knot
+           :children (get-in tree [:children knot-id])
+           :status (get-in tree [:status knot-id])
+           :descendant-status (get-in tree [:descendant-status knot-id])
+           :dynamic-response (get-in tree [:dynamic knot-id :response])
+                             :dynamic-state (get-in tree [:dynamic knot-id :state]))))
+
 (defn knots-from-root
   "Returns a seq of knots at or above the given knot in the tree; order is from
   knot 0 (the root) down to the initial knot."
   [tree initial-knot-id]
-  (let [{:keys [knots]} tree]
-    (loop [knot-id initial-knot-id
-           result  ()]
-      (if (nil? knot-id)
-        result
-        (let [knot (get knots knot-id)]
-          (recur (:parent-id knot)
-                 (cons knot result)))))))
+  (loop [knot-id initial-knot-id
+         result  ()]
+    (if (nil? knot-id)
+      result
+      (let [knot (get-knot tree knot-id)]
+        (recur (:parent-id knot)
+               (cons knot result))))))
 
 (defn selected-knots
   "Starting at the root knot, returns a seq of each selected knot."
   [tree]
-  (let [{:keys [knots]} tree]
-    (loop [result  []
-           knot-id 0]
-      (if-not knot-id
-        result
-        (let [knot (get knots knot-id)]
-          (recur (conj result knot)
-                 (get-selected tree knot-id)))))))
+  (loop [result  []
+         knot-id 0]
+    (if-not knot-id
+      result
+      (let [knot (get-knot tree knot-id)]
+        (recur (conj result knot)
+               (get-selected tree knot-id))))))
 
 (defn select-knot
   "Updates the parent of the indicated knot to make this knot selected, then recurses upwards
@@ -371,7 +388,7 @@
   "Returns a seq of knots that have non-blank labels, sorted alphabetically by label.
    The START knot (root knot with id 0) is always first."
   [tree]
-  (let [start-knot  (get-knot tree 0)
+  (let [start-knot  (get-in tree [:knots 0])
         other-knots (->> (dissoc (:knots tree) 0)
                          vals
                          (remove #(string/blank? (:label %)))
