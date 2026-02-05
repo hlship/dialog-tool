@@ -149,8 +149,11 @@
 (def ^:private relation-pred "($ has relation $)")
 
 (defn flatten-predicates
-  "Flattens the predicates map into a form that can be used to identify added/removed/changed
-  predicates and flags."
+  "Flattens the predicates map into a set of predicates that are present.  For global flags, this
+  is any flags that are \"on\".  
+  
+  In addition, the ($ has parent $) and ($ has relation $) predicates
+  are merged into ($ is $ $), as a special case."
   [predicates]
   (let [{:keys [object-flags global-flags global-vars object-vars]} predicates
         parent-preds   (get object-vars parent-pred)
@@ -163,59 +166,22 @@
                                              what
                                              (get obj->relation what "<unset>")
                                              where))
-                            parent-preds)]
-    {:global-flags global-flags                             ;; Fine like it is
-     ;; The next few we do strict, not lazy, because it's really hard to debug otherwise.
-     :global-vars  (mapv (fn [[pred-name value]]
-                           (flatten-pred pred-name value))
-                         global-vars)
-     :object-flags (->> (mapcat (fn [[pred-name objects]]
-                                  (map #(flatten-pred pred-name %) objects))
-                                object-flags)
-                        vec)
-     :object-vars  (->> (dissoc object-vars parent-pred relation-pred)
-                        (mapcat (fn [[pred-name obj+value-pairs]]
-                                  (map (fn [[obj value]]
-                                         (flatten-pred+ pred-name obj value))
-                                       obj+value-pairs)))
-                        vec
-                        (into location-preds))}))
-
-(defn- compare-tuples
-  [left right]
-  (let [result (compare (second left) (second right))]
-    (if (zero? result)
-      (if (= :removed (first left)) -1 1)
-      result)))
-
-(defn- diff*
-  [k before after]
-  (let [before-preds  (set (get before k))
-        after-preds   (set (get after k))
-        added-preds   (set/difference after-preds before-preds)
-        removed-preds (set/difference before-preds after-preds)
-        added         (map #(vector :added %) added-preds)
-        removed       (map #(vector :removed %) removed-preds)]
-    (->> (concat added removed)
-         (sort compare-tuples))))
-
-(defn diff-flattened
-  "Compares two flattened predicates maps and returns a map of differences. 
-  
-  :global-flags is a sorted map the global flags with any unchanged values removed (maybe empty).
-  :global-vars, :object-vars, and :object-flags are sorted seq of tuples; each tuple
-  is of the form [:removed predicate-name] or [:added predicate-name], sorted first by predicate name, 
-  then :removed before :added."
-  [before after]
-  (let [before-flags (:global-flags before)
-        after-flags  (:global-flags after)]
-    {:global-vars  (diff* :global-vars before after)
-     :object-vars  (diff* :object-vars before after)
-     :object-flags (diff* :object-flags before after)
-     ;; unlike predicates, global flags always have a value
-     :global-flags (reduce-kv (fn [m k v]
-                                (if (= (get before-flags k) v)
-                                  m
-                                  (assoc m k v)))
-                              (sorted-map)
-                              after-flags)}))
+                            parent-preds)
+        active-flags   (keep (fn [[pred-name value]]
+                               (when (string/starts-with? value "on")
+                                 pred-name))
+                             global-flags)]
+    (reduce into #{}
+            [active-flags
+             (map (fn [[pred-name value]]
+                    (flatten-pred pred-name value))
+                  global-vars)
+             (mapcat (fn [[pred-name objects]]
+                       (map #(flatten-pred pred-name %) objects))
+                     object-flags)
+             (->> (dissoc object-vars parent-pred relation-pred)
+                  (mapcat (fn [[pred-name obj+value-pairs]]
+                            (map (fn [[obj value]]
+                                   (flatten-pred+ pred-name obj value))
+                                 obj+value-pairs))))
+             location-preds])))

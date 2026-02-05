@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.ui.app
-  (:require [dialog-tool.skein.dynamic :as dynamic]
+  (:require [clojure.set :as set]
+            [dialog-tool.skein.dynamic :as dynamic]
             [dialog-tool.skein.ui.svg :as svg]
             [dialog-tool.skein.ui.utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
@@ -74,29 +75,27 @@
    :new   "bg-warning"
    :error "bg-error"})
 
-(defn- render-pred-tuples
-  [label tuples]
-  (when (seq tuples)
-    [:<>
-     [:h3 label]
-     [:ul.list-disc.list-inside
-      (for [[op pred-name] tuples]
-        [:li (name op) " - " pred-name])]]))
+(defn- render-predicates
+  [preds]
+  (for [n (sort preds)]
+    [:div.rounded-full.border-1.text-xs.px-2
+     ;; Strip off parens:
+     (subs n 1 (dec (count n)))]))
 
 (defn- render-dynamic
   "Renders the dynamic state."
   [tree knot]
   (let [{:keys [parent-id dynamic-state]} knot
-        before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)
-        {:keys [object-flags global-vars object-vars]} (dynamic/diff-flattened before-dynamic-state dynamic-state)]
-    (when (or (seq object-flags)
-              (seq global-vars)
-              (seq object-vars))
-      [:div "Knot " (:id knot)
-       [:br]
-       [render-pred-tuples "Global Variables" global-vars]
-       [render-pred-tuples "Object Flags" object-flags]
-       [render-pred-tuples "Object Variables" object-vars]])))
+        before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
+    (when (and (seq dynamic-state)
+               (seq before-dynamic-state))
+      (let [added   (set/difference dynamic-state before-dynamic-state)
+            removed (set/difference before-dynamic-state dynamic-state)]
+        [:div.grid.grid-cols-2.gap-2.text-sm.bg-slate-100
+         [:div.justify-center "Removed"]
+         [:div.justify-center "Added"]
+         [:div.flex.flex-wrap [render-predicates removed]]
+         [:div.flex.flex-wrap [render-predicates added]]]))))
 
 (defn- render-children-navigation
   [tree knot]
