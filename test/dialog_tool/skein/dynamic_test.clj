@@ -1,7 +1,7 @@
 (ns dialog-tool.skein.dynamic-test
   (:require [clojure.java.io :as io]
             [matcher-combinators.test :refer [match?]]
-            [dialog-tool.skein.dynamic :refer [parse->predicates flatten-predicates diff-flattened]]
+            [dialog-tool.skein.dynamic :refer [parse-predicates flatten-predicates diff-flattened]]
             [matcher-combinators.matchers :as m]
             [clojure.test :refer [deftest is]]
             [clojure.edn :as edn]))
@@ -16,10 +16,10 @@
 (deftest basic-parse
   ;; This is more of a canary test
   (is (= (-> "dynamic-1.edn" file-contents edn/read-string)
-         (-> "dynamic-1.txt" file-contents parse->predicates))))
+         (-> "dynamic-1.txt" file-contents parse-predicates))))
 
 (deftest spot-checks
-  (let [parsed (-> "dynamic-1.txt" file-contents parse->predicates)]
+  (let [parsed (-> "dynamic-1.txt" file-contents parse-predicates)]
     (is (match? {:global-flags {"(inhibiting next tick)" "off"
                                 "(sand-dancer is named)" "on (changed)"}
                  :object-flags {"($ is exposed)" nil
@@ -40,13 +40,11 @@
                                                            ["#about-freedom" "[#sand-dancer #knock]"]]}}
                 parsed))))
 
-;; Will need more tests later when we have good examples of word wrapping of @dynamic output
-
 (deftest flatten-test
   ;; Spot check some of this
   (let [parsed    (-> "dynamic-1.txt"
                       file-contents
-                      parse->predicates)
+                      parse-predicates)
         flattened (flatten-predicates parsed)]
     (is (identical? (:global-flags flattened)
                     (:global-flags parsed)))
@@ -74,11 +72,11 @@
 (deftest flattened-diff
   (let [before (-> "dynamic-before.txt"
                    file-contents
-                   parse->predicates
+                   parse-predicates
                    flatten-predicates)
         after  (-> "dynamic-after.txt"
                    file-contents
-                   parse->predicates
+                   parse-predicates
                    flatten-predicates)
         diff   (diff-flattened before after)]
     (is (match?
@@ -107,7 +105,7 @@
 
   (let [predicates (-> "dynamic-global-var-wrap.txt"
                        file-contents
-                       parse->predicates)]
+                       parse-predicates)]
     ;; In the debug output, this line has a word break after "#about-"
     (is (match? {:global-vars {"(discussable quips $)" "[#about-sand-dancer #about-lizards]",}}
                 predicates))))
@@ -116,7 +114,7 @@
 
   (let [predicates (-> "dynamic-object-flag-wrap.txt"
                        file-contents
-                       parse->predicates)]
+                       parse-predicates)]
     ;; In the debug output, this line has a word break after "#pane-of-"
     (is (match? {:object-flags {"($ is closed)" ["#drawer"
                                                  "#dust-covered-window"
@@ -125,13 +123,5 @@
                                                  "#pane-of-cracked-glass"
                                                  "#gas-can"
                                                  "#tiny-frosted-window"
-                                                 "#cage"],}}
+                                                 "#cage"]}}
                 predicates))))
-
-(comment
-  (-> "dynamic-object-flag-wrap.txt"
-      file-contents
-      parse->predicates)
-  
-  
-  )

@@ -119,7 +119,7 @@
           (let [[output' remaining-lines] (object-var output lines)]
             (recur state output' remaining-lines)))))))
 
-(defn parse->predicates
+(defn parse-predicates
   "Parse the captured response for the command \"@dynamic\" into a predicates map that can be further processed."
   [response]
   (->> response
