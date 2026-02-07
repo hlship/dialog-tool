@@ -41,30 +41,30 @@
       [:a.flex.items-center
        [:div.self-center.whitespace-nowrap.text-xl.font-semibold
         title]]
-      [:div.mx-0.inline-flex
+      [:div.join
        [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-warning.p-2.font-semibold new]
-       [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg.mr-2 error]
-       [:div.flex.md:order-2.space-x-2
-        [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                            :label    [:<> svg/icon-jump "Jump"]}
-         (for [{:keys [id label]} labeled-knots]
-           [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
-            label])]
-        [:div.btn.btn-primary {:data-on:click "@post('/action/replay-all')"}
-         svg/icon-play "Replay All"]
-        [:div.btn
-         {:data-on:click "@post('/action/save')"
-          :class         (if dirty? "btn-warning" "btn-primary")}
-         svg/icon-save "Save"]
-        [:div.btn.btn-primary {:data-on:click "@get('/action/undo')"
-                               :disabled      (not can-undo?)}
-         svg/icon-undo "Undo"]
-        [:div.btn.btn-primary {:data-on:click "@get('/action/redo')"
-                               :disabled      (not can-redo?)}
-         svg/icon-redo "Redo"]
-        [:div.btn.btn-primary {:data-on:click "@get('/action/quit')"}
-         svg/icon-quit "Quit"]]]]]))
+       [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg error]]
+      [:div.flex.md:order-2.space-x-2
+       [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
+                           :label    [:<> svg/icon-jump "Jump"]}
+        (for [{:keys [id label]} labeled-knots]
+          [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
+           label])]
+       [:div.btn.btn-primary {:data-on:click "@post('/action/replay-all')"}
+        svg/icon-play "Replay All"]
+       [:div.btn
+        {:data-on:click "@post('/action/save')"
+         :class         (if dirty? "btn-warning" "btn-primary")}
+        svg/icon-save "Save"]
+       [:div.btn.btn-primary {:data-on:click "@get('/action/undo')"
+                              :disabled      (not can-undo?)}
+        svg/icon-undo "Undo"]
+       [:div.btn.btn-primary {:data-on:click "@get('/action/redo')"
+                              :disabled      (not can-redo?)}
+        svg/icon-redo "Redo"]
+       [:div.btn.btn-primary {:data-on:click "@get('/action/quit')"}
+        svg/icon-quit "Quit"]]]]))
 
 (def ^:private status->border-class
   {:ok    "border-slate-100"
