@@ -1,8 +1,6 @@
 (ns dialog-tool.skein.dynamic
   "Parses the dgdebug response for @dynamic into map of predicates, and makes it possible
-  to present what changed between commands.
-  
-  The noun 'dynamic' refers to the "
+  to present what changed between commands."
   (:require [clojure.set :as set]
             [clojure.string :as string]))
 
@@ -149,8 +147,14 @@
 (def ^:private location-pred "($ is $ $)")
 
 (defn flatten-predicates
-  "Flattens the predicates map into a set of predicates that are present.  For global flags, this
-  is any flags that are \"on\".  
+  "Flattens the predicates map into a set of predicates that are present. 
+  
+  :flags are global and per-object flags that are present (and have non-<unset> values).
+  The predicate names have been \"flattened\" to replace \"$\" with the object name
+  (for per-object flags).
+  
+  :vars are global and per-object variables as tuples of the predicate name and then the
+  flattened predicate.
   
   In addition, the ($ has parent $) and ($ has relation $) predicates
   are merged into ($ is $ $), as a special case."
