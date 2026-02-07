@@ -1,6 +1,12 @@
 (ns dialog-tool.skein.ui.modals
   (:require [dialog-tool.skein.ui.components.modal :as modal]))
 
+(defn close-window
+  []
+  [modal/modal {:title   "Skein Shutdown"
+                :content [:div.text-large
+                          "You may close this window now."]}])
+
 (defn edit-command
   "Renders the edit command modal with optional error message."
   [id command error]

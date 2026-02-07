@@ -62,17 +62,6 @@ function init() {
   console.log('Dialog Tool UI initialized');
 }
 
-/**
- * Closes the browser window or navigates to about:blank if closing is not allowed.
- */
-window.closeWindow = function() {
-  window.close();
-  // Fallback in case window.close() didn't work
-  setTimeout(() => {
-    window.location = 'about:blank';
-  }, 100);
-};
-
 window.dropdownSetup = function(element) {
 if (element.open) {
   const listener = (e) => {

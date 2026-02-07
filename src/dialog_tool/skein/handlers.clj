@@ -310,11 +310,12 @@
     (future
       ;; Give browser a moment to process the close command
       (Thread/sleep 200)
-      ;; Shut down the service
+      ;; Shut down the service 
       (@*shutdown))
     {:status 200
-     :body   (html [:div#app
-                    [:script "dialog_tool.ui.main.close_window();"]])}))
+     :body   (html [:<>
+                    [:div#app]                              ; Clear the main body of the app
+                    [modals/close-window]])}))
 
 (defn- open-quit
   "Checks if session is dirty. If so, shows quit confirmation modal.
