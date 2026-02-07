@@ -1,6 +1,5 @@
 (ns dialog-tool.skein.ui.components.dropdown
-  (:require [clojure.string :as string]
-            [dialog-tool.skein.ui.utils :refer [classes]]))
+  (:require [dialog-tool.skein.ui.utils :refer [classes]]))
 
 (defn dropdown
   "A dropdown using Daisy UI dropdown with details element for proper open/close control.

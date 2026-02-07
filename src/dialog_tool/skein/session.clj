@@ -35,19 +35,28 @@
       (update :redo-stack empty)
       (assoc :dirty? true)))
 
+(defn- capture-dynamic
+  [session]
+  (let [{:keys [active-knot-id debug-enabled? process]} session
+        dynamic-response (when debug-enabled?
+                           (sk.process/send-command! process "@dynamic"))]
+    (cond-> session
+      dynamic-response (update :tree tree/update-dynamic active-knot-id dynamic-response))))
+
 (defn- run-command!
   [session command]
   (let [{:keys [tree active-knot-id process]} session
         child-knot-id (tree/find-child-id tree active-knot-id command)
-        response (sk.process/send-command! process command)]
-    (if child-knot-id
-      (-> session
-          (assoc :active-knot-id child-knot-id)
-          (update :tree tree/update-response child-knot-id response))
-      (let [new-knot-id (tree/next-id)]
-        (-> session
-            (assoc :active-knot-id new-knot-id)
-            (update :tree tree/add-child active-knot-id new-knot-id command response))))))
+        response      (sk.process/send-command! process command)
+        session'      (if child-knot-id
+                        (-> session
+                            (assoc :active-knot-id child-knot-id)
+                            (update :tree tree/update-response child-knot-id response))
+                        (let [new-knot-id (tree/next-id)]
+                          (-> session
+                              (assoc :active-knot-id new-knot-id)
+                              (update :tree tree/add-child active-knot-id new-knot-id command response))))]
+    (capture-dynamic session')))
 
 (defn- collect-commands
   [tree initial-knot-id]
@@ -65,7 +74,8 @@
     (-> session
         (assoc :active-knot-id 0
                :process process')
-        (update :tree tree/update-response 0 new-initial-response))))
+        (update :tree tree/update-response 0 new-initial-response)
+        capture-dynamic)))
 
 (defn do-replay-to!
   "Replays to a knot without capturing undo. Used internally by replay-to! and for batch operations."
@@ -90,13 +100,6 @@
     (-> session'
         capture-undo
         (run-command! command))))
-
-(defn restart!
-  "Restarts the game, sets the active knot to 0."
-  [session]
-  (-> session
-      capture-undo
-      do-restart!))
 
 (defn replay-to!
   "Restarts the game, then plays through all the commands leading up to the knot.
@@ -257,14 +260,3 @@
           replay-id (do-replay-to! replay-id)
           ;; If we spliced the active knot and no children, clear active-knot-id
           (and active-is-spliced? (not replay-id)) (dissoc :active-knot-id))))))
-
-(defn kill!
-  "Kills the session, and the underlying process. Returns nil."
-  [session]
-  (sk.process/kill! (:process session)))
-
-(defn deselect
-  [session id]
-  (-> session
-      capture-undo
-      (update :tree tree/deselect id)))

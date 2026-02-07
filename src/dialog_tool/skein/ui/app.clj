@@ -1,5 +1,8 @@
 (ns dialog-tool.skein.ui.app
-  (:require [dialog-tool.skein.ui.svg :as svg]
+  (:require [clojure.set :as set]
+            [clojure.string :as string]
+            [dialog-tool.skein.dynamic :as dynamic]
+            [dialog-tool.skein.ui.svg :as svg]
             [dialog-tool.skein.ui.utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
@@ -73,33 +76,69 @@
    :new   "bg-warning"
    :error "bg-error"})
 
+(defn- render-predicates
+  [preds]
+  (for [n (sort preds)]
+    [:div.rounded-full.border-1.text-xs.px-2
+     ;; Strip off parens:
+     (subs n 1 (dec (count n)))]))
+
+(defn- compare-pred
+  [left right]
+  (compare (string/replace left "#" "")
+           (string/replace right "#" "")))
+
+(defn- render-dynamic
+  "Renders the dynamic state."
+  [tree knot]
+  (let [{:keys [parent-id dynamic-state]} knot
+        before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
+    (when (and (seq dynamic-state)
+               (seq before-dynamic-state))
+      (let [{:keys [added removed changed]} (dynamic/diff-flattened before-dynamic-state dynamic-state)
+            tuples (->> []
+                        (into (map #(vector :added %) added))
+                        (into (map #(vector :removed %) removed))
+                        (into (map #(vector :changed (second %)) changed))
+                        (sort-by second compare-pred))]
+        (when (seq tuples)
+          [:div.flex.flex-wrap.gap-1.mt-4.text-xs
+           (for [[kind predicate] tuples]
+             (case kind
+               :added [:span.rounded-box.border.border-success.bg-success.bg-opacity-20.text-success-content.px-2.py-1
+                       [:span.font-bold.mr-1 "+"] predicate]
+               :removed [:span.rounded-box.border.border-warning.bg-warning.bg-opacity-20.text-warning-content.px-2.py-1
+                         [:span.font-bold.mr-1 "−"] predicate]
+               :changed [:span.rounded-box.border.border-info.bg-info.bg-opacity-10.px-2.py-1
+                         predicate]))])))))
+
 (defn- render-children-navigation
   [tree knot]
   (let [children (tree/children tree knot)
-        {:keys [id]} knot]
-    (when (< 1 (count children))
-      [:div.indicator
-       [dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class (tree/descendant-status tree id)))
-                           :label        svg/icon-children}
-        (map (fn [{:keys [id label command]}]
-               (let [status (tree/greatest-status (tree/knot-status tree id)
-                                                  (tree/descendant-status tree id))]
-                 [dropdown/button {:bg-class      (status->button-class status)
-                                   :data-on:click (str "@get('/action/select/" id "')")}
-                  (or label command)]))
-             children)]
+        {:keys [descendant-status]} knot]
+    [:div.indicator
+     [dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class descendant-status))
+                         :disabled     (< (count children) 2)
+                         :label        svg/icon-children}
+      (map (fn [{:keys [id label command]}]
+             (let [status (tree/greatest-status (tree/knot-status tree id)
+                                                (tree/descendant-status tree id))]
+               [dropdown/button {:bg-class      (status->button-class status)
+                                 :data-on:click (str "@get('/action/select/" id "')")}
+                (or label command)]))
+           children)]
+     (when (> (count children) 1)
        [:div
         {:class (classes
                   "indicator-item indicator-top indicator-right"
                   "rounded-full text-sm border-2 bg-base-300 border-base-100"
                   "flex items-center justify-center"
                   "w-8 h-8")}
-        (count children)]])))
+        (count children)])]))
 
 (defn- render-knot
   [tree knot scroll-to-knot-id]
-  (let [{:keys [id label response unblessed]} knot
-        status         (tree/knot-status tree id)
+  (let [{:keys [id label response unblessed status]} knot
         border-class   (status->border-class status)
         disable-bless? (= :ok status)
         root?          (zero? id)]
@@ -138,7 +177,9 @@
             "Splice Out" "Delete this knot, reparent children up"]])]
        (render-children-navigation tree knot)]
       [render-diff response unblessed]
-      [:hr.clear-right.text-stone-200]]]))
+      [:hr.clear-right.text-stone-200]
+      (when (not= 0 id)
+        [render-dynamic tree knot])]]))
 
 
 (defn render-app

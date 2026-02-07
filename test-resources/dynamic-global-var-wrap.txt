@@ -1,0 +1,268 @@
+> @dynamic
+GLOBAL FLAGS
+        (caught by shadows)                      off
+        (radio kicked over)                      off
+        (radio smashed)                          off
+        (sand-dancer is named)                   off
+        (prevent about lizards quip)             off
+        (photo is noted)                         off
+        (truck damage is known)                  off
+        (player acts cowardly)                   off
+        (last action was conversationally active) off (changed)
+        (narrator's it is protected)             off
+        (inhibit conversation suggestions)       off
+        (force shadow)                           off
+        (barrel is placed)                       off
+        (just smoked)                            off (changed)
+        (scene debugging enabled)                off
+        (score notifications are on)             off
+        (tried to leave)                         off
+        (photo has been opened)                  off
+        (plan threatened)                        off
+        (memory threatened)                      off
+        (talent threatened)                      off
+        (final threatened)                       off
+        (implicit action wants direction)        off (changed)
+        (fixed pursuit path)                     off
+        (force rainstorm complete)               off
+        (inhibiting next tick)                   off
+        (tracing actions)                        off
+        (allowing parse errors)                  off (changed)
+        (player can see)                         on (changed)
+        (head noun is required)                  off (changed)
+
+PER-OBJECT FLAGS
+        ($ is closed)                           
+                #drawer #dust-covered-window #glove-compartment #photo #wallet
+#pickup-truck #pane-of-cracked-glass #gas-can #tiny-frosted-window #cage
+        ($ is locked)                           
+                #cage
+        ($ is off)                              
+                #radio
+        ($ is noted useful)                     
+                #flashlight #canned-oranges #luck #duct-tape #courage
+        ($ has spoken this tick)                
+                #sand-dancer
+        ($ is handled)                          
+                #flashlight #canned-oranges #luck #duct-tape #courage
+#emotional-baggage #wallet #lighter
+        ($ is visited)                          
+                #roof #storage-room #middle-of-nowhere
+        ($ has completed)                       
+                #sand-dancers-arrival
+        ($ is retrieved)                        
+        ($ is traded)                           
+        ($ has traded)                          
+        ($ is hidden)                           
+                #duct-tape
+        ($ in progress)                         
+                #sand-dancers-offer
+        ($ has started)                         
+                #sand-dancers-offer #sand-dancers-arrival
+        ($ is choice-exhausted)                 
+        ($ is exposed)                          
+
+GLOBAL VARIABLES
+        (pursuit duration $)                    <unset>
+        (pursuit direction $)                   <unset>
+        (remaining cigarettes $)                6
+        (visible flotsam $)                     <unset>
+        (previous room $)                       #roof
+        (turns in current room $)               1
+        (conversation partner $)                #sand-dancer
+        (discussable quips $)                   [#about-sand-dancer #about-
+lizards]
+        (current quip $)                        #greet-sd
+        (previous quip $)                       <unset>
+        (grandparent quip $)                    #greet-sd
+        (current player $)                      #knock
+        (current room $)                        #roof
+        (current score $)                       0
+        (current visibility ceiling $)          #roof
+        (deferred commandline $)                <unset>
+        (reported score is $)                   0
+        (last command was $)                    [say hello]
+        (implicit action is $)                  <unset>
+        (player's it refers to $)               <unset>
+        (narrator's it refers to $)             <unset>
+        (her refers to $)                       <unset>
+        (him refers to $)                       #sand-dancer
+        (them refers to $)                      <unset>
+        (current node $)                        <unset>
+        (previous node $)                       <unset>
+        (current actor $)                       #knock
+
+PER-OBJECT VARIABLES
+        ($ has parent $)                        
+                #courage                        #knock
+                #luck                           #knock
+                #flashlight                     #knock
+                #pack                           #glove-compartment
+                #emergency-lights               #storage-room
+                #rabbit                         #burrow
+                #radio                          #break-room
+                #lizards                        #roof
+                #sand-dancer                    #roof
+                #knock                          #roof
+                #emotional-baggage              #knock
+                #cigarette                      #coyote
+                #denim-jacket                   #coyote
+                #sunglasses                     #coyote
+                #withered-cactus                #backtracking
+                #rusty-can                      #base-of-tower
+                #tumbleweed                     #base-of-tower
+                #girder                         #base-of-tower
+                #scrawny-weeds                  #base-of-tower
+                #bits-of-trash                  #base-of-tower
+                #red-warning-light              #base-of-tower
+                #electrical-tower               #base-of-tower
+                #cage                           #break-room
+                #tiny-frosted-window            #break-room
+                #tables                         #break-room
+                #crumbling-trash                #break-room
+                #rusted-key                     #foremans-desk
+                #blanket                        #cage
+                #dial                           #radio
+                #roots                          #burrow
+                #can-opener                     #control-center
+                #piles-of-trash                 #control-center
+                #smell-of-gasoline              #control-center
+                #metal-sheet                    #control-center
+                #pickup-truck                   #middle-of-nowhere
+                #duct-tape                      #knock
+                #canned-oranges                 #knock
+                #lighter                        #knock
+                #wallet                         #knock
+                #jacket                         #knock
+                #license                        #wallet
+                #receipt                        #wallet
+                #photo                          #wallet
+                #ultrasound                     #photo
+                #headlights                     #pickup-truck
+                #last-day-of-high-school        #emotional-baggage
+                #your-shit-job                  #emotional-baggage
+                #grandmas-stories               #emotional-baggage
+                #jade                           #pickup-truck
+                #meeting-ocean                  #emotional-baggage
+                #watching-family-guy            #emotional-baggage
+                #lizard                         #middle-of-nowhere
+                #whiffs-of-gasoline             #middle-of-nowhere
+                #saguaro                        #middle-of-nowhere
+                #glove-compartment              #pickup-truck
+                #layers-of-sand                 #storage-room
+                #foremans-desk                  #office
+                #dust-covered-window            #office
+                #poster                         #office
+                #hole                           #staging-area
+                #shafts-of-light                #staging-area
+                #holes-in-roof                  #staging-area
+                #patches-of-mold                #staging-area
+                #metal-desk                     #staging-area
+                #drawer                         #metal-desk
+                #cobwebs                        #hole
+                #shelves                        #storage-room
+                #ladder                         #storage-room
+                #skylight                       #storage-room
+                #panel                          #storage-room
+                #cans-of-food                   #shelves
+                #desert-sand                    #roof
+                #sagebrush                      #roof
+                #tower                          #roof
+                #tire-tracks                    #middle-of-nowhere
+                #overturned-barrel              #weed-strewn-rust
+                #newspapers                     #weed-strewn-rust
+                #leaking-pipe                   #weed-strewn-rust
+                #rusted-barrels                 #weed-strewn-rust
+                #weeds                          #weed-strewn-rust
+                #guidebook                      #overturned-barrel
+        ($ has relation $)                      
+                #courage                        #heldby
+                #luck                           #heldby
+                #flashlight                     #heldby
+                #pack                           #in
+                #emergency-lights               #in
+                #rabbit                         #in
+                #radio                          #in
+                #lizards                        #in
+                #sand-dancer                    #in
+                #rungs                          #in
+                #huge-barrel                    #in
+                #knock                          #in
+                #emotional-baggage              #heldby
+                #cigarette                      #heldby
+                #denim-jacket                   #wornby
+                #sunglasses                     #wornby
+                #withered-cactus                #in
+                #rusty-can                      #in
+                #tumbleweed                     #in
+                #girder                         #in
+                #scrawny-weeds                  #in
+                #bits-of-trash                  #in
+                #red-warning-light              #in
+                #electrical-tower               #in
+                #cage                           #in
+                #tiny-frosted-window            #in
+                #tables                         #in
+                #crumbling-trash                #in
+                #rusted-key                     #on
+                #blanket                        #in
+                #dial                           #partof
+                #roots                          #in
+                #can-opener                     #in
+                #piles-of-trash                 #in
+                #smell-of-gasoline              #in
+                #metal-sheet                    #in
+                #pickup-truck                   #in
+                #duct-tape                      #heldby
+                #canned-oranges                 #heldby
+                #lighter                        #heldby
+                #wallet                         #heldby
+                #jacket                         #wornby
+                #license                        #in
+                #receipt                        #in
+                #photo                          #in
+                #ultrasound                     #in
+                #headlights                     #partof
+                #last-day-of-high-school        #in
+                #your-shit-job                  #in
+                #grandmas-stories               #in
+                #jade                           #in
+                #meeting-ocean                  #in
+                #watching-family-guy            #in
+                #lizard                         #in
+                #whiffs-of-gasoline             #in
+                #saguaro                        #in
+                #glove-compartment              #partof
+                #layers-of-sand                 #in
+                #foremans-desk                  #in
+                #dust-covered-window            #in
+                #poster                         #in
+                #hole                           #in
+                #shafts-of-light                #in
+                #holes-in-roof                  #in
+                #patches-of-mold                #in
+                #metal-desk                     #in
+                #drawer                         #partof
+                #cobwebs                        #in
+                #shelves                        #in
+                #ladder                         #in
+                #skylight                       #in
+                #panel                          #in
+                #cans-of-food                   #on
+                #desert-sand                    #in
+                #sagebrush                      #in
+                #tower                          #in
+                #tire-tracks                    #in
+                #overturned-barrel              #in
+                #newspapers                     #in
+                #leaking-pipe                   #in
+                #rusted-barrels                 #in
+                #weeds                          #in
+                #guidebook                      #on
+        ($ is $)                                
+        ($ number of trades $)                  
+        ($ is tuned to $)                       
+        ($ is recollected by $)                 
+                #greet-sd                       [#sand-dancer #knock]
+        ($ has conversation queue $)            
+                #sand-dancer                    []

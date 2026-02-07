@@ -30,9 +30,16 @@
   [f]
   (fn [request]
     (let [{:keys [uri request-method]} request
-          response (f request)]
-      (println (or (:status response) "SSE")
-               (-> request-method name string/upper-case) uri)
+          method        (-> request-method name string/upper-case)
+          start-nanos   (System/nanoTime)
+          _             (do
+                          (print (format "--- %4s %s ..." method uri))
+                          (flush))
+          response      (f request)
+          elapsed-nanos (- (System/nanoTime) start-nanos)]
+      (println (format "\r%s %4s %s (%,.1f ms)"
+                       (or (:status response) "SSE")
+                       method uri (/ elapsed-nanos 1e6)))
       response)))
 
 (defn- wrap-not-found
@@ -48,7 +55,7 @@
   (fn [request]
     (try
       (f request)
-      (catch Exception e
+      (catch Throwable e
         (println "Error: " e)
         {:status  500
          :headers {"content-type" "text/plain"}

@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.tree-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]]
             [matcher-combinators.test :refer [match?]]
             [matcher-combinators.matchers :as m]
             [dialog-tool.skein.tree :as tree]))
@@ -312,7 +313,6 @@
           labeled (tree/labeled-knots-sorted tree)]
       (is (= ["START" "LABELED"] (mapv :label labeled))))))
 
-
 (deftest counts-test
   (testing "counts knot statuses"
     (let [tree   (-> (make-tree)
@@ -345,3 +345,20 @@
                    (tree/add-child 1 2 "north" "Hallway."))
           all  (tree/all-knots tree)]
       (is (= (-> tree :knots keys) (map :id all))))))
+
+
+(deftest update-dynamic
+  (let [dynamic-response (-> "dynamic-small.txt" io/resource slurp)
+        tree             (-> (make-tree)
+                             (tree/add-child 0 1 "look" "Room.")
+                             (tree/add-child 1 2 "north" "Hallway.")
+                             (tree/update-dynamic 2 dynamic-response))]
+    (is (match?
+          {:dynamic-response dynamic-response
+           :dynamic-state    (m/equals {:global-flags
+                                        {"(caught by shadows)"    "off"
+                                         "(sand-dancer is named)" "on (changed)"}
+                                        :global-vars  ["(remaining cigarettes 6)"]
+                                        :object-flags ["(#drawer is closed)"]
+                                        :object-vars  ["(#flashlight is #heldby #knock)"]})}
+          (tree/get-knot tree 2)))))
