@@ -5,3 +5,58 @@
 html {
   scrollbar-gutter: stable;
 }
+
+/* Icon classes using mask-image to inherit currentColor */
+.icon {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  vertical-align: middle;
+}
+
+.icon-undo {
+  mask-image: url('/icons/arrow-uturn-left.svg');
+  -webkit-mask-image: url('/icons/arrow-uturn-left.svg');
+}
+
+.icon-redo {
+  mask-image: url('/icons/arrow-uturn-right.svg');
+  -webkit-mask-image: url('/icons/arrow-uturn-right.svg');
+}
+
+.icon-jump {
+  mask-image: url('/icons/bookmark-solid.svg');
+  -webkit-mask-image: url('/icons/bookmark-solid.svg');
+}
+
+.icon-children {
+  mask-image: url('/icons/command-line-solid.svg');
+  -webkit-mask-image: url('/icons/command-line-solid.svg');
+}
+
+.icon-dots-vertical {
+  mask-image: url('/icons/ellipsis-vertical-solid.svg');
+  -webkit-mask-image: url('/icons/ellipsis-vertical-solid.svg');
+}
+
+.icon-save {
+  mask-image: url('/icons/folder-arrow-down-solid.svg');
+  -webkit-mask-image: url('/icons/folder-arrow-down-solid.svg');
+}
+
+.icon-play {
+  mask-image: url('/icons/play-solid.svg');
+  -webkit-mask-image: url('/icons/play-solid.svg');
+}
+
+.icon-quit {
+  mask-image: url('/icons/x-circle-solid.svg');
+  -webkit-mask-image: url('/icons/x-circle-solid.svg');
+}

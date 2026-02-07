@@ -38,6 +38,7 @@ Developing the UI requires an additional window.
 - Consider *always* running from start, even when adding a new command at end?
 - new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
 - modals don't cancel, add an SSE that fails repeats forever (from client side?)
+- add ability to paste in a transcript (or create a skein from a transcript)
 
 ## Releasing
 

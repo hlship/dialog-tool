@@ -2,7 +2,6 @@
   (:require [clojure.set :as set]
             [clojure.string :as string]
             [dialog-tool.skein.dynamic :as dynamic]
-            [dialog-tool.skein.ui.svg :as svg]
             [dialog-tool.skein.ui.utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
@@ -46,24 +45,24 @@
        [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg error]]
       [:div.flex.md:order-2.space-x-2
        [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                           :label    [:<> svg/icon-jump "Jump"]}
+                           :label    [:<> [:div.icon.icon-jump] "Jump"]}
         (for [{:keys [id label]} labeled-knots]
           [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
            label])]
        [:div.btn.btn-primary {:data-on:click "@post('/action/replay-all')"}
-        svg/icon-play "Replay All"]
+        [:div.icon.icon-play] "Replay All"]
        [:div.btn.btn-primary
         {:data-on:click "@post('/action/save')"
          :class         (when dirty? "btn-soft")}
-        svg/icon-save "Save"]
+        [:div.icon.icon-save] "Save"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/undo')"
                               :disabled      (not can-undo?)}
-        svg/icon-undo "Undo"]
+        [:div.icon.icon-undo] "Undo"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/redo')"
                               :disabled      (not can-redo?)}
-        svg/icon-redo "Redo"]
+        [:div.icon.icon-redo] "Redo"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/quit')"}
-        svg/icon-quit "Quit"]]]]))
+        [:div.icon.icon-quit] "Quit"]]]]))
 
 (def ^:private status->border-class
   {:ok    "border-slate-100"
@@ -118,7 +117,7 @@
     [:div.indicator
      [dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class descendant-status))
                          :disabled     (< (count children) 2)
-                         :label        svg/icon-children}
+                         :label        [:div.icon.icon-children]}
       (map (fn [{:keys [id label command]}]
              (let [status (tree/greatest-status (tree/knot-status tree id)
                                                 (tree/descendant-status tree id))]
@@ -149,7 +148,7 @@
       [:div.whitespace-normal.flex.flex-row.items-center.absolute.top-2.right-2.gap-x-2
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
-       [dropdown/dropdown {:label        svg/icon-dots-vertical
+       [dropdown/dropdown {:label        [:div.icon.icon-dots-vertical]
                            :button-class "btn p-0"}
         [dropdown/button {:disabled      disable-bless?
                           :data-on:click (str "@post('/action/bless/" id "')")}
