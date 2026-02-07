@@ -87,6 +87,11 @@
                    {}
                    (fs/path src-dir (str project-name ".dg")))
 
+    (copy-rendered "template/.gitignore"
+                   {}
+                   (fs/path dir' ".gitignore"))
+    
+    
     (copy-file (fs/path dialog-root "stdlib.dg")
                (fs/path dir' "lib" "dialog" "stdlib.dg"))
 
