@@ -99,15 +99,18 @@
             tuples (->> []
                         (into (map #(vector :added %) added))
                         (into (map #(vector :removed %) removed))
-                        (into (map #(apply vector :changed %) changed))
+                        (into (map #(vector :changed (second %)) changed))
                         (sort-by second compare-pred))]
         (when (seq tuples)
-          [:ul
-           (for [[kind predicate after-predicate] tuples]
+          [:div.flex.flex-wrap.gap-1.mt-4.p-2.bg-base-300.rounded-box.text-xs
+           (for [[kind predicate] tuples]
              (case kind
-               :added [:li "Added: " predicate]
-               :removed [:li "Removed: " predicate]
-               :changed [:li "Changed: " predicate " -> " after-predicate]))])))))
+               :added [:span.rounded-box.border.border-success.bg-success.bg-opacity-20.text-success-content.px-2.py-1
+                       [:span.font-bold.mr-1 "+"] predicate]
+               :removed [:span.rounded-box.border.border-warning.bg-warning.bg-opacity-20.text-warning-content.px-2.py-1
+                         [:span.font-bold.mr-1 "−"] predicate]
+               :changed [:span.rounded-box.border.border-info.bg-info.bg-opacity-10.px-2.py-1
+                         predicate]))])))))
 
 (defn- render-children-navigation
   [tree knot]
