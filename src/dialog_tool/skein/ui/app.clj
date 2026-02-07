@@ -102,7 +102,7 @@
                         (into (map #(vector :changed (second %)) changed))
                         (sort-by second compare-pred))]
         (when (seq tuples)
-          [:div.flex.flex-wrap.gap-1.mt-4.p-2.bg-base-300.rounded-box.text-xs
+          [:div.flex.flex-wrap.gap-1.mt-4.text-xs
            (for [[kind predicate] tuples]
              (case kind
                :added [:span.rounded-box.border.border-success.bg-success.bg-opacity-20.text-success-content.px-2.py-1
