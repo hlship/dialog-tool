@@ -114,7 +114,7 @@ project) under :library (and :debug).
 
 The :format key defines the output when the project is built; :zblorb is a good general choice.
 In specific situations you may want to build for :z5, :z8, or :aa.  The differences between
-these formats are described in [the Dialog manual](https://linusakesson.net/dialog/docs/software.html#compiler).
+these formats are described in [the Dialog manual](https://dialog-if.github.io/manual/dialog/1a01/software.html).
 
 ### Build Config
 
