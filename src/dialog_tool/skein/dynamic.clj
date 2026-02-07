@@ -33,7 +33,7 @@
     \s+
     (.*) # start of values (may span lines)"
                                    line)]
-    (loop [fact-value      value
+    (loop [fact-value value
            remaining-lines (next lines)]
       (let [line (first remaining-lines)]
         (if (soft-end? line)
@@ -48,32 +48,31 @@
                       line)
                  (next remaining-lines)))))))
 
-
 (defn- object-flag
   [output lines]
   (let [fact (first lines)]
     (loop [values []
-           lines  (next lines)]
+           lines (next lines)]
       (let [line (first lines)]
         (if (soft-end? line)
           [(assoc-in output [:object-flags fact] (seq values)) lines]
           (let [object-names (string/split line #"\s+")
-                values'      (if (string/starts-with? line "#")
-                               (into values object-names)
+                values' (if (string/starts-with? line "#")
+                          (into values object-names)
                                ;; Handle ugly case where an object name was split at a dash
-                               (let [last-value        (last values)
-                                     replacement-value (str last-value (first object-names))]
-                                 (-> values
-                                     pop
-                                     (conj replacement-value)
-                                     (into (rest object-names)))))]
+                          (let [last-value (last values)
+                                replacement-value (str last-value (first object-names))]
+                            (-> values
+                                pop
+                                (conj replacement-value)
+                                (into (rest object-names)))))]
             (recur values' (next lines))))))))
 
 (defn- object-var
   [output lines]
   (let [fact (first lines)]
     (loop [values []
-           lines  (next lines)]
+           lines (next lines)]
       (let [line (first lines)]
         (if (soft-end? line)
           [(assoc-in output [:object-vars fact] (seq values))
@@ -86,7 +85,7 @@
   [state output lines]
   (if-not lines
     output
-    (let [line   (first lines)
+    (let [line (first lines)
           lines' (next lines)]
       (cond
 
@@ -157,26 +156,26 @@
   are merged into ($ is $ $), as a special case."
   [predicates]
   (let [{:keys [object-flags global-flags global-vars object-vars]} predicates
-        parent-preds   (get object-vars parent-pred)
-        obj->relation  (reduce (fn [m [k v]]
-                                 (assoc m k v))
-                               {}
-                               (get object-vars relation-pred))
-        location-vars  (reduce (fn [m [what where]]
-                                 (assoc m
-                                        (flatten-pred location-pred what)
-                                        (flatten-pred+ location-pred
-                                                       what
-                                                       (get obj->relation what "<unset>")
-                                                       where)))
-                               {}
-                               parent-preds)
-        object-tuples  (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
-                             [object-name object-value] object+values]
-                         [(flatten-pred pred-name object-name)
-                          (flatten-pred+ pred-name object-name object-value)])
-        global-tuples  (for [[pred-name object-value] global-vars]
-                         [pred-name (flatten-pred pred-name object-value)])
+        parent-preds (get object-vars parent-pred)
+        obj->relation (reduce (fn [m [k v]]
+                                (assoc m k v))
+                              {}
+                              (get object-vars relation-pred))
+        location-vars (reduce (fn [m [what where]]
+                                (assoc m
+                                       (flatten-pred location-pred what)
+                                       (flatten-pred+ location-pred
+                                                      what
+                                                      (get obj->relation what "<unset>")
+                                                      where)))
+                              {}
+                              parent-preds)
+        object-tuples (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
+                            [object-name object-value] object+values]
+                        [(flatten-pred pred-name object-name)
+                         (flatten-pred+ pred-name object-name object-value)])
+        global-tuples (for [[pred-name object-value] global-vars]
+                        [pred-name (flatten-pred pred-name object-value)])
         active-global-flags (keep (fn [[pred-name value]]
                                     (when (string/starts-with? value "on")
                                       pred-name))
@@ -187,40 +186,60 @@
     {:flags (-> active-global-flags
                 (concat active-object-flags)
                 set)
-     :vars  (-> location-vars
-                (into object-tuples)
-                (into global-tuples))}))
+     :vars (-> location-vars
+               (into object-tuples)
+               (into global-tuples))}))
+
+(defn- unset?
+  "Returns true if the string contains the fake value <unset>."
+  [s]
+  (and s
+       (string/includes? s "<unset>")))
 
 (defn diff-flattened
   "Analyzes the before and after predicates (from flatten-predicates) and returns a map of :added, :removed,
   and :changed sets.  :added and :removed are sets of predicates added or removed,
-  :changes is a set of before/after predicates."
+  :changes is a set of before/after predicates.
+  
+  Variables that change from <unset> to a value are treated as :added.
+  Variables that change from a value to <unset> are treated as :removed."
   [before after]
-  (let [before-flags  (:flags before)
-        after-flags   (:flags after)
-        added-flags   (set/difference after-flags before-flags)
+  (let [before-flags (:flags before)
+        after-flags (:flags after)
+        added-flags (set/difference after-flags before-flags)
         removed-flags (set/difference before-flags after-flags)
-        before-vars   (:vars before)
-        after-vars    (:vars after)
-        f             (fn [m k]
-                        (let [before-val (get before-vars k)
-                              after-val  (get after-vars k)]
-                          (cond
-                            (= before-val after-val)
-                            m
+        before-vars (:vars before)
+        after-vars (:vars after)
+        f (fn [m k]
+            (let [before-val (get before-vars k)
+                  after-val (get after-vars k)]
+              (cond
+                (= before-val after-val)
+                m
 
-                            (and (some? before-val)
-                                 (some? after-val))
-                            (update m :changed conj [before-val after-val])
+                            ;; <unset> -> value is treated as added
+                (and (unset? before-val)
+                     (some? after-val))
+                (update m :added conj after-val)
 
-                            (some? before-val)
-                            (update m :removed conj before-val)
+                            ;; value -> <unset> is treated as removed
+                (and (some? before-val)
+                     (unset? after-val))
+                (update m :removed conj before-val)
 
-                            :else
-                            (update m :added conj after-val))))
-        all-keys      (set/union (keys before-vars) (keys after-vars))]
+                            ;; both have non-<unset> values
+                (and (some? before-val)
+                     (some? after-val))
+                (update m :changed conj [before-val after-val])
+
+                (some? before-val)
+                (update m :removed conj before-val)
+
+                :else
+                (update m :added conj after-val))))
+        all-keys (set/union (keys before-vars) (keys after-vars))]
     (reduce f
-            {:added   added-flags
+            {:added added-flags
              :removed removed-flags
              :changed #{}}
             all-keys)))
