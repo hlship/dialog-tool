@@ -137,7 +137,7 @@
 
 (defn- render-knot
   [tree knot scroll-to-knot-id]
-  (let [{:keys [id label response unblessed status]} knot
+  (let [{:keys [id label response unblessed status children]} knot
         border-class   (status->border-class status)
         disable-bless? (= :ok status)
         root?          (zero? id)]
@@ -172,7 +172,8 @@
             "Insert Parent" "Insert a command before this"]
            [dropdown/button {:data-on:click (str "@post('/action/delete/" id "')")}
             "Delete" "Delete this knot and all children"]
-           [dropdown/button {:data-on:click (str "@post('/action/splice-out/" id "')")}
+           [dropdown/button {:data-on:click (str "@post('/action/splice-out/" id "')")
+                             :disabled (not (seq children))}
             "Splice Out" "Delete this knot, reparent children up"]])]
        (render-children-navigation tree knot)]
       [render-diff response unblessed]

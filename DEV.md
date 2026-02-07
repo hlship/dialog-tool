@@ -36,7 +36,6 @@ Developing the UI requires an additional window.
 - Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
 - Present source file warnings/errors in a modal when detected?
 - Consider *always* running from start, even when adding a new command at end?
-- Disallow splice-out if no children
 - new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
 - modals don't cancel, add an SSE that fails repeats forever (from client side?)
 
