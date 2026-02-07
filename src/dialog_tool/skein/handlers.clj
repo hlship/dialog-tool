@@ -238,20 +238,20 @@
 (defn- undo
   "Undoes the last action by restoring the previous tree state."
   [{:keys [*session] :as request}]
-  (swap! *session session/undo)
-  (render-app request {:flash "Undo"}))
+  (render-app   (swap! *session session/undo)
+                {:flash "Undo"}))
 
 (defn- redo
   "Redoes the last undone action by restoring the next tree state."
   [{:keys [*session] :as request}]
-  (swap! *session session/redo)
-  (render-app request {:flash "Redo"}))
+  (render-app  (swap! *session session/redo) 
+               {:flash "Redo"}))
 
 (defn- save
   "Saves the current tree state to the file."
   [{:keys [*session] :as request}]
-  (swap! *session session/save!)
-  (render-app request {:flash "Saved"}))
+  (render-app   (swap! *session session/save!)
+                {:flash "Saved"}))
 
 (defn- replay-all
   "Replays to all leaf knots with SSE progress updates."

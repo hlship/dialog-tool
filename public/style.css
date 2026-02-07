@@ -21,6 +21,11 @@ html {
   vertical-align: middle;
 }
 
+.icon-warning {
+  mask-image: url('/icons/exclamation-triangle.svg');
+  -webkit-mask-image: url('/icons/exclamation-triangle.svg');
+}
+
 .icon-undo {
   mask-image: url('/icons/arrow-uturn-left.svg');
   -webkit-mask-image: url('/icons/arrow-uturn-left.svg');

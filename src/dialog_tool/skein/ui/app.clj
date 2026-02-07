@@ -30,22 +30,25 @@
     response))
 
 (defn navbar
-  [title tree {:keys [can-undo? can-redo? dirty?]}]
-  (let [{:keys [ok new error]} (tree/totals tree)
+  [session]
+  (let [{:keys [skein-path tree dirty?]} session
+        can-undo? (-> session :undo-stack not-empty)
+        can-redo? (-> session :redo-stack not-empty)
+        {:keys [ok new error]} (tree/totals tree)
         labeled-knots (tree/labeled-knots-sorted tree)]
     [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
                            "px-2 sm:px-4 py-2.5"
                            "fixed w-full z-20 top-0 start-0 border-b")}
      [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
       [:div.self-center.whitespace-nowrap.text-xl.font-semibold
-       title]
+       skein-path]
       [:div.join
        [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-warning.p-2.font-semibold new]
        [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg error]]
       [:div.flex.md:order-2.space-x-2
        [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                           :label    [:<> [:div.icon.icon-jump] "Jump"]}
+                           :label [:<> [:div.icon.icon-jump] "Jump"]}
         (for [{:keys [id label]} labeled-knots]
           [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
            label])]
@@ -53,33 +56,26 @@
         [:div.icon.icon-play] "Replay All"]
        [:div.btn.btn-primary
         {:data-on:click "@post('/action/save')"
-         :class         (when dirty? "btn-soft")}
+         :class (when dirty? "btn-soft")}
         [:div.icon.icon-save] "Save"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/undo')"
-                              :disabled      (not can-undo?)}
+                              :disabled (not can-undo?)}
         [:div.icon.icon-undo] "Undo"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/redo')"
-                              :disabled      (not can-redo?)}
+                              :disabled (not can-redo?)}
         [:div.icon.icon-redo] "Redo"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/quit')"}
         [:div.icon.icon-quit] "Quit"]]]]))
 
 (def ^:private status->border-class
-  {:ok    "border-slate-100"
-   :new   "border-yellow-200"
+  {:ok "border-slate-100"
+   :new "border-yellow-200"
    :error "border-rose-400"})
 
 (def ^:private status->button-class
-  {:ok    nil
-   :new   "bg-warning"
+  {:ok nil
+   :new "bg-warning"
    :error "bg-error"})
-
-(defn- render-predicates
-  [preds]
-  (for [n (sort preds)]
-    [:div.rounded-full.border-1.text-xs.px-2
-     ;; Strip off parens:
-     (subs n 1 (dec (count n)))]))
 
 (defn- compare-pred
   [left right]
@@ -91,8 +87,8 @@
   [tree knot]
   (let [{:keys [parent-id dynamic-state]} knot
         before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
-    (when (and (seq dynamic-state)
-               (seq before-dynamic-state))
+    (if (and (seq dynamic-state)
+             (seq before-dynamic-state))
       (let [{:keys [added removed changed]} (dynamic/diff-flattened before-dynamic-state dynamic-state)
             tuples (->> []
                         (into (map #(vector :added %) added))
@@ -108,7 +104,11 @@
                :removed [:span.rounded-box.border.border-warning.bg-warning.bg-opacity-20.text-warning-content.px-2.py-1
                          [:span.font-bold.mr-1 "−"] predicate]
                :changed [:span.rounded-box.border.border-info.bg-info.bg-opacity-10.px-2.py-1
-                         predicate]))])))))
+                         predicate]))]))
+      ;; When missing dynamic state, warn user to replay
+      [:div.inline-flex.items-center.gap-2.text-sm.bg-info.rounded-sm.opacity-75.px-2.py-1.mt-2
+       [:div.icon.icon-warning]
+       [:em "Replay to collect world state data"]])))
 
 (defn- render-children-navigation
   [tree knot]
@@ -116,31 +116,31 @@
         {:keys [descendant-status]} knot]
     [:div.indicator
      [dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class descendant-status))
-                         :disabled     (< (count children) 2)
-                         :label        [:div.icon.icon-children]}
+                         :disabled (< (count children) 2)
+                         :label [:div.icon.icon-children]}
       (map (fn [{:keys [id label command]}]
              (let [status (tree/greatest-status (tree/knot-status tree id)
                                                 (tree/descendant-status tree id))]
-               [dropdown/button {:bg-class      (status->button-class status)
+               [dropdown/button {:bg-class (status->button-class status)
                                  :data-on:click (str "@get('/action/select/" id "')")}
                 (or label command)]))
            children)]
      (when (> (count children) 1)
        [:div
         {:class (classes
-                  "indicator-item indicator-top indicator-right"
-                  "rounded-full text-sm border-2 bg-base-300 border-base-100"
-                  "flex items-center justify-center"
-                  "w-8 h-8")}
+                 "indicator-item indicator-top indicator-right"
+                 "rounded-full text-sm border-2 bg-base-300 border-base-100"
+                 "flex items-center justify-center"
+                 "w-8 h-8")}
         (count children)])]))
 
 (defn- render-knot
-  [tree knot scroll-to-knot-id]
+  [tree knot {:keys [scroll-to-knot-id debug-enabled?]}]
   (let [{:keys [id label response unblessed status children]} knot
-        border-class   (status->border-class status)
+        border-class (status->border-class status)
         disable-bless? (= :ok status)
-        root?          (zero? id)]
-    [:div.border-x-4 (cond-> {:id    (str "knot-" id)
+        root? (zero? id)]
+    [:div.border-x-4 (cond-> {:id (str "knot-" id)
                               :class border-class}
                        (= id scroll-to-knot-id)
                        (assoc :data-scroll-into-view true))
@@ -148,13 +148,13 @@
       [:div.whitespace-normal.flex.flex-row.items-center.absolute.top-2.right-2.gap-x-2
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
-       [dropdown/dropdown {:label        [:div.icon.icon-dots-vertical]
+       [dropdown/dropdown {:label [:div.icon.icon-dots-vertical]
                            :button-class "btn p-0"}
-        [dropdown/button {:disabled      disable-bless?
+        [dropdown/button {:disabled disable-bless?
                           :data-on:click (str "@post('/action/bless/" id "')")}
          "Bless" "Accept changes"]
         (when-not root?
-          [dropdown/button {:disabled      disable-bless?
+          [dropdown/button {:disabled disable-bless?
                             :data-on:click (str "@post('/action/bless-to/" id "')")}
            "Bless To Here" "Accept changes from root to here"])
         [dropdown/button {:data-on:click (str "@post('/action/replay-to/" id "')")}
@@ -177,23 +177,21 @@
        (render-children-navigation tree knot)]
       [render-diff response unblessed]
       [:hr.clear-right.text-stone-200]
-      (when (not= 0 id)
+      (when (and debug-enabled?
+                 (not= 0 id))
         [render-dynamic tree knot])]]))
-
 
 (defn render-app
   [session {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash] :as _opts}]
-  (let [{:keys [skein-path tree]} session
-        knots   (tree/selected-knots tree)]
+  (let [{:keys [tree debug-enabled?]} session
+        knots (tree/selected-knots tree)]
     [:div#app.relative.px-8
      (when flash
        [flash/flash-message flash])
-     [navbar skein-path tree
-      {:can-undo? (not-empty (:undo-stack session))
-       :can-redo? (not-empty (:redo-stack session))
-       :dirty?    (:dirty? session)}]
+     [navbar session]
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [knot]
-             (render-knot tree knot scroll-to-knot-id)) knots)
-      [new-command/new-command-input {:scroll-to?           scroll-to-new-command?
+             (render-knot tree knot {:scroll-to-knot-id scroll-to-knot-id
+                                     :debug-enabled? debug-enabled?})) knots)
+      [new-command/new-command-input {:scroll-to? scroll-to-new-command?
                                       :reset-command-input? reset-command-input?}]]]))
