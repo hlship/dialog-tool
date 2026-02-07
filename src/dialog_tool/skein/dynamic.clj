@@ -147,6 +147,7 @@
 
 (def ^:private parent-pred "($ has parent $)")
 (def ^:private relation-pred "($ has relation $)")
+(def ^:private location-pred "($ is $ $)")
 
 (defn flatten-predicates
   "Flattens the predicates map into a set of predicates that are present.  For global flags, this
@@ -161,27 +162,65 @@
                                  (assoc m k v))
                                {}
                                (get object-vars relation-pred))
-        location-preds (map (fn [[what where]]
-                              (flatten-pred+ "($ is $ $)"
-                                             what
-                                             (get obj->relation what "<unset>")
-                                             where))
-                            parent-preds)
-        active-flags   (keep (fn [[pred-name value]]
-                               (when (string/starts-with? value "on")
-                                 pred-name))
-                             global-flags)]
-    (reduce into #{}
-            [active-flags
-             (map (fn [[pred-name value]]
-                    (flatten-pred pred-name value))
-                  global-vars)
-             (mapcat (fn [[pred-name objects]]
-                       (map #(flatten-pred pred-name %) objects))
-                     object-flags)
-             (->> (dissoc object-vars parent-pred relation-pred)
-                  (mapcat (fn [[pred-name obj+value-pairs]]
-                            (map (fn [[obj value]]
-                                   (flatten-pred+ pred-name obj value))
-                                 obj+value-pairs))))
-             location-preds])))
+        location-vars  (reduce (fn [m [what where]]
+                                 (assoc m
+                                        (flatten-pred location-pred what)
+                                        (flatten-pred+ location-pred
+                                                       what
+                                                       (get obj->relation what "<unset>")
+                                                       where)))
+                               {}
+                               parent-preds)
+        object-tuples  (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
+                             [object-name object-value] object+values]
+                         [(flatten-pred pred-name object-name)
+                          (flatten-pred+ pred-name object-name object-value)])
+        global-tuples  (for [[pred-name object-value] global-vars]
+                         [pred-name (flatten-pred pred-name object-value)])
+        active-global-flags (keep (fn [[pred-name value]]
+                                    (when (string/starts-with? value "on")
+                                      pred-name))
+                                  global-flags)
+        active-object-flags (for [[pred-name object-names] object-flags
+                                  object-name object-names]
+                              (flatten-pred pred-name object-name))]
+    {:flags (-> active-global-flags
+                (concat active-object-flags)
+                set)
+     :vars  (-> location-vars
+                (into object-tuples)
+                (into global-tuples))}))
+
+(defn diff-flattened
+  "Analyzes the before and after predicates (from flatten-predicates) and returns a map of :added, :removed,
+  and :changed sets.  :added and :removed are sets of predicates added or removed,
+  :changes is a set of before/after predicates."
+  [before after]
+  (let [before-flags  (:flags before)
+        after-flags   (:flags after)
+        added-flags   (set/difference after-flags before-flags)
+        removed-flags (set/difference before-flags after-flags)
+        before-vars   (:vars before)
+        after-vars    (:vars after)
+        f             (fn [m k]
+                        (let [before-val (get before-vars k)
+                              after-val  (get after-vars k)]
+                          (cond
+                            (= before-val after-val)
+                            m
+
+                            (and (some? before-val)
+                                 (some? after-val))
+                            (update m :changed conj [before-val after-val])
+
+                            (some? before-val)
+                            (update m :removed conj before-val)
+
+                            :else
+                            (update m :added conj after-val))))
+        all-keys      (set/union (keys before-vars) (keys after-vars))]
+    (reduce f
+            {:added   added-flags
+             :removed removed-flags
+             :changed #{}}
+            all-keys)))

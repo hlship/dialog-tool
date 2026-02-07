@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.ui.app
   (:require [clojure.set :as set]
+            [clojure.string :as string]
             [dialog-tool.skein.dynamic :as dynamic]
             [dialog-tool.skein.ui.svg :as svg]
             [dialog-tool.skein.ui.utils :refer [classes]]
@@ -82,6 +83,11 @@
      ;; Strip off parens:
      (subs n 1 (dec (count n)))]))
 
+(defn- compare-pred
+  [left right]
+  (compare (string/replace left "#" "")
+           (string/replace right "#" "")))
+
 (defn- render-dynamic
   "Renders the dynamic state."
   [tree knot]
@@ -89,13 +95,19 @@
         before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
     (when (and (seq dynamic-state)
                (seq before-dynamic-state))
-      (let [added   (set/difference dynamic-state before-dynamic-state)
-            removed (set/difference before-dynamic-state dynamic-state)]
-        [:div.grid.grid-cols-2.gap-2.text-sm.bg-slate-100
-         [:div.justify-center "Removed"]
-         [:div.justify-center "Added"]
-         [:div.flex.flex-wrap [render-predicates removed]]
-         [:div.flex.flex-wrap [render-predicates added]]]))))
+      (let [{:keys [added removed changed]} (dynamic/diff-flattened before-dynamic-state dynamic-state)
+            tuples (->> []
+                        (into (map #(vector :added %) added))
+                        (into (map #(vector :removed %) removed))
+                        (into (map #(apply vector :changed %) changed))
+                        (sort-by second compare-pred))]
+        (when (seq tuples)
+          [:ul
+           (for [[kind predicate after-predicate] tuples]
+             (case kind
+               :added [:li "Added: " predicate]
+               :removed [:li "Removed: " predicate]
+               :changed [:li "Changed: " predicate " -> " after-predicate]))])))))
 
 (defn- render-children-navigation
   [tree knot]
