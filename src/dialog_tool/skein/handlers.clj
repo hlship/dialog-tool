@@ -61,11 +61,11 @@
          :body    (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
 
 (defn- render-app
-  ([request]
-   (render-app request nil))
-  ([request opts]
+  ([session]
+   (render-app session nil))
+  ([session opts]
    {:status 200
-    :body   (html (ui.app/render-app request opts))}))
+    :body   (html (ui.app/render-app session opts))}))
 
 ;;; Action handlers
 ;;; Each receives :signals (parsed Datastar signals) in the request
@@ -86,33 +86,33 @@
         (when command
           (swap! *session session/command! command)
           (utils/patch-elements! sse-gen
-                                 (ui.app/render-app request {:scroll-to-new-command? true}))
+                                 (ui.app/render-app @*session {:scroll-to-new-command? true}))
           (utils/patch-signals! sse-gen {:newCommand ""}))))))
 
 (defn- bless-knot
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
   [{:keys [*session] :as request}]
-  (swap! *session session/bless (knot-id request))
-  (render-app request {:flash "Blessed"}))
+  (render-app (swap! *session session/bless (knot-id request))
+              {:flash "Blessed"}))
 
 (defn- bless-to-knot
   "Blesses all knots from root to the specified knot, inclusive."
   [{:keys [*session] :as request}]
-  (swap! *session session/bless-to (knot-id request))
-  (render-app request {:flash "Blessed to here"}))
+  (render-app (swap! *session session/bless-to (knot-id request))
+              {:flash "Blessed to here"}))
 
 (defn- replay-to-knot
   "Replays from the start to the specified knot."
   [{:keys [*session] :as request}]
-  (swap! *session session/replay-to! (knot-id request))
-  (render-app request {:flash "Replayed"}))
+  (render-app (swap! *session session/replay-to! (knot-id request))
+              {:flash "Replayed"}))
 
 (defn- select-knot
   "Selects the specified knot, making it and its ancestors the active path, and scrolls to the selected knot."
   [{:keys [*session] :as request}]
   (let [id (knot-id request)]
-    (swap! *session session/select-knot id)
-    (render-app request {:scroll-to-knot-id id})))
+    (render-app (swap! *session session/select-knot id)
+                {:scroll-to-knot-id id})))
 
 (defn- prepare-new-child
   "Prepares for adding a new child to the specified knot.
@@ -122,7 +122,7 @@
   (utils/with-short-sse
     request
     (fn [sse-gen]
-      (utils/patch-elements! sse-gen (ui.app/render-app request {:scroll-to-new-command? true}))
+      (utils/patch-elements! sse-gen (ui.app/render-app @*session {:scroll-to-new-command? true}))
       (utils/patch-signals! sse-gen {:newCommand ""}))))
 
 (defn- render-edit-command-modal
@@ -157,7 +157,7 @@
         (fn [sse-gen]
           (utils/patch-elements! sse-gen
                                  [:<>
-                                  (ui.app/render-app request {})
+                                  (ui.app/render-app @*session {})
                                   [:div#modal-container]])
           (utils/patch-signals! sse-gen {:editCommand nil}))))))
 
@@ -188,7 +188,7 @@
       ;; Success - return both updated app and cleared modal
       {:status 200
        :body   (html [:<>
-                      (ui.app/render-app request {})
+                      (ui.app/render-app @*session {})
                       [:div#modal-container]])})))
 
 (defn- render-edit-label-modal
@@ -226,7 +226,7 @@
           (swap! *session session/label id label)
           (utils/patch-signals! sse-gen {:editLabel nil})
           (utils/patch-elements! sse-gen [:<>
-                                          (ui.app/render-app request {})
+                                          (ui.app/render-app @*session {})
                                           [:div#modal-container]]))))))
 
 (defn- dismiss-modal
@@ -285,14 +285,14 @@
         (utils/patch-elements!
           sse-gen
           (html [:<>
-                 (ui.app/render-app request {:flash "Replay complete"})
+                 (ui.app/render-app @*session {:flash "Replay complete"})
                  [:div#modal-container]]))))))
 
 (defn- delete-knot
   "Deletes the specified knot and all its descendants."
   [{:keys [*session] :as request}]
-  (swap! *session session/delete (knot-id request))
-  (render-app request {:flash "Deleted"}))
+  (render-app (swap! *session session/delete (knot-id request))
+              {:flash "Deleted"}))
 
 (defn- splice-out-knot
   "Splices out the specified knot, reparenting its children."
@@ -300,8 +300,8 @@
   (let [session' (swap! *session session/splice-out! (knot-id request))]
     (if-let [error (:error session')]
       ;; TODO: Display error to user properly
-      (render-app request {:flash error})
-      (render-app request {:flash "Spliced out"}))))
+      (render-app session' {:flash error})
+      (render-app session' {:flash "Spliced out"}))))
 
 (defn- close-and-shutdown
   "Closes the browser window and shuts down the service."
@@ -421,7 +421,7 @@
     (quit-without-saving req)
 
     "GET /app" req
-    (render-app req)
+    (render-app (-> req :*session deref))
 
     "GET /**" [path]
     (or

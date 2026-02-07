@@ -38,9 +38,8 @@
                            "px-2 sm:px-4 py-2.5"
                            "fixed w-full z-20 top-0 start-0 border-b")}
      [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
-      [:a.flex.items-center
-       [:div.self-center.whitespace-nowrap.text-xl.font-semibold
-        title]]
+      [:div.self-center.whitespace-nowrap.text-xl.font-semibold
+       title]
       [:div.join
        [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-warning.p-2.font-semibold new]
@@ -183,10 +182,8 @@
 
 
 (defn render-app
-  [request {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash] :as _opts}]
-  (let [{:keys [*session]} request
-        session @*session
-        {:keys [skein-path tree]} session
+  [session {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash] :as _opts}]
+  (let [{:keys [skein-path tree]} session
         knots   (tree/selected-knots tree)]
     [:div#app.relative.px-8
      (when flash
