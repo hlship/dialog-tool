@@ -53,9 +53,9 @@
            label])]
        [:div.btn.btn-primary {:data-on:click "@post('/action/replay-all')"}
         svg/icon-play "Replay All"]
-       [:div.btn
+       [:div.btn.btn-primary
         {:data-on:click "@post('/action/save')"
-         :class         (if dirty? "btn-warning" "btn-primary")}
+         :class         (when dirty? "btn-soft")}
         svg/icon-save "Save"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/undo')"
                               :disabled      (not can-undo?)}

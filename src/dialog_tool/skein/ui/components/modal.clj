@@ -8,7 +8,7 @@
    Options:
    - :label - Button text (default: 'Cancel')"
   [{:keys [label] :or {label "Cancel"}}]
-  [:button.px-4.py-2.text-sm.font-medium.text-gray-700.bg-white.border.border-gray-300.rounded-md.hover:bg-gray-50
+  [:button.btn
    {:type "button"
     :data-on:click__stop "@post('/action/dismiss-modal')"}
    label])
@@ -19,7 +19,7 @@
    Options:
    - :label - Button text (default: 'OK')"
   [{:keys [label] :or {label "OK"}}]
-  [:button.px-4.py-2.text-sm.font-medium.text-white.bg-blue-700.rounded-md.hover:bg-blue-800
+  [:button.btn.btn-primary
    {:type "submit"}
    label])
 

@@ -6,10 +6,9 @@
             [clojure.string :as string]
             [selmer.parser :as s]
             [dialog-tool.skein.session :as session]
+            [dialog-tool.skein.ui.modals :as modals]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
-            [dialog-tool.skein.ui.components.modal :as modal]
-            [dialog-tool.skein.ui.components.progress :as progress]
             [dialog-tool.skein.ui.components.quit-modal :as quit-modal]
             [dialog-tool.skein.ui.utils :as utils]
             [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
@@ -130,24 +129,7 @@
   "Renders the edit command modal with optional error message."
   [id command error]
   {:status 200
-   :body   (html
-             [modal/modal
-              (cond-> {:title   "Edit Command"
-                       :signals {:editCommand command}
-                       :content
-                       [:form {:data-on:submit__stop (str "@post('/action/edit-command/" id "')")}
-                        [:div.mb-4
-                         [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-command-input"}
-                          "Command:"]
-                         [:input#edit-command-input
-                          {:type      "text"
-                           :data-bind "editCommand"
-                           :data-init "el.select()"
-                           :class     "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
-                        [:div.flex.justify-end.gap-2
-                         [modal/cancel-button {}]
-                         [modal/ok-button {}]]]}
-                error (assoc :error error))])})
+   :body   (html [modals/edit-command id command error])})
 
 (defn- open-edit-command
   "Opens the edit command modal for the specified knot."
@@ -184,23 +166,7 @@
   [id command error]
   {:status 200
    :body   (html
-             [modal/modal
-              (cond-> {:title   "Insert Parent"
-                       :signals {:insertCommand command}
-                       :content
-                       [:form {:data-on:submit__stop (str "@post('/action/insert-parent/" id "')")}
-                        [:div.mb-4
-                         [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "insert-parent-input"}
-                          "Command:"]
-                         [:input#insert-parent-input
-                          {:type      "text"
-                           :data-bind "insertCommand"
-                           :data-init "el.select()"
-                           :class     "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
-                        [:div.flex.justify-end.gap-2
-                         [modal/cancel-button {}]
-                         [modal/ok-button {}]]]}
-                error (assoc :error error))])})
+             (modals/insert-parent id command error))})
 
 (defn- open-insert-parent
   "Opens the insert parent modal for the specified knot."
@@ -229,24 +195,7 @@
   "Renders the edit label modal with optional error message."
   [id label error]
   {:status 200
-   :body   (html
-             [modal/modal
-              (cond-> {:title   "Edit Label"
-                       :signals {:editLabel label}
-                       :content
-                       [:form {:data-on:submit__stop (str "@post('/action/edit-label/" id "')")}
-                        [:div.mb-4
-                         [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-label-input"}
-                          "Label:"]
-                         [:input#edit-label-input
-                          {:type      "text"
-                           :data-bind "editLabel"
-                           :data-init "el.select()"
-                           :class     "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
-                        [:div.flex.justify-end.gap-2
-                         [modal/cancel-button {}]
-                         [modal/ok-button {}]]]}
-                error (assoc :error error))])})
+   :body   (html (modals/edit-label id label error))})
 
 (defn- open-edit-label
   "Opens the edit label modal for the specified knot."
@@ -323,7 +272,7 @@
             ;; Update progress
             (utils/patch-elements!
               sse-gen
-              (html (progress/progress-modal
+              (html (modals/progress
                       {:current   current
                        :total     total
                        :label     label
