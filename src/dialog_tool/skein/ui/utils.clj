@@ -54,7 +54,7 @@
 (defn wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
   [handler]
-  (fn [request]
+  (fn [request] 
     (let [data    (d*/get-signals request)
           signals (cond
                     (string? data)

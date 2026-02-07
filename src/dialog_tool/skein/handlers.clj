@@ -1,6 +1,7 @@
 (ns dialog-tool.skein.handlers
   (:require [clj-simple-router.core :as router]
             [ring.middleware.content-type :as content-type]
+            [ring.middleware.params :as params]
             [huff2.core :as huff :refer [html]]
             [ring.util.response :as response]
             [clojure.string :as string]
@@ -60,12 +61,25 @@
          :headers {"content-type" "text/plain"}
          :body    (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
 
+(defn- wrap-signal->session
+  "Applies relevant signals in the request to the session."
+  [f]
+  (fn [request]
+    (let [{:keys [*session signals]} request
+          {hide-dynamic :hideDynamic} signals]
+      (when (some? hide-dynamic)
+        (swap! *session assoc :hide-dynamic? hide-dynamic))
+      (f request))))
+
 (defn- render-app
   ([session]
    (render-app session nil))
   ([session opts]
    {:status 200
-    :body   (html (ui.app/render-app session opts))}))
+    :body   (html
+              [:<>
+               (ui.app/render-app session opts)
+               (ui.app/render-fab)])}))
 
 ;;; Action handlers
 ;;; Each receives :signals (parsed Datastar signals) in the request
@@ -445,6 +459,8 @@
       wrap-not-found
       content-type/wrap-content-type
       wrap-with-response-logger
+      wrap-signal->session
       utils/wrap-parse-signals
+      params/wrap-params
       hk-gen/wrap-start-responding
       log-errors))

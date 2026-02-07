@@ -21,6 +21,12 @@ html {
   vertical-align: middle;
 }
 
+.icon-globe {
+  mask-image: url('/icons/globe-alt.svg');
+  -webkit-mask-image: url('/icons/globe-alt.svg');
+}
+
+
 .icon-warning {
   mask-image: url('/icons/exclamation-triangle.svg');
   -webkit-mask-image: url('/icons/exclamation-triangle.svg');

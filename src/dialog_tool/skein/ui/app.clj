@@ -182,8 +182,8 @@
         [render-dynamic tree knot])]]))
 
 (defn render-app
-  [session {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash] :as _opts}]
-  (let [{:keys [tree debug-enabled?]} session
+  [session {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash]}]
+  (let [{:keys [tree debug-enabled? hide-dynamic?]} session
         knots (tree/selected-knots tree)]
     [:div#app.relative.px-8
      (when flash
@@ -192,6 +192,24 @@
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [knot]
              (render-knot tree knot {:scroll-to-knot-id scroll-to-knot-id
-                                     :debug-enabled? debug-enabled?})) knots)
-      [new-command/new-command-input {:scroll-to? scroll-to-new-command?
+                                     :debug-enabled?    (and debug-enabled?
+                                                             (not hide-dynamic?))}))
+           knots)
+      [new-command/new-command-input {:scroll-to?           scroll-to-new-command?
                                       :reset-command-input? reset-command-input?}]]]))
+
+(defn render-fab
+  []
+  ;; TODO: What if debugging not enabled? Remove or disable?  The entire FAB?
+  [:div.fab#fab
+   [:div.btn.btn-lg.btn-circle.btn-primary
+    {:tabindex "0"
+     :role     "button"}
+    [:div.icon.icon-globe]]
+
+   [:div.rounded-box.bg-primary-content
+    [:label.label.p-2
+     [:input.toggle {:type           "checkbox"
+                     :data-bind      "hideDynamic"
+                     :data-on:change "@get('/app/')"}]
+     "Hide dynamic state"]]])
