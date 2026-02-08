@@ -353,12 +353,11 @@
                              (tree/add-child 0 1 "look" "Room.")
                              (tree/add-child 1 2 "north" "Hallway.")
                              (tree/update-dynamic 2 dynamic-response))]
+    (prn (-> (tree/get-knot tree 2) :dynamic-state))
     (is (match?
           {:dynamic-response dynamic-response
-           :dynamic-state    (m/equals {:global-flags
-                                        {"(caught by shadows)"    "off"
-                                         "(sand-dancer is named)" "on (changed)"}
-                                        :global-vars  ["(remaining cigarettes 6)"]
-                                        :object-flags ["(#drawer is closed)"]
-                                        :object-vars  ["(#flashlight is #heldby #knock)"]})}
+           :dynamic-state    (m/equals {:flags #{"(sand-dancer is named)"
+                                                 "(#drawer is closed)"}
+                                        :vars  {"(#flashlight is $ $)"     "(#flashlight is #heldby #knock)"
+                                                "(remaining cigarettes $)" "(remaining cigarettes 6)"}})}
           (tree/get-knot tree 2)))))
