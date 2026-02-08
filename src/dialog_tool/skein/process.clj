@@ -67,8 +67,9 @@
 
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger."
-  [project seed]
-  (let [cmd (-> ["dgdebug"
+  [project-root seed]
+  (let [project (pf/read-project project-root)
+        cmd     (-> ["dgdebug"
                  "--quit"
                  "--seed" (str seed)
                  "--width" "80"]
@@ -77,16 +78,16 @@
 
 (def engines #{:dgdebug :frotz :frotz-release})
 
-(defmulti start-process! (fn [_project engine _seed] engine))
+(defmulti start-process! (fn [project-root engine _seed] engine))
 
 (defmethod start-process! :dgdebug
-  [project _ seed]
-  (start-debug-process! project seed))
-
+  [project-root _ seed]
+  (start-debug-process! project-root seed))
 
 (defn- start-frotz-process
-  [project seed debug?]
-  (let [{project-name :name} project
+  [project-root seed debug?]
+  (let [project     (pf/read-project project-root)
+        {project-name :name} project
         project-dir (pf/root-dir project)
         output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
         path (fs/path output-dir (str project-name ".zblorb"))
@@ -110,12 +111,12 @@
                  :echo-command true})))
 
 (defmethod start-process! :frotz
-  [project _ seed]
-  (start-frotz-process project seed true))
+  [project-root _ seed]
+  (start-frotz-process project-root seed true))
 
 (defmethod start-process! :frotz-release
-  [project _ seed]
-  (start-frotz-process project seed false))
+  [project-root _ seed]
+  (start-frotz-process project-root seed false))
 
 (defn read-response!
   [process]
@@ -152,10 +153,3 @@
   (let [{:keys [^Process process]} process]
     (.destroy process))
   nil)
-
-(defn restart!
-  "Kills the process and starts a new one, returning a new process map."
-  [process]
-  (kill! process)
-  (let [{:keys [cmd opts]} process]
-    (start! cmd opts)))

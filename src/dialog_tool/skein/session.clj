@@ -65,11 +65,11 @@
        (map :command)))
 
 (defn- do-restart!
+  "Kills the current process and starts a new one."
   [session]
-  ;; An earlier version made use of '(restart)' but that had problems, and dgdebug is so fast
-  ;; to start up that it doesn't make sense.
-  (let [{:keys [process]} session
-        process' (sk.process/restart! process)
+  (let [{:keys [process start-process-fn]} session
+        _                    (sk.process/kill! process)
+        process'             (start-process-fn)
         new-initial-response (sk.process/read-response! process')]
     (-> session
         (assoc :active-knot-id 0

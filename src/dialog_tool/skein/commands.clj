@@ -9,8 +9,7 @@
 
 (defn- start-skein-service!
   [skein-path start-opts]
-  (let [project (pf/read-project)
-        {:keys [port]} (service/start! project skein-path start-opts)
+  (let [{:keys [port]} (service/start! nil skein-path start-opts)
         url     (str "http://localhost:" port)]
     (pout [:bold (if (fs/exists? skein-path) "Loading" "Creating")
            " " skein-path " ..."])

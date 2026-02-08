@@ -32,7 +32,6 @@ Developing the UI requires an additional window.
 - Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
 - Detect/report network failures
 - Color-blind indicators or mode
-- Restart should rebuild the source file list, re-read the dialog.edn
 - Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
 - Present source file warnings/errors in a modal when detected?
 - Consider *always* running from start, even when adding a new command at end?
