@@ -159,10 +159,10 @@
   [{:keys [*session signals] :as request}]
   (let [id       (knot-id request)
         {:keys [editCommand]} signals
-        command  (some-> editCommand str string/trim not-empty)
-        session' (when command
-                   (swap! *session session/edit-command! id command))]
-    (if-let [error (:error session')]
+        command  (some-> editCommand str string/trim)
+        [error session'] (session/edit-command! @*session id command)]
+    (reset! *session session')
+    (if error
       ;; Error occurred - redisplay modal with error
       (render-edit-command-modal id command error)
       ;; Success - return both updated app and cleared modal
@@ -171,7 +171,7 @@
         (fn [sse-gen]
           (utils/patch-elements! sse-gen
                                  [:<>
-                                  (ui.app/render-app @*session {})
+                                  (ui.app/render-app session' {})
                                   [:div#modal-container]])
           (utils/patch-signals! sse-gen {:editCommand nil}))))))
 
@@ -194,14 +194,11 @@
   (let [id       (knot-id request)
         {:keys [insertCommand]} signals
         command  (some-> insertCommand str string/trim not-empty)
-        session' (if command
-                   (swap! *session session/insert-parent! id command)
-                   @*session)]
-    (if-let [error (:error session')]
+        [error session'] (session/insert-parent! @*session id command)]
+    (reset! *session session')
+    (if error
       ;; Error occurred - redisplay modal with error
-      (do
-        (swap! *session dissoc :error)
-        (render-insert-parent-modal id command error))
+      (render-insert-parent-modal id command error)
       ;; Success - return both updated app and cleared modal
       (utils/with-short-sse
         request
@@ -317,12 +314,11 @@
 (defn- splice-out-knot
   "Splices out the specified knot, reparenting its children."
   [{:keys [*session] :as request}]
-  (let [session' (swap! *session session/splice-out! (knot-id request))]
-    (if-let [error (:error session')]
-      (do
-        ;; TODO: Display error to user properly
-        (swap! *session dissoc :error)
-        (render-app session' {:flash error}))
+  (let [[error session'] (session/splice-out! @*session (knot-id request))]
+    (reset! *session session')
+    (if error
+      ;; TODO: Better way to present the error (a modal?)
+      (render-app session' {:flash error})
       (render-app session' {:flash "Spliced out"}))))
 
 (defn- close-and-shutdown

@@ -4,6 +4,7 @@
   (:require [clj-commons.humanize :as h]
             [clojure.set :as set]
             [clj-commons.humanize.inflect :refer [pluralize-noun]]
+            [clojure.string :as string]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]))
@@ -120,36 +121,40 @@
       (assoc :active-knot-id knot-id)))
 
 (defn edit-command!
+  "Returns a tuple of error and new session."
   [session knot-id new-command]
-  (let [{:keys [tree]} session
-        {:keys [parent-id]} (tree/get-knot tree knot-id)
-        existing-child (tree/find-child-id tree parent-id new-command)]
-    (if existing-child
-      (assoc session :error
-             (format "Parent knot already contains a child with command '%s'"
-                     new-command))
-      (-> session
-          (dissoc :error)
-          capture-undo
-          (update :tree tree/change-command knot-id new-command)
-          (do-replay-to! knot-id)))))
+  (if (string/blank? new-command)
+    [nil session]
+    (let [{:keys [tree]} session
+          {:keys [parent-id]} (tree/get-knot tree knot-id)
+          existing-child (tree/find-child-id tree parent-id new-command)]
+      (if existing-child
+        [(format "Parent knot already contains a child with command '%s'"
+                 new-command)
+         session]
+        [nil
+         (-> session
+             capture-undo
+             (update :tree tree/change-command knot-id new-command)
+             (do-replay-to! knot-id))]))))
 
 (defn insert-parent!
   [session knot-id new-command]
-  (let [{:keys [tree]} session
-        {:keys [parent-id]} (tree/get-knot tree knot-id)
-        existing-child (tree/find-child-id tree parent-id new-command)]
-    (if existing-child
-      (assoc session :error
-             (format "Parent knot already contains a child with command '%s'"
-                     new-command))
-      (let [new-id (tree/next-id)]
-        (-> session
-            (dissoc :error)
-            capture-undo
-            (update :tree tree/insert-parent knot-id new-id new-command)
-            (do-replay-to! knot-id)
-            (assoc :new-id new-id))))))
+  (if (string/blank? new-command)
+    [nil session]
+    (let [{:keys [tree]} session
+          {:keys [parent-id]} (tree/get-knot tree knot-id)
+          existing-child (tree/find-child-id tree parent-id new-command)]
+      (if existing-child
+        [(format "Parent knot already contains a child with command '%s'"
+                 new-command)
+         session]
+        (let [new-id (tree/next-id)]
+          [nil (-> session
+                   capture-undo
+                   (update :tree tree/insert-parent knot-id new-id new-command)
+                   (do-replay-to! knot-id)
+                   (assoc :new-id new-id))])))))
 
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."
@@ -229,7 +234,9 @@
 
 (defn splice-out!
   "Deletes a knot, reparenting its children to the knot's parent (unless there
-  are command conflicts)."
+  are command conflicts).
+  
+  Returns a tuple of error and the new session."
   [session knot-id]
   (let [{:keys [tree active-knot-id]} session
         {:keys [parent-id children]} (tree/get-knot tree knot-id)
@@ -242,21 +249,20 @@
                             set)
         overlaps (set/intersection parent-commands child-commands)]
     (if (seq overlaps)
-      (assoc session :error
-             (format "Parent already has %s %s"
-                     (pluralize-noun (count overlaps) "command")
-                     (->> overlaps
-                          sort
-                          (map q)
-                          h/oxford)))
+      [(format "Parent already has %s %s"
+               (pluralize-noun (count overlaps) "command")
+               (->> overlaps
+                    sort
+                    (map q)
+                    h/oxford))
+       session]
       (let [replay-id (first children)
             active-is-spliced? (= active-knot-id knot-id)]
-        (cond-> (-> session
-                    (dissoc :error)
-                    capture-undo
-                    (update :tree tree/splice-out knot-id)
-                    (assoc :new-id (or replay-id parent-id)))
-          ;; Replay to first child if exists (process state still valid for that path)
-          replay-id (do-replay-to! replay-id)
-          ;; If we spliced the active knot and no children, clear active-knot-id
-          (and active-is-spliced? (not replay-id)) (dissoc :active-knot-id))))))
+        [nil (cond-> (-> session
+                         capture-undo
+                         (update :tree tree/splice-out knot-id)
+                         (assoc :new-id (or replay-id parent-id)))
+               ;; Replay to first child if exists (process state still valid for that path)
+               replay-id (do-replay-to! replay-id)
+               ;; If we spliced the active knot and no children, clear active-knot-id
+               (and active-is-spliced? (not replay-id)) (dissoc :active-knot-id))]))))
