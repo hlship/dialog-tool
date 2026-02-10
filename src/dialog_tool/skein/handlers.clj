@@ -194,16 +194,22 @@
   (let [id       (knot-id request)
         {:keys [insertCommand]} signals
         command  (some-> insertCommand str string/trim not-empty)
-        session' (when command
-                   (swap! *session session/insert-parent! id command))]
+        session' (if command
+                   (swap! *session session/insert-parent! id command)
+                   @*session)]
     (if-let [error (:error session')]
       ;; Error occurred - redisplay modal with error
-      (render-insert-parent-modal id command error)
+      (do
+        (swap! *session dissoc :error)
+        (render-insert-parent-modal id command error))
       ;; Success - return both updated app and cleared modal
-      {:status 200
-       :body   (html [:<>
-                      (ui.app/render-app @*session {})
-                      [:div#modal-container]])})))
+      (utils/with-short-sse
+        request
+        (fn [sse-gen]
+          (utils/patch-signals! sse-gen {:insertCommand nil})
+          (utils/patch-elements! sse-gen (html [:<>
+                                                (ui.app/render-app @*session {})
+                                                [:div#modal-container]])))))))
 
 (defn- render-edit-label-modal
   "Renders the edit label modal with optional error message."
@@ -313,8 +319,10 @@
   [{:keys [*session] :as request}]
   (let [session' (swap! *session session/splice-out! (knot-id request))]
     (if-let [error (:error session')]
-      ;; TODO: Display error to user properly
-      (render-app session' {:flash error})
+      (do
+        ;; TODO: Display error to user properly
+        (swap! *session dissoc :error)
+        (render-app session' {:flash error}))
       (render-app session' {:flash "Spliced out"}))))
 
 (defn- close-and-shutdown
