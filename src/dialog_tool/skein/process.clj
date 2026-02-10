@@ -151,5 +151,6 @@
   "Kills the process and returns nil."
   [process]
   (let [{:keys [^Process process]} process]
-    (.destroy process))
+    (when process
+      (.destroy process)))
   nil)

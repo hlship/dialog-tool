@@ -47,10 +47,9 @@
                                 engine
                                 :dgdebug)
         start-process       #(sk.process/start-process! root-dir engine' seed')
-        process             (start-process)
         session             (if tree
-                              (s/create-loaded! process skein-path tree)
-                              (s/create-new! process skein-path engine seed))
+                              (s/create-loaded! start-process skein-path tree)
+                              (s/create-new! start-process skein-path engine seed))
         shutdown-fn         (hk/run-server service-handler-proxy
                                            {:port          port
                                             :ip            "localhost"
@@ -61,7 +60,6 @@
                               (when-not development-mode?
                                 (System/exit 0)))]
     (reset! *session (assoc session
-                            :start-process-fn start-process
                             ;; Development mode is when testing/debugging the tool itself
                             :development-mode? development-mode?
                             ;; debug-enabled? is for users debugging their projects using dgdebug

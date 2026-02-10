@@ -70,12 +70,12 @@
                 [:red (:error totals)]))
 
 (defn- run-tests
-  [project width quiet? skein-path]
+  [width quiet? skein-path]
   (let [tree (sk.file/load-tree skein-path)
         {:keys [engine seed]
          :or {engine :dgdebug}} (:meta tree)
-        process (sk.process/start-process! project engine seed)
-        session (s/create-loaded! process skein-path tree)
+        start-process #(sk.process/start-process! nil engine seed)
+        session (s/create-loaded! start-process skein-path tree)
         leaf-ids (->> tree
                       tree/leaf-knots
                       (map :id))
@@ -107,14 +107,13 @@
    skein-file ["SKEIN-FILE" "Path to single skein file to test"
                :optional true]
    :command "test"]
-  (let [project (pf/read-project)
-        skein-paths (if skein-file
+  (let [skein-paths   (if skein-file
                       [skein-file]
                       (map str (fs/glob "" "*.skein")))
         _ (when-not (seq skein-paths)
             (abort "No skein files found"))
         width (->> skein-paths (map count) (apply max))
-        test-totals (map #(run-tests project width quiet? %) skein-paths)
+        test-totals   (map #(run-tests width quiet? %) skein-paths)
         totals (apply merge-with + test-totals)
         pretty-totals (compose-totals totals)]
     (if quiet?

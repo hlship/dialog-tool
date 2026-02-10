@@ -13,20 +13,22 @@
   "Creates a new session from a tree loaded from the path, and a process started with
   the skein's seed. The process should be just started so that we can read the initial
   response."
-  [process skein-path tree]
-  (let [initial-response (sk.process/read-response! process)]
+  [start-process-fn skein-path tree]
+  (let [process (start-process-fn)
+        initial-response (sk.process/read-response! process)]
     {:skein-path skein-path
      :undo-stack []
-     :redo-stack []
+     :redo-stack [] 
      :process process
+     :start-process-fn start-process-fn
      :tree (tree/update-response tree 0 initial-response)
      :active-knot-id 0}))
 
 (defn create-new!
   "Creates a new session for a new skein, using an existing process.  The process should be
   just started, so that we can read the initial response. Creates a new tree for the session."
-  [process skein-path engine seed]
-  (create-loaded! process skein-path (tree/new-tree engine seed)))
+  [start-process-fn skein-path engine seed]
+  (create-loaded! start-process-fn skein-path (tree/new-tree engine seed)))
 
 (defn capture-undo
   [session]
