@@ -42,6 +42,8 @@
         "resources"
         build-dir)
     (sh "cp -R public" (fs/file build-dir "resources"))
+    (-> (fs/file build-dir "resources" "version.txt")
+        (spit tag))
     (sh "tailwindcss --minimize --map"
         "--input" "public/style.css"
         "--output" "out/build/resources/public/style.css")

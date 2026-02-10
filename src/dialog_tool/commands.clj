@@ -2,6 +2,7 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
             [clj-commons.ansi :as ansi :refer [pout perr]]
+            [clojure.java.io :as io]
             [clojure.string :as string]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
@@ -160,7 +161,7 @@
 (defcommand sources
   "Print the sources for the project in compilation order."
   [debug? debug-opt
-   one? ["-1" "--single-line" "Output as a single line, colon-seperated"]]
+   one? ["-1" "--single-line" "Output as a single line, colon-separated"]]
   (let [project (pf/read-project)
         paths (pf/expand-sources project {:debug? debug?})]
     (if one?
@@ -169,3 +170,11 @@
         (doseq [path paths]
           (pout [{:font :cyan
                   :width longest} path]))))))
+
+(defcommand version
+  "Prints the current version of dgt."
+  []
+  (let [url (io/resource "version.txt")]
+    (println (if url
+               (-> url slurp string/trim)
+               "DEV"))))
