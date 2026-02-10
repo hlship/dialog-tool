@@ -88,7 +88,7 @@
 
   (start! "../dialog-extensions/who"
           "../dialog-extensions/who/default.skein"
-          nil)
+          {:development-mode? true})
 
   (start! "../dialog-extensions/who"
           "../dialog-extensions/who/frotz.skein"

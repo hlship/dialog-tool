@@ -33,7 +33,7 @@
           method        (-> request-method name string/upper-case)
           start-nanos   (System/nanoTime)
           _             (do
-                          (print (format "--- %4s %s ..." method uri))
+                          (print (format "--- %4s %s ... " method uri))
                           (flush))
           response      (f request)
           elapsed-nanos (- (System/nanoTime) start-nanos)]

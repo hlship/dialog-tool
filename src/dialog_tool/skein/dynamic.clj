@@ -4,7 +4,50 @@
   (:require [clojure.set :as set]
             [clojure.string :as string]))
 
-;; Assuming that word breaks will *NOT* occur mid-object name
+(defn- maybe-conj
+  [coll v]
+  (if (some? v)
+    (conj coll v)
+    coll))
+
+
+(defn- combine-lines
+  [prior-line new-line]
+  (str prior-line
+       ;; Little worried about square brackets, but in the meantime:
+       (when-not (string/ends-with? prior-line "-")
+         " ")
+       new-line))
+
+(defn- pre-parse
+  "Trims lines and combines unindented lines with prior line."
+  [lines]
+  (loop [result     []
+         prior-line nil
+         [line & remaining-lines] lines]
+    (cond
+      (nil? line)
+      (maybe-conj result prior-line)
+
+      (string/blank? line)
+      (recur (-> result
+                 (maybe-conj prior-line)
+                 (conj ""))
+             nil
+             remaining-lines)
+
+      ;; sections are always preceded by a blank line so don't need to worry about prior-line
+      (re-matches #"[A-Z \-]+" line)
+      (recur (conj result line) nil remaining-lines)
+
+      ;; Indented line: finish prior line if necessary, start a new line as prior
+      (string/starts-with? line " ")
+      (recur (maybe-conj result prior-line) (string/trim line) remaining-lines)
+
+      :else
+      ;; Not indented
+      (recur result (combine-lines prior-line line) remaining-lines))))
+
 
 (defn- soft-end?
   [line]
@@ -14,61 +57,35 @@
 (defn- global-flag
   [output line]
   (let [[_ fact value] (re-matches #"(?ix)
-    \s*
     (\(.+\)) # fact
     \s+
-    (.*) # value
-    \s*"
+    (.*) # value"
                                    line)]
     (assoc-in output [:global-flags fact] value)))
 
 (defn- global-var
-  [output lines]
-  (let [line (first lines)
-        [_ fact value] (re-matches #"(?ix)
-    \s*
+  [output line]
+  (let [[_ fact value] (re-matches #"(?ix)
     (\(.+\)) # fact
     \s+
-    (.*) # start of values (may span lines)"
+    (.*)"
                                    line)]
-    (loop [fact-value value
-           remaining-lines (next lines)]
-      (let [line (first remaining-lines)]
-        (if (soft-end? line)
-          [(assoc-in output [:global-vars fact] fact-value)
-           remaining-lines]
-          ;; It may break mid-word at a dash, or between words.
-          ;; This may need to be revisited if a dictionary words list
-          ;; (such as '(last command was $)') is split across lines. 
-          (recur (str fact-value
-                      ;; Add a space between object names, but not when a name is split at a dash
-                      (when (string/starts-with? line "#") " ")
-                      line)
-                 (next remaining-lines)))))))
+    (assoc-in output [:global-vars fact] value)))
 
 (defn- object-flag
   [output lines]
-  (let [fact (first lines)]
-    (loop [values []
-           lines (next lines)]
-      (let [line (first lines)]
-        (if (soft-end? line)
-          [(assoc-in output [:object-flags fact] (seq values)) lines]
-          (let [object-names (string/split line #"\s+")
-                values' (if (string/starts-with? line "#")
-                          (into values object-names)
-                               ;; Handle ugly case where an object name was split at a dash
-                          (let [last-value (last values)
-                                replacement-value (str last-value (first object-names))]
-                            (-> values
-                                pop
-                                (conj replacement-value)
-                                (into (rest object-names)))))]
-            (recur values' (next lines))))))))
+  (let [[fact value & more-lines] lines]
+    (if (soft-end? value)
+      ;; Per-object flag with no values.
+      ;; Maybe we should just omit this non-fact?
+      [(assoc-in output [:object-flags fact] nil)
+       (rest lines)]
+      [(assoc-in output [:object-flags fact] (string/split value #"\s+")) more-lines])))
 
 (defn- object-var
   [output lines]
   (let [fact (first lines)]
+    ;; Each predicate line is followed by some number of object/value lines.
     (loop [values []
            lines (next lines)]
       (let [line (first lines)]
@@ -108,8 +125,7 @@
           :global-vars
           (if (= line "PER-OBJECT VARIABLES")
             (recur :object-vars output lines')
-            (let [[output' remaining-lines] (global-var output lines)]
-              (recur state output' remaining-lines)))
+            (recur state (global-var output line) lines'))
 
           ;; Final state
           :object-vars
@@ -123,8 +139,7 @@
        string/split-lines
        ;; The first line is ">@dynamic", then "GLOBAL FLAGS"
        (drop 2)
-       (map string/trim)
-       ;; TODO: Could we "unwrap" wrapped lines to simplify logic?
+       pre-parse
        (parse* :global-flags {})))
 
 (defn- flatten-pred

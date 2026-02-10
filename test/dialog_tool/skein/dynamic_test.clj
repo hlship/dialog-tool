@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.dynamic-test
   (:require [clojure.java.io :as io]
+            [dialog-tool.skein.dynamic :as dynamic]
             [matcher-combinators.test :refer [match?]]
             [dialog-tool.skein.dynamic :refer [parse-predicates flatten-predicates diff-flattened]]
             [matcher-combinators.matchers :as m]
@@ -297,3 +298,13 @@
           :changed (m/equals
                     #{["(current quip #greet)" "(current quip #farewell)"]})}
          diff))))
+
+(deftest parse-object-value-with-split
+  (let [parsed (->> "dynamic-split-dict-list.txt"
+                    file-contents
+                    parse-predicates)]
+    (is (match?
+          {:object-vars
+           {"($ has conversation queue $)"
+            [["#bartender" "[[#postponed-obligatory #play-billiards]]"]]}}
+          parsed))))

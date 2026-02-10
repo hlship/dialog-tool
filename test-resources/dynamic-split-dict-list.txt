@@ -1,0 +1,117 @@
+> @dynamic
+GLOBAL FLAGS
+        (scene debugging enabled)                off
+        (last action was conversationally active) off (changed)
+        (tutorial mode enabled)                  on (changed)
+        (score notifications are on)             off
+        (conversation debug logging)             on (changed)
+        (inhibiting next tick)                   off
+        (tracing actions)                        off
+        (narrator's it is protected)             off (changed)
+        (inhibit conversation suggestions)       off
+        (player can see)                         on (changed)
+        (implicit action wants direction)        off (changed)
+        (allowing parse errors)                  off (changed)
+        (game has ended)                         off
+        (head noun is required)                  off (changed)
+
+PER-OBJECT FLAGS
+        ($ is off)                              
+        ($ is handled)                          
+                #key
+        ($ is hidden)                           
+        ($ is closed)                           
+                #trap-door
+        ($ is locked)                           
+        (prior room was $)                      
+                #pub-interior #outside-pub
+        ($ has spoken this tick)                
+                #bartender
+        ($ in progress)                         
+                #entering-the-pub
+        ($ has completed)                       
+                #entering-the-pub
+        ($ has started)                         
+                #entering-the-pub
+        ($ has been suggested)                  
+                #climb-something #make-conversation #enter-conversation #ask-
+for-exits #go-somewhere #take-something #drop-something #look-self #examine-
+something #inventory
+        ($ has been performed)                  
+                #make-conversation #enter-conversation #go-somewhere #take-
+something #drop-something #look-self #examine-something #inventory
+        ($ is visited)                          
+                #game-room #pub-interior #outside-pub
+        ($ is choice-exhausted)                 
+        ($ is exposed)                          
+
+GLOBAL VARIABLES
+        (conversation partner $)                #bartender
+        (discussable quips $)                   [#where-everyone-is #turn-noisy-
+machine-off]
+        (current quip $)                        #noisy-machine
+        (previous quip $)                       <unset>
+        (grandparent quip $)                    #noisy-machine
+        (suggestion $ was just performed)       <unset>
+        (current player $)                      #player
+        (current room $)                        #game-room
+        (current score $)                       0
+        (current scope ceiling $)               #game-room
+        (deferred commandline $)                <unset>
+        (reported score is $)                   0
+        (last command was $)                    [machine]
+        (implicit action is $)                  <unset>
+        (player's it refers to $)               #fruit-game
+        (narrator's it refers to $)             <unset>
+        (her refers to $)                       <unset>
+        (him refers to $)                       #bartender
+        (them refers to $)                      [#trousers]
+        (current node $)                        <unset>
+        (previous node $)                       <unset>
+        (current actor $)                       #player
+
+PER-OBJECT VARIABLES
+        ($ has parent $)                        
+                #sonic-screwdriver              #crawl-space
+                #bartender                      #pub-interior
+                #fruit-game                     #game-room
+                #beam                           #game-room
+                #lamp                           #game-room
+                #billiards-table                #game-room
+                #trap-door                      #game-room
+                #dartboard                      #game-room
+                #player                         #game-room
+                #sign                           #outside-pub
+                #pub-door                       #pub-interior
+                #windows                        #pub-interior
+                #mist                           #outside-pub
+                #trousers                       #player
+                #jacket                         #player
+                #key                            #player
+                #booths                         #pub-interior
+                #bar                            #pub-interior
+        ($ has relation $)                      
+                #sonic-screwdriver              #in
+                #bartender                      #in
+                #fruit-game                     #in
+                #beam                           #in
+                #lamp                           #in
+                #billiards-table                #in
+                #trap-door                      #in
+                #dartboard                      #in
+                #player                         #in
+                #sign                           #in
+                #pub-door                       #in
+                #windows                        #in
+                #mist                           #in
+                #trousers                       #wornby
+                #jacket                         #wornby
+                #key                            #heldby
+                #booths                         #in
+                #bar                            #in
+        ($ is recollected by $)                 
+                #noisy-machine                  [#bartender #player]
+                #no-need-to-shout               [#bartender #player]
+        ($ has conversation queue $)            
+                #bartender                      [[#postponed-obligatory #play-
+billiards]]
