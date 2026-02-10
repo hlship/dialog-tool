@@ -57,7 +57,9 @@
                                             :server-header "Dialog Skein Service"})
         shutdown-service-fn (fn []
                               (shutdown-fn)
-                              (println "Shut down"))]
+                              (println "Shut down")
+                              (when-not development-mode?
+                                (System/exit 0)))]
     (reset! *session (assoc session
                             :start-process-fn start-process
                             ;; Development mode is when testing/debugging the tool itself
