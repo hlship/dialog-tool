@@ -74,6 +74,8 @@
   
   (-> @*session :debug-enabled?)
   
+  (-> @*session :tree :dynamic (get 0))
+  
   (@*shutdown)
 
   (start! "../sanddancer-dialog"

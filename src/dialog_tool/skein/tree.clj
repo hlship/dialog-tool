@@ -254,9 +254,7 @@
   "Records the state of the dynamic predicates for the knot; this is the result
   of executing the @dynamic command (in the debugger) immediately after the primary command."
   [tree knot-id dynamic]
-  (let [predicate-state (-> dynamic
-                            dynamic/parse-predicates
-                            dynamic/flatten-predicates)]
+  (let [predicate-state (dynamic/parse dynamic)]
     (update-in tree [:dynamic knot-id]
                assoc :response dynamic
                :state predicate-state)))

@@ -89,7 +89,7 @@
         before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
     (if (and (seq dynamic-state)
              (seq before-dynamic-state))
-      (let [{:keys [added removed changed]} (dynamic/diff-flattened before-dynamic-state dynamic-state)
+      (let [{:keys [added removed changed]} (dynamic/diff before-dynamic-state dynamic-state)
             tuples (->> []
                         (into (map #(vector :added %) added))
                         (into (map #(vector :removed %) removed))

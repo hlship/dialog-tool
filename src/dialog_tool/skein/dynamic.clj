@@ -49,6 +49,69 @@
       (recur result (combine-lines prior-line line) remaining-lines))))
 
 
+(defn- flatten-pred
+  [pred-name value]
+  (assert (some? pred-name))
+  (assert (some? value))
+  (string/replace-first pred-name "$" value))
+
+(defn- flatten-pred+
+  [pred-name & values]
+  (assert (some? pred-name))
+  (assert (seq values))
+  (assert (every? some? values))
+  (reduce #(flatten-pred %1 %2)
+          pred-name
+          values))
+
+(def ^:private parent-pred "($ has parent $)")
+(def ^:private relation-pred "($ has relation $)")
+(def ^:private location-pred "($ is $ $)")
+
+(defn- flatten-predicates
+  "Flattens the predicates map into a set of predicates that are present. 
+  
+  :flags are global and per-object flags that are set.
+  The predicate names have been \"flattened\" to replace \"$\" with the object name
+  (for per-object flags).
+  
+  :vars are global and per-object variables as tuples of the predicate name and then the
+  flattened predicate.
+  
+  In addition, the ($ has parent $) and ($ has relation $) predicates
+  are merged into ($ is $ $), as a special case."
+  [predicates]
+  (let [{:keys [object-flags global-flags global-vars object-vars]} predicates
+        parent-preds        (get object-vars parent-pred)
+        obj->relation       (reduce (fn [m [k v]]
+                                      (assoc m k v))
+                                    {}
+                                    (get object-vars relation-pred))
+        location-vars       (reduce (fn [m [what where]]
+                                      (assoc m
+                                             (flatten-pred location-pred what)
+                                             (flatten-pred+ location-pred
+                                                            what
+                                                            (get obj->relation what "<unset>")
+                                                            where)))
+                                    {}
+                                    parent-preds)
+        object-tuples       (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
+                                  [object-name object-value] object+values]
+                              [(flatten-pred pred-name object-name)
+                               (flatten-pred+ pred-name object-name object-value)])
+        global-tuples       (for [[pred-name object-value] global-vars]
+                              [pred-name (flatten-pred pred-name object-value)])
+        active-object-flags (for [[pred-name object-names] object-flags
+                                  object-name object-names]
+                              (flatten-pred pred-name object-name))]
+    {:flags (-> global-flags
+                (concat active-object-flags)
+                set)
+     :vars  (-> location-vars
+                (into object-tuples)
+                (into global-tuples))}))
+
 (defn- soft-end?
   [line]
   (or (string/blank? line)
@@ -141,39 +204,10 @@
           (let [[output' remaining-lines] (object-var output lines)]
             (recur state output' remaining-lines)))))))
 
-(defn parse-predicates
-  "Parse the captured response for the command \"@dynamic\" into a predicates map that can be further processed."
-  [response]
-  (->> response
-       string/split-lines
-       ;; The first line is ">@dynamic", then "GLOBAL FLAGS"
-       (drop 2)
-       pre-parse
-       (parse* :global-flags {:global-flags #{}})))
-
-(defn- flatten-pred
-  [pred-name value]
-  (assert (some? pred-name))
-  (assert (some? value))
-  (string/replace-first pred-name "$" value))
-
-(defn- flatten-pred+
-  [pred-name & values]
-  (assert (some? pred-name))
-  (assert (seq values))
-  (assert (every? some? values))
-  (reduce #(flatten-pred %1 %2)
-          pred-name
-          values))
-
-(def ^:private parent-pred "($ has parent $)")
-(def ^:private relation-pred "($ has relation $)")
-(def ^:private location-pred "($ is $ $)")
-
-(defn flatten-predicates
-  "Flattens the predicates map into a set of predicates that are present. 
+(defn parse
+  "Parse the captured response for the command \"@dynamic\" into a predicates map that can be further processed.
   
-  :flags are global and per-object flags that are present (and have non-<unset> values).
+  :flags are global and per-object flags that are set.
   The predicate names have been \"flattened\" to replace \"$\" with the object name
   (for per-object flags).
   
@@ -182,51 +216,19 @@
   
   In addition, the ($ has parent $) and ($ has relation $) predicates
   are merged into ($ is $ $), as a special case."
-  [predicates]
-  (let [{:keys [object-flags global-flags global-vars object-vars]} predicates
-        parent-preds        (get object-vars parent-pred)
-        obj->relation       (reduce (fn [m [k v]]
-                                      (assoc m k v))
-                                    {}
-                                    (get object-vars relation-pred))
-        location-vars       (reduce (fn [m [what where]]
-                                      (assoc m
-                                             (flatten-pred location-pred what)
-                                             (flatten-pred+ location-pred
-                                                            what
-                                                            (get obj->relation what "<unset>")
-                                                            where)))
-                                    {}
-                                    parent-preds)
-        object-tuples       (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
-                                  [object-name object-value] object+values]
-                              [(flatten-pred pred-name object-name)
-                               (flatten-pred+ pred-name object-name object-value)])
-        global-tuples       (for [[pred-name object-value] global-vars]
-                              [pred-name (flatten-pred pred-name object-value)])
-        active-object-flags (for [[pred-name object-names] object-flags
-                                  object-name object-names]
-                              (flatten-pred pred-name object-name))]
-    {:flags (-> global-flags
-                (concat active-object-flags)
-                set)
-     :vars  (-> location-vars
-                (into object-tuples)
-                (into global-tuples))}))
+  [response]
+  (->> response
+       string/split-lines
+       ;; The first line is ">@dynamic", then "GLOBAL FLAGS"
+       (drop 2)
+       pre-parse
+       (parse* :global-flags {:global-flags #{}})
+       flatten-predicates))
 
-(defn- unset?
-  "Returns true if the string contains the fake value <unset>."
-  [s]
-  (and s
-       (string/includes? s "<unset>")))
-
-(defn diff-flattened
+(defn diff
   "Analyzes the before and after predicates (from flatten-predicates) and returns a map of :added, :removed,
   and :changed sets.  :added and :removed are sets of predicates added or removed,
-  :changes is a set of before/after predicates.
-  
-  Variables that change from <unset> to a value are treated as :added.
-  Variables that change from a value to <unset> are treated as :removed."
+  :changes is a set of before/after tuples."
   [before after]
   (let [before-flags (:flags before)
         after-flags (:flags after)
@@ -241,17 +243,6 @@
                 (= before-val after-val)
                 m
 
-                            ;; <unset> -> value is treated as added
-                (and (unset? before-val)
-                     (some? after-val))
-                (update m :added conj after-val)
-
-                            ;; value -> <unset> is treated as removed
-                (and (some? before-val)
-                     (unset? after-val))
-                (update m :removed conj before-val)
-
-                            ;; both have non-<unset> values
                 (and (some? before-val)
                      (some? after-val))
                 (update m :changed conj [before-val after-val])
