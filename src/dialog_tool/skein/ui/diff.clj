@@ -59,12 +59,40 @@
       :else
       (recur i (dec j) (conj result {:type :added :value (nth ys (dec j))})))))
 
+(defn- coalesce-diff
+  "Merge consecutive diff entries of the same type into single blocks.
+   Reduces the number of spans in the output."
+  [diff-seq]
+  (when (seq diff-seq)
+    (loop [[current & remaining] diff-seq
+           result []
+           acc nil]
+      (cond
+        ;; No more items - flush accumulator and return
+        (nil? current)
+        (if acc
+          (conj result acc)
+          result)
+
+        ;; No accumulator yet - start one
+        (nil? acc)
+        (recur remaining result current)
+
+        ;; Same type - merge values
+        (= (:type acc) (:type current))
+        (recur remaining result (update acc :value str (:value current)))
+
+        ;; Different type - flush accumulator and start new one
+        :else
+        (recur remaining (conj result acc) current)))))
+
 (defn- compute-diff*
   [old-text new-text]
   (let [old-tokens (tokenize old-text)
         new-tokens (tokenize new-text)
-        matrix     (lcs-matrix old-tokens new-tokens)]
-    (backtrack-lcs matrix old-tokens new-tokens)))
+        matrix     (lcs-matrix old-tokens new-tokens)
+        raw-diff   (backtrack-lcs matrix old-tokens new-tokens)]
+    (coalesce-diff raw-diff)))
 
 (defn- compute-diff
   [old-text new-text]
@@ -78,7 +106,8 @@
 
 (defn diff-text
   "Compute word-level diff between old-text and new-text.
-   Returns a sequence of {:type :added/:removed/:unchanged :value string} maps."
+   Returns a sequence of coalesced blocks: {:type :added/:removed/:unchanged :value string} maps.
+   Consecutive tokens of the same type are merged to reduce the number of output spans."
   [old-text new-text]
   (cond
     ;; No response yet, everything in unblessed is new
