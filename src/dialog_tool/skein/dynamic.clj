@@ -61,7 +61,9 @@
     \s+
     (.*) # value"
                                    line)]
-    (assoc-in output [:global-flags fact] value)))
+    (if (string/starts-with? value "on")
+      (update output :global-flags conj fact)
+      output)))
 
 (defn- global-var
   [output line]
@@ -70,16 +72,16 @@
     \s+
     (.*)"
                                    line)]
-    (assoc-in output [:global-vars fact] value)))
+    (if-not (= value "<unset>")
+      (assoc-in output [:global-vars fact] value)
+      output)))
 
 (defn- object-flag
   [output lines]
   (let [[fact value & more-lines] lines]
     (if (soft-end? value)
       ;; Per-object flag with no values.
-      ;; Maybe we should just omit this non-fact?
-      [(assoc-in output [:object-flags fact] nil)
-       (rest lines)]
+      [output (rest lines)]
       [(assoc-in output [:object-flags fact] (string/split value #"\s+")) more-lines])))
 
 (defn- object-var
@@ -88,10 +90,17 @@
     ;; Each predicate line is followed by some number of object/value lines.
     (loop [values []
            lines (next lines)]
-      (let [line (first lines)]
-        (if (soft-end? line)
-          [(assoc-in output [:object-vars fact] (seq values))
+      (let [line (first lines)
+            end? (soft-end? line)]
+        (cond
+          (and end? (seq values))
+          [(assoc-in output [:object-vars fact] values)
            lines]
+
+          end?
+          [output lines]
+
+          :else
           (let [obj+val (string/split line #"\s+" 2)]
             (recur (conj values obj+val)
                    (next lines))))))))
@@ -140,7 +149,7 @@
        ;; The first line is ">@dynamic", then "GLOBAL FLAGS"
        (drop 2)
        pre-parse
-       (parse* :global-flags {})))
+       (parse* :global-flags {:global-flags #{}})))
 
 (defn- flatten-pred
   [pred-name value]
@@ -175,39 +184,35 @@
   are merged into ($ is $ $), as a special case."
   [predicates]
   (let [{:keys [object-flags global-flags global-vars object-vars]} predicates
-        parent-preds (get object-vars parent-pred)
-        obj->relation (reduce (fn [m [k v]]
-                                (assoc m k v))
-                              {}
-                              (get object-vars relation-pred))
-        location-vars (reduce (fn [m [what where]]
-                                (assoc m
-                                       (flatten-pred location-pred what)
-                                       (flatten-pred+ location-pred
-                                                      what
-                                                      (get obj->relation what "<unset>")
-                                                      where)))
-                              {}
-                              parent-preds)
-        object-tuples (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
-                            [object-name object-value] object+values]
-                        [(flatten-pred pred-name object-name)
-                         (flatten-pred+ pred-name object-name object-value)])
-        global-tuples (for [[pred-name object-value] global-vars]
-                        [pred-name (flatten-pred pred-name object-value)])
-        active-global-flags (keep (fn [[pred-name value]]
-                                    (when (string/starts-with? value "on")
-                                      pred-name))
-                                  global-flags)
+        parent-preds        (get object-vars parent-pred)
+        obj->relation       (reduce (fn [m [k v]]
+                                      (assoc m k v))
+                                    {}
+                                    (get object-vars relation-pred))
+        location-vars       (reduce (fn [m [what where]]
+                                      (assoc m
+                                             (flatten-pred location-pred what)
+                                             (flatten-pred+ location-pred
+                                                            what
+                                                            (get obj->relation what "<unset>")
+                                                            where)))
+                                    {}
+                                    parent-preds)
+        object-tuples       (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
+                                  [object-name object-value] object+values]
+                              [(flatten-pred pred-name object-name)
+                               (flatten-pred+ pred-name object-name object-value)])
+        global-tuples       (for [[pred-name object-value] global-vars]
+                              [pred-name (flatten-pred pred-name object-value)])
         active-object-flags (for [[pred-name object-names] object-flags
                                   object-name object-names]
                               (flatten-pred pred-name object-name))]
-    {:flags (-> active-global-flags
+    {:flags (-> global-flags
                 (concat active-object-flags)
                 set)
-     :vars (-> location-vars
-               (into object-tuples)
-               (into global-tuples))}))
+     :vars  (-> location-vars
+                (into object-tuples)
+                (into global-tuples))}))
 
 (defn- unset?
   "Returns true if the string contains the fake value <unset>."

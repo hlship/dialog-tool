@@ -1,37 +1,6 @@
-{:global-flags {"(narrator's it is protected)"              "off",
-                "(memory threatened)"                       "off",
-                "(last action was conversationally active)" "off (changed)",
-                "(inhibiting next tick)"                    "off",
-                "(score notifications are on)"              "off",
-                "(fixed pursuit path)"                      "off",
-                "(talent threatened)"                       "off",
-                "(implicit action wants direction)"         "off (changed)",
-                "(just smoked)"                             "off (changed)",
-                "(final threatened)"                        "off",
-                "(player can see)"                          "on (changed)",
-                "(tracing actions)"                         "off",
-                "(force rainstorm complete)"                "off",
-                "(scene debugging enabled)"                 "off",
-                "(photo is noted)"                          "off",
-                "(allowing parse errors)"                   "off (changed)",
-                "(photo has been opened)"                   "off",
-                "(barrel is placed)"                        "off",
-                "(head noun is required)"                   "off (changed)",
-                "(inhibit conversation suggestions)"        "off",
-                "(sand-dancer is named)"                    "on (changed)",
-                "(tried to leave)"                          "off",
-                "(radio kicked over)"                       "off",
-                "(player acts cowardly)"                    "off",
-                "(caught by shadows)"                       "off",
-                "(plan threatened)"                         "off",
-                "(force shadow)"                            "off",
-                "(prevent about lizards quip)"              "off",
-                "(truck damage is known)"                   "off",
-                "(radio smashed)"                           "off"},
- :object-flags {"($ has spoken this tick)" nil,
-                "($ is exposed)"           nil,
-                "($ is traded)"            ("#road-trips" "#last-day-of-high-school" "#your-shit-job"),
-                "($ is choice-exhausted)"  nil,
+{:global-flags #{"(player can see)"
+                 "(sand-dancer is named)"},
+ :object-flags {"($ is traded)"            ("#road-trips" "#last-day-of-high-school" "#your-shit-job"),
                 "($ is noted useful)"      ("#duct-tape"
                                              "#canned-oranges"
                                              "#flashlight"
@@ -51,8 +20,6 @@
                                              "#gas-can"
                                              "#tiny-frosted-window"
                                              "#cage"),
-                "($ in progress)"          nil,
-                "($ is retrieved)"         nil,
                 "($ has completed)"        ("#sand-dancers-offer" "#sand-dancers-arrival"),
                 "($ has traded)"           ("#sand-dancer"),
                 "($ has started)"          ("#sand-dancers-offer" "#sand-dancers-arrival"),
@@ -65,35 +32,19 @@
                                              "#strength"
                                              "#emotional-baggage"
                                              "#wallet"
-                                             "#lighter"),
-                "($ is hidden)"            nil},
- :global-vars  {"(player's it refers to $)"      "<unset>",
-                "(current room $)"               "#crumbling-concrete",
+                                             "#lighter")},
+ :global-vars  {"(current room $)"               "#crumbling-concrete",
                 "(previous room $)"              "#crumbling-concrete",
                 "(remaining cigarettes $)"       "6",
                 "(them refers to $)"             "[#canned-oranges]",
-                "(her refers to $)"              "<unset>",
-                "(grandparent quip $)"           "<unset>",
-                "(visible flotsam $)"            "<unset>",
-                "(him refers to $)"              "<unset>",
-                "(conversation partner $)"       "<unset>",
                 "(current visibility ceiling $)" "#crumbling-concrete",
                 "(current player $)"             "#knock",
-                "(pursuit direction $)"          "<unset>",
                 "(turns in current room $)"      "1",
-                "(pursuit duration $)"           "<unset>",
                 "(last command was $)"           "[s]",
-                "(current node $)"               "<unset>",
-                "(previous quip $)"              "<unset>",
                 "(reported score is $)"          "0",
-                "(deferred commandline $)"       "<unset>",
                 "(current actor $)"              "#knock",
-                "(current quip $)"               "<unset>",
                 "(current score $)"              "0",
-                "(previous node $)"              "<unset>",
-                "(discussable quips $)"          "[]",
-                "(narrator's it refers to $)"    "<unset>",
-                "(implicit action is $)"         "<unset>"},
+                "(discussable quips $)"          "[]"},
  :object-vars  {"($ has parent $)"             (["#strength" "#knock"]
                                                 ["#flashlight" "#knock"]
                                                 ["#pack" "#glove-compartment"]
@@ -266,9 +217,7 @@
                                                 ["#rusted-barrels" "#in"]
                                                 ["#weeds" "#in"]
                                                 ["#guidebook" "#on"]),
-                "($ is $)"                     nil,
                 "($ number of trades $)"       (["#sand-dancer" "3"]),
-                "($ is tuned to $)"            nil,
                 "($ is recollected by $)"      (["#final-choice" "[#sand-dancer]"]
                                                 ["#greet-sd" "[#sand-dancer #knock]"]
                                                 ["#about-sand-dancer" "[#sand-dancer #knock]"]

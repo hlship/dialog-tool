@@ -21,16 +21,12 @@
 
 (deftest spot-checks
   (let [parsed (-> "dynamic-1.txt" file-contents parse-predicates)]
-    (is (match? {:global-flags {"(inhibiting next tick)" "off"
-                                "(sand-dancer is named)" "on (changed)"}
-                 :object-flags {"($ is exposed)" nil
-                                "($ is traded)" ["#road-trips" "#last-day-of-high-school" "#your-shit-job"]}
+    (is (match? {:global-flags #{"(player can see)" "(sand-dancer is named)"}
+                 :object-flags {"($ is traded)" ["#road-trips" "#last-day-of-high-school" "#your-shit-job"]}
                  :global-vars {"(previous room $)" "#crumbling-concrete"
                                "(remaining cigarettes $)" "6"
-                               "(them refers to $)" "[#canned-oranges]"
-                               "(her refers to $)" "<unset>"}
+                               "(them refers to $)" "[#canned-oranges]"}
                  :object-vars {"($ number of trades $)" [["#sand-dancer" "3"]]
-                               "($ is tuned to $)" nil
                                "($ has conversation queue $)" [["#sand-dancer" "[]"]]
                                "($ is recollected by $)" [["#final-choice" "[#sand-dancer]"]
                                                           ["#greet-sd" "[#sand-dancer #knock]"]
@@ -92,7 +88,6 @@
                                     "(#drawer is closed)"}),
                  :vars (m/equals {"(#pane-of-cracked-glass is $ $)"
                                   "(#pane-of-cracked-glass is #in #crumbling-concrete)",
-                                  "(player's it refers to $)" "(player's it refers to <unset>)",
                                   "(#shelves is $ $)" "(#shelves is #in #storage-room)",
                                   "(#smell-of-gasoline is $ $)"
                                   "(#smell-of-gasoline is #in #control-center)",
@@ -134,7 +129,6 @@
                                   "(#whiffs-of-gasoline is $ $)"
                                   "(#whiffs-of-gasoline is #in #middle-of-nowhere)",
                                   "(them refers to $)" "(them refers to [#canned-oranges])",
-                                  "(her refers to $)" "(her refers to <unset>)",
                                   "(#emergency-lights is $ $)"
                                   "(#emergency-lights is #in #storage-room)",
                                   "(#boarded-up-door is $ $)"
@@ -142,12 +136,9 @@
                                   "(#layers-of-sand is $ $)" "(#layers-of-sand is #in #storage-room)",
                                   "(#pickup-truck is $ $)" "(#pickup-truck is #in #middle-of-nowhere)",
                                   "(#rusty-can is $ $)" "(#rusty-can is #in #base-of-tower)",
-                                  "(grandparent quip $)" "(grandparent quip <unset>)",
                                   "(#shafts-of-light is $ $)"
                                   "(#shafts-of-light is #in #staging-area)",
                                   "(#receipt is $ $)" "(#receipt is #in #wallet)",
-                                  "(visible flotsam $)" "(visible flotsam <unset>)",
-                                  "(him refers to $)" "(him refers to <unset>)",
                                   "(#dial is $ $)" "(#dial is #partof #radio)",
                                   "(#rusted-key is $ $)" "(#rusted-key is #on #foremans-desk)",
                                   "(#drawer is $ $)" "(#drawer is #partof #metal-desk)",
@@ -155,7 +146,6 @@
                                   "(#about-freedom is recollected by $)"
                                   "(#about-freedom is recollected by [#sand-dancer #knock])",
                                   "(#lighter is $ $)" "(#lighter is #heldby #knock)",
-                                  "(conversation partner $)" "(conversation partner <unset>)",
                                   "(#cans-of-food is $ $)" "(#cans-of-food is #on #shelves)",
                                   "(#girder is $ $)" "(#girder is #in #base-of-tower)",
                                   "(#skylight is $ $)" "(#skylight is #in #storage-room)",
@@ -171,7 +161,6 @@
                                   "(#cigarette is $ $)" "(#cigarette is #heldby #coyote)",
                                   "(#grandmas-stories is $ $)"
                                   "(#grandmas-stories is #in #emotional-baggage)",
-                                  "(pursuit direction $)" "(pursuit direction <unset>)",
                                   "(turns in current room $)" "(turns in current room 1)",
                                   "(#final-not-sure is recollected by $)"
                                   "(#final-not-sure is recollected by [#sand-dancer #knock])",
@@ -181,21 +170,17 @@
                                   "(#electrical-tower is #in #base-of-tower)",
                                   "(#crumbling-trash is $ $)" "(#crumbling-trash is #in #break-room)",
                                   "(#headlights is $ $)" "(#headlights is #partof #pickup-truck)",
-                                  "(pursuit duration $)" "(pursuit duration <unset>)",
                                   "(#sand-dancer has conversation queue $)"
                                   "(#sand-dancer has conversation queue [])",
                                   "(#piles-of-trash is $ $)"
                                   "(#piles-of-trash is #in #control-center)",
                                   "(last command was $)" "(last command was [s])",
-                                  "(current node $)" "(current node <unset>)",
                                   "(#tower is $ $)" "(#tower is #in #crumbling-concrete)",
-                                  "(previous quip $)" "(previous quip <unset>)",
                                   "(#cobwebs is $ $)" "(#cobwebs is #in #hole)",
                                   "(reported score is $)" "(reported score is 0)",
                                   "(#scrawny-weeds is $ $)" "(#scrawny-weeds is #in #base-of-tower)",
                                   "(#freedom is $ $)" "(#freedom is #in #roof)",
                                   "(#rabbit is $ $)" "(#rabbit is #in #burrow)",
-                                  "(deferred commandline $)" "(deferred commandline <unset>)",
                                   "(#sagebrush is $ $)" "(#sagebrush is #in #crumbling-concrete)",
                                   "(#can-opener is $ $)" "(#can-opener is #in #control-center)",
                                   "(#foremans-desk is $ $)" "(#foremans-desk is #in #office)",
@@ -205,7 +190,6 @@
                                   "(#withered-cactus is $ $)"
                                   "(#withered-cactus is #in #backtracking)",
                                   "(#newspapers is $ $)" "(#newspapers is #in #weed-strewn-rust)",
-                                  "(current quip $)" "(current quip <unset>)",
                                   "(#ladder is $ $)" "(#ladder is #in #storage-room)",
                                   "(#dust-covered-window is $ $)"
                                   "(#dust-covered-window is #in #office)",
@@ -223,15 +207,12 @@
                                   "(#spirit is $ $)" "(#spirit is #heldby #knock)",
                                   "(#gas-can is $ $)" "(#gas-can is #heldby #knock)",
                                   "(#photo is $ $)" "(#photo is #in #wallet)",
-                                  "(previous node $)" "(previous node <unset>)",
                                   "(#holes-in-roof is $ $)" "(#holes-in-roof is #in #staging-area)",
                                   "(discussable quips $)" "(discussable quips [])",
-                                  "(narrator's it refers to $)" "(narrator's it refers to <unset>)",
                                   "(#hole is $ $)" "(#hole is #in #staging-area)",
                                   "(#path-selection is recollected by $)"
                                   "(#path-selection is recollected by [#sand-dancer #knock])",
                                   "(#saguaro is $ $)" "(#saguaro is #in #middle-of-nowhere)",
-                                  "(implicit action is $)" "(implicit action is <unset>)",
                                   "(#roots is $ $)" "(#roots is #in #burrow)",
                                   "(#guidebook is $ $)" "(#guidebook is #on #overturned-barrel)",
                                   "(#pack is $ $)" "(#pack is #in #glove-compartment)",
@@ -284,12 +265,10 @@
 
 (deftest diff-handles-unset-as-add-or-remove
   (let [before {:flags #{}
-                :vars {"(player's it refers to $)" "(player's it refers to <unset>)"
-                       "(conversation partner $)" "(conversation partner #sand-dancer)"
+                :vars {"(conversation partner $)" "(conversation partner #sand-dancer)"
                        "(current quip $)" "(current quip #greet)"}}
         after {:flags #{}
                :vars {"(player's it refers to $)" "(player's it refers to #lighter)"
-                      "(conversation partner $)" "(conversation partner <unset>)"
                       "(current quip $)" "(current quip #farewell)"}}
         diff (diff-flattened before after)]
     (is (match?
