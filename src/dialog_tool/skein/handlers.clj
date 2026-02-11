@@ -32,9 +32,6 @@
     (let [{:keys [uri request-method]} request
           method        (-> request-method name string/upper-case)
           start-nanos   (System/nanoTime)
-          _             (do
-                          (print (format "--- %4s %s ... " method uri))
-                          (flush))
           response      (f request)
           elapsed-nanos (- (System/nanoTime) start-nanos)]
       (println (format "\r%s %4s %s (%,.1f ms)"
@@ -462,9 +459,9 @@
       expand-raw-string-body
       wrap-not-found
       content-type/wrap-content-type
-      wrap-with-response-logger
       wrap-signal->session
       utils/wrap-parse-signals
       params/wrap-params
       hk-gen/wrap-start-responding
-      log-errors))
+      log-errors
+      wrap-with-response-logger))
