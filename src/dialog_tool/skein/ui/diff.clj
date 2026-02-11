@@ -1,5 +1,11 @@
 (ns dialog-tool.skein.ui.diff)
 
+(def ^:private *cache (atom {}))
+
+(defn clear-cache
+  []
+  (swap! *cache empty))
+
 ;; Word-diff implementation using longest common subsequence algorithm
 
 (defn- tokenize
@@ -53,7 +59,24 @@
       :else
       (recur i (dec j) (conj result {:type :added :value (nth ys (dec j))})))))
 
-(defn compute-diff
+(defn- compute-diff*
+  [old-text new-text]
+  (let [old-tokens (tokenize old-text)
+        new-tokens (tokenize new-text)
+        matrix     (lcs-matrix old-tokens new-tokens)]
+    (backtrack-lcs matrix old-tokens new-tokens)))
+
+(defn- compute-diff
+  [old-text new-text]
+  (let [k      [old-text new-text]
+        cached (get @*cache k)]
+    ;; This is good enough for effectively single-threaded execution
+    (or cached
+        (let [result (compute-diff* old-text new-text)]
+          (swap! *cache assoc k result)
+          result))))
+
+(defn diff-text
   "Compute word-level diff between old-text and new-text.
    Returns a sequence of {:type :added/:removed/:unchanged :value string} maps."
   [old-text new-text]
@@ -68,8 +91,4 @@
 
     ;; Both present, compute word-level diff
     :else
-    (let [old-tokens (tokenize old-text)
-          new-tokens (tokenize new-text)
-          matrix (lcs-matrix old-tokens new-tokens)]
-      (backtrack-lcs matrix old-tokens new-tokens))))
-
+    (compute-diff old-text new-text)))

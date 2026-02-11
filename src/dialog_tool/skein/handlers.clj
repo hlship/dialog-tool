@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.handlers
   (:require [clj-simple-router.core :as router]
+            [dialog-tool.skein.ui.diff :as diff]
             [ring.middleware.content-type :as content-type]
             [ring.middleware.params :as params]
             [huff2.core :as huff :refer [html]]
@@ -114,7 +115,8 @@
 
 (defn- replay-to-knot
   "Replays from the start to the specified knot."
-  [{:keys [*session] :as request}]
+  [{:keys [*session] :as request}] 
+  (diff/clear-cache)
   (render-app (swap! *session session/replay-to! (knot-id request))
               {:flash "Replayed"}))
 
@@ -270,6 +272,7 @@
 (defn- replay-all
   "Replays to all leaf knots with SSE progress updates."
   [{:keys [*session] :as request}]
+  (diff/clear-cache)
   (utils/with-short-sse
     request
     (fn [sse-gen]

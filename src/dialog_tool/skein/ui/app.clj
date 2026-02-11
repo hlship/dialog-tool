@@ -18,7 +18,7 @@
    - Unchanged text: normal styling"
   [response unblessed]
   (if unblessed
-    (let [changes (diff/compute-diff response unblessed)]
+    (let [changes (diff/diff-text response unblessed)]
       (into [:<>]
             (map (fn [{:keys [type value]}]
                    (case type
