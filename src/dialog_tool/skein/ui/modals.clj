@@ -87,7 +87,9 @@
   [modal/modal
    {:title   "Dynamic State"
     :buttons [modal/cancel-button {:label "OK"}]}
-   [:div.whitespace-pre.text-sm.font-mono.overflow-y-auto.max-h-96 dynamic-response]])
+   [:div.whitespace-pre.text-sm.font-mono.overflow-y-auto.max-h-96
+    {:data-init "el.focus()"}
+    dynamic-response]])
 
 (defn quit-modal
   "Renders a quit confirmation modal with options to cancel, save and quit, or quit without saving."
