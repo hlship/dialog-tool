@@ -9,17 +9,18 @@
    - :disabled - when truthy, the dropdown button is disabled
    - :button-class - button style class (default: btn-primary)"
   [{:keys [label disabled button-class dropdown-class]
-    :or   {label        "Drop Down"
-           dropdown-class "dropdown-left"
-           button-class "btn-primary"}} & items]
+    :or {label "Drop Down"
+         dropdown-class "dropdown-left"
+         button-class "btn-primary"}} & items]
   [:details.dropdown
-   {:class          dropdown-class
+   {:class dropdown-class
     :data-on:toggle "dropdownSetup(el)"}
-   [:summary {:class    (classes "btn m-0" button-class)
+   [:summary {:class (classes "btn m-0" button-class)
               :disabled disabled}
     label]
    [:ul.menu.dropdown-content.bg-base-100.rounded-box.z-1.p-2.w-96.max-h-96.overflow-y-auto.flex-nowrap
-    {:class "shadow-xl/30"}
+    {:class "shadow-xl/30"
+     :data-on:click "el.closest('details').removeAttribute('open')"}
     items]])
 
 (defn button
@@ -34,11 +35,10 @@
    (button options label nil))
   ([options label sub-label]
    (let [{:keys [disabled bg-class]} options
-         attrs (cond-> (merge {:type                   "button"
-                               :class                  bg-class
-                               :data-on:click__capture "el.blur()"
-                               :role                   "menuitem"
-                               :tabindex               "-1"}
+         attrs (cond-> (merge {:type "button"
+                               :class bg-class
+                               :role "menuitem"
+                               :tabindex "-1"}
                               (dissoc options :disabled))
                  disabled (assoc :disabled true))]
      [:li
