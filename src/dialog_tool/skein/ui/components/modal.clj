@@ -23,25 +23,32 @@
    {:type "submit"}
    label])
 
+(def ^:private default-buttons
+  [:<>
+   [cancel-button {}]
+   [ok-button {}]])
+
 (defn modal
   "Renders a modal dialog overlay.
 
    Options:
    - :title - Dialog title
-   - :content - Hiccup content to render in the modal body
    - :signals - Optional map of signals to initialize (will be JSON-encoded as data-signals)
+   - :buttons - Buttons to display at bottom of form
    - :error - Optional error message to display at the top of the modal
 
    The modal:
    - Can be dismissed by pressing ESC
    - Centers content and provides standard styling"
-  [{:keys [title content signals error]}]
+  [{:keys [title signals buttons error]
+    :or   {buttons default-buttons}}
+   content]
   [:div#modal-container
    (merge
     {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
     (when signals
       {:data-signals (cheshire.core/generate-string signals)}))
-   [:div.bg-white.rounded-lg.shadow-xl.max-w-md.w-full.mx-4
+   [:div.bg-white.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
     {:data-on:click__stop ""
      :data-on:keydown "evt.key === 'Escape' && @post('/action/dismiss-modal')"}
     ;; Header
@@ -54,4 +61,6 @@
         [:p.text-sm error]]])
     ;; Body
     [:div.px-6.py-4
-     content]]])
+     content
+     (when buttons
+       [:div.flex.justify-end.gap-2 buttons])]]])

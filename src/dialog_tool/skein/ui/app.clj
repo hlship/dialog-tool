@@ -136,7 +136,7 @@
 
 (defn- render-knot
   [tree knot {:keys [scroll-to-knot-id debug-enabled?]}]
-  (let [{:keys [id label response unblessed status children]} knot
+  (let [{:keys [id label response unblessed status children dynamic-response]} knot
         border-class (status->border-class status)
         disable-bless? (= :ok status)
         root? (zero? id)]
@@ -161,6 +161,10 @@
          "Replay" "Run from start to here"]
         [dropdown/button {:data-on:click (str "@post('/action/new-child/" id "')")}
          "New Child" "Add a new command after this"]
+        [dropdown/button {:data-on:click (str "@get('/action/dynamic/" id "')")
+                          :disabled      (nil? dynamic-response)}
+         "Dynamic state ..."
+         "Show full dynamic state"]
         (when-not root?
           [:<>
            [dropdown/button {:data-on:click (str "@get('/action/edit-label/" id "')")}

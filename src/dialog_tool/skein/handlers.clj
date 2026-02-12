@@ -11,7 +11,6 @@
             [dialog-tool.skein.ui.modals :as modals]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
-            [dialog-tool.skein.ui.components.quit-modal :as quit-modal]
             [dialog-tool.skein.ui.utils :as utils]
             [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
 
@@ -311,6 +310,17 @@
   (render-app (swap! *session session/delete (knot-id request))
               {:flash "Deleted"}))
 
+(defn- show-dynamic-state
+  [{:keys [*session] :as request}]
+  (let [{:keys [dynamic-response]} (session/get-knot @*session (knot-id request))]
+    {:status 200
+     :body   (html
+               (modals/dynamic-state dynamic-response))}))
+
+(comment
+  (html
+    (modals/dynamic-state "Riff Raff")))
+
 (defn- splice-out-knot
   "Splices out the specified knot, reparenting its children."
   [{:keys [*session] :as request}]
@@ -344,7 +354,7 @@
     (if dirty?
       ;; Show confirmation modal
       {:status 200
-       :body   (html [quit-modal/quit-modal])}
+       :body   (html [modals/quit-modal])}
       ;; Not dirty, quit immediately
       (close-and-shutdown request))))
 
@@ -441,6 +451,9 @@
 
     "GET /app" req
     (render-app (-> req :*session deref))
+
+    "GET /action/dynamic/*" req
+    (show-dynamic-state req)
 
     "GET /**" [path]
     (or

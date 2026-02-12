@@ -268,3 +268,7 @@
                replay-id (do-replay-to! replay-id)
                ;; If we spliced the active knot and no children, clear active-knot-id
                (and active-is-spliced? (not replay-id)) (dissoc :active-knot-id))]))))
+
+(defn get-knot
+  [session id]
+  (-> session :tree (tree/get-knot id)))
