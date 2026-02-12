@@ -312,14 +312,11 @@
 
 (defn- show-dynamic-state
   [{:keys [*session] :as request}]
-  (let [{:keys [dynamic-response]} (session/get-knot @*session (knot-id request))]
+  (let [{:keys [dynamic-response]} (session/get-knot @*session (knot-id request))
+        [_ trimmed] (string/split dynamic-response #"\n" 2)]
     {:status 200
      :body   (html
-               (modals/dynamic-state dynamic-response))}))
-
-(comment
-  (html
-    (modals/dynamic-state "Riff Raff")))
+               (modals/dynamic-state trimmed))}))
 
 (defn- splice-out-knot
   "Splices out the specified knot, reparenting its children."
