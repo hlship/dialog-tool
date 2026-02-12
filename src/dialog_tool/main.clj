@@ -1,11 +1,11 @@
 (ns dialog-tool.main
-  (:require [net.lewisship.cli-tools :as cli]))
+  (:require [net.lewisship.cli-tools :as cli])
+  (:gen-class))
 
-(defn main
+(defn -main
   [& args]
-  (cli/dispatch {:namespaces '[dialog-tool.commands
+  (cli/dispatch {:tool-name  "dgt"
+                 :namespaces '[dialog-tool.commands
+                               dialog-tool.skein.commands
                                net.lewisship.cli-tools.completions]
                  :arguments  args}))
-
-
-

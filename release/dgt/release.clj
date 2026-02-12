@@ -34,12 +34,18 @@
         zip-file  (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
     (sh "cp -R"
         "src"
-        "dgt"
-        "bb.edn"
+        "resources"
+
+        #_"dgt"
+        #_"bb.edn"
+
+        "deps.edn"
+        "jbundle.toml"
+        "build.clj"
+        
         "LICENSE"
         "README.md"
         "CHANGES.md"
-        "resources"
         build-dir)
     (sh "cp -R public" (fs/file build-dir "resources"))
     (-> (fs/file build-dir "resources" "version.txt")
@@ -47,8 +53,11 @@
     (sh "tailwindcss --minimize --map"
         "--input" "public/style.css"
         "--output" "out/build/resources/public/style.css")
+    (sh "jbundle build"
+        "--input" build-dir
+        "--output" (fs/path build-dir "dgt"))
     (perr "Writing: " [:bold zip-file] " ...")
-    (fs/zip zip-file build-dir {:root "out/build"})
+    (fs/zip zip-file (fs/path build-dir "dgt") {:root "out/build"})
     zip-file))
 
 (defn sha256

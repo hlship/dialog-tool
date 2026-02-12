@@ -1,7 +1,5 @@
 #!/usr/bin/env bb
 
-(require '[net.lewisship.cli-tools :as cli])
+(require '[dialog-tool.main :refer [main]])
 
-(cli/dispatch {:namespaces '[dialog-tool.commands
-                             dialog-tool.skein.commands
-                             net.lewisship.cli-tools.completions]})
+(apply main *command-line-args*)
