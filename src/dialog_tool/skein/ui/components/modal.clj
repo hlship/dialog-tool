@@ -41,7 +41,7 @@
    - Can be dismissed by pressing ESC
    - Centers content and provides standard styling"
   [{:keys [title signals buttons error]
-    :or   {buttons default-buttons}}
+    :or {buttons default-buttons}}
    content]
   [:div#modal-container
    (merge
@@ -50,7 +50,9 @@
       {:data-signals (cheshire.core/generate-string signals)}))
    [:div.bg-white.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
     {:data-on:click__stop ""
-     :data-on:keydown "evt.key === 'Escape' && @post('/action/dismiss-modal')"}
+     :data-on:keydown "evt.key === 'Escape' && @post('/action/dismiss-modal')"
+     :tabindex "-1"
+     :data-init "el.focus()"}
     ;; Header
     [:div.px-6.py-4.border-b.border-gray-200
      [:h3.text-lg.font-medium.text-gray-900 title]]
