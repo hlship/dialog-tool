@@ -36,6 +36,7 @@
         "src"
         "dgt"
         "bb.edn"
+        "deps.edn"                                          ; Really, a symlink to bb.edn
         "LICENSE"
         "README.md"
         "CHANGES.md"

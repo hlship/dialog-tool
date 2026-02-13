@@ -451,7 +451,7 @@
 
     "GET /action/dynamic/*" req
     (show-dynamic-state req)
-
+ 
     "GET /**" [path]
     (or
       ;; This is where resources come from in the deployed app

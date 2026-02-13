@@ -2,7 +2,8 @@
   "Wraps the Skein session in an HTTP service, exposing static resources and an
   API."
   (:require [babashka.fs :as fs]
-            [dialog-tool.project-file :as pf]
+            [clj-commons.ansi :refer [pout]]
+            [clojure.java.browse :as browse]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]

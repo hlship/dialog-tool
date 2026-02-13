@@ -1,23 +1,46 @@
 (ns dialog-tool.skein.commands
-  (:require [net.lewisship.cli-tools :as cli :refer [defcommand abort]]
-            [clojure.java.browse :as browse]
-            [dialog-tool.skein.service :as service]
-            [dialog-tool.project-file :as pf]
-            [clj-commons.ansi :refer [pout]]
+  (:require [clojure.string :as string]
+            [dialog-tool.util :as util]
+            [clj-commons.ansi :refer [perr]]
+            [net.lewisship.cli-tools :as cli :refer [defcommand abort]]
             [dialog-tool.skein.process :as sk.process]
+            [babashka.process :as p]
             [babashka.fs :as fs]))
 
+(defn- in-root
+  [f]
+  (if (fs/absolute? f)
+    f
+    (-> (util/find-root)
+        (fs/file f)
+        fs/absolutize
+        str)))
+
 (defn- start-skein-service!
-  [skein-path start-opts]
-  (let [{:keys [port]} (service/start! nil skein-path start-opts)
-        url     (str "http://localhost:" port)]
-    (pout [:bold (if (fs/exists? skein-path) "Loading" "Creating")
-           " " skein-path " ..."])
-    (pout [:faint "Skein service started on port " port " ..."])
-    (pout "Hit " [:bold "Ctrl+C"] " when done")
-    (browse/browse-url url)
-    ;; Hang forever
-    @(promise)))
+  [params]
+  (perr [:faint "Starting Clojure process ..."])
+  ;; Need to collect the Java classpath used for dialog-tool.
+  (let [proc (p/process {:dir (-> (util/find-root) fs/file)
+                         :out :string}
+                        "clojure -Aclojure -Srepro -Spath")
+        {:keys [out exit]} @proc]
+    (when-not (zero? exit)
+      (cli/abort exit "Failure collecting Clojure process dependencies"))
+    (let [paths      (-> out
+                         string/trim
+                         (string/split #":"))
+          class-path (->> paths
+                          (map in-root)
+                          (string/join ":"))
+          {:keys [skein-path seed engine]} params
+          args       (cond-> ["java"
+                              "--class-path" class-path
+                              "clojure.main"
+                              "-m" "dialog-tool.skein.main"]
+                       seed (conj "--seed" (str seed))
+                       engine (conj "--engine" (name engine))
+                       true (conj skein-path))]
+      (p/exec {:cmd args}))))
 
 (defcommand skein
   "Run the Skein UI for an existing skein file."
@@ -27,7 +50,7 @@
   (let [skein-path (or skein "default.skein")]
     (when-not (fs/exists? skein-path)
       (abort [:bold skein-path] " does not exist"))
-    (start-skein-service! skein-path nil)))
+    (start-skein-service! {:skein-path skein-path})))
 
 (defcommand new-skein
   "Create a new skein, and run the Skein UI.
@@ -46,4 +69,4 @@
   (let [skein-path (or skein "default.skein")]
     (when (fs/exists? skein-path)
       (abort [:bold skein-path] " already exists"))
-    (start-skein-service! skein-path {:seed seed :engine engine})))
+    (start-skein-service! {:skein-path skein-path :seed seed :engine engine})))
