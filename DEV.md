@@ -2,7 +2,7 @@
  
 ## Tests
 
-Run tests with `clojure -M:test`.
+Run tests with `clojure -M:clojure:test`.
 
 ## UI Notes
 
@@ -12,8 +12,8 @@ Developing the UI requires an additional window.
 
 `brew install tailwindcss`
 
-`tailwindcss -i public/style.css -o out/public/style.css --watch`
-- Watches source folders, identifies CSS classes, regenerates `out/public/style.css`
+`tailwindcss -i public/style.css -o generated-resources/public/style.css --watch`
+- Watches source folders, identifies CSS classes, regenerates `style.css`
 
 
 ### Datastar
