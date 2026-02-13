@@ -32,12 +32,14 @@
 
   The :seed option is only used if the skein file does not already exist;
   otherwise it is used (or, if omitted, a random seed is created).
+  
+  Likewise, the :engine comes from meta, then as supplied, then :dgdebug as a default.
 
   Does not join the service.
 
-  Returns a function that does shutdown the service."
-  [root-dir skein-path opts]
-  (let [{:keys [port seed engine development-mode?]
+  Returns a function that will shutdown the service when invoked."
+  [root-dir opts]
+  (let [{:keys [skein-path port seed engine development-mode?]
          :or   {port 10140}} opts
         tree                (when (fs/exists? skein-path)
                               (sk.file/load-tree skein-path))
@@ -80,22 +82,22 @@
   (@*shutdown)
 
   (start! "../sanddancer-dialog"
-          "../sanddancer-dialog/default.skein"
           {:engine            :dgdebug
+           :skein-path        "../sanddancer-dialog/default.skein"
            :development-mode? true})
 
   (start! "../sanddancer-dialog"
-          "/tmp/sd.skein"
-          {:engine :dgdebug})
+          {:engine     :dgdebug
+           :skein-path "/tmp/sd.skein"})
 
 
   (start! "../dialog-extensions/who"
-          "../dialog-extensions/who/default.skein"
-          {:development-mode? true})
+          {:development-mode? true
+           :skein-path        "../dialog-extensions/who/default.skein"})
 
   (start! "../dialog-extensions/who"
-          "../dialog-extensions/who/frotz.skein"
-          {:seed   10101
+          {:skein-path "../dialog-extensions/who/frotz.skein"
+           :seed       10101
            :engine :frotz})
 
 

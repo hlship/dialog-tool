@@ -206,14 +206,12 @@
           class-path (->> paths
                           (map in-root)
                           (string/join ":"))
-          {:keys [skein-path seed engine]} params
-          args       (cond-> ["java"
-                              "--class-path" class-path
-                              "clojure.main"
-                              "-m" "dialog-tool.skein.main"]
-                       seed (conj "--seed" (str seed))
-                       engine (conj "--engine" (name engine))
-                       true (conj skein-path))]
+          params'    (-> params pr-str)
+          args       ["java"
+                      "--class-path" class-path
+                      "clojure.main"
+                      "-m" "dialog-tool.skein.main"
+                      (pr-str params)]]
       (p/exec {:cmd args}))))
 
 (defcommand skein
