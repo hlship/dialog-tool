@@ -23,6 +23,11 @@
       (string/trim out)
       out)))
 
+(defn render-template
+  [source-file dest-file context]
+  (let [content (selmer/render-file source-file context)]
+    (spit dest-file content)))
+
 (defn package
   "Packages distribution files into a zip; the file is returned."
   [tag]
@@ -43,8 +48,9 @@
         (spit tag))
     (sh "clojure -T:build uber " (pr-str {:uber-file (str uber-file)
                                           :class-dir (str class-dir)}))
-    (->> (selmer/render-file "templates/bb.edn" {:uber-jar (fs/file-name uber-file)})
-         (spit (fs/file build-dir "bb.edn")))
+    (render-template "templates/bb.edn"
+                     (fs/file build-dir "bb.edn")
+                     {:uber-jar (fs/file-name uber-file)})
     (sh "cp -R"
         "LICENSE"
         "README.md"

@@ -45,10 +45,9 @@ Developing the UI requires an additional window.
 
 - `git tag` and push *first*
   - the latest tag will be the version
-- `bb --config release.edn release`
+- `bb release`
   - Builds the deployable bundle and uploads to GitHub
   - Need `gh` installed
   - Prints out info for next step
-- Edit `homebrew-brew/dialog-tool.rb` to update `url`, `sha`, and `version`
-  - This is a different repo
+- Copy `out/dialog-tool.rb` to `homebrew-brew` repo
   - Commit and push -- it's live!
