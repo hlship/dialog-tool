@@ -1,7 +1,5 @@
 #!/usr/bin/env bb
 
-;; This file is used for local testing.
-
 (require '[dialog-tool.main :as main])
 
-(main/launch-cli)
+(apply main/-main *command-line-args*)

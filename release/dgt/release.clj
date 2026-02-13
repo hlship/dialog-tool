@@ -1,6 +1,7 @@
 (ns dgt.release
   "Support for release new version of dialog-tool (see release.edn)."
   (:require [clj-commons.ansi :refer [pout perr]]
+            [selmer.parser :as selmer]
             [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as string]))
@@ -26,28 +27,30 @@
   "Packages distribution files into a zip; the file is returned."
   [tag]
   (let [out-dir   (fs/file "out")
+        class-dir (fs/file out-dir "classes")
         build-dir (fs/file out-dir "build")
         _         (do
+                    (fs/delete-tree out-dir)
                     (fs/create-dirs out-dir)
-                    (fs/delete-tree build-dir)
+                    (fs/create-dirs class-dir)
                     (fs/create-dirs build-dir))
+        uber-file (fs/file build-dir (str "dialog-tool-" tag ".jar"))
         zip-file  (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
+    (sh "tailwindcss --minimize --map"
+        "--input" "public/style.css"
+        "--output" (-> (fs/file class-dir "public" "style.css") str))
+    (-> (fs/file class-dir "version.txt")
+        (spit tag))
+    (sh "clojure -T:build uber " (pr-str {:uber-file (str uber-file)
+                                          :class-dir (str class-dir)}))
+    (->> (selmer/render-file "templates/bb.edn" {:uber-jar (fs/file-name uber-file)})
+         (spit (fs/file build-dir "bb.edn")))
     (sh "cp -R"
-        "src"
-        "dgt"
-        "bb.edn"
-        "deps.edn"                                          ; Really, a symlink to bb.edn
         "LICENSE"
         "README.md"
         "CHANGES.md"
-        "resources"
+        "dgt"                                               ; will pull from the uberjar
         build-dir)
-    (sh "cp -R public" (fs/file build-dir "resources"))
-    (-> (fs/file build-dir "resources" "version.txt")
-        (spit tag))
-    (sh "tailwindcss --minimize --map"
-        "--input" "public/style.css"
-        "--output" "out/build/resources/public/style.css")
     (perr "Writing: " [:bold zip-file] " ...")
     (fs/zip zip-file build-dir {:root "out/build"})
     zip-file))
