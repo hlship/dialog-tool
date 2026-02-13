@@ -1,6 +1,7 @@
 #!/usr/bin/env bb
 
-(require '[net.lewisship.cli-tools :as cli])
+;; This file is used for local testing.
 
-(cli/dispatch {:namespaces '[dialog-tool.commands
-                             net.lewisship.cli-tools.completions]})
+(require '[dialog-tool.main :as main])
+
+(main/launch-cli)
