@@ -10,7 +10,6 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.template :as template]
             [dialog-tool.bundle :as bundle]
-            [dialog-tool.util :as util]
             [net.lewisship.cli-tools :as cli :refer [defcommand abort]]
             [dialog-tool.build :as build]
             [dialog-tool.project-file :as pf]))
@@ -171,15 +170,6 @@
         (doseq [path paths]
           (pout [{:font :cyan
                   :width longest} path]))))))
-
-(defn- in-root
-  [f]
-  (if (fs/absolute? f)
-    f
-    (-> (util/find-root)
-        (fs/file f)
-        fs/absolutize
-        str)))
 
 (defn- start-skein-service!
   [params]

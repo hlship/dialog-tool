@@ -41,6 +41,7 @@ Developing the UI requires an additional window.
 - Knot action to show complete @dynamic output in a modal popup
 - Don't show FAB if it has no contents (debug not enabled)
 - skein w/ frotz: need to export path to the dfrotz-skein-patch.dg
+- single `dgt` script for both Babashka and java
 
 ## Releasing
 

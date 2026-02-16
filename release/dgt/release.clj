@@ -48,9 +48,13 @@
         (spit tag))
     (sh "clojure -T:build uber " (pr-str {:uber-file (str uber-file)
                                           :class-dir (str class-dir)}))
-    (render-template "templates/bb.edn"
-                     (fs/file build-dir "bb.edn")
-                     {:uber-jar (fs/file-name uber-file)})
+    (doseq [f ["bb.edn" "dgt.sh"]]
+      (render-template (str "templates/" f)
+                       (fs/file build-dir f)
+                       {:uber-jar (fs/file-name uber-file)}))
+    
+    (sh "chmod a+x" (fs/file build-dir "dgt.sh"))
+    
     (sh "cp -R"
         "LICENSE"
         "README.md"
