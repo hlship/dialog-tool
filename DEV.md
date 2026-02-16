@@ -36,13 +36,10 @@ Developing the UI requires an additional window.
 - Present source file warnings/errors in a modal when detected?
 - Consider *always* running from start, even when adding a new command at end?
 - new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
-- modals don't cancel, add an SSE that fails repeats forever (from client side?)
 - add ability to paste in a transcript (or create a skein from a transcript)
-- Knot action to show complete @dynamic output in a modal popup
 - Don't show FAB if it has no contents (debug not enabled)
 - skein w/ frotz: need to export path to the dfrotz-skein-patch.dg
 - single `dgt` script for both Babashka and java
-- run w/ java doesn't exit
 
 ## Releasing
 
