@@ -3,7 +3,7 @@
             [babashka.process :as p]
             [clj-commons.ansi :as ansi :refer [pout perr]]
             [clojure.string :as string]
-            [dialog-tool.env :as env]
+            [dialog-tool.skein.start :as sk.start]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
@@ -171,19 +171,6 @@
           (pout [{:font :cyan
                   :width longest} path]))))))
 
-(defn- start-skein-service!
-  [params]
-  (perr [:faint "Starting Clojure process ..."])
-  (let [class-path (System/getProperty "java.class.path")
-        ;; First entry in class-path is the Uberjar (when deployed)
-        [uberjar] (string/split class-path #":" 1)]
-    (let [args       ["java"
-                      "--class-path" uberjar
-                      "clojure.main"
-                      "-m" "dialog-tool.skein.main"
-                      (pr-str (assoc params :debug env/*debug*))]]
-      (p/exec {:cmd args}))))
-
 (defcommand skein
   "Run the Skein UI for an existing skein file."
   [:args
@@ -192,7 +179,7 @@
   (let [skein-path (or skein "default.skein")]
     (when-not (fs/exists? skein-path)
       (abort [:bold skein-path] " does not exist"))
-    (start-skein-service! {:skein-path skein-path})))
+    (sk.start/start-service! {:skein-path skein-path})))
 
 (defcommand new-skein
   "Create a new skein, and run the Skein UI.
@@ -211,4 +198,4 @@
   (let [skein-path (or skein "default.skein")]
     (when (fs/exists? skein-path)
       (abort [:bold skein-path] " already exists"))
-    (start-skein-service! {:skein-path skein-path :seed seed :engine engine})))
+    (sk.start/start-service! {:skein-path skein-path :seed seed :engine engine})))
