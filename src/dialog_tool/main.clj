@@ -19,4 +19,6 @@
                  :arguments            args
                  :extra-tool-options   [["-v" "--version" "Show version information and exit"]
                                         ["-d" "--debug" "Enable developer output"]]
-                 :tool-options-handler option-handler}))
+                 :tool-options-handler option-handler})
+  ;; TODO: This is needed for java invocation, maybe a cli-tools bug.
+  (cli/abort 0))
