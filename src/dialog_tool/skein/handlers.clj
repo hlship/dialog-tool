@@ -63,9 +63,9 @@
   [f]
   (fn [request]
     (let [{:keys [*session signals]} request
-          {hide-dynamic :hideDynamic} signals]
-      (when (some? hide-dynamic)
-        (swap! *session assoc :hide-dynamic? hide-dynamic))
+          {show-dynamic :showDynamic} signals]
+      (when (some? show-dynamic)
+        (swap! *session assoc :show-dynamic? show-dynamic))
       (f request))))
 
 (defn- render-app

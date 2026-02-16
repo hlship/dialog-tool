@@ -1,6 +1,5 @@
 (ns dialog-tool.skein.ui.app
-  (:require [clojure.set :as set]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
             [dialog-tool.skein.dynamic :as dynamic]
             [dialog-tool.skein.ui.utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
@@ -187,7 +186,7 @@
 
 (defn render-app
   [session {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash]}]
-  (let [{:keys [tree debug-enabled? hide-dynamic?]} session
+  (let [{:keys [tree debug-enabled? show-dynamic?]} session
         knots (tree/selected-knots tree)]
     [:div#app.relative.px-8
      (when flash
@@ -196,8 +195,7 @@
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [knot]
              (render-knot tree knot {:scroll-to-knot-id scroll-to-knot-id
-                                     :debug-enabled?    (and debug-enabled?
-                                                             (not hide-dynamic?))}))
+                                     :debug-enabled?    (and debug-enabled? show-dynamic?)}))
            knots)
       [new-command/new-command-input {:scroll-to?           scroll-to-new-command?
                                       :reset-command-input? reset-command-input?}]]]))
@@ -214,6 +212,6 @@
    [:div.rounded-box.bg-primary-content
     [:label.label.p-2
      [:input.toggle {:type           "checkbox"
-                     :data-bind      "hideDynamic"
+                     :data-bind      "showDynamic"
                      :data-on:change "@get('/app/')"}]
-     "Hide dynamic state"]]])
+     "Show dynamic state"]]])
