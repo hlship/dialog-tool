@@ -2,8 +2,8 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
             [clj-commons.ansi :as ansi :refer [pout perr]]
-            [clojure.java.io :as io]
             [clojure.string :as string]
+            [dialog-tool.env :as env]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
@@ -172,15 +172,6 @@
           (pout [{:font :cyan
                   :width longest} path]))))))
 
-(defcommand version
-  "Prints the current version of dgt."
-  []
-  (let [url (io/resource "version.txt")]
-    (println (if url
-               (-> url slurp string/trim)
-               "DEV"))))
-
-
 (defn- in-root
   [f]
   (if (fs/absolute? f)
@@ -193,25 +184,14 @@
 (defn- start-skein-service!
   [params]
   (perr [:faint "Starting Clojure process ..."])
-  ;; Need to collect the Java classpath used for dialog-tool.
-  (let [proc (p/process {:dir (-> (util/find-root) fs/file)
-                         :out :string}
-                        "clojure -Aclojure -Srepro -Spath")
-        {:keys [out exit]} @proc]
-    (when-not (zero? exit)
-      (cli/abort exit "Failure collecting Clojure process dependencies"))
-    (let [paths      (-> out
-                         string/trim
-                         (string/split #":"))
-          class-path (->> paths
-                          (map in-root)
-                          (string/join ":"))
-          params'    (-> params pr-str)
-          args       ["java"
-                      "--class-path" class-path
+  (let [class-path (System/getProperty "java.class.path")
+        ;; First entry in class-path is the Uberjar (when deployed)
+        [uberjar] (string/split class-path #":" 1)]
+    (let [args       ["java"
+                      "--class-path" uberjar
                       "clojure.main"
                       "-m" "dialog-tool.skein.main"
-                      (pr-str params)]]
+                      (pr-str (assoc params :debug env/*debug*))]]
       (p/exec {:cmd args}))))
 
 (defcommand skein
