@@ -1,7 +1,7 @@
 (ns dialog-tool.util
   (:require [babashka.fs :as fs]))
 
-(defn- find-root
+(defn find-root
   []
   #?(:bb  (-> *file*
               fs/path

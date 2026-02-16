@@ -2,7 +2,7 @@
  
 ## Tests
 
-Run tests with `clojure -M:test`.
+Run tests with `clojure -M:clojure:test`.
 
 ## UI Notes
 
@@ -12,8 +12,8 @@ Developing the UI requires an additional window.
 
 `brew install tailwindcss`
 
-`tailwindcss -i public/style.css -o out/public/style.css --watch`
-- Watches source folders, identifies CSS classes, regenerates `out/public/style.css`
+`tailwindcss -i public/style.css -o generated-resources/public/style.css --watch`
+- Watches source folders, identifies CSS classes, regenerates `style.css`
 
 
 ### Datastar
@@ -40,15 +40,17 @@ Developing the UI requires an additional window.
 - add ability to paste in a transcript (or create a skein from a transcript)
 - Knot action to show complete @dynamic output in a modal popup
 - Don't show FAB if it has no contents (debug not enabled)
+- skein w/ frotz: need to export path to the dfrotz-skein-patch.dg
+- single `dgt` script for both Babashka and java
+- run w/ java doesn't exit
 
 ## Releasing
 
 - `git tag` and push *first*
   - the latest tag will be the version
-- `bb --config release.edn release`
+- `bb release`
   - Builds the deployable bundle and uploads to GitHub
   - Need `gh` installed
   - Prints out info for next step
-- Edit `homebrew-brew/dialog-tool.rb` to update `url`, `sha`, and `version`
-  - This is a different repo
+- Copy `out/dialog-tool.rb` to `homebrew-brew` repo
   - Commit and push -- it's live!

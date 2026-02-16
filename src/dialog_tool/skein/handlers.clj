@@ -451,13 +451,11 @@
 
     "GET /action/dynamic/*" req
     (show-dynamic-state req)
-
+ 
     "GET /**" [path]
-    (or
-      ;; This is where resources come from in the deployed app
-      (response/resource-response path {:root "public"})
-      ;; Search for local-development compiled files
-      (response/file-response path {:root "out/public"}))))
+    ;; During local development, generated-resources/public/style.css will come from here
+    ;; and everything else from resources/public.
+    (response/resource-response path {:root "public"})))
 
 (def service-handler
   "The main Ring handler for the Skein web service.

@@ -6,6 +6,8 @@
             [babashka.process :as p]
             [clojure.core.async :refer [chan close! >!! <!!]]
             [clojure.string :as string]
+            [dialog-tool.env :as env]
+            [clj-commons.ansi :refer [perr]]
             [dialog-tool.project-file :as pf]
             [dialog-tool.util :as util])
   (:import (java.io BufferedReader PrintWriter)
@@ -58,6 +60,8 @@
                     .start)
         stdout-reader (.inputReader process)
         output-ch (chan)]
+    (when env/*debug*
+      (perr [:cyan (string/join " " cmd)]))
     {:process      process
      :cmd          cmd
      :opts         opts

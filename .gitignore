@@ -8,6 +8,7 @@
 *.iml
 /.nrepl-port
 out
+generated-resources/
 
 # Node modules
 node_modules/

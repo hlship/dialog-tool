@@ -2,8 +2,8 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
             [clj-commons.ansi :as ansi :refer [pout perr]]
-            [clojure.java.io :as io]
             [clojure.string :as string]
+            [dialog-tool.skein.start :as sk.start]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
@@ -171,10 +171,31 @@
           (pout [{:font :cyan
                   :width longest} path]))))))
 
-(defcommand version
-  "Prints the current version of dgt."
-  []
-  (let [url (io/resource "version.txt")]
-    (println (if url
-               (-> url slurp string/trim)
-               "DEV"))))
+(defcommand skein
+  "Run the Skein UI for an existing skein file."
+  [:args
+   skein ["SKEIN" "Path to skein file to run; defaults to default.skein"
+          :optional true]]
+  (let [skein-path (or skein "default.skein")]
+    (when-not (fs/exists? skein-path)
+      (abort [:bold skein-path] " does not exist"))
+    (sk.start/start-service! {:skein-path skein-path})))
+
+(defcommand new-skein
+  "Create a new skein, and run the Skein UI.
+
+  Note: the frotz engine has output formatting issues and is not yet ready for use."
+  [seed [nil "--seed NUMBER" "Random number generator seed to use"
+         :parse-fn parse-long
+         :validate [some? "Not a number"
+                    pos-int? "Must be at least one"]]
+   engine (cli/select-option "-e" "--engine NAME" "Engine to use:"
+                             sk.process/engines
+                             :default :dgdebug)
+   :args
+   skein ["SKEIN" "Path to skein file to create; defaults to default.skein"
+          :optional true]]
+  (let [skein-path (or skein "default.skein")]
+    (when (fs/exists? skein-path)
+      (abort [:bold skein-path] " already exists"))
+    (sk.start/start-service! {:skein-path skein-path :seed seed :engine engine})))

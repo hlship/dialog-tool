@@ -6,6 +6,7 @@
             [babashka.process :as p]
             [clj-commons.ansi :refer [perr]]
             [clj-commons.humanize :as h]
+            [dialog-tool.project-file :as pf]
             [net.lewisship.cli-tools :as cli]
             [clojure.string :as string]
             [dialog-tool.skein.process :as sk.process]
@@ -26,7 +27,7 @@
 
 (defn- extract-story-info
   [project]
-  (let [process (sk.process/start-debug-process! project 0)
+  (let [process (sk.process/start-debug-process! (pf/root-dir project) 0)
         _ (sk.process/read-response! process)
         info (reduce (fn [m k]
                        (assoc m k

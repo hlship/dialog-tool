@@ -1,6 +1,7 @@
 (ns dgt.release
   "Support for release new version of dialog-tool (see release.edn)."
   (:require [clj-commons.ansi :refer [pout perr]]
+            [selmer.parser :as selmer]
             [babashka.process :as p]
             [babashka.fs :as fs]
             [clojure.string :as string]))
@@ -22,31 +23,44 @@
       (string/trim out)
       out)))
 
+(defn render-template
+  [source-file dest-file context]
+  (let [content (selmer/render-file source-file context)]
+    (spit dest-file content)))
+
 (defn package
   "Packages distribution files into a zip; the file is returned."
   [tag]
   (let [out-dir   (fs/file "out")
+        class-dir (fs/file out-dir "classes")
         build-dir (fs/file out-dir "build")
         _         (do
+                    (fs/delete-tree out-dir)
                     (fs/create-dirs out-dir)
-                    (fs/delete-tree build-dir)
+                    (fs/create-dirs class-dir)
                     (fs/create-dirs build-dir))
+        uber-file (fs/file build-dir (str "dialog-tool-" tag ".jar"))
         zip-file  (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
+    (sh "tailwindcss --minimize --map"
+        "--input" "public/style.css"
+        "--output" (-> (fs/file class-dir "public" "style.css") str))
+    (-> (fs/file class-dir "version.txt")
+        (spit tag))
+    (sh "clojure -T:build uber " (pr-str {:uber-file (str uber-file)
+                                          :class-dir (str class-dir)}))
+    (doseq [f ["bb.edn" "dgt.sh"]]
+      (render-template (str "templates/" f)
+                       (fs/file build-dir f)
+                       {:uber-jar (fs/file-name uber-file)}))
+    
+    (sh "chmod a+x" (fs/file build-dir "dgt.sh"))
+    
     (sh "cp -R"
-        "src"
-        "dgt"
-        "bb.edn"
         "LICENSE"
         "README.md"
         "CHANGES.md"
-        "resources"
+        "dgt"                                               ; will pull from the uberjar
         build-dir)
-    (sh "cp -R public" (fs/file build-dir "resources"))
-    (-> (fs/file build-dir "resources" "version.txt")
-        (spit tag))
-    (sh "tailwindcss --minimize --map"
-        "--input" "public/style.css"
-        "--output" "out/build/resources/public/style.css")
     (perr "Writing: " [:bold zip-file] " ...")
     (fs/zip zip-file build-dir {:root "out/build"})
     zip-file))
