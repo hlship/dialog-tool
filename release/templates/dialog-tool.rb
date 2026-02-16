@@ -2,7 +2,9 @@ class DialogTool < Formula
   desc "Assist building projects for the Dialog programming language"
   homepage "https://github.com/hlship/dialog-tool"
   url "https://github.com/hlship/dialog-tool/releases/download/{{tag}}/{{zip-name}}"
+  version "{{tag}}"
   sha256 "{{sha}}"
+  version_scheme 1 # Because version was borked in some prior releases due to -alpha-
 
   depends_on "borkdude/brew/babashka"
   depends_on "dialog-if/brew/aamachine"
@@ -13,8 +15,8 @@ class DialogTool < Formula
 
   def install
       bin.install "bb.edn"
+      bin.install "{{uber-jar}}"
       bin.install "dgt"
-      bin.install "{{zip-name}}"
 
       zsh_completion_file = buildpath/"_dgt"
 

@@ -31,6 +31,7 @@
                 formula
                 {:tag      tag
                  :sha      sha
+                 :uber-jar (str "dialog-tool-" tag ".jar")
                  :zip-name (fs/file-name zip-file)})
               (println)
               (pout "Wrote formula to " [:bold formula]))}
