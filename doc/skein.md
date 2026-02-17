@@ -53,7 +53,7 @@ response to the `inventory` command at the very start of the game
 than later, after you've gotten your cigarettes out of 
 the glove box.
 
-Likewise, moving around the world can be unexpected; not only are interactive fictions maps notably weird (you can't always go north after going south and end up in the same place) but your particular
+Likewise, moving around the world can be unexpected; not only are interactive fiction map layouts notoriously weird (you can't always go north after going south and end up in the same place) but your particular
 project may have time based events, randomness, or wandering NPCs that change the world as you move about.
 
 ## Running the Skein
@@ -80,9 +80,9 @@ Each Knot may have a label, but this is optional; the *Jump* menu item makes it 
 
 Each knot has popup of specific actions.
 
-Eventually, knots will have children and you can navigate across different children of a knot with the children popup.
+Eventually, knots will have children and you can navigate across different children of a knot with the child knots popup.
 
-The text and border of the knot identifies it's status.  The
+The text and border of the knot identifies its status.  The
 text here is in bold blue, to indicate it is new and the border is yellow to indicate this is a new knot.
 
 At the bottom of the Skein is a place to enter the next player command
@@ -121,3 +121,56 @@ to this knot.  We'll cover the remaining actions shortly.
 The _Replay_ action will restart the session and run all the commands from the root to this knot.
 
 This will check each response against the blessed response and identify any knots that have changed content.
+
+After blessing the node, you can _Replay_ to check that everything is ok.
+
+Let's say you were not happy with the phrasing of that last response and edited the source code:
+
+![](skein-source-edit.png)
+
+You could then replay (the source changes will automatically be
+picked up):
+
+![](skein-knot-error.png)
+
+Now the knot is in error and the text shows deleted text (in red) and
+added text (in blue).  If you are happy with this new text, you can bless the changes and continue.
+
+## Replay All
+
+Another option is _Replay All_ from the top navigation bar.
+_Replay All_ will find every leaf knot in the Skein and replay it.
+
+For large skeins, this can take a while, so there's a progress
+dialog:
+
+![](skein-replay-all.png)
+
+The above is from the Skein for Sanddancer.
+
+Don't worry, with modern hardware, even replays of large games 
+is incredibly fast. On my laptop, it takes under six seconds to replay all 50 leaves, and many of the leaf knots are dozens of player commands deep in the tree.  Do this all the time.
+
+## Understanding Randomness
+
+A project will often include some degree of randomness.
+
+Your Dialog source may use predicates such as
+`(select) ... (at random)` or `(random from $X to $Y into $Z)`.
+
+You would think that replaying would cause all those random things to cause response mismatches, but they don't.
+
+In Dialog, randomness is controlled by a _random number generator_.
+An RNG is a special bit of code that returns a different
+random number each time it is invoked.
+
+However, you can set up an RNG with a _seed_ value.  In that case
+it will return the same sequence of random numbers.  It's kind of like predestination.
+
+But be warned; some changes to your source code may subtly shift the order in which different parts of Dialog consults the RNG, resulting in different random decisions.  That's why _Replay All_ should be run pretty frequently.
+
+Likewise, there are actions that move or delete knots in the Skein; those will also affect randomness.
+
+## Undo/Redo
+
+Be fearless.  The Skein supports unlimited undo and redo.  These just juggle things in memory, Undo and Redo don't run commands or affect files.
