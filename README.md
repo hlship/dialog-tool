@@ -164,6 +164,9 @@ as status bar updates; to verify these, you must run using Frotz.
 
 ## Running the Skein
 
+The [Skein](doc/skein.md) is an interactive web interface for running, debugging, and
+testing your project.
+
 `dgt new-skein` will open up the skein UI for a new skein file.  
 By default, the file is named `default.skein`, or you can provide a different
 name, as you may want to have multiple skein files. 
@@ -177,9 +180,6 @@ and the skein will identify any text that has changed.  You can even run *all* p
 to completion.
 
 `dgt skein` will open an existing skein.
-
-> More on this later
-
 
 ## Building and Bundling
 
