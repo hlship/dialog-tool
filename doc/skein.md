@@ -1,6 +1,6 @@
 # The Skein
 
-The Skein is a interactive tool used to run, debug, and test your projects.
+The Skein is a interactive tool used to run, debug, and test your projects. The Skein is designed to encourage an incremental, exploratory, gradual style of development ... it's a real step up from using `dgdebug` directly (or even `dgt debug`).
 
 > skein | skān |
 > 
@@ -12,15 +12,15 @@ The Skein is a interactive tool used to run, debug, and test your projects.
 > 
 > a flock of wild geese or swans in flight, typically in a V-shaped formation.
 
-At its most basic, the Skein is a web-based wrapper around the `dgdebug` command; you can enter
+At its most basic, you can think of the Skein as a web-based wrapper around Dialog's debugger (`dgdebug`); you can enter
 commands into the Skein, which are passed through to the running project, and the results are captured
 and displayed back at you.
 
-What's important is that the Skein _has a memory_.  As you enter commands, it saves all of those commands and responses in memory (and can later save its memory to a file).
+What's important is that the Skein _has a memory_.  As you enter player commands, it saves all of those commands and Dialog's responses in memory (and can later save its memory to a file).
 
-In keeping with the name, each command/response is a called a "knot".
+In keeping with the name, each command/response is a called a _knot_.
 
-More importantly, you can "time travel" back to a prior knot and enter
+More importantly, while playing you can "time travel" back to a prior knot and enter
 a different command.  For example, here's a few different things you can do at the start of the game [Sanddancer](https://github.com/hlship/sanddancer-dialog):
 
 ```mermaid
@@ -47,14 +47,21 @@ stateDiagram
   takecigs --> i3
   i3: inventory
 ```
+
+Perhaps you started initially by exitting the truck and moving south and taking inventory of
+your belonging; then used the Skein to "time travel" back to the start and try a different route; say starting by opening the glove compartment.
+
+No information is lost, the Skein remembers the entire, ever-growing tree of possibilities.
+
 It's important to note that each command has its own knot, even
-if the same command exists elsewhere:  you'd expect a different
+if the same command exists elsewhere in the Skein.
+This makes sense if you think about it -- you'd expect a different
 response to the `inventory` command at the very start of the game
 than later, after you've gotten your cigarettes out of 
 the glove box.
 
-Likewise, moving around the world can be unexpected; not only are interactive fiction map layouts notoriously weird (you can't always go north after going south and end up in the same place) but your particular
-project may have time based events, randomness, or wandering NPCs that change the world as you move about.
+Likewise, even simple movement around the world's map can lead to the unexpected.  Not only are interactive fiction map layouts notoriously non-euclidian (you can't always go north after going south and end up in the same place) but your particular
+project may have time based events, randomness, or wandering NPCs that change the world as you move about.  As they say, "no one steps into the same river twice."
 
 ## Running the Skein
 
@@ -67,23 +74,26 @@ Let's break down the interface.
 
 ![](skein-tour.png)
 
-At the top of the Skein is the Knot Status; this is a counter of
+At the top of the Skein is the naviagation bar.
+It identifies the file name for this Skein,
+the knot status,
+and then a set of commands.
+
+The  knot status is a count of
 all the knots in the Skein, broken into three categories:
 
-* Green - knot's response matches blessed response
-* Yellow - knot is new, with no blessed response
-* Red - knot's response doesn't match blessed response
+* Green (left) - knot's response is valid
+* Yellow (middle) - knot is new
+* Red (right) - knot's response is **not** valid
 
-In this new Skein, there's only one knot so far and we haven't "blessed" that response, so it shows up yellow.
+We'll loop back to this shortly to explain how the Skein knows which knots are valid or otherwise.
 
 Each Knot may have a label, but this is optional; the *Jump* menu item makes it easy to jump to any labeled knot.
 
-Each knot has popup of specific actions.
-
-Eventually, knots will have children and you can navigate across different children of a knot with the child knots popup.
+Each knot has popup of knot-specific actions, and a popup for navigation to child knots.
 
 The text and border of the knot identifies its status.  The
-text here is in bold blue, to indicate it is new and the border is yellow to indicate this is a new knot.
+text in the screenshot is in bold blue, to indicate it is new, and the knot's border is yellow to indicate this is a new knot.
 
 At the bottom of the Skein is a place to enter the next player command
 and, floating at the bottom right, the floating action button; we'll come back to these later.
@@ -94,18 +104,22 @@ The root knot has very limited actions available:
 
 ![](skein-root-actions.png)
 
-The most important is _Bless_ which tells the Skein that the text for
+The most important action is _Bless_ which tells the Skein that the text for
 the knot is correct.
 
-If we click the Bless action the Skein will update:
+The Skein stores the most recent response from the running project for each knot, but also an expected (or "blessed") response.  When these two values
+align, the knot is valid; When they differ, the knot is in error.
+when there is no blessed response yet, the knot is new.
+
+If we click the _Bless_ action the Skein will update:
 
 ![](skein-root-blessed.png)
 
-Notice that the knot counts has changed to 1/0/0 ... one single knot whose response matches the expected content.  The knot's text is now plain, not bold blue, and the borders are grey.
+Notice that the knot counts has changed to 1/0/0 ... one single knot whose response matches the expected response, no new knots, no knots in error.  The knot's text is now  in a plain font, not bold blue, and the knot's borders are grey.
 
 ## Entering New Commands
 
-You can enter a command, such as `x lizard` in text field at the bottom to add a new child knot.
+You can enter a command, such as `x lizard` in the text field at the bottom to add a new child knot.
 
 ![](skein-new-command.png)
 
@@ -118,11 +132,13 @@ to this knot.  We'll cover the remaining actions shortly.
 
 ## Replaying
 
-The _Replay_ action will restart the session and run all the commands from the root to this knot.
+The _Replay_ action will restart the debugger, and run all the commands from the root through to this knot.
 
-This will check each response against the blessed response and identify any knots that have changed content.
+Along the way, the Skein will check each response against the blessed response and identify any knots that have changed content.
 
-After blessing the node, you can _Replay_ to check that everything is ok.
+After blessing the knot, you can _Replay_ to check that everything is still ok.
+
+This is a critical part of development; you can change your project's source code -- anything from fixing a typo to reworking the logic of a puzzle -- and get immediate feedback if you broke anything.
 
 Let's say you were not happy with the phrasing of that last response and edited the source code:
 
@@ -141,39 +157,40 @@ added text (in blue).  If you are happy with this new text, you can bless the ch
 Another option is _Replay All_ from the top navigation bar.
 _Replay All_ will find every leaf knot in the Skein and replay it.
 
-For large skeins, this can take a while, so there's a progress
-dialog:
+This is perhaps the Skein's greatest feature because it doesn't test just one path through the project, it tests _all_ paths. This is how you _really_ know that a change to your project's logic works, and hasn't had any unforseen consequences.
+
+For large skeins, this replay process can take a few seconds, so there's a progress dialog:
 
 ![](skein-replay-all.png)
 
 The above is from the Skein for Sanddancer.
 
-Don't worry, with modern hardware, even replays of large games 
-are ludicrously fast. On my laptop, it takes under six seconds to replay all 50 leaf knots, and many of them are dozens of player commands deep in the tree. 
+Don't worry, with modern hardware, even replays of large projects 
+are ludicrously fast. On my laptop, it takes under six seconds to replay all 50 leaf knots in Sandancer, and many of these knots are dozens of player commands deep in the tree. 
 
 ## Understanding Randomness
 
 A project will often include some degree of randomness.
 
 Your Dialog source may use predicates such as
-`(select) ... (at random)` or `(random from $X to $Y into $Z)`.
+`(select) ... (at random)` or `(random from $X to $Y into $Z)` to vary the descriptions of rooms or objects, or the dialog of NPCs, or even the location of objects.
 
-You would think that replaying would cause all those random things to cause response mismatches, but they don't.
+You would think that replaying a series of commands in the presence of such randomness would result in response mismatches, but fortunately they usually don't.
 
 In Dialog, randomness is controlled by a _random number generator_.
 An RNG is a special bit of code that returns a different
 random number each time it is invoked.
 
-However, you can set up an RNG with a _seed_ value.  In that case
-it will return the same sequence of random numbers.  It's kind of like predestination.  Each Skein has its own seed value that is used whenever starting up the underlying `dgdebug` process.
+An RNG is not truly random --  you can initialize an RNG with a numeric _seed_ value.  In that case
+the RNG will return the same sequence of random numbers every time.  It's kind of like predestination.  Each Skein has its own seed value that is used whenever starting up the underlying `dgdebug` process.
 
-But be warned; some changes to your source code may subtly shift the order in which different parts of Dialog consults the RNG, resulting in different random decisions.  That's why _Replay All_ should be run pretty frequently.
+But be warned; some changes to your source code may subtly shift the order in which different parts of Dialog consults the RNG, resulting in different random decisions.  That's why _Replay All_ should be run  frequently, especially after any significant code changes.
 
-Likewise, there are actions that move or delete knots in the Skein; those will also affect randomness.
+Likewise, there are Skein actions that move or delete knots in the Skein; those will also affect randomness.
 
 ## Undo/Redo
 
-Be fearless.  The Skein supports unlimited undo and redo.  These just juggle things in memory, Undo and Redo don't run commands or affect files.
+Be fearless.  The Skein supports unlimited undo and redo.  These just juggle things in memory, Undo and Redo don't run commands or affect files.  You can undo even after saving to a file.
 
 ## Saving
 
@@ -182,28 +199,28 @@ You can save your file at any time using the _Save_ item on the navigation bar.
 The Skein files are in a simple textual format; they are designed
 to be managed files under source code control.
 
-The `dgt test` command can be used, from the command line, to do the same works as _Replay All_ and verify that all possible Skein leaves are still correct.
+The `dgt test` command can be used, from the command line, to do the same work as _Replay All_ and verify that all possible Skein leaves are still valid.
 
 ## Beyond Player Commands
 
 The text that you enter as a command is not limited to player commands for your project.  Just as with the Dialog debugger, you can enter
 queries, multi-queries, and `(now)` queries at the prompt and
-those will execute as well.  This is often done to check the state of the world, or to setup complex situations for testing (though, when possible, it is better to do so through a series of player commands).
+those will execute as well.  This is often done to check the state of the world, or to set up complex situations for testing (though, when possible, it is better to do so through a series of player commands).
 
-Also, it can be usesful to put a transcript comment into your Skein; this is a player command that starts with a `*`; the comment is ignored, no Dialog predicates execute.
+Also, it can be useful to put a transcript comment into your Skein; this is a player command that starts with a `*`; the comment is ignored, no Dialog predicates execute.
 
-You can do this to add a reminder about what you might be about to test in your Skein.
+You can use a transcript comment to add a reminder about what you might be about to test in your Skein.
 
 ## Dynamic State
 
-A dialog project fundamentally is about parsing commands from the
+A Dialog project is fundamentally about parsing commands from the
 player, matching those commands against specific rules implemented
-as Dialog predicates, with the result being a change to the dynamic state of the world, along with output describing the result.
+as Dialog predicates, with the result being a change to the dynamic state of the world, along with output describing the result.  A Dialog project acts as a world when the commands, rules, and dynamic state project a consistent simulation of a world.
 
-For example, the command `pick up the wrench` will, if successful, change the location and relation of the wrench to `(#wrench is #heldby #player)`.
+For example, the command `pick up the wrench` will, if successful, change the location and relation of the wrench to `(#wrench is #heldby #player)` and emit the text "You take the wrench."
 
-The Skein tracks the dynamic state after ever command execution.
-Using the world button, you can bring up a toggle switch to control if this information is shown:
+The Skein tracks the dynamic state of the world after every command is executed.
+Using the floating action button (the world icon, in the lower right), you can bring up a toggle switch to control if this information is shown:
 
 ![](skein-show-state-toggle.png)
 
@@ -215,14 +232,51 @@ This is a mix of global flags, per-object flags, global
 attributes, and per-object attributes.  Just the added, removed,
 and changed predicates are displayed.
 
+The Skein does something special with the dynamic state before
+presenting it to you: it merges the `($ has relation $)` and `($ has parent $)` predicates together to form the
+[access predicate](https://dialog-if.github.io/manual/dialog/0m03/lang/sugar.html#accesspred)
+`($ is $ $)`; in other worlds, you just see `(#wrench is #heldby #player)` rather than `(#wrench has relation #heldby)` and
+`(#wrench has parent #player)`.
+
+This is a single, special, hard-coded case; the Skein does *not* support
+the general case of access predicates.
+
 In the knot's action menu, the `Dynamic State ...` item will bring up
 a modal dialog of the dynamic state immediately after executing
 the command, exactly as provided by the Dialog debugger.
 
 ![](skein-dynamic-state-full.png)
 
-It should be noted that compound player commands, such as `go north then take chalice` are still treated by the Skein as a single command; there may be some intermediate dynamic state that is not exposed between the first part (`go north`) and the second (`take chalice`).
+It should be noted that compound player commands, such as `go north then take chalice`, are still treated by the Skein as a single command; there may be some intermediate dynamic state that is not exposed between the first part (`go north`) and the second (`take chalice`).
 
-Dynamic state is *not* stored in the Skein or used as the basis for marking a node as valid or in error; on the actual text response generated by Dialog is used for that purpose.
+Dynamic state is **not** stored in the Skein file, or used as the basis for marking a knot as valid or in error; only the actual text response generated by Dialog is used for that purpose.
 
 After loading the Skein, you should _Replay All_ to collect all the dynamic state data.
+
+## Time Travel
+
+From any knot's action popup, the _New Child_ menu item will allow you to create a new child knot.  This will deselect any children of the knot, and move focus to the player command text field.
+
+For example, in the below screenshot, the player opened the wallet and was hinted by the project to brood about their job.  Clicking on the action menu for the "open wallet" knot is how we time travel:
+
+![](skein-before-time-travel.png)
+
+This will clear out the "brood job" command (it's still tracked by the Skein, just not selected for display); you can then enter a _different_ command to follow from "open wallet"; let's try "close wallet":
+
+![](skein-new-child.png)
+
+The new knot is marked as new (in yellow).  You will notice 
+that the child knots popup of the parent knot ("open wallet") is now colored yellow, because
+there is a new knot somewhere below it:
+
+![](skein-navigation-popup.png)
+
+Those yellow navigation buttons will extend all the way up to the root knot.
+
+This background color choice might be trumped by an invalid knot, marked with a red background.
+
+The child knots popup also includes an indicator with the count of children; this knot now has three different children:
+
+![](skein-child-nav-menu.png)
+
+The menu item for the new knot is in yellow, because the new knot is yellow.  This menu item coloration is to assist you in navigating from the root down to the knot, or knots, that show some kind of error.
