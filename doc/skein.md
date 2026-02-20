@@ -210,7 +210,9 @@ those will execute as well.  This is often done to check the state of the world,
 
 ![](skein-query.png)
 
-Also, it can be useful to put a transcript comment into your Skein; this is a player command that starts with an asterisk (`*`); the comment is ignored by Dialog and no predicated execute.
+Also, it can be useful to put a transcript comment into your Skein; this is a player command that starts with an asterisk (`*`); the comment is ignored by Dialog and no predicates are executed.
+
+![](skein-transcript-comment.png)
 
 You can use a transcript comment to add a reminder about what you might be about to test in your Skein.
 
