@@ -40,6 +40,7 @@ Developing the UI requires an additional window.
 - Don't show FAB if it has no contents (debug not enabled)
 - skein w/ frotz: need to export path to the dfrotz-skein-patch.dg
 - single `dgt` script for both Babashka and java
+- lock and unlock knots (to prevent accidental deletion)
 
 ## Releasing
 
