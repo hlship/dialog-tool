@@ -12,6 +12,7 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.utils :as utils]
+            [taoensso.timbre :refer [info]]
             [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
 
 (defn- expand-raw-string-body
@@ -34,7 +35,7 @@
           start-nanos   (System/nanoTime)
           response      (f request)
           elapsed-nanos (- (System/nanoTime) start-nanos)]
-      (println (format "\r%s %4s %s (%,.1f ms)"
+      (info (format "\r%s %4s %s (%,.1f ms)"
                        (or (:status response) "SSE")
                        method uri (/ elapsed-nanos 1e6)))
       response)))
