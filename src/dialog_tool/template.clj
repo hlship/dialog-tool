@@ -1,7 +1,6 @@
 (ns dialog-tool.template
   (:require [babashka.fs :as fs]
             [selmer.parser :as s]
-            [babashka.process :as p]
             [clj-commons.ansi :refer [perr]]
             [clojure.java.io :as io]
             [clojure.string :as string])
@@ -69,10 +68,6 @@
   (let [{:keys [project-name]} opts
         dir' (fs/path dir)
         src-dir (fs/path dir "src")
-        brew-root (-> (p/sh "brew --prefix")
-                      :out
-                      string/trim)
-        dialog-root (fs/path brew-root "share" "dialog-if")
         bundle-dir (fs/path dir' "bundle")]
 
     (copy-rendered "template/dialog.edn"
@@ -91,11 +86,10 @@
                    {}
                    (fs/path dir' ".gitignore"))
     
-    
-    (copy-file (fs/path dialog-root "stdlib.dg")
+    (copy-resource "template/stdlib.dg"
                (fs/path dir' "lib" "dialog" "stdlib.dg"))
 
-    (copy-file (fs/path dialog-root "stddebug.dg")
+    (copy-resource "template/stddebug.dg"
                (fs/path dir' "lib" "dialog" "debug" "stddebug.dg"))
 
     (copy-resource "template/default-cover.png"
