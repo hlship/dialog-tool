@@ -162,7 +162,7 @@
          "New Child" "Add a new command after this"]
         [dropdown/button {:data-on:click (str "@get('/action/dynamic/" id "')")
                           :disabled      (nil? dynamic-response)}
-         "Dynamic state ..."
+         "Dynamic State ..."
          "Show full dynamic state"]
         (when-not root?
           [:<>
