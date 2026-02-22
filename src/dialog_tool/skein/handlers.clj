@@ -12,7 +12,7 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.utils :as utils]
-            [taoensso.timbre :refer [info]]
+            [clj-commons.ansi :refer [pout]]
             [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
 
 (defn- expand-raw-string-body
@@ -35,9 +35,15 @@
           start-nanos   (System/nanoTime)
           response      (f request)
           elapsed-nanos (- (System/nanoTime) start-nanos)]
-      (info (format "\r%s %4s %s (%,.1f ms)"
-                       (or (:status response) "SSE")
-                       method uri (/ elapsed-nanos 1e6)))
+      (pout [:faint (format "%tT" (System/currentTimeMillis))]
+            " "
+            [{:width 3} (or (:status response "SSE"))]
+            " "
+            [{:width 4} method]
+            " "
+            uri
+            (format " (%,.1f ms)"
+                    (/ elapsed-nanos 1e6)))
       response)))
 
 (defn- wrap-not-found

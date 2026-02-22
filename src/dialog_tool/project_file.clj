@@ -1,7 +1,6 @@
 (ns dialog-tool.project-file
   (:require [clojure.edn :as edn]
             [net.lewisship.cli-tools :refer [abort]]
-            [taoensso.timbre :refer [spy]]            
             [babashka.fs :as fs])
   (:import (java.nio ByteBuffer)
            (java.nio.file Path)

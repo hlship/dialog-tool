@@ -48,7 +48,6 @@
                                                     :exclusions  [http-kit/http-kit]}
 
                 ;; Bundled Babashka dependencies:
-                com.taoensso/timbre                {:mvn/version "6.8.0"}
                 selmer/selmer                      {:mvn/version "1.12.70"}
                 babashka/fs                        {:mvn/version "0.5.30"}
                 babashka/process                   {:mvn/version "0.6.25"}
