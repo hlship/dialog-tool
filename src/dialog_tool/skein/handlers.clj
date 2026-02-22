@@ -90,6 +90,7 @@
 (defn- new-command
   "Adds a new command to the tree as a child of the active knot."
   [{:keys [*session signals] :as request}]
+  (swap! *session session/check-for-changed-sources)
   (let [{:keys [newCommand]} signals
         command (some-> newCommand str string/trim not-empty)]
     (utils/with-short-sse
@@ -117,6 +118,7 @@
   "Replays from the start to the specified knot."
   [{:keys [*session] :as request}] 
   (diff/clear-cache)
+  (swap! *session session/check-for-changed-sources)
   (render-app (swap! *session session/replay-to! (knot-id request))
               {:flash "Replayed"}))
 
@@ -156,6 +158,7 @@
 (defn- edit-command
   "Submits the edited command for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
+  (swap! *session session/check-for-changed-sources)
   (let [id       (knot-id request)
         {:keys [editCommand]} signals
         command  (some-> editCommand str string/trim)
@@ -190,6 +193,7 @@
 (defn- insert-parent
   "Submits the insert parent command for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
+  (swap! *session session/check-for-changed-sources)
   (let [id       (knot-id request)
         {:keys [insertCommand]} signals
         command  (some-> insertCommand str string/trim not-empty)
@@ -281,7 +285,8 @@
             total        (count leaf-knots)]
         ;; Capture initial state for undo (once for entire operation)
         (swap! *session session/capture-undo)
-
+        (swap! *session session/check-for-changed-sources)
+        
         ;; Replay to each leaf knot
         (doseq [[idx knot] (map-indexed vector leaf-knots)]
           (let [current (inc idx)

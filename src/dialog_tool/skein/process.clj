@@ -1,7 +1,11 @@
 (ns dialog-tool.skein.process
   "Management of a sub-process running the Dialog debugger,
   sending it commands to execute, and receiving back
-  the results (output) from those commands."
+  the results (output) from those commands.
+  
+  In addition, can track the files on the project and determine when
+  they have changed (thus needing a restart of the process for
+  accurate results)."
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
             [clojure.core.async :refer [chan close! >!! <!!]]
@@ -50,7 +54,7 @@
       .start)))
 
 (defn- start!
-  [^List cmd opts]
+  [project ^List cmd opts]
   (let [{:keys [pre-flight]} opts
         ;; pre-flight is optional, used to build the .zblorb file for example,
         ;; so it must be before starting the process.
@@ -63,6 +67,8 @@
     (when env/*debug*
       (perr [:cyan (string/join " " cmd)]))
     {:process      process
+     :project      project
+     :hash         (pf/project-hash project)
      :cmd          cmd
      :opts         opts
      :stdin-writer (-> process .outputWriter PrintWriter.)  ; write stdin of process
@@ -78,7 +84,7 @@
                  "--seed" (str seed)
                  "--width" "80"]
                 (into (pf/expand-sources project {:debug? true})))]
-    (start! cmd nil)))
+    (start! project cmd nil)))
 
 (def engines #{:dgdebug :frotz :frotz-release})
 
@@ -111,7 +117,9 @@
              "-w" "80"
              (str path)]]
     (fs/create-dirs output-dir)
-    (start! cmd {:pre-flight   pre
+    (start! project
+            cmd
+            {:pre-flight       pre
                  :echo-command true})))
 
 (defmethod start-process! :frotz
@@ -158,3 +166,10 @@
     (when process
       (.destroy process)))
   nil)
+
+(defn sources-changed?
+  "Checks to see if the project (dialog.edn, or any .dg file) has changed
+  since this process was created."
+  [process]
+  (let [{:keys [project hash]} process]
+    (not= hash (pf/project-hash project))))

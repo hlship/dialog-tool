@@ -80,6 +80,12 @@
         (update :tree tree/update-response 0 new-initial-response)
         capture-dynamic)))
 
+(defn check-for-changed-sources
+  [session]
+  (if (-> session :process sk.process/sources-changed?)
+    (assoc session :active-knot-id nil)
+    session))
+
 (defn do-replay-to!
   "Replays to a knot without capturing undo. Used internally by replay-to! and for batch operations."
   [session knot-id]
