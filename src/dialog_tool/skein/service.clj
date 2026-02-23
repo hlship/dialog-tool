@@ -5,6 +5,7 @@
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
+            [dialog-tool.skein.handlers :refer [service-handler]]
             [org.httpkit.server :as hk]))
 
 ^:clj-reload/keep
@@ -15,11 +16,12 @@
 
 (defn- service-handler-proxy
   [request]
-  ;; This is to allow code reloading to work correctly without restarting
-  ;; the service.
-  ((requiring-resolve 'dialog-tool.skein.handlers/service-handler)
-   (assoc request :*session *session
-          :*shutdown *shutdown)))
+  (let [handler (if (-> *session deref :development-mode?)
+                  (requiring-resolve 'dialog-tool.skein.handlers/service-handler)
+                  service-handler)]
+    (handler (assoc request 
+                    :*session *session
+                    :*shutdown *shutdown))))
 
 (defn start!
   "Starts a service with the Skein for the given path, or a new empty skein
@@ -35,7 +37,7 @@
 
   Does not join the service.
 
-  Returns a function that will shutdown the service when invoked."
+  Returns the port opened."
   [root-dir opts]
   (let [{:keys [skein-path port seed engine development-mode?]
          :or   {port 10140}} opts
@@ -64,10 +66,10 @@
                             ;; Development mode is when testing/debugging the tool itself
                             :development-mode? development-mode?
                             ;; debug-enabled? is for users debugging their projects using dgdebug
+                            ;; Some features of the Skein only work with dgdebug
                             :debug-enabled? (= engine' :dgdebug)))
     (reset! *shutdown shutdown-service-fn)
-    {:shutdown-fn shutdown-service-fn
-     :port        port}))
+    port))
 
 (comment
 

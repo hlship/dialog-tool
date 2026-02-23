@@ -37,11 +37,12 @@ Developing the UI requires an additional window.
 - Consider *always* running from start, even when adding a new command at end?
 - new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
 - add ability to paste in a transcript (or create a skein from a transcript)
-- Don't show FAB if it has no contents (debug not enabled)
+- disable FAB if it has not debug engine 
 - skein w/ frotz: need to export path to the dfrotz-skein-patch.dg
 - single `dgt` script for both Babashka and java
 - lock and unlock knots (to prevent accidental deletion)
 - use core.cache (or memoize) for caching (of text diffs)
+- provide a `favicon.ico`
 
 ## Releasing
 
@@ -50,6 +51,7 @@ Developing the UI requires an additional window.
 - `bb release`
   - Builds the deployable bundle and uploads to GitHub
   - Need `gh` installed
-  - Prints out info for next step
-- Copy `out/dialog-tool.rb` to `homebrew-brew` repo
+  - Prints out info about release
+  - Generates `out/dialog-tool.rb` from template
+- Copy `out/dialog-tool.rb` to `hlship/homebrew-brew` repo
   - Commit and push -- it's live!
