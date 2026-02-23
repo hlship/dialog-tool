@@ -41,6 +41,7 @@ Developing the UI requires an additional window.
 - skein w/ frotz: need to export path to the dfrotz-skein-patch.dg
 - single `dgt` script for both Babashka and java
 - lock and unlock knots (to prevent accidental deletion)
+- use core.cache (or memoize) for caching (of text diffs)
 
 ## Releasing
 

@@ -152,7 +152,7 @@ picked up):
 
 ![](skein-knot-error.png)
 
-Now the knot is in error and the text shows deleted text (in red) and
+Now the knot is in error and the text shows deleted text (in red, with overstrike) and
 added text (in blue).  If you are happy with this new text, you can bless the changes and continue.
 
 ## Replay All
@@ -194,6 +194,9 @@ Likewise, there are Skein actions that move or delete knots in the Skein; those 
 ## Undo/Redo
 
 Be fearless.  The Skein supports unlimited _Undo_ and _Redo_ (in the top navigation bar).  These commands only juggle things in memory, _Undo_ and _Redo_ don't run commands or affect files.  You can undo even after saving to a file.
+
+For example, sometimes its easier to verify textual changes by using undo (to see how it used to look) then redo (to see how it now looks) before blessing the changes; this
+is particularily useful when there's some subtle whitespace changes in the output.
 
 ## Saving
 
@@ -297,3 +300,26 @@ if they are new (or in error) _or_ if some child or descendent
 of the knot is new (or in error).
 
 This menu item coloration is to assist you in navigating from the root down to the knot, or knots, that are new or in error.
+
+## Engines
+
+When you create a skein, you can optionally specify an _engine_.  
+The default engine is `dgdebug`, but you can also use `frotz` or `frotz-release`.
+
+The latter two run the Skein using the `frotz` command line tool instead of `dgdebug`.
+
+When `frotz` is used, you will not see dynamic predicate data, as that requires the Dialog debugger. Likewise, you will not be able to use enter queries or `(now)` predicates.
+
+The `frotz` engine includes all debugging sources; `frotz-release` does not.  In both cases, the Skein will compile your sources into Z-code to run inside `frotz`,
+recompiling as necessary when the source changes, as with the debugger.
+
+There can be subtle differences between the debugger and the runtime, so having a playthrough using `frotz` or `frotz-release` may help uncover problems before your 
+players do.  Remember that the `dgt test`  command will run _all_ the 
+`.skein` files in the project directory, which is faster and easier than loading each one into the visual Skein.
+
+## Limitations
+
+The Skein has limitations:
+
+* It can't help you verify **font** changes, as all text from the debugger is output as plain text.
+* It can't help you with **status lines** as the debugger can't display those.
