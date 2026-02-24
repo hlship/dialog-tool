@@ -308,7 +308,7 @@ The default engine is `dgdebug`, but you can also use `frotz` or `frotz-release`
 
 The latter two run the Skein using the `frotz` command line tool instead of `dgdebug`.
 
-When `frotz` is used, you will not see dynamic predicate data, as that requires the Dialog debugger. Likewise, you will not be able to use enter queries or `(now)` predicates.
+When `frotz` is used, you will not see dynamic predicate data, as that requires the Dialog debugger. Likewise, you will not be able to enter queries or `(now)` predicates.
 
 The `frotz` engine includes all debugging sources; `frotz-release` does not.  In both cases, the Skein will compile your sources into Z-code to run inside `frotz`,
 recompiling as necessary when the source changes, as with the debugger.
@@ -319,7 +319,10 @@ players do.  Remember that the `dgt test`  command will run _all_ the
 
 ## Limitations
 
-The Skein has limitations:
+The Skein has limitations, which are fundamentally based on
+the fact that it treats the interaction as a series of commands and responses; some of Dialog's capabilities are outside this simple model.
 
-* It can't help you verify **font** changes, as all text from the debugger is output as plain text.
+* The Skein can't help you verify **font** changes, as all text from the debugger is output as plain text.
 * It can't help you with **status lines** as the debugger can't display those.
+* It does not handle [non-command input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
+* It doesn't allow for hyperlinks
