@@ -3,7 +3,7 @@
 > dgt 2.0 is a total rewrite and is currently in progress
 
 `dgt` is a tool to assist in the development of interactive fiction
-written in the [Dialog](https://linusakesson.net/dialog/index.php) language. Not every work of IF is a "game" so we use the term "project".
+written in the [Dialog](https://github.com/dialog-if/dialog) language. Not every work of IF is a "game" so we use the term "project".
 
 `dgt` simplifies Dialog development, it allows you to specify the details of your project,
 including what individual source files to use, and then provides commands to:
@@ -13,26 +13,43 @@ including what individual source files to use, and then provides commands to:
 - run tests derived from your skein files
 - package your project for release
 
-Unlike many of my projects, this is _really_ for personal use:
-
-- OS X only
-- Subject to breaking change at any time
-- Written in [Babashka](https://github.com/babashka/babashka) (the ultimate scripting language) which you almost certainly don't know
-
 ## Installing
 
-Dialog tool is easily installed on OS X using the [Homebrew](https://brew.sh/).
+### Homebrew (macOS)
+
+The easiest way to install `dgt` on macOS is via [Homebrew](https://brew.sh/), which handles all dependencies automatically:
 
 ```
 brew install hlship/brew/dialog-tool
 ```
 
-This will download and install the `dgt` command, along with all it's dependencies.
+This installs `dgt` along with all required tools: the Dialog compiler and debugger, Babashka, Frotz, ImageMagick, and Java.
 
-Run the command `dgt help` for a list of commands; each command has a `--help` option (abbreviated as `-h`) that gives
+### Manual install
+
+Download the latest release zip from the [GitHub releases page](https://github.com/hlship/dialog-tool/releases).
+The zip contains two files you need:
+
+- `dgt` — the launcher script
+- `dialog-tool-<version>.jar` — the uberjar containing all Clojure dependencies
+
+Extract both files into the same directory, then add that directory to your `PATH`,
+or symlink `dgt` into a directory already on your `PATH`.
+
+Java 11 or later is required. [Babashka](https://github.com/babashka/babashka) is optional but recommended;
+when available, `dgt` will use it for faster startup.
+
+The following external tools must also be installed and on your `PATH`:
+
+- [Dialog](https://github.com/dialog-if/dialog) — provides `dialogc` (compiler) and `dgdebug` (debugger)
+- [AAMachine](https://github.com/dialog-if/aamachine) — provides `aambundle`, for `dgt bundle`
+- [Frotz](https://gitlab.com/DavidGriffith/frotz) — for `dgt run`
+- [ImageMagick](https://imagemagick.org/) — for `dgt bundle`
+
+---
+
+Run `dgt help` for a list of commands; each command has a `--help` option (abbreviated as `-h`) for
 specific details.
-
-> The first time you run `dgt` it may have to download additional libraries, which takes a second or two. Subsequently, `dgt` starts lightning fast.
 
 ## Creating a new project
 

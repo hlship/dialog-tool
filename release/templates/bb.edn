@@ -1,1 +1,0 @@
-{:deps {uber/dialog-tool {:local/root "{{uber-jar}}"}}}

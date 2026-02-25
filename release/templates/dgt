@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if command -v bb >/dev/null 2>&1; then
+  exec bb --classpath "$SCRIPT_DIR/{{uber-jar}}" -m dialog-tool.main "$@"
+else
+  exec java --class-path "$SCRIPT_DIR/{{uber-jar}}" clojure.main -m dialog-tool.main "$@"
+fi

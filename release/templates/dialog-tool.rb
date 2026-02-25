@@ -14,7 +14,6 @@ class DialogTool < Formula
   depends_on "java"
 
   def install
-      bin.install "bb.edn"
       bin.install "{{uber-jar}}"
       bin.install "dgt"
 
@@ -22,7 +21,7 @@ class DialogTool < Formula
 
       ENV["CLI_TOOLS_CACHE_DIR"] = buildpath
 
-      system "bb", bin/"dgt", "completions", zsh_completion_file
+      system bin/"dgt", "completions", zsh_completion_file
 
       zsh_completion.install zsh_completion_file
   end

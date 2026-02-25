@@ -38,7 +38,6 @@ Developing the UI requires an additional window.
 - new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
 - add ability to paste in a transcript (or create a skein from a transcript)
 - disable FAB if it has not debug engine 
-- single `dgt` script for both Babashka and java
 - use core.cache (or memoize) for caching (of text diffs)
 - provide a `favicon.ico`
 

@@ -31,16 +31,16 @@
 (defn package
   "Packages distribution files into a zip; the file is returned."
   [tag]
-  (let [out-dir   (fs/file "out")
+  (let [out-dir (fs/file "out")
         class-dir (fs/file out-dir "classes")
         build-dir (fs/file out-dir "build")
-        _         (do
-                    (fs/delete-tree out-dir)
-                    (fs/create-dirs out-dir)
-                    (fs/create-dirs class-dir)
-                    (fs/create-dirs build-dir))
+        _ (do
+            (fs/delete-tree out-dir)
+            (fs/create-dirs out-dir)
+            (fs/create-dirs class-dir)
+            (fs/create-dirs build-dir))
         uber-file (fs/file build-dir (str "dialog-tool-" tag ".jar"))
-        zip-file  (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
+        zip-file (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
     (sh "tailwindcss --minimize --map"
         "--input" "public/style.css"
         "--output" (-> (fs/file class-dir "public" "style.css") str))
@@ -48,18 +48,16 @@
         (spit tag))
     (sh "clojure -T:build uber " (pr-str {:uber-file (str uber-file)
                                           :class-dir (str class-dir)}))
-    (doseq [f ["bb.edn" "dgt.sh"]]
-      (render-template (str "templates/" f)
-                       (fs/file build-dir f)
-                       {:uber-jar (fs/file-name uber-file)}))
-    
-    (sh "chmod a+x" (fs/file build-dir "dgt.sh"))
-    
+    (render-template "templates/dgt"
+                     (fs/file build-dir "dgt")
+                     {:uber-jar (fs/file-name uber-file)})
+
+    (sh "chmod a+x" (fs/file build-dir "dgt"))
+
     (sh "cp -R"
         "LICENSE"
         "README.md"
         "CHANGES.md"
-        "dgt"                                               ; will pull from the uberjar
         build-dir)
     (perr "Writing: " [:bold zip-file] " ...")
     (fs/zip zip-file build-dir {:root "out/build"})

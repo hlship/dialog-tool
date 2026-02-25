@@ -1,5 +1,7 @@
 #!/usr/bin/env bb
 
+;; This file is only used for local testing.
+
 (require '[dialog-tool.main :as main])
 
 (apply main/-main *command-line-args*)
