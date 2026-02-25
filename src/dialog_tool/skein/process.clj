@@ -77,8 +77,8 @@
   "Starts a Skein process using the Dialog debugger."
   [project-root seed]
   (let [project (pf/read-project project-root)
-        cmd     (-> ["dgdebug"
-                 "--quit"
+        cmd     (-> [(pf/command-path project "dgdebug")
+                     "--quit"
                  "--seed" (str seed)
                  "--width" "80"]
                 (into (pf/expand-sources project {:debug? true})))]

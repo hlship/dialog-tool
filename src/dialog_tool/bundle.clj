@@ -74,7 +74,8 @@
       (fs/delete-tree bundle-out-dir))
 
     ;; Must be first, because it will fail if the output directory already exists.
-    (p/shell "aambundle --target web"
+    (p/shell (pf/command-path project "aambundle")
+             "--target" "web"
              "--output" (str bundle-out-dir)
              (str aa-path))
     (perr [:cyan "  out/web/resources/..."])

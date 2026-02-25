@@ -33,7 +33,7 @@
         output-path (fs/path output-dir (str (:name project) "." ext))
         args        (into (dialogc-args format options project output-path)
                           sources)
-        command     (into ["dialogc"] args)
+        command     (into [(pf/command-path project "dialogc")] args)
         _           (do
                       (perr [:cyan "Building " output-path " ..."])
                       (env/debug-command command))

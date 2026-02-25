@@ -25,7 +25,7 @@
   (let [project (pf/read-project)
         extra-args (cond-> []
                      width (conj "--width" width))
-        cmd (-> ["dgdebug" "--quit"]
+        cmd (-> [(pf/command-path project "dgdebug") "--quit"]
                 (into extra-args)
                 (into (pf/expand-sources project {:debug? true})))
         *process (p/process {:cmd cmd

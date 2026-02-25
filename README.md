@@ -127,6 +127,13 @@ This is typically used to set the heap size information.
 Under :build, the :default key contains defaults for building (any format); the specific build map (:zblorb, in our example)
 is merged on top of the :default map, if present.
 
+### Bin Dir
+
+Normally, `dgt` expects the Dialog commands it uses (`dgdebug`, `dialogc`, and `aambundle`) to be on the path.
+If your `dialog.edn` contains a :bin-dir key, its value is used as the directory containing these commands. 
+
+This is a rarely used option, such as when testing a project against a new version of Dialog without installing that new version.
+
 ## Running your project
 
 `dgt debug` will run your project using `dgdebug` so you can explore your creation interactively at the console.
