@@ -2,7 +2,7 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
             [clj-commons.ansi :refer [perr]]
-            [clojure.string :as str]
+            [dialog-tool.env :as env]
             [dialog-tool.project-file :as pf]
             [net.lewisship.cli-tools :as cli]))
 
@@ -10,8 +10,8 @@
   [format options project output-path]
   (let [{:keys [verbose? debug?]} options
         {:keys [build]} project
-        build' (merge (:default build)
-                            (get build format))
+        build'        (merge (:default build)
+                             (get build format))
         build-options (:options build')]
     (cond-> ["--format" (name format)
              "--output" (str output-path)]
@@ -33,10 +33,10 @@
         output-path (fs/path output-dir (str (:name project) "." ext))
         args        (into (dialogc-args format options project output-path)
                           sources)
-        command     (into ["dialogc"] args)
-        _           (perr [:cyan "Building " output-path " ..."])
-        _           (when (:verbose? options)
-                      (perr [:cyan (str/join " " command)]))
+        command     (into [(pf/command-path project "dialogc")] args)
+        _           (do
+                      (perr [:cyan "Building " output-path " ..."])
+                      (env/debug-command command))
         {:keys [exit]} @(p/process {:cmd     command
                                     :inherit true})]
     (when-not (zero? exit)

@@ -252,7 +252,8 @@
 
                 :else
                 (update m :added conj after-val))))
-        all-keys (set/union (keys before-vars) (keys after-vars))]
+        all-keys (set/union (-> before-vars keys set)
+                            (-> after-vars keys set))]
     (reduce f
             {:added added-flags
              :removed removed-flags

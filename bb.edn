@@ -46,7 +46,8 @@
                 dev.data-star.clojure/sdk          {:mvn/version "1.0.0-RC7"}
                 dev.data-star.clojure/http-kit     {:mvn/version "1.0.0-RC7"
                                                     :exclusions  [http-kit/http-kit]}
-
+                plumula/diff                       {:mvn/version "0.1.1"}
+                
                 ;; Bundled Babashka dependencies:
                 selmer/selmer                      {:mvn/version "1.12.70"}
                 babashka/fs                        {:mvn/version "0.5.30"}

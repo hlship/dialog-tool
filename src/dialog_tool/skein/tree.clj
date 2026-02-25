@@ -103,14 +103,14 @@
   or descendant-status."
   [tree knot-id]
   (let [existing (get-in tree [:descendant-status knot-id])
-        computed (compute-descendant-status tree knot-id)]
-    (let [tree'     (if (= existing computed)
-                      tree
-                      (assoc-in tree [:descendant-status knot-id] computed))
-          parent-id (get-parent-id tree' knot-id)]
-      (if parent-id
-        (recur tree' parent-id)
-        tree'))))
+        computed (compute-descendant-status tree knot-id)
+        tree'    (if (= existing computed)
+                   tree
+                   (assoc-in tree [:descendant-status knot-id] computed))
+        parent-id (get-parent-id tree' knot-id)]
+    (if parent-id
+      (recur tree' parent-id)
+      tree')))
 
 (defn- compute-knot-status
   "Returns the status of a knot: :ok if blessed matches response (no unblessed),

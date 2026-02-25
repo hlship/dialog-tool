@@ -4,7 +4,7 @@
             [babashka.fs :as fs])
   (:import (java.nio ByteBuffer)
            (java.nio.file Path)
-           (java.nio.file.attribute BasicFileAttributes FileTime)
+           (java.nio.file.attribute FileTime)
            (java.security MessageDigest)))
 
 (defn read-project
@@ -91,3 +91,10 @@
     ;; Byte arrays don't compare as equals, so convert to a hex string
     ;; for later comparison.
     (hex-string bs)))
+
+(defn command-path
+  [project command]
+  (let [{:keys [bin-dir]} project]
+    (if bin-dir
+      (str bin-dir "/" command)
+      command)))

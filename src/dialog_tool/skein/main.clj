@@ -1,5 +1,5 @@
 (ns dialog-tool.skein.main
-  "Alternate, internal program entrypoint used when a Java process is created to run the Skein."
+  "Program entrypoint used to run the Skein as a Java process."
   (:require [clj-commons.ansi :refer [pout]]
             [clojure.java.browse :as browse]
             [babashka.fs :as fs]
@@ -11,7 +11,7 @@
   [params]
   (let [{:keys [skein-path debug]} params
         _   (alter-var-root #'env/*debug* (constantly debug))
-        {:keys [port]} (service/start! nil params)
+        port (service/start! nil params)
         url (str "http://localhost:" port)]
     (pout [:bold (if (fs/exists? skein-path) "Loading" "Creating")
            " " skein-path " ..."])
