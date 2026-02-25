@@ -135,7 +135,7 @@
 
 (defn- render-knot
   [tree knot {:keys [scroll-to-knot-id debug-enabled?]}]
-  (let [{:keys [id label response unblessed status children dynamic-response]} knot
+  (let [{:keys [id label response unblessed status children dynamic-response locked]} knot
         border-class (status->border-class status)
         disable-bless? (= :ok status)
         root? (zero? id)]
@@ -145,6 +145,8 @@
                        (assoc :data-scroll-into-view true))
      [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
       [:div.whitespace-normal.flex.flex-row.items-center.absolute.top-2.right-2.gap-x-2
+       (when locked
+         [:div.icon.icon-lock {:title "Locked"}])
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
        [dropdown/dropdown {:label [:div.icon.icon-dots-vertical]
@@ -161,13 +163,15 @@
         [dropdown/button {:data-on:click (str "@post('/action/new-child/" id "')")}
          "New Child" "Add a new command after this"]
         [dropdown/button {:data-on:click (str "@get('/action/dynamic/" id "')")
-                          :disabled      (nil? dynamic-response)}
+                          :disabled (nil? dynamic-response)}
          "Dynamic State ..."
          "Show full dynamic state"]
         (when-not root?
           [:<>
            [dropdown/button {:data-on:click (str "@get('/action/edit-label/" id "')")}
             "Edit Label" "Change label for knot"]
+           [dropdown/button {:data-on:click (str "@post('/action/toggle-lock/" id "')")}
+            "Toggle Lock" "Lock or unlock this knot"]
            [dropdown/button {:data-on:click (str "@get('/action/edit-command/" id "')")}
             "Edit Command" "Change the knot's command"]
            [dropdown/button {:data-on:click (str "@get('/action/insert-parent/" id "')")}
@@ -195,9 +199,9 @@
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [knot]
              (render-knot tree knot {:scroll-to-knot-id scroll-to-knot-id
-                                     :debug-enabled?    (and debug-enabled? show-dynamic?)}))
+                                     :debug-enabled? (and debug-enabled? show-dynamic?)}))
            knots)
-      [new-command/new-command-input {:scroll-to?           scroll-to-new-command?
+      [new-command/new-command-input {:scroll-to? scroll-to-new-command?
                                       :reset-command-input? reset-command-input?}]]]))
 
 (defn render-fab
@@ -206,12 +210,12 @@
   [:div.fab#fab
    [:div.btn.btn-lg.btn-circle.btn-primary
     {:tabindex "0"
-     :role     "button"}
+     :role "button"}
     [:div.icon.icon-globe]]
 
    [:div.rounded-box.bg-primary-content
     [:label.label.p-2
-     [:input.toggle {:type           "checkbox"
-                     :data-bind      "showDynamic"
+     [:input.toggle {:type "checkbox"
+                     :data-bind "showDynamic"
                      :data-on:change "@get('/app/')"}]
      "Show dynamic state"]]])

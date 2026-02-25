@@ -71,3 +71,8 @@ html {
   mask-image: url('/icons/x-circle-solid.svg');
   -webkit-mask-image: url('/icons/x-circle-solid.svg');
 }
+
+.icon-lock {
+  mask-image: url('/icons/lock-closed-solid.svg');
+  -webkit-mask-image: url('/icons/lock-closed-solid.svg');
+}

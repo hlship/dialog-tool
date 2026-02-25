@@ -1,9 +1,13 @@
 (ns dialog-tool.skein.tree-test
   (:require [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]
             [matcher-combinators.test :refer [match?]]
             [matcher-combinators.matchers :as m]
-            [dialog-tool.skein.tree :as tree]))
+            [dialog-tool.skein.tree :as tree]
+            [dialog-tool.skein.file :as file])
+  (:import (clojure.lang LineNumberingPushbackReader)
+           (java.io PrintWriter StringWriter StringReader)))
 
 (defn- make-tree
   "Helper to create a fresh tree for testing."
@@ -13,25 +17,25 @@
 (deftest tree-creation
   (testing "creates a tree with metadata and root knot"
     (let [tree (tree/new-tree :anything 12345)]
-      (is (= {:meta              {:engine :anything
-                                  :seed   12345}
-              :knots             {0 {:id    0
-                                     :label "START"}}
-              :children          {}
-              :selected          {}
-              :status            {0 :new}
+      (is (= {:meta {:engine :anything
+                     :seed 12345}
+              :knots {0 {:id 0
+                         :label "START"}}
+              :children {}
+              :selected {}
+              :status {0 :new}
               :descendant-status {}}
              tree)))))
 
 (deftest add-child-test
   (testing "adds a child knot with unblessed response"
-    (let [tree  (make-tree)
+    (let [tree (make-tree)
           tree' (tree/add-child tree 0 1 "look" "You see a room.")]
-      (is (match? {:knots    {0 {}
-                              1 {:id        1
-                                 :parent-id 0
-                                 :command   "look"
-                                 :unblessed "You see a room."}}
+      (is (match? {:knots {0 {}
+                           1 {:id 1
+                              :parent-id 0
+                              :command "look"
+                              :unblessed "You see a room."}}
                    :children {0 #{1}}
                    :selected {0 1}}
                   tree'))))
@@ -42,11 +46,11 @@
                    (tree/add-child 0 2 "inventory" "Empty."))]
 
       (is (match?
-            {:knots    {2 {:command   "inventory"
-                           :unblessed "Empty."}}
-             :children {0 #{1 2}}
-             :selected {0 2}}
-            tree)))))
+           {:knots {2 {:command "inventory"
+                       :unblessed "Empty."}}
+            :children {0 #{1 2}}
+            :selected {0 2}}
+           tree)))))
 
 (deftest delete-knot-test
   (testing "deletes a leaf knot"
@@ -55,11 +59,11 @@
                    (tree/delete-knot 1))]
       (is (nil? (tree/get-knot tree 1)))
 
-      (is (match? {:children          {0 #{}
-                                       1 m/absent}
-                   :knots             {1 m/absent}
-                   :selected          (m/equals {})
-                   :status            (m/equals {0 :new})
+      (is (match? {:children {0 #{}
+                              1 m/absent}
+                   :knots {1 m/absent}
+                   :selected (m/equals {})
+                   :status (m/equals {0 :new})
                    :descendant-status (m/equals {0 :ok})}
                   tree))))
 
@@ -69,13 +73,13 @@
                    (tree/add-child 1 2 "north" "Hallway.")
                    (tree/add-child 2 3 "east" "Kitchen.")
                    (tree/delete-knot 1))]
-      (is (match? {:knots             {1 m/absent
-                                       2 m/absent
-                                       3 m/absent}
-                   :status            (m/equals {0 :new})
+      (is (match? {:knots {1 m/absent
+                           2 m/absent
+                           3 m/absent}
+                   :status (m/equals {0 :new})
                    :descendant-status (m/equals {0 :ok})
-                   :children          (m/equals {0 #{}})
-                   :selected          (m/equals {})}
+                   :children (m/equals {0 #{}})
+                   :selected (m/equals {})}
                   tree))))
 
   (testing "adjusts selection when deleting selected child"
@@ -83,7 +87,7 @@
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/add-child 0 2 "inventory" "Empty.")
                    (tree/delete-knot 2))]
-      (is (match? {:knots    {2 m/absent}
+      (is (match? {:knots {2 m/absent}
                    :children (m/equals {0 #{1}})
                    :selected {0 1}}
                   tree)))))
@@ -114,14 +118,14 @@
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "You see a room.")
                    (tree/bless-response 1))]
-      (is (match? {:knots {1 {:response  "You see a room."
+      (is (match? {:knots {1 {:response "You see a room."
                               :unblessed m/absent}}}
                   tree))))
 
   (testing "does nothing if already blessed"
-    (let [tree  (-> (make-tree)
-                    (tree/add-child 0 1 "look" "You see a room.")
-                    (tree/bless-response 1))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "You see a room.")
+                   (tree/bless-response 1))
           tree' (tree/bless-response tree 1)]
       (is (= tree tree')))))
 
@@ -131,10 +135,10 @@
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/bless-response 1)
                    (tree/update-response 1 "Different room."))]
-      (is (match? {:knots             {1 {:response  "Room."
-                                          :unblessed "Different room."}}
-                   :status            {0 :new
-                                       1 :error}
+      (is (match? {:knots {1 {:response "Room."
+                              :unblessed "Different room."}}
+                   :status {0 :new
+                            1 :error}
                    :descendant-status {0 :error}}
                   tree))))
 
@@ -144,7 +148,7 @@
                    (tree/bless-response 1)
                    (tree/update-response 1 "Different room.")
                    (tree/update-response 1 "Room."))]
-      (is (match? {:knots {1 {:response  "Room."
+      (is (match? {:knots {1 {:response "Room."
                               :unblessed m/absent}}}
                   tree)))))
 
@@ -173,9 +177,9 @@
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/insert-parent 1 2 "inventory"))]
-      (is (match? {:knots    {2 {:command   "inventory"
-                                 :response  m/absent
-                                 :unblessed nil}}
+      (is (match? {:knots {2 {:command "inventory"
+                              :response m/absent
+                              :unblessed nil}}
                    :children {0 #{2}
                               2 #{1}}
                    :selected {0 2
@@ -189,8 +193,8 @@
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/add-child 1 2 "north" "Hallway.")
                    (tree/splice-out 1))]
-      (is (match? {:knots    {1 m/absent
-                              2 {:parent-id 0}}
+      (is (match? {:knots {1 m/absent
+                           2 {:parent-id 0}}
                    :selected {1 m/absent
                               0 2
                               2 m/absent}
@@ -205,10 +209,10 @@
                    (tree/add-child 1 2 "north" "Hallway.")
                    (tree/add-child 1 3 "south" "Kitchen.")
                    (tree/splice-out 1))]
-      (is (match? {:knots    {1 m/absent
-                              2 {:parent-id 0}
-                              3 {:parent-id 0}}
-                   :selected {0 3                           ; why 3?  is this deterministic?
+      (is (match? {:knots {1 m/absent
+                           2 {:parent-id 0}
+                           3 {:parent-id 0}}
+                   :selected {0 3 ; why 3?  is this deterministic?
                               1 m/absent}
                    :children {0 #{2 3}
                               1 m/absent}}
@@ -220,16 +224,16 @@
                  (tree/bless-response 0)
                  (tree/add-child 0 100 "look" "Room."))]
     (testing "new status propagates up"
-      (is (match? {:status            {0   :ok
-                                       100 :new}
+      (is (match? {:status {0 :ok
+                            100 :new}
                    :descendant-status {0 :new}}
                   tree)))
 
     (testing "error status overrides new"
-      (is (match? {:status            {0   :ok
-                                       100 :new
-                                       200 :error}
-                   :descendant-status {0   :error
+      (is (match? {:status {0 :ok
+                            100 :new
+                            200 :error}
+                   :descendant-status {0 :error
                                        100 :error}}
                   (-> tree
                       (tree/add-child 100 200 "i" "inv")
@@ -251,17 +255,17 @@
 
 (deftest selected-knots-test
   (testing "returns selected path from root"
-    (let [tree     (-> (make-tree)
-                       (tree/add-child 0 1 "look" "Room.")
-                       (tree/add-child 1 2 "north" "Hallway."))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 1 2 "north" "Hallway."))
           selected (tree/selected-knots tree)]
       (is (= [0 1 2] (mapv :id selected)))))
 
   (testing "stops at unselected knots"
-    (let [tree     (-> (make-tree)
-                       (tree/add-child 0 1 "look" "Room.")
-                       (tree/add-child 1 2 "north" "Hallway.")
-                       (tree/deselect 1))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 1 2 "north" "Hallway.")
+                   (tree/deselect 1))
           selected (tree/selected-knots tree)]
       (is (match? {:selected {0 1
                               1 m/absent}}
@@ -270,16 +274,16 @@
 
 (deftest select-knot-test
   (testing "selects a knot and all ancestors"
-    (let [tree  (-> (make-tree)
-                    (tree/add-child 0 1 "look" "Room.")
-                    (tree/add-child 0 2 "inventory" "Empty.")
-                    (tree/add-child 2 3 "north" "Hallway."))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 0 2 "inventory" "Empty.")
+                   (tree/add-child 2 3 "north" "Hallway."))
           tree' (tree/select-knot tree 3)]
       (is (= [0 2 3] (mapv :id (tree/selected-knots tree))))))
 
   (testing "does nothing when already selected"
-    (let [tree  (-> (make-tree)
-                    (tree/add-child 0 1 "look" "Room."))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room."))
           tree' (tree/select-knot tree 1)]
       (is (= tree tree')))))
 
@@ -297,44 +301,43 @@
 
 (deftest labeled-knots-sorted-test
   (testing "returns START first, then others sorted"
-    (let [tree    (-> (make-tree)
-                      (tree/add-child 0 1 "look" "Room.")
-                      (tree/label-knot 1 "ZEBRA")
-                      (tree/add-child 0 2 "inventory" "Empty.")
-                      (tree/label-knot 2 "ALPHA"))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/label-knot 1 "ZEBRA")
+                   (tree/add-child 0 2 "inventory" "Empty.")
+                   (tree/label-knot 2 "ALPHA"))
           labeled (tree/labeled-knots-sorted tree)]
       (is (= ["START" "ALPHA" "ZEBRA"] (mapv :label labeled)))))
 
   (testing "excludes unlabeled knots"
-    (let [tree    (-> (make-tree)
-                      (tree/add-child 0 1 "look" "Room.")
-                      (tree/add-child 0 2 "inventory" "Empty.")
-                      (tree/label-knot 2 "LABELED"))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 0 2 "inventory" "Empty.")
+                   (tree/label-knot 2 "LABELED"))
           labeled (tree/labeled-knots-sorted tree)]
       (is (= ["START" "LABELED"] (mapv :label labeled))))))
 
 (deftest counts-test
   (testing "counts knot statuses"
-    (let [tree   (-> (make-tree)
-                     (tree/add-child 0 1 "look" "Room.")
-                     (tree/bless-response 1)
-                     (tree/add-child 1 2 "north" "Hallway.")
-                     (tree/add-child 2 3 "east" "Kitchen.")
-                     (tree/bless-response 3)
-                     (tree/update-response 3 "Different."))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/bless-response 1)
+                   (tree/add-child 1 2 "north" "Hallway.")
+                   (tree/add-child 2 3 "east" "Kitchen.")
+                   (tree/bless-response 3)
+                   (tree/update-response 3 "Different."))
           counts (tree/totals tree)]
-      (is (match? {:ok    1
-                   :new   2
+      (is (match? {:ok 1
+                   :new 2
                    :error 1}
-                  counts)))))                               ;; knot 3
-
+                  counts))))) ;; knot 3
 
 (deftest leaf-knots-test
   (testing "returns only knots without children"
-    (let [tree   (-> (make-tree)
-                     (tree/add-child 0 1 "look" "Room.")
-                     (tree/add-child 1 2 "north" "Hallway.")
-                     (tree/add-child 0 3 "inventory" "Empty."))
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 1 2 "north" "Hallway.")
+                   (tree/add-child 0 3 "inventory" "Empty."))
           leaves (tree/leaf-knots tree)]
       (is (= #{2 3} (set (map :id leaves)))))))
 
@@ -343,20 +346,91 @@
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/add-child 1 2 "north" "Hallway."))
-          all  (tree/all-knots tree)]
+          all (tree/all-knots tree)]
       (is (= (-> tree :knots keys) (map :id all))))))
 
+(deftest set-locked-test
+  (testing "locks a knot"
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/set-locked 1 true))]
+      (is (true? (get-in tree [:knots 1 :locked])))))
+
+  (testing "unlocks a knot by removing :locked key"
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/set-locked 1 true)
+                   (tree/set-locked 1 false))]
+      (is (match? {:knots {1 {:locked m/absent}}}
+                  tree)))))
+
+(deftest allow-deletion?-test
+  (testing "returns false for a locked leaf"
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/set-locked 1 true))]
+      (is (false? (tree/allow-deletion? tree 1)))))
+
+  (testing "returns false when a grandchild is locked"
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 1 2 "north" "Hallway.")
+                   (tree/set-locked 2 true))]
+      (is (false? (tree/allow-deletion? tree 1)))))
+
+  (testing "returns true for an unlocked subtree"
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 1 2 "north" "Hallway."))]
+      (is (true? (tree/allow-deletion? tree 1)))))
+
+  (testing "returns false when the root of the subtree is locked"
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/add-child 1 2 "north" "Hallway.")
+                   (tree/set-locked 1 true))]
+      (is (false? (tree/allow-deletion? tree 1))))))
+
+(defn- tree->string [tree]
+  (let [sw (StringWriter.)
+        pw (PrintWriter. sw)]
+    (file/write-skein tree pw)
+    (.flush pw)
+    (.toString sw)))
+
+(defn- string->tree [s]
+  (-> s
+      StringReader.
+      LineNumberingPushbackReader.
+      file/read-tree))
+
+(deftest file-round-trip-locked-test
+  (testing "locked flag persists through write/read cycle"
+    (let [tree (-> (make-tree)
+                   (tree/add-child 0 1 "look" "Room.")
+                   (tree/bless-response 1)
+                   (tree/add-child 0 2 "inventory" "Empty.")
+                   (tree/bless-response 2)
+                   (tree/set-locked 1 true))
+          serialized (tree->string tree)
+          loaded (string->tree serialized)]
+      (is (true? (get-in loaded [:knots 1 :locked]))
+          "Locked knot should have :locked true after round-trip")
+      (is (nil? (get-in loaded [:knots 2 :locked]))
+          "Unlocked knot should have no :locked key after round-trip")
+      (is (string/includes? serialized "locked: true")
+          "Serialized form should contain 'locked: true'"))))
 
 (deftest update-dynamic
   (let [dynamic-response (-> "dynamic-small.txt" io/resource slurp)
-        tree             (-> (make-tree)
-                             (tree/add-child 0 1 "look" "Room.")
-                             (tree/add-child 1 2 "north" "Hallway.")
-                             (tree/update-dynamic 2 dynamic-response))]
+        tree (-> (make-tree)
+                 (tree/add-child 0 1 "look" "Room.")
+                 (tree/add-child 1 2 "north" "Hallway.")
+                 (tree/update-dynamic 2 dynamic-response))]
     (is (match?
-          {:dynamic-response dynamic-response
-           :dynamic-state    (m/equals {:flags #{"(sand-dancer is named)"
-                                                 "(#drawer is closed)"}
-                                        :vars  {"(#flashlight is $ $)"     "(#flashlight is #heldby #knock)"
-                                                "(remaining cigarettes $)" "(remaining cigarettes 6)"}})}
-          (tree/get-knot tree 2)))))
+         {:dynamic-response dynamic-response
+          :dynamic-state (m/equals {:flags #{"(sand-dancer is named)"
+                                             "(#drawer is closed)"}
+                                    :vars {"(#flashlight is $ $)" "(#flashlight is #heldby #knock)"
+                                           "(remaining cigarettes $)" "(remaining cigarettes 6)"}})}
+         (tree/get-knot tree 2)))))

@@ -43,10 +43,11 @@
             ;; Purposely don't write the :selected property as that is only meaningful
             ;; during editing and would cause many unwanted changes to the skein stored in
             ;; version control.  We want skein changes to be reviewable.
-            :let [{:keys [id parent-id response unblessed command label]} (get knots knot-id)]]
+            :let [{:keys [id parent-id response unblessed command label locked]} (get knots knot-id)]]
       (.println out sep)
       (p out "id" id)
       (p out "label" label)
+      (p out "locked" (when locked "true"))
       (p out "parent-id" parent-id)
       (p out "command" command)
       (.println out sep)
@@ -92,7 +93,8 @@
   {"id" s->long
    "parent-id" s->long
    "command" identity
-   "label" identity})
+   "label" identity
+   "locked" #(= "true" %)})
 
 (defn- apply-content
   [knot k ^StringBuilder sb]

@@ -30,9 +30,9 @@
   [f]
   (fn [request]
     (let [{:keys [uri request-method]} request
-          method        (-> request-method name string/upper-case)
-          start-nanos   (System/nanoTime)
-          response      (f request)
+          method (-> request-method name string/upper-case)
+          start-nanos (System/nanoTime)
+          response (f request)
           elapsed-nanos (- (System/nanoTime) start-nanos)]
       (pout [:faint (format "%tT" (System/currentTimeMillis))]
             " "
@@ -60,9 +60,9 @@
       (f request)
       (catch Throwable e
         (println "Error: " e)
-        {:status  500
+        {:status 500
          :headers {"content-type" "text/plain"}
-         :body    (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
+         :body (str "INTERNAL SERVER ERROR: " (ex-message e))}))))
 
 (defn- wrap-signal->session
   "Applies relevant signals in the request to the session."
@@ -79,10 +79,10 @@
    (render-app session nil))
   ([session opts]
    {:status 200
-    :body   (html
-              [:<>
-               (ui.app/render-app session opts)
-               (ui.app/render-fab)])}))
+    :body (html
+           [:<>
+            (ui.app/render-app session opts)
+            (ui.app/render-fab)])}))
 
 ;;; Action handlers
 ;;; Each receives :signals (parsed Datastar signals) in the request
@@ -121,7 +121,7 @@
 
 (defn- replay-to-knot
   "Replays from the start to the specified knot."
-  [{:keys [*session] :as request}] 
+  [{:keys [*session] :as request}]
   (swap! *session session/check-for-changed-sources)
   (render-app (swap! *session session/replay-to! (knot-id request))
               {:flash "Replayed"}))
@@ -148,14 +148,14 @@
   "Renders the edit command modal with optional error message."
   [id command error]
   {:status 200
-   :body   (html [modals/edit-command id command error])})
+   :body (html [modals/edit-command id command error])})
 
 (defn- open-edit-command
   "Opens the edit command modal for the specified knot."
   [{:keys [*session] :as request}]
-  (let [id      (knot-id request)
-        tree    (:tree @*session)
-        knot    (tree/get-knot tree id)
+  (let [id (knot-id request)
+        tree (:tree @*session)
+        knot (tree/get-knot tree id)
         command (:command knot)]
     (render-edit-command-modal id command nil)))
 
@@ -163,9 +163,9 @@
   "Submits the edited command for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
   (swap! *session session/check-for-changed-sources)
-  (let [id       (knot-id request)
+  (let [id (knot-id request)
         {:keys [editCommand]} signals
-        command  (some-> editCommand str string/trim)
+        command (some-> editCommand str string/trim)
         [error session'] (session/edit-command! @*session id command)]
     (reset! *session session')
     (if error
@@ -185,8 +185,8 @@
   "Renders the insert parent modal with optional error message."
   [id command error]
   {:status 200
-   :body   (html
-             (modals/insert-parent id command error))})
+   :body (html
+          (modals/insert-parent id command error))})
 
 (defn- open-insert-parent
   "Opens the insert parent modal for the specified knot."
@@ -198,9 +198,9 @@
   "Submits the insert parent command for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
   (swap! *session session/check-for-changed-sources)
-  (let [id       (knot-id request)
+  (let [id (knot-id request)
         {:keys [insertCommand]} signals
-        command  (some-> insertCommand str string/trim not-empty)
+        command (some-> insertCommand str string/trim not-empty)
         [error session'] (session/insert-parent! @*session id command)]
     (reset! *session session')
     (if error
@@ -217,38 +217,40 @@
 
 (defn- render-edit-label-modal
   "Renders the edit label modal with optional error message."
-  [id label error]
+  [id label locked error]
   {:status 200
-   :body   (html (modals/edit-label id label error))})
+   :body (html (modals/edit-label id label locked error))})
 
 (defn- open-edit-label
   "Opens the edit label modal for the specified knot."
   [{:keys [*session] :as request}]
-  (let [id    (knot-id request)
-        tree  (:tree @*session)
-        knot  (tree/get-knot tree id)
-        label (or (:label knot) "")]
-    (render-edit-label-modal id label nil)))
+  (let [id (knot-id request)
+        tree (:tree @*session)
+        knot (tree/get-knot tree id)
+        label (or (:label knot) "")
+        locked (boolean (:locked knot))]
+    (render-edit-label-modal id label locked nil)))
 
 (defn- edit-label
   "Submits the edited label for the knot and re-renders the app."
   [{:keys [*session signals] :as request}]
-  (let [id            (knot-id request)
-        {:keys [editLabel]} signals
-        label         (some-> editLabel str string/trim)
-        tree          (:tree @*session)
+  (let [id (knot-id request)
+        {:keys [editLabel editLocked]} signals
+        label (some-> editLabel str string/trim)
+        locked? (boolean editLocked)
+        tree (:tree @*session)
         existing-knot (when-not (string/blank? label)
                         (tree/find-by-label tree label))
         is-duplicate? (and existing-knot (not= id (:id existing-knot)))]
     (if is-duplicate?
       ;; Duplicate found in a different knot - return modal with error
-      (render-edit-label-modal id label (str "Label \"" label "\" is already used by another knot."))
+      (render-edit-label-modal id label locked? (str "Label \"" label "\" is already used by another knot."))
       ;; No duplicate or same knot - proceed with update
       (utils/with-short-sse
         request
         (fn [sse-gen]
-          (swap! *session session/label id label)
-          (utils/patch-signals! sse-gen {:editLabel nil})
+          (swap! *session session/label id label locked?)
+          (utils/patch-signals! sse-gen {:editLabel nil :editLocked nil})
           (utils/patch-elements! sse-gen [:<>
                                           (ui.app/render-app @*session {})
                                           [:div#modal-container]]))))))
@@ -257,25 +259,25 @@
   "Dismisses any open modal by clearing the modal-container."
   [_request]
   {:status 200
-   :body   (html [:div#modal-container])})
+   :body (html [:div#modal-container])})
 
 (defn- undo
   "Undoes the last action by restoring the previous tree state."
   [{:keys [*session]}]
-  (render-app   (swap! *session session/undo)
-                {:flash "Undo"}))
+  (render-app (swap! *session session/undo)
+              {:flash "Undo"}))
 
 (defn- redo
   "Redoes the last undone action by restoring the next tree state."
   [{:keys [*session]}]
-  (render-app  (swap! *session session/redo) 
-               {:flash "Redo"}))
+  (render-app (swap! *session session/redo)
+              {:flash "Redo"}))
 
 (defn- save
   "Saves the current tree state to the file."
   [{:keys [*session]}]
-  (render-app   (swap! *session session/save!)
-                {:flash "Saved"}))
+  (render-app (swap! *session session/save!)
+              {:flash "Saved"}))
 
 (defn- replay-all
   "Replays to all leaf knots with SSE progress updates."
@@ -284,48 +286,59 @@
     request
     (fn [sse-gen]
       (let [initial-tree (:tree @*session)
-            leaf-knots   (tree/leaf-knots initial-tree)
-            total        (count leaf-knots)]
+            leaf-knots (tree/leaf-knots initial-tree)
+            total (count leaf-knots)]
         ;; Capture initial state for undo (once for entire operation)
         (swap! *session session/capture-undo)
         (swap! *session session/check-for-changed-sources)
-        
+
         ;; Replay to each leaf knot
         (doseq [[idx knot] (map-indexed vector leaf-knots)]
           (let [current (inc idx)
                 {:keys [id label]} knot]
             ;; Update progress
             (utils/patch-elements!
-              sse-gen
-              (html (modals/progress
-                      {:current   current
-                       :total     total
-                       :label     label
-                       :operation "Replaying All"})))
+             sse-gen
+             (html (modals/progress
+                    {:current current
+                     :total total
+                     :label label
+                     :operation "Replaying All"})))
 
             ;; Replay to this leaf (using do-replay-to! to avoid capturing undo)
             (swap! *session #(session/do-replay-to! % id))))
 
         ;; Close progress modal and render final state
         (utils/patch-elements!
-          sse-gen
-          (html [:<>
-                 (ui.app/render-app @*session {:flash "Replay complete"})
-                 [:div#modal-container]]))))))
+         sse-gen
+         (html [:<>
+                (ui.app/render-app @*session {:flash "Replay complete"})
+                [:div#modal-container]]))))))
 
 (defn- delete-knot
   "Deletes the specified knot and all its descendants."
   [{:keys [*session] :as request}]
-  (render-app (swap! *session session/delete (knot-id request))
-              {:flash "Deleted"}))
+  (let [[error session'] (session/delete! @*session (knot-id request))]
+    (reset! *session session')
+    (if error
+      (render-app session' {:flash error})
+      (render-app session' {:flash "Deleted"}))))
 
 (defn- show-dynamic-state
   [{:keys [*session] :as request}]
   (let [{:keys [dynamic-response]} (session/get-knot @*session (knot-id request))
         [_ trimmed] (string/split dynamic-response #"\n" 2)]
     {:status 200
-     :body   (html
-               (modals/dynamic-state trimmed))}))
+     :body (html
+            (modals/dynamic-state trimmed))}))
+
+(defn- toggle-lock-knot
+  "Toggles the locked state of the specified knot."
+  [{:keys [*session] :as request}]
+  (let [id (knot-id request)
+        locked? (get-in @*session [:tree :knots id :locked])
+        session' (swap! *session session/toggle-lock id)]
+    (render-app session' {:flash (if locked? "Unlocked" "Locked")})))
 
 (defn- splice-out-knot
   "Splices out the specified knot, reparenting its children."
@@ -347,20 +360,20 @@
       ;; Shut down the service 
       (@*shutdown))
     {:status 200
-     :body   (html [:<>
-                    [:div#app]                              ; Clear the main body of the app
-                    [modals/close-window]])}))
+     :body (html [:<>
+                  [:div#app] ; Clear the main body of the app
+                  [modals/close-window]])}))
 
 (defn- open-quit
   "Checks if session is dirty. If so, shows quit confirmation modal.
    If not dirty, proceeds directly to quit."
   [{:keys [*session] :as request}]
   (let [session @*session
-        dirty?  (:dirty? session)]
+        dirty? (:dirty? session)]
     (if dirty?
       ;; Show confirmation modal
       {:status 200
-       :body   (html [modals/quit-modal])}
+       :body (html [modals/quit-modal])}
       ;; Not dirty, quit immediately
       (close-and-shutdown request))))
 
@@ -379,92 +392,95 @@
   "Renders the template index.html file."
   [{:keys [*session]}]
   (let [{:keys [development-mode?]} @*session]
-    {:status  200
+    {:status 200
      :headers {"Content-Type" "text/html"}
-     :body    (s/render-file "skein/index.html"
-                             {:dev development-mode?})}))
+     :body (s/render-file "skein/index.html"
+                          {:dev development-mode?})}))
 
 (def ^:private routes
   (router/routes
-    "GET /" req
-    (render-index req)
+   "GET /" req
+   (render-index req)
 
-    "POST /action/new-command" req
-    (new-command req)
+   "POST /action/new-command" req
+   (new-command req)
 
-    "POST /action/bless/*" req
-    (bless-knot req)
+   "POST /action/bless/*" req
+   (bless-knot req)
 
-    "POST /action/bless-to/*" req
-    (bless-to-knot req)
+   "POST /action/bless-to/*" req
+   (bless-to-knot req)
 
-    "POST /action/replay-to/*" req
-    (replay-to-knot req)
+   "POST /action/replay-to/*" req
+   (replay-to-knot req)
 
-    "GET /action/select/*" req
-    (select-knot req)
+   "GET /action/select/*" req
+   (select-knot req)
 
-    "POST /action/new-child/*" req
-    (prepare-new-child req)
+   "POST /action/new-child/*" req
+   (prepare-new-child req)
 
-    "GET /action/edit-command/*" req
-    (open-edit-command req)
+   "GET /action/edit-command/*" req
+   (open-edit-command req)
 
-    "POST /action/edit-command/*" req
-    (edit-command req)
+   "POST /action/edit-command/*" req
+   (edit-command req)
 
-    "GET /action/insert-parent/*" req
-    (open-insert-parent req)
+   "GET /action/insert-parent/*" req
+   (open-insert-parent req)
 
-    "POST /action/insert-parent/*" req
-    (insert-parent req)
+   "POST /action/insert-parent/*" req
+   (insert-parent req)
 
-    "GET /action/edit-label/*" req
-    (open-edit-label req)
+   "GET /action/edit-label/*" req
+   (open-edit-label req)
 
-    "POST /action/edit-label/*" req
-    (edit-label req)
+   "POST /action/edit-label/*" req
+   (edit-label req)
 
-    "POST /action/dismiss-modal" req
-    (dismiss-modal req)
+   "POST /action/dismiss-modal" req
+   (dismiss-modal req)
 
-    "GET /action/undo" req
-    (undo req)
+   "GET /action/undo" req
+   (undo req)
 
-    "GET /action/redo" req
-    (redo req)
+   "GET /action/redo" req
+   (redo req)
 
-    "POST /action/save" req
-    (save req)
+   "POST /action/save" req
+   (save req)
 
-    "POST /action/replay-all" req
-    (replay-all req)
+   "POST /action/replay-all" req
+   (replay-all req)
 
-    "POST /action/delete/*" req
-    (delete-knot req)
+   "POST /action/delete/*" req
+   (delete-knot req)
 
-    "POST /action/splice-out/*" req
-    (splice-out-knot req)
+   "POST /action/toggle-lock/*" req
+   (toggle-lock-knot req)
 
-    "GET /action/quit" req
-    (open-quit req)
+   "POST /action/splice-out/*" req
+   (splice-out-knot req)
 
-    "POST /action/save-and-quit" req
-    (save-and-quit req)
+   "GET /action/quit" req
+   (open-quit req)
 
-    "POST /action/quit-without-saving" req
-    (quit-without-saving req)
+   "POST /action/save-and-quit" req
+   (save-and-quit req)
 
-    "GET /app" req
-    (render-app (-> req :*session deref))
+   "POST /action/quit-without-saving" req
+   (quit-without-saving req)
 
-    "GET /action/dynamic/*" req
-    (show-dynamic-state req)
- 
-    "GET /**" [path]
+   "GET /app" req
+   (render-app (-> req :*session deref))
+
+   "GET /action/dynamic/*" req
+   (show-dynamic-state req)
+
+   "GET /**" [path]
     ;; During local development, generated-resources/public/style.css will come from here
     ;; and everything else from resources/public.
-    (response/resource-response path {:root "public"})))
+   (response/resource-response path {:root "public"})))
 
 (def service-handler
   "The main Ring handler for the Skein web service.

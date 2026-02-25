@@ -18,7 +18,7 @@
         initial-response (sk.process/read-response! process)]
     {:skein-path skein-path
      :undo-stack []
-     :redo-stack [] 
+     :redo-stack []
      :process process
      :start-process-fn start-process-fn
      :tree (tree/update-response tree 0 initial-response)
@@ -50,15 +50,15 @@
   [session command]
   (let [{:keys [tree active-knot-id process]} session
         child-knot-id (tree/find-child-id tree active-knot-id command)
-        response      (sk.process/send-command! process command)
-        session'      (if child-knot-id
-                        (-> session
-                            (assoc :active-knot-id child-knot-id)
-                            (update :tree tree/update-response child-knot-id response))
-                        (let [new-knot-id (tree/next-id)]
-                          (-> session
-                              (assoc :active-knot-id new-knot-id)
-                              (update :tree tree/add-child active-knot-id new-knot-id command response))))]
+        response (sk.process/send-command! process command)
+        session' (if child-knot-id
+                   (-> session
+                       (assoc :active-knot-id child-knot-id)
+                       (update :tree tree/update-response child-knot-id response))
+                   (let [new-knot-id (tree/next-id)]
+                     (-> session
+                         (assoc :active-knot-id new-knot-id)
+                         (update :tree tree/add-child active-knot-id new-knot-id command response))))]
     (capture-dynamic session')))
 
 (defn- collect-commands
@@ -71,8 +71,8 @@
   "Kills the current process and starts a new one."
   [session]
   (let [{:keys [process start-process-fn]} session
-        _                    (sk.process/kill! process)
-        process'             (start-process-fn)
+        _ (sk.process/kill! process)
+        process' (start-process-fn)
         new-initial-response (sk.process/read-response! process')]
     (-> session
         (assoc :active-knot-id 0
@@ -219,24 +219,35 @@
         (update :redo-stack pop))))
 
 (defn label
-  [session knot-id label]
+  [session knot-id label locked?]
   (-> session
       capture-undo
-      (update :tree tree/label-knot knot-id label)))
+      (update :tree tree/label-knot knot-id label)
+      (update :tree tree/set-locked knot-id locked?)))
 
-(defn delete
-  "Deletes a knot from the tree, including any descendants of the knot."
+(defn toggle-lock
+  "Toggles the locked state of a knot. Creates one undo entry."
   [session knot-id]
-  (let [{:keys [tree active-knot-id]} session
-        ;; Check if active knot is the one being deleted or a descendant
-        active-knot-deleted? (some #(= active-knot-id (:id %))
-                                   (tree/knots-from-root tree knot-id))]
-    (cond-> (-> session
-                capture-undo
-                (update :tree tree/delete-knot knot-id))
-      ;; If we deleted the active knot, clear it so we'll replay on next command
-      active-knot-deleted?
-      (dissoc :active-knot-id))))
+  (let [locked? (tree/locked? (:tree session) knot-id)]
+    (-> session
+        capture-undo
+        (update :tree tree/set-locked knot-id (not locked?)))))
+
+(defn delete!
+  "Deletes a knot from the tree, including any descendants of the knot.
+  Returns a tuple of [error session]. If a locked knot exists in the subtree,
+  returns an error message and the unchanged session."
+  [session knot-id]
+  (let [{:keys [tree active-knot-id]} session]
+    (if-not (tree/allow-deletion? tree knot-id)
+      ["Cannot delete: this knot (or a descendant) is locked." session]
+      (let [active-knot-deleted? (some #(= active-knot-id (:id %))
+                                       (tree/knots-from-root tree knot-id))]
+        [nil (cond-> (-> session
+                         capture-undo
+                         (update :tree tree/delete-knot knot-id))
+               active-knot-deleted?
+               (dissoc :active-knot-id))]))))
 
 (defn q [s] (str \' s \'))
 

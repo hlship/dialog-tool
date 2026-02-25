@@ -39,7 +39,6 @@ Developing the UI requires an additional window.
 - add ability to paste in a transcript (or create a skein from a transcript)
 - disable FAB if it has not debug engine 
 - single `dgt` script for both Babashka and java
-- lock and unlock knots (to prevent accidental deletion)
 - use core.cache (or memoize) for caching (of text diffs)
 - provide a `favicon.ico`
 
