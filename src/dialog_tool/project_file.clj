@@ -4,7 +4,7 @@
             [babashka.fs :as fs])
   (:import (java.nio ByteBuffer)
            (java.nio.file Path)
-           (java.nio.file.attribute BasicFileAttributes FileTime)
+           (java.nio.file.attribute FileTime)
            (java.security MessageDigest)))
 
 (defn read-project

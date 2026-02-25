@@ -36,7 +36,7 @@
           elapsed-nanos (- (System/nanoTime) start-nanos)]
       (pout [:faint (format "%tT" (System/currentTimeMillis))]
             " "
-            [{:width 3} (or (:status response "SSE"))]
+            [{:width 3} (or (:status response) "SSE")]
             " "
             [{:width 4} method]
             " "
@@ -255,25 +255,25 @@
 
 (defn- dismiss-modal
   "Dismisses any open modal by clearing the modal-container."
-  [request]
+  [_request]
   {:status 200
    :body   (html [:div#modal-container])})
 
 (defn- undo
   "Undoes the last action by restoring the previous tree state."
-  [{:keys [*session] :as request}]
+  [{:keys [*session]}]
   (render-app   (swap! *session session/undo)
                 {:flash "Undo"}))
 
 (defn- redo
   "Redoes the last undone action by restoring the next tree state."
-  [{:keys [*session] :as request}]
+  [{:keys [*session]}]
   (render-app  (swap! *session session/redo) 
                {:flash "Redo"}))
 
 (defn- save
   "Saves the current tree state to the file."
-  [{:keys [*session] :as request}]
+  [{:keys [*session]}]
   (render-app   (swap! *session session/save!)
                 {:flash "Saved"}))
 

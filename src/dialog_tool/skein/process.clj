@@ -9,11 +9,10 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as p]
             [clojure.core.async :refer [chan close! >!! <!!]]
+            [clojure.java.io :as io]
             [clojure.string :as string]
             [dialog-tool.env :as env]
-            [clj-commons.ansi :refer [perr]]
-            [dialog-tool.project-file :as pf]
-            [dialog-tool.util :as util])
+            [dialog-tool.project-file :as pf])
   (:import (java.io BufferedReader PrintWriter)
            (java.util List)))
 
@@ -64,8 +63,7 @@
                     .start)
         stdout-reader (.inputReader process)
         output-ch (chan)]
-    (when env/*debug*
-      (perr [:cyan (string/join " " cmd)]))
+    (env/debug-command cmd)
     {:process      process
      :project      project
      :hash         (pf/project-hash project)
@@ -88,11 +86,21 @@
 
 (def engines #{:dgdebug :frotz :frotz-release})
 
-(defmulti start-process! (fn [project-root engine _seed] engine))
+(defmulti start-process! (fn [_project-root engine _seed] engine))
 
 (defmethod start-process! :dgdebug
   [project-root _ seed]
   (start-debug-process! project-root seed))
+
+(def ^:private *patch-path
+  (delay
+    (let [file "dfrotz-skein-patch.dg"
+          dir  (fs/create-temp-dir)
+          path (fs/path dir file)]
+      (-> (io/resource file)
+          io/input-stream
+          (io/copy (fs/file path)))
+      path)))
 
 (defn- start-frotz-process
   [project-root seed debug?]
@@ -102,14 +110,16 @@
         output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
         path (fs/path output-dir (str project-name ".zblorb"))
         pre (fn []
-              (p/check
-                (p/sh (into ["dialogc"
-                             "--format" "zblorb"
-                             "--output" (str path)]
-                            ;; the dumb-patch? option prevents the status bar from being output at all
-                            ;; (otherwise it shows up inline)
-                            (pf/expand-sources project {:debug?    true
-                                                        :pre-patch [(util/root-path "resources" "dfrotz-skein-patch.dg")]})))))
+              (let [command (into ["dialogc"
+                                   "--format" "zblorb"
+                                   "--output" (str path)]
+                                  ;; the patch prevents the status line from being presented
+                                  ;; (otherwise it shows up inline)
+                                  (pf/expand-sources project {:debug?    true
+                                                              :pre-patch [@*patch-path]}))]
+                (env/debug-command command)
+                (p/check
+                  (p/sh command))))
         cmd ["dfrotz"
              ;; Flags: quiet, no *more*
              "-q" "-m"
@@ -120,7 +130,7 @@
     (start! project
             cmd
             {:pre-flight       pre
-                 :echo-command true})))
+             :echo-command     true})))
 
 (defmethod start-process! :frotz
   [project-root _ seed]
