@@ -60,7 +60,9 @@
         "CHANGES.md"
         build-dir)
     (perr "Writing: " [:bold zip-file] " ...")
-    (fs/zip zip-file build-dir {:root "out/build"})
+    ;; Use system zip (not fs/zip) to preserve executable permissions
+    (apply sh "zip" "-j" (str zip-file)
+           (map str (fs/list-dir build-dir)))
     zip-file))
 
 (defn sha256

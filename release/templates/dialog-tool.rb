@@ -16,6 +16,7 @@ class DialogTool < Formula
   def install
       bin.install "{{uber-jar}}"
       bin.install "dgt"
+      chmod 0755, bin/"dgt"
 
       zsh_completion_file = buildpath/"_dgt"
 
