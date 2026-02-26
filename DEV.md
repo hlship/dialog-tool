@@ -40,7 +40,6 @@ Developing the UI requires an additional window.
 - disable FAB if it has not debug engine 
 - use core.cache (or memoize) for caching (of text diffs)
 - provide a `favicon.ico`
-- `dgt --version` always prints `DEV` (version.txt not getting packaged)
 
 ## Releasing
 

@@ -44,7 +44,7 @@
     (sh "tailwindcss --minimize --map"
         "--input" "public/style.css"
         "--output" (-> (fs/file class-dir "public" "style.css") str))
-    (-> (fs/file class-dir "version.txt")
+    (-> (fs/file class-dir "dialog-tool-version.txt")
         (spit tag))
     (sh "clojure -T:build uber " (pr-str {:uber-file (str uber-file)
                                           :class-dir (str class-dir)}))

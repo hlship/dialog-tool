@@ -7,7 +7,7 @@
 
 (defn version
   []
-  (if-let [url (io/resource "version.text")]
+  (if-let [url (io/resource "dialog-tool-version.txt")]
     (-> url slurp string/trim)
     "DEV"))
 
