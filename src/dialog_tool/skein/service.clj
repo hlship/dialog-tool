@@ -6,7 +6,8 @@
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.handlers :refer [service-handler]]
-            [org.httpkit.server :as hk]))
+            [org.httpkit.server :as hk])
+  (:import (java.net ServerSocket)))
 
 ^:clj-reload/keep
 (def *session (atom nil))
@@ -23,9 +24,16 @@
                     :*session *session
                     :*shutdown *shutdown))))
 
+(defn- free-port
+  []
+  (with-open [s (ServerSocket. 0)]
+    (.getLocalPort s)))
+
 (defn start!
   "Starts a service with the Skein for the given path, or a new empty skein
   if the path does not exist.
+  
+  If a port is not specified, a free port is identified and used.
   
   root-dir is the directory to load the project from, or nil for the current
   working directory.
@@ -36,11 +44,12 @@
   Likewise, the :engine comes from meta, then as supplied, then :dgdebug as a default.
 
   Does not join the service.
+  
 
   Returns the port opened."
   [root-dir opts]
-  (let [{:keys [skein-path port seed engine development-mode?]
-         :or   {port 10140}} opts
+  (let [{:keys [skein-path port seed engine development-mode?]} opts
+        port'               (or port (free-port))
         tree                (when (fs/exists? skein-path)
                               (sk.file/load-tree skein-path))
         seed'               (or (get-in tree [:meta :seed])
@@ -54,7 +63,7 @@
                               (s/create-loaded! start-process skein-path tree)
                               (s/create-new! start-process skein-path engine seed))
         shutdown-fn         (hk/run-server service-handler-proxy
-                                           {:port          port
+                                           {:port          port'
                                             :ip            "localhost"
                                             :server-header "Dialog Skein Service"})
         shutdown-service-fn (fn []
@@ -69,7 +78,7 @@
                             ;; Some features of the Skein only work with dgdebug
                             :debug-enabled? (= engine' :dgdebug)))
     (reset! *shutdown shutdown-service-fn)
-    port))
+    port'))
 
 (comment
 
