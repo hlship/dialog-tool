@@ -30,7 +30,6 @@ Developing the UI requires an additional window.
 - Jump to "nearest" unblessed node
 - Add an indicator that there are invisible whitespace changes in a diff
 - Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
-- Detect/report network failures
 - Color-blind indicators or mode
 - Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
 - Present source file warnings/errors in a modal when detected?
