@@ -127,6 +127,8 @@ It is a common practice to modify libraries as necessary, even the standard libr
 good practice is to try and split out reusable code (code that could reasonably be used in an entirely different
 project) under :library (and :debug).
 
+Alternately, a source may be a specific file, which is simply added to the list of source files.
+
 ### Format
 
 The :format key defines the output when the project is built; :zblorb is a good general choice.

@@ -30,7 +30,17 @@
   [root-dir source]
   (if (instance? Path source)
     [source]
-    (sort (fs/glob (fs/path root-dir source) "*.dg" {:follow-links true}))))
+    (let [path (fs/path root-dir source)]
+      (cond
+
+        (fs/directory? path)
+        (sort (fs/glob (fs/path root-dir source) "*.dg" {:follow-links true}))
+
+        (fs/exists? path)
+        [path]
+
+        :else
+        nil))))
 
 (defn expand-sources
   ([project]
@@ -81,10 +91,8 @@
         digest    (MessageDigest/getInstance "SHA-1")
         root-path (fs/path root-dir "dialog.edn")
         _         (->> [main debug library]
-                       (reduce into [])
-                       (map #(fs/path root-dir %))
-                       (mapcat #(fs/glob % "*.dg" {:follow-links true}))
-                       (into [root-path])
+                       (reduce into [root-path])
+                       (mapcat #(expand-source root-dir %))
                        sort
                        (run! #(update-digest-from-file digest %)))
         bs        (.digest digest)]
