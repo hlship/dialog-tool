@@ -13,11 +13,12 @@
             [clojure.string :as string]
             [dialog-tool.env :as env]
             [dialog-tool.project-file :as pf])
-  (:import (java.io BufferedReader PrintWriter)
+  (:import (com.pty4j PtyProcessBuilder)
+           (java.io BufferedReader PrintWriter)
            (java.util List)))
 
 (defn- check-for-end-of-response
-  [sb output-ch]
+  [sb output-ch post-process]
   (let [s (.toString sb)]
     (when (string/ends-with? s "> ")
       (let [last-nl (string/last-index-of s \newline)]
@@ -25,12 +26,12 @@
         (.setLength sb 0)
         ;; Keep only up to (and including) the newline
         (>!! output-ch
-             (subs s 0 (inc last-nl)))
+             (post-process (subs s 0 (inc last-nl))))
         ;; Put prompt back into the SB
         (.append sb (subs s (inc last-nl)))))))
 
 (defn- read-loop
-  [^BufferedReader r output-ch]
+  [^BufferedReader r output-ch post-process]
   (let [buffer-size 5000
         buffer (char-array buffer-size)
         sb (StringBuilder. buffer-size)]
@@ -41,27 +42,33 @@
         (if (neg? n-read)
           (close! output-ch)
           (do
+            (print (String/valueOf buffer 0 n-read))
             (.append sb buffer 0 n-read)
-            (check-for-end-of-response sb output-ch)
+            (check-for-end-of-response sb output-ch post-process)
             (recur)))))))
 
 (defn- start-thread
-  [reader output-ch]
-  (let [f #(read-loop reader output-ch)]
+  [reader output-ch post-process]
+  (let [f #(read-loop reader output-ch post-process)]
     (doto (Thread. ^Runnable f "skein process output reader")
       (.setDaemon true)
       .start)))
 
 (defn- start!
   [project ^List cmd opts]
-  (let [{:keys [pre-flight]} opts
+  (let [{:keys [pre-flight post-process use-pty?]} opts
         ;; pre-flight is optional, used to build the .zblorb file for example,
         ;; so it must be before starting the process.
-        _ (when pre-flight
-            (pre-flight))
-        process (-> (ProcessBuilder. cmd)
-                    .start)
-        stdout-reader (.inputReader process)
+        _         (when pre-flight
+                    (pre-flight))
+        process   (if use-pty?
+                    (-> (PtyProcessBuilder.)
+                        (.setCommand (into-array String cmd))
+                        (.setInitialColumns (int 80))
+                        (.setInitialRows Integer/MAX_VALUE)
+                        .start)
+                    (-> (ProcessBuilder. cmd)
+                        .start))
         output-ch (chan)]
     (env/debug-command cmd)
     {:process      process
@@ -69,20 +76,21 @@
      :hash         (pf/project-hash project)
      :cmd          cmd
      :opts         opts
-     :stdin-writer (-> process .outputWriter PrintWriter.)  ; write stdin of process
+     :stdin-writer (-> process .outputWriter PrintWriter.)
      :output-ch    output-ch
-     :thread       (start-thread stdout-reader output-ch)}))
+     :thread       (start-thread (.inputReader process) output-ch (or post-process identity))}))
 
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger."
   [project-root seed]
   (let [project (pf/read-project project-root)
-        cmd     (-> [(pf/command-path project "dgdebug")
-                     "--quit"
+        cmd (-> [(pf/command-path project "dgdebug")
+                 "--quit"
                  "--seed" (str seed)
                  "--width" "80"]
                 (into (pf/expand-sources project {:debug? true})))]
-    (start! project cmd nil)))
+    (start! project cmd {:use-pty? true
+                         :post-process #(string/replace % "\r" "")})))
 
 (def engines #{:dgdebug :frotz :frotz-release})
 
@@ -95,7 +103,7 @@
 (def ^:private *patch-path
   (delay
     (let [file "dfrotz-skein-patch.dg"
-          dir  (fs/create-temp-dir)
+          dir (fs/create-temp-dir)
           path (fs/path dir file)]
       (-> (io/resource file)
           io/input-stream
@@ -104,7 +112,7 @@
 
 (defn- start-frotz-process
   [project-root seed debug?]
-  (let [project     (pf/read-project project-root)
+  (let [project (pf/read-project project-root)
         {project-name :name} project
         project-dir (pf/root-dir project)
         output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
@@ -115,11 +123,11 @@
                                    "--output" (str path)]
                                   ;; the patch prevents the status line from being presented
                                   ;; (otherwise it shows up inline)
-                                  (pf/expand-sources project {:debug?    true
+                                  (pf/expand-sources project {:debug? true
                                                               :pre-patch [@*patch-path]}))]
                 (env/debug-command command)
                 (p/check
-                  (p/sh command))))
+                 (p/sh command))))
         cmd ["dfrotz"
              ;; Flags: quiet, no *more*
              "-q" "-m"
@@ -129,8 +137,8 @@
     (fs/create-dirs output-dir)
     (start! project
             cmd
-            {:pre-flight       pre
-             :echo-command     true})))
+            {:pre-flight pre
+             :echo-command true})))
 
 (defmethod start-process! :frotz
   [project-root _ seed]
@@ -147,10 +155,10 @@
 (defn- inject-command
   [command response]
   (str
-    (subs response 0 2)
-    command
-    "\n"
-    (subs response 2)))
+   (subs response 0 2)
+   command
+   "\n"
+   (subs response 2)))
 
 (defn send-command!
   "Sends a player command to the process, blocking until a response to the command
