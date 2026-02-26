@@ -77,7 +77,7 @@
                             ;; debug-enabled? is for users debugging their projects using dgdebug
                             ;; Some features of the Skein only work with dgdebug
                             :debug-enabled? (= engine' :dgdebug)))
-    (reset! *shutdown shutdown-service-fn)
+    (reset! *shutdown shutdown-service-fn) l
     port'))
 
 (comment
@@ -93,6 +93,7 @@
   (start! "../sanddancer-dialog"
           {:engine            :dgdebug
            :skein-path        "../sanddancer-dialog/default.skein"
+           :port              10140
            :development-mode? true})
 
   (start! "../sanddancer-dialog"
