@@ -257,7 +257,8 @@
 
 (defn- dismiss-modal
   "Dismisses any open modal by clearing the modal-container."
-  [_request]
+  [{:keys [*session]}]
+  (swap! *session dissoc :continue)
   {:status 200
    :body (html [:div#modal-container])})
 
@@ -292,28 +293,40 @@
         (swap! *session session/capture-undo)
         (swap! *session session/check-for-changed-sources)
 
-        ;; Replay to each leaf knot
-        (doseq [[idx knot] (map-indexed vector leaf-knots)]
-          (let [current (inc idx)
-                {:keys [id label]} knot]
-            ;; Update progress
-            (utils/patch-elements!
-             sse-gen
-             (html (modals/progress
-                    {:current current
-                     :total total
-                     :label label
-                     :operation "Replaying All"})))
+        ;; Set continue flag so cancel can stop the loop
+        (swap! *session assoc :continue true)
 
-            ;; Replay to this leaf (using do-replay-to! to avoid capturing undo)
-            (swap! *session #(session/do-replay-to! % id))))
+        ;; Replay to each leaf knot, checking :continue between iterations
+        (loop [remaining (map-indexed vector leaf-knots)]
+          (when (and (seq remaining) (:continue @*session))
+            (let [[idx knot] (first remaining)
+                  current (inc idx)
+                  {:keys [id label]} knot]
+              ;; Update progress
+              (utils/patch-elements!
+               sse-gen
+               (html (modals/progress
+                      {:current current
+                       :total total
+                       :label label
+                       :operation "Replaying All"})))
 
-        ;; Close progress modal and render final state
-        (utils/patch-elements!
-         sse-gen
-         (html [:<>
-                (ui.app/render-app @*session {:flash "Replay complete"})
-                [:div#modal-container]]))))))
+              ;; Replay to this leaf (using do-replay-to! to avoid capturing undo)
+              (swap! *session #(session/do-replay-to! % id))
+
+              (recur (rest remaining)))))
+
+        (let [cancelled? (not (:continue @*session))
+              flash (if cancelled? "Replay cancelled" "Replay complete")]
+          ;; Clear the continue flag
+          (swap! *session dissoc :continue)
+
+          ;; Close progress modal and render final state
+          (utils/patch-elements!
+           sse-gen
+           (html [:<>
+                  (ui.app/render-app @*session {:flash flash})
+                  [:div#modal-container]])))))))
 
 (defn- delete-knot
   "Deletes the specified knot and all its descendants."
