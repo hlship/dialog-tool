@@ -171,15 +171,22 @@
           (pout [{:font :cyan
                   :width longest} path]))))))
 
+(def ^:private port-opt ["-p" "--port NUMBER" "Port number for the Skein service"
+                         :parse-fn parse-long
+                         :validate [some? "Not a number"
+                                    pos-int? "Must be at least one"]])
+
 (defcommand skein
   "Run the Skein UI for an existing skein file."
-  [:args
+  [port port-opt
+   :args
    skein ["SKEIN" "Path to skein file to run; defaults to default.skein"
           :optional true]]
   (let [skein-path (or skein "default.skein")]
     (when-not (fs/exists? skein-path)
       (abort [:bold skein-path] " does not exist"))
-    (sk.start/start-service! {:skein-path skein-path})))
+    (sk.start/start-service! {:skein-path skein-path
+                              :port       port})))
 
 (defcommand new-skein
   "Create a new skein, and run the Skein UI.
@@ -189,6 +196,7 @@
          :parse-fn parse-long
          :validate [some? "Not a number"
                     pos-int? "Must be at least one"]]
+   port port-opt
    engine (cli/select-option "-e" "--engine NAME" "Engine to use:"
                              sk.process/engines
                              :default :dgdebug)
@@ -198,4 +206,7 @@
   (let [skein-path (or skein "default.skein")]
     (when (fs/exists? skein-path)
       (abort [:bold skein-path] " already exists"))
-    (sk.start/start-service! {:skein-path skein-path :seed seed :engine engine})))
+    (sk.start/start-service! {:skein-path skein-path
+                              :seed       seed
+                              :engine     engine
+                              :port       port})))
