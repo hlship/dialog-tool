@@ -11,6 +11,7 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.utils :as utils]
+            [dialog-tool.env :as env]
             [clj-commons.ansi :refer [pout]]
             [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
 
@@ -408,7 +409,8 @@
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (s/render-file "skein/index.html"
-                          {:dev development-mode?})}))
+                          {:dev development-mode?
+                           :version (env/version)})}))
 
 (def ^:private routes
   (router/routes
