@@ -77,7 +77,7 @@
                             ;; debug-enabled? is for users debugging their projects using dgdebug
                             ;; Some features of the Skein only work with dgdebug
                             :debug-enabled? (= engine' :dgdebug)))
-    (reset! *shutdown shutdown-service-fn) l
+    (reset! *shutdown shutdown-service-fn)
     port'))
 
 (comment

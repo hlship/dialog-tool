@@ -10,7 +10,7 @@
   [sse-gen markup]
   (d*/patch-elements! sse-gen
                       (if
-                        (vector? markup)
+                       (vector? markup)
                         (-> markup html str)
                         ;; In likely case it's a Huff RawString
                         (str markup))))
@@ -19,6 +19,10 @@
   [sse-gen signals]
   (d*/patch-signals! sse-gen
                      (json/generate-string signals)))
+
+(defn execute-script!
+  [sse-gen script]
+  (d*/execute-script! sse-gen script))
 
 (defn with-sse
   "Runs operation-fn with SSE open and operating, returning a response map.
@@ -38,10 +42,9 @@
   "Runs the operation-fn with SSE, but closes the SSE after the function is invoked."
   [request operation-fn]
   (with-sse request
-            (fn [sse-gen]
-              (operation-fn sse-gen)
-              (d*/close-sse! sse-gen))))
-
+    (fn [sse-gen]
+      (operation-fn sse-gen)
+      (d*/close-sse! sse-gen))))
 
 (defn classes
   "Combines multiple class strings into a single string, skipping nils, and reducing spaces to a single space.
@@ -54,8 +57,8 @@
 (defn wrap-parse-signals
   "Middleware that parses Datastar signals and adds them to the request as :signals."
   [handler]
-  (fn [request] 
-    (let [data    (d*/get-signals request)
+  (fn [request]
+    (let [data (d*/get-signals request)
           signals (cond
                     (string? data)
                     (json/parse-string data true)

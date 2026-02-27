@@ -1,7 +1,7 @@
 (ns dialog-tool.skein.ui.app
   (:require [clojure.string :as string]
             [dialog-tool.skein.dynamic :as dynamic]
-            [dialog-tool.skein.ui.utils :refer [classes]]
+            [dialog-tool.skein.ui.utils :as utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
             [dialog-tool.skein.ui.components.flash :as flash]
@@ -134,15 +134,13 @@
         (count children)])]))
 
 (defn- render-knot
-  [tree knot {:keys [scroll-to-knot-id debug-enabled?]}]
+  [tree knot {:keys [debug-enabled?]}]
   (let [{:keys [id label response unblessed status children dynamic-response locked]} knot
         border-class (status->border-class status)
         disable-bless? (= :ok status)
         root? (zero? id)]
-    [:div.border-x-4 (cond-> {:id (str "knot-" id)
-                              :class border-class}
-                       (= id scroll-to-knot-id)
-                       (assoc :data-scroll-into-view true))
+    [:div.border-x-4 {:id (str "knot-" id)
+                      :class border-class}
      [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
       [:div.whitespace-normal.flex.flex-row.items-center.absolute.top-2.right-2.gap-x-2
        (when locked
@@ -189,20 +187,31 @@
         [render-dynamic tree knot])]]))
 
 (defn render-app
-  [session {:keys [scroll-to-new-command? reset-command-input? scroll-to-knot-id flash]}]
+  [sse-gen session {:keys [scroll-to-new-command? scroll-to-knot-id flash]}]
   (let [{:keys [tree debug-enabled? show-dynamic?]} session
-        knots (tree/selected-knots tree)]
-    [:div#app.relative.px-8
-     (when flash
-       [flash/flash-message flash])
-     [navbar session]
-     [:div.container.mx-lg.mx-auto.mt-16
-      (map (fn [knot]
-             (render-knot tree knot {:scroll-to-knot-id scroll-to-knot-id
-                                     :debug-enabled? (and debug-enabled? show-dynamic?)}))
-           knots)
-      [new-command/new-command-input {:scroll-to? scroll-to-new-command?
-                                      :reset-command-input? reset-command-input?}]]]))
+        knots (tree/selected-knots tree)
+        leaf-knot (last knots)
+        scroll-to-bottom? (or scroll-to-new-command?
+                              (and scroll-to-knot-id
+                                   (= scroll-to-knot-id (:id leaf-knot))
+                                   (empty? (:children leaf-knot))))]
+    (utils/patch-elements! sse-gen
+                           [:div#app.relative.px-8
+                            (when flash
+                              [flash/flash-message flash])
+                            [navbar session]
+                            [:div.container.mx-lg.mx-auto.mt-16
+                             (map (fn [knot]
+                                    (render-knot tree knot {:debug-enabled? (and debug-enabled? show-dynamic?)}))
+                                  knots)
+                             [new-command/new-command-input]]])
+    (if scroll-to-bottom?
+      (do
+        (utils/execute-script! sse-gen "window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})")
+        (utils/execute-script! sse-gen "document.getElementById('new-command-input')?.focus()"))
+      (when scroll-to-knot-id
+        (utils/execute-script! sse-gen
+                               (str "document.getElementById('knot-" scroll-to-knot-id "')?.scrollIntoView({behavior: 'smooth', block: 'end'})"))))))
 
 (defn render-fab
   []

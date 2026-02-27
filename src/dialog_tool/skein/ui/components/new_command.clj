@@ -6,21 +6,14 @@
    When submitted (on Enter), sends the command to create a new node
    as a child of the session's active knot.
 
-   The component binds to the newCommand Datastar signal.
-
-   Options:
-   - :scroll-to? - When true, the component will be scrolled into view
-                   after rendering (typically after a new command is submitted)."
-  [{:keys [scroll-to? ]}]
+   The component binds to the newCommand Datastar signal."
+  []
   [:div.mt-4.mb-8
-   (merge
-    (when scroll-to?
-      {:data-scroll-into-view true}))
    [:div.flex.items-center.gap-2
     [:span.text-gray-400 ">"]
-    [:input {:type        "text"
-             :name        "command"
-             :placeholder "Enter command..."
-             :class       "flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-             :data-bind   "newCommand"
-             :data-on:change "@post('/action/new-command')"}]]])
+    [:input#new-command-input {:type "text"
+                               :name "command"
+                               :placeholder "Enter command..."
+                               :class "flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                               :data-bind "newCommand"
+                               :data-on:change "@post('/action/new-command')"}]]])
