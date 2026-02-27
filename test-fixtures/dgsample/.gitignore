@@ -1,0 +1,6 @@
+out
+.cache
+*.ni
+.DS_Store
+.lsp 
+.clj-kondo/cache

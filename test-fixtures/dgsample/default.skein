@@ -1,0 +1,72 @@
+engine: :dgdebug
+seed: 42
+--------------------------------------------------------------------------------
+id: 0
+label: START
+--------------------------------------------------------------------------------
+
+
+The Featureless Space
+An interactive fiction by The Intrepid Author.
+Release 0. Serial number DEBUG.
+Dialog Interactive Debugger (dgdebug) version 1a/01. Library version 1.1.0.
+Debugging extension 1.1.
+
+Endless Featureless Space
+You are in an endless, featureless space. Just what will you create within it?
+Floating nearby is a small white orb.
+
+--------------------------------------------------------------------------------
+id: 1772224627854
+parent-id: 0
+command: i
+--------------------------------------------------------------------------------
+> i
+You have no possessions.
+
+--------------------------------------------------------------------------------
+id: 1772224627855
+parent-id: 1772224627854
+command: take orb
+--------------------------------------------------------------------------------
+> take orb
+You take the White Orb.
+
+--------------------------------------------------------------------------------
+id: 1772224627856
+parent-id: 1772224627855
+command: i
+--------------------------------------------------------------------------------
+> i
+You have a White Orb.
+
+--------------------------------------------------------------------------------
+id: 1772224627857
+parent-id: 1772224627860
+command: x orb
+--------------------------------------------------------------------------------
+> x orb
+A bit larger than a cue ball, and heavier, but otherwise completely featureless.
+
+--------------------------------------------------------------------------------
+id: 1772224627858
+parent-id: 0
+command: x orb
+--------------------------------------------------------------------------------
+> x orb
+A bit larger than a cue ball but otherwise completely featureless.
+
+--------------------------------------------------------------------------------
+id: 1772224627859
+parent-id: 1772224627858
+command: hit it
+--------------------------------------------------------------------------------
+> hit it
+You consider attacking the White Orb, but reject the idea.
+
+--------------------------------------------------------------------------------
+id: 1772224627860
+parent-id: 1772224627856
+command: * "and heavier" only outputs when held
+--------------------------------------------------------------------------------
+> * "and heavier" only outputs when held

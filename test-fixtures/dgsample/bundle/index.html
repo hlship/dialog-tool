@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head>
+  <title>{{story.author}} - {{story.title}}</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="author" content="{{story.author}}">
+  <meta name="description" content="A page for the {{story.title}} by {{story.author}}.">
+  <link rel="stylesheet" href="style.css" type="text/css"/>
+</head>
+<body cz-shortcut-listen="true">
+<div class="container">
+<div class="coverimage"><span><a href="cover.png"><img src="cover-small.jpg" border="1"></a></span></div>
+<div class="introduction">
+	<h1><span>{{story.title}}</span></h1>
+	<h2><span>{{story.author}}</span></h2>
+	<div class="bibliography"><span>Release {{story.release}}</span></div>
+</div>
+<div class="links">
+	<ul>
+	<li><div class="download"><a href="{{story-file}}">Story File</a> <span class="filetype">({{story-file-description}})</span></div></li>
+	<div class="auxiliary">
+		<li><a href="introduction-to-if.pdf">Introduction to IF</a> <span class="filetype">(pdf,&nbsp;612KB)</span></li>
+		<li><a href="play-if-card.pdf">IF in One Page</a> <span class="filetype">(pdf, 263KB)</li>
+		<li><a href="play.html">Play In-Browser</a> <span class="filetype">(link)</span></li></div>
+		{% if walkthrough-description %}
+		<li><a href="walkthrough.txt">Walkthrough</a> <span class="filetype">({{walkthrough-description}})</span></li>
+		{% endif %}
+	</ul>
+</div>
+
+<div class="about"><span><p>{{story.blurb}}</p></span></div>
+
+<div class="playinfo">
+	<p>{{story.title}} was created with <a href="https://github.com/Dialog-IF/dialog">Dialog</a>
+ and has IFID {{story.ifid}}. To play a work like
+this one, you need an interpreter program: many are available, among 
+them <a href="http://ccxvii.net/spatterlight/">Spatterlight
+for Mac OS X</a>, <a href="http://www.logicalshift.demon.co.uk/unix/zoom/">Zoom for Unix</a>, or
+<a href="http://freespace.virgin.net/davidk.kinder/frotz.html">Frotz for Windows</a>.
+Or you can play without downloading anything by following the 'Play In-Browser'
+link, using the Aamachine interpreter. You'll need to have Javascript enabled
+on your web browser.</p>
+</div> 
+
+</div>
+
+
+
+</body></html>

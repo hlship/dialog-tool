@@ -1,0 +1,23 @@
+#featureless-space
+(room *)
+(name *) Endless Featureless Space
+(look *)
+    You are in an endless, featureless space.  Just what will you create within it?
+    (if) (#orb is pristine)
+    (then) Floating nearby is a small white orb.
+    (endif)
+
+#player
+(current player *)
+(descr *)
+    As undefined as the space you inhabit.
+(* is #in #featureless-space)
+
+
+#orb
+(item *)
+(name *) White Orb
+(descr *) A bit larger than a cue ball
+    (if) (* is #heldby #player) (then), and heavier, (endif)
+    but otherwise completely featureless.
+(* is #in #featureless-space)

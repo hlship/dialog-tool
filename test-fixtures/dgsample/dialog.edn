@@ -1,0 +1,10 @@
+{:name   "The Orb"
+ :format :zblorb
+ :build
+ {:zblorb
+  {:options ["--cover"     "cover.png"
+             "--cover-alt" "The orb"]}}
+ :sources
+ {:main    ["src"]
+  :debug   ["lib/dialog/debug"]
+  :library ["lib/dialog"]}}
