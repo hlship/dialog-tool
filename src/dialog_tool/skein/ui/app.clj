@@ -43,8 +43,16 @@
        skein-path]
       [:div.join
        [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
-       [:div.text-black.bg-warning.p-2.font-semibold new]
-       [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg error]]
+       [:div.text-black.bg-warning.p-2.font-semibold
+        (when (pos? new)
+          {:class "cursor-pointer"
+           :data-on:click "@get('/action/jump-to-status/new')"})
+        new]
+       [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg
+        (when (pos? error)
+          {:class "cursor-pointer"
+           :data-on:click "@get('/action/jump-to-status/error')"})
+        error]]
       [:div.flex.md:order-2.space-x-2
        [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
                            :label [:<> [:div.icon.icon-jump] "Jump"]}

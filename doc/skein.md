@@ -88,6 +88,8 @@ all the knots in the Skein, broken into three categories:
 * Yellow (middle) - knot is new
 * Red (right) - knot's response is in error
 
+The yellow and red badges are clickable when their count is non-zero; clicking a badge will jump to the next knot with that status, cycling through all matching knots on repeated clicks. This makes it easy to find and review new or errored knots in a large tree.
+
 We'll loop back to this shortly to explain how the Skein knows which knots are valid or otherwise.
 
 Each knot may have a label, but this is optional; the *Jump* menu item makes it easy to jump to any labeled knot.

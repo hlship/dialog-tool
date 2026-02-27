@@ -358,6 +358,26 @@
       (render-app request {:flash error})
       (render-app request {:flash "Spliced out"}))))
 
+(defn- jump-to-status
+  "Jumps to the next knot with the given status, cycling through matches."
+  [{:keys [*session] :as request}]
+  (let [status (-> request :path-params first keyword)
+        session @*session
+        tree (:tree session)
+        matching (tree/knots-with-status tree status)]
+    (when (seq matching)
+      (let [last-id (get-in session [:last-jump status])
+            idx (when last-id
+                  (let [i (.indexOf matching last-id)]
+                    (when (>= i 0) i)))
+            next-idx (if idx
+                       (mod (inc idx) (count matching))
+                       0)
+            next-id (nth matching next-idx)]
+        (swap! *session assoc-in [:last-jump status] next-id)
+        (swap! *session session/select-knot next-id)
+        (render-app request {:scroll-to-knot-id next-id})))))
+
 (defn- close-and-shutdown
   "Closes the browser window and shuts down the service."
   [request]
@@ -470,6 +490,9 @@
 
    "POST /action/splice-out/*" req
    (splice-out-knot req)
+
+   "GET /action/jump-to-status/*" req
+   (jump-to-status req)
 
    "GET /action/quit" req
    (open-quit req)

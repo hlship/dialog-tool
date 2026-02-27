@@ -418,6 +418,15 @@
   [tree knot-id]
   (get-in tree [:status knot-id]))
 
+(defn knots-with-status
+  "Returns sorted vector of knot IDs that have the given status."
+  [tree status]
+  (->> (:status tree)
+       (filter (fn [[_ s]] (= s status)))
+       (map first)
+       sort
+       vec))
+
 (defn totals
   "Returns a map of :ok, :new, :error, each a count. :new is for new knots where there's
   not a :response, just :unblessed.  :error is when blessed != response."
