@@ -212,7 +212,7 @@
                              (map (fn [knot]
                                     (render-knot tree knot {:debug-enabled? (and debug-enabled? show-dynamic?)}))
                                   knots)
-                             [new-command/new-command-input]]])
+                             [new-command/new-command-input (:id leaf-knot)]]])
     (if scroll-to-bottom?
       (do
         (utils/execute-script! sse-gen "window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})")

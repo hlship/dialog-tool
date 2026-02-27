@@ -93,7 +93,7 @@
     (is (string/includes? ct "text/event-stream"))))
 
 (deftest new-command-test
-  (let [{:keys [status]} (POST "/action/new-command"
+  (let [{:keys [status]} (POST "/action/new-command/0"
                            {:newCommand "look"})]
     (is (= 200 status))
     (let [knots (-> @service/*session :tree :knots)]
@@ -110,7 +110,7 @@
 
 (deftest bless-knot-test
   ;; Add a command first
-  (POST "/action/new-command" {:newCommand "x orb"})
+  (POST "/action/new-command/0" {:newCommand "x orb"})
   (let [new-knot-id (->> @service/*session :tree :knots vals
                          (remove #(zero? (:id %)))
                          (some #(when (= "x orb" (:command %)) (:id %))))
@@ -123,7 +123,7 @@
 
 (deftest undo-test
   ;; Add a command so we have something to undo
-  (POST "/action/new-command" {:newCommand "i"})
+  (POST "/action/new-command/0" {:newCommand "i"})
   (let [knot-count-before (count (-> @service/*session :tree :knots))
         {:keys [status]} (GET "/action/undo")]
     (is (= 200 status))

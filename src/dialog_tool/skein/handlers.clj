@@ -97,16 +97,17 @@
   (-> path-params first parse-long))
 
 (defn- new-command
-  "Adds a new command to the tree as a child of the active knot."
+  "Adds a new command to the tree as a child of the specified knot."
   [{:keys [*session signals] :as request}]
   (swap! *session session/check-for-changed-sources)
   (let [{:keys [newCommand]} signals
-        command (some-> newCommand normalize-input)]
+        command (some-> newCommand normalize-input)
+        parent-knot-id (knot-id request)]
     (utils/with-short-sse
       request
       (fn [sse-gen]
         (when command
-          (swap! *session session/command! command)
+          (swap! *session session/command! parent-knot-id command)
           (ui.app/render-app sse-gen @*session {:scroll-to-new-command? true})
           (utils/patch-signals! sse-gen {:newCommand ""}))))))
 
@@ -431,7 +432,7 @@
    "GET /" req
    (render-index req)
 
-   "POST /action/new-command" req
+   "POST /action/new-command/*" req
    (new-command req)
 
    "POST /action/bless/*" req

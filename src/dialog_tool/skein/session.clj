@@ -94,18 +94,17 @@
     (assoc session' :active-knot-id knot-id)))
 
 (defn command!
-  "Sends a player command to the process at the current knot. This will either
-  update a child of the current knot (with a possibly unblessed response) or
-  will create a new child knot.
+  "Sends a player command to the process as a child of the given parent knot.
+  This will either update a child of the parent knot (with a possibly unblessed
+  response) or will create a new child knot.
 
   Returns the updated session."
-  [session command]
-  (let [{:keys [tree active-knot-id]} session
-        selected-leaf-id (-> (tree/selected-knots tree) last :id)
+  [session parent-knot-id command]
+  (let [{:keys [active-knot-id]} session
         ;; Replay if process position doesn't match where we want to execute the command
-        session' (if (= active-knot-id selected-leaf-id)
+        session' (if (= active-knot-id parent-knot-id)
                    session
-                   (do-replay-to! session selected-leaf-id))]
+                   (do-replay-to! session parent-knot-id))]
     (-> session'
         capture-undo
         (run-command! command))))
