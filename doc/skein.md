@@ -43,13 +43,14 @@ stateDiagram
   s1:south
   n2:north
   i2:inventory
-  takecigs:take cigarrettes
+  takecigs:take cigarettes
   takecigs --> i3
   i3: inventory
 ```
 
-Perhaps you started initially by exitting the truck and moving south and taking inventory of
-your belongings; then used the Skein to "time travel" back to the start and try a different route; say starting by opening the glove compartment.
+Perhaps you started initially by exiting the truck and moving south and taking inventory of
+your belongings; then used the Skein to "time travel" back to the beginning and try a different route; 
+say by opening the glove compartment.
 
 No information is lost, the Skein remembers the entire, ever-growing tree of possibilities.
 
@@ -212,7 +213,7 @@ The `dgt test` command can be used, from the command line, to do the same work a
 ## Beyond Player Commands
 
 The text that you enter as a command is not limited to player commands for your project.  Just as with the Dialog debugger, you can enter
-queries, multi-queries, and `(now)` queries at the prompt and
+queries, multi-queries, and `(now)` expressions at the prompt and
 those will execute as well.  This is often done to check the state of the world, or to set up complex situations for testing (though, when possible, it is better to do so through a series of player commands).
 
 ![](skein-query.png)
@@ -310,7 +311,7 @@ The default engine is `dgdebug`, but you can also use `frotz` or `frotz-release`
 
 The latter two run the Skein using the `frotz` command line tool instead of `dgdebug`.
 
-When `frotz` is used, you will not see dynamic predicate data, as that requires the Dialog debugger. Likewise, you will not be able to enter queries or `(now)` predicates.
+When `frotz` is used, you will not see dynamic predicate data, as that requires the Dialog debugger. Likewise, you will not be able to enter queries or `(now)` expressions.
 
 The `frotz` engine includes all debugging sources; `frotz-release` does not.  In both cases, the Skein will compile your sources into Z-code to run inside `frotz`,
 recompiling as necessary when the source changes, as with the debugger.
