@@ -481,11 +481,11 @@
    (quit-without-saving req)
 
    "GET /app" req
-   (utils/with-short-sse
-     req
-     (fn [sse-gen]
-       (ui.app/render-app sse-gen @(:*session req) nil)
-       (utils/patch-elements! sse-gen (ui.app/render-fab))))
+   (render-app req)
+
+   "GET /fab" req
+   {:status 200
+    :body (html (ui.app/render-fab @(:*session req)))}
 
    "GET /action/dynamic/*" req
    (show-dynamic-state req)

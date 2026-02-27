@@ -214,17 +214,18 @@
                                (str "document.getElementById('knot-" scroll-to-knot-id "')?.scrollIntoView({behavior: 'smooth', block: 'end'})"))))))
 
 (defn render-fab
-  []
-  ;; TODO: What if debugging not enabled? Remove or disable?  The entire FAB?
+  [{:keys [debug-enabled?]}]
   [:div.fab#fab
    [:div.btn.btn-lg.btn-circle.btn-primary
     {:tabindex "0"
-     :role "button"}
+     :role "button"
+     :disabled (not debug-enabled?)}
     [:div.icon.icon-globe]]
 
    [:div.rounded-box.bg-primary-content
     [:label.label.p-2
      [:input.toggle {:type "checkbox"
                      :data-bind "showDynamic"
-                     :data-on:change "@get('/app/')"}]
+                     :data-on:change "@get('/app/')"
+                     :disabled (not debug-enabled?)}]
      "Show dynamic state"]]])
