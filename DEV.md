@@ -32,7 +32,6 @@ Developing the UI requires an additional window.
 - Present source file warnings/errors in a modal when detected?
 - add ability to paste in a transcript (or create a skein from a transcript)
 - use core.cache (or memoize) for caching (of text diffs)
-- provide a `favicon.ico`
 
 ## Releasing
 
