@@ -75,6 +75,10 @@
         (swap! *session assoc :show-dynamic? show-dynamic))
       (f request))))
 
+(defn- normalize-input
+  [s]
+  (-> s str string/trim (string/replace #"\s+" " ")))
+
 (defn- render-app
   ([request]
    (render-app request nil))
@@ -97,7 +101,7 @@
   [{:keys [*session signals] :as request}]
   (swap! *session session/check-for-changed-sources)
   (let [{:keys [newCommand]} signals
-        command (some-> newCommand str string/trim not-empty)]
+        command (some-> newCommand normalize-input)]
     (utils/with-short-sse
       request
       (fn [sse-gen]
@@ -232,7 +236,7 @@
   [{:keys [*session signals] :as request}]
   (let [id (knot-id request)
         {:keys [editLabel editLocked]} signals
-        label (some-> editLabel str string/trim)
+        label (some-> editLabel normalize-input)
         locked? (boolean editLocked)
         tree (:tree @*session)
         existing-knot (when-not (string/blank? label)

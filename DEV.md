@@ -34,9 +34,8 @@ Developing the UI requires an additional window.
 - Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
 - Present source file warnings/errors in a modal when detected?
 - Consider *always* running from start, even when adding a new command at end?
-- new-child is often not executing in the right game context (but maybe solution is to always start a fresh dgdebug session)
 - add ability to paste in a transcript (or create a skein from a transcript)
-- disable FAB if it has not debug engine 
+- disable FAB if it not dgdebug engine 
 - use core.cache (or memoize) for caching (of text diffs)
 - provide a `favicon.ico`
 
