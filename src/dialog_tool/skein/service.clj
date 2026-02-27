@@ -107,6 +107,7 @@
 
   (start! "../dialog-extensions/who"
           {:skein-path "../dialog-extensions/who/frotz.skein"
+           :port              10140
            :seed       10101
            :engine :frotz})
 
