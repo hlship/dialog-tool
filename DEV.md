@@ -24,18 +24,13 @@ Developing the UI requires an additional window.
 ## TODO / Ideas / Plans/ Bugs
 
 - The graph view (currently it's just a serial view, one path through the graph)
-- Collapsable text (hide text, allow for quick navigation)
 - Buttons to jump to next/prev command
 - Search the Skein
-- Jump to "nearest" unblessed node
 - Add an indicator that there are invisible whitespace changes in a diff
 - Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
 - Color-blind indicators or mode
-- Monitor the file system for (specific) changes, use a webhook, optional auto-replay-all on change
 - Present source file warnings/errors in a modal when detected?
-- Consider *always* running from start, even when adding a new command at end?
 - add ability to paste in a transcript (or create a skein from a transcript)
-- disable FAB if it not dgdebug engine 
 - use core.cache (or memoize) for caching (of text diffs)
 - provide a `favicon.ico`
 
