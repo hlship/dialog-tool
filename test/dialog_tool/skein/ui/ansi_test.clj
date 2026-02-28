@@ -105,3 +105,9 @@
   (testing "CSI 1;31 m emits both markers"
     (is (= "[B][RED]alert[/RED][/B]"
            (ansi->markers (str ESC "[1;31m" "alert" RESET))))))
+
+(deftest markers-unrecognized-sgr-code
+  (testing "unrecognized SGR codes are represented as [?] / [/?]"
+    ;; SGR 6 is "rapid blink", not something we support
+    (is (= "[?]hello[/?]"
+           (ansi->markers (str (sgr 6) "hello" RESET))))))

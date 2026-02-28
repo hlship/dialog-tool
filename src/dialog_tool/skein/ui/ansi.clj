@@ -101,27 +101,30 @@
           result)))))
 
 (defn- opening-marker
-  "Returns the opening pseudo-marker for an SGR code, or nil."
+  "Returns the opening pseudo-marker for an SGR code, or nil for reset (0)."
   [code]
   (cond
+    (= code 0) nil
     (= code 1) "[B]"
     (= code 3) "[I]"
     (color-codes code) (str "[" (string/upper-case (color-names code)) "]")
-    :else nil))
+    :else "[?]"))
 
 (defn- closing-markers
   "Returns closing pseudo-markers for all active effects (in reverse order).
-   Effects map: {:bold bool, :italic bool, :color \"name\"}"
-  [{:keys [bold italic color]}]
-  ;; Close in reverse order: color, italic, bold
+   Effects map: {:bold bool, :italic bool, :color \"name\", :unknown int}"
+  [{:keys [bold italic color unknown]}]
+  ;; Close in reverse order: unknown, color, italic, bold
   (cond-> []
+    (pos-int? unknown) (into (repeat unknown "[/?]"))
     color (conj (str "[/" (string/upper-case color) "]"))
     italic (conj "[/I]")
     bold (conj "[/B]")))
 
 (defn ansi->markers
   "Converts text with ANSI SGR escape codes to plain text with visible pseudo-markers.
-   Used for diff output where ANSI styling would be overridden by diff spans."
+   Used for diff output where ANSI styling would be overridden by diff spans.
+   Unrecognized SGR codes are represented as [?]."
   [text]
   (cond
     (nil? text) nil
@@ -148,7 +151,7 @@
                                                    (= code 1) (assoc eff :bold true)
                                                    (= code 3) (assoc eff :italic true)
                                                    (color-codes code) (assoc eff :color (color-names code))
-                                                   :else eff))
+                                                   :else (update eff :unknown (fnil inc 0))))
                                                effects
                                                codes)]
                        (recur (rest remaining) new-effects))))
