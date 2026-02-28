@@ -18,4 +18,6 @@ if [ ! -f "$UBER_JAR" ]; then
   exit 1
 fi
 
-exec java --class-path "$UBER_JAR" clojure.main -m dialog-tool.main "$@"
+exec java --enable-native-access=ALL-UNNAMED \
+  --class-path "$UBER_JAR" \
+  clojure.main -m dialog-tool.main "$@"

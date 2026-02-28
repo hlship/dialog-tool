@@ -6,8 +6,7 @@
   (let [{:keys [uber-file class-dir]
          :or   {uber-file "out/build/dialog-tool-DEV.jar"
                 class-dir "out/classes"}} params
-        basis (b/create-basis {:project "deps.edn"
-                               :aliases [:clojure]})]
+        basis (b/create-basis {:project "deps.edn"})]
     (b/copy-dir {:src-dirs   ["src"
                               "resources"]
                  :target-dir class-dir})
