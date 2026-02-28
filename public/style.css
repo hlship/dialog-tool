@@ -76,3 +76,44 @@ html {
   mask-image: url('/icons/lock-closed-solid.svg');
   -webkit-mask-image: url('/icons/lock-closed-solid.svg');
 }
+
+/* ANSI SGR styling classes for blessed output */
+.ansi-bold {
+  font-weight: bold;
+}
+
+.ansi-italic {
+  font-style: italic;
+}
+
+.ansi-black {
+  color: #1a1a1a;
+}
+
+.ansi-red {
+  color: #cc0000;
+}
+
+.ansi-green {
+  color: #00aa00;
+}
+
+.ansi-yellow {
+  color: #aa8800;
+}
+
+.ansi-blue {
+  color: #0000cc;
+}
+
+.ansi-magenta {
+  color: #aa00aa;
+}
+
+.ansi-cyan {
+  color: #00aaaa;
+}
+
+.ansi-white {
+  color: #aaaaaa;
+}

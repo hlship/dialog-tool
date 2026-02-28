@@ -1,1 +1,36 @@
-deps.edn
+{:paths ["release"]
+ :deps  {io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-4"}}
+
+ :tasks
+ {:requires ([clj-commons.ansi :refer [pout]]
+             [clojure.string :as string]
+             [babashka.fs :as fs]
+             [dgt.release :as r :refer [sh]])
+  test      (sh "clojure -M:test")
+  tailwind  (sh "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")
+  package   (r/package "test")
+  release   (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
+                  zip-file (r/package tag)
+                  sha (r/sha256 zip-file)
+                  create-opts (cond-> ["--verify-tag" "--generate-notes"]
+                                (string/includes? tag "alpha")
+                                (conj "--prerelease"))
+                  formula (-> zip-file fs/parent (fs/file "dialog-tool.rb"))]
+              (apply sh "gh release create" tag create-opts)
+              (sh "gh release upload --clobber" tag zip-file)
+              (println)
+              (pout "Release URL: "
+                [:bold
+                 "https://github.com/hlship/dialog-tool/releases/tag/" tag])
+              (pout "  Asset URL: "
+                [:bold "https://github.com/hlship/dialog-tool/releases/download/"
+                 tag "/" (fs/file-name zip-file)])
+              (pout "     SHA256: " [:bold sha])
+              (r/render-template "templates/dialog-tool.rb"
+                formula
+                {:tag      tag
+                 :sha      sha
+                 :uber-jar (str "dialog-tool-" tag ".jar")
+                 :zip-name (fs/file-name zip-file)})
+              (println)
+              (pout "Wrote formula to " [:bold formula]))}}

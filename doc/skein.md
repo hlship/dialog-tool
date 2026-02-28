@@ -66,7 +66,7 @@ project may have time based events, randomness, or wandering NPCs that change th
 
 ## Running the Skein
 
-The simplest way to start is with `dgt new-skein`.  This will
+The simplest way to start is with `dgt skein new`.  This will
 start a specialized web server and open your web browser to the start of your project:
 
 ![](skein-launch.png)
@@ -74,6 +74,10 @@ start a specialized web server and open your web browser to the start of your pr
 The above is an example of a new Skein for the Sand-dancer project.
 
 Let's break down the interface.
+
+>![WARNING]
+> These screen shots have not been brought up to date with the recent changes that capture font and color
+> information from the Dialog debugger.
 
 ![](skein-tour.png)
 
@@ -208,7 +212,7 @@ You can save your file at any time using the _Save_ command on the navigation ba
 The Skein files are in a simple textual format; they are designed
 to be managed files under source code control.
 
-The `dgt test` command can be used, from the command line, to do the same work as _Replay All_ and verify that all possible Skein leaves are still valid.
+The `dgt skein test` command can be used, from the command line, to do the same work as _Replay All_ and verify that all possible Skein leaves are still valid.
 
 ## Beyond Player Commands
 
@@ -317,7 +321,7 @@ The `frotz` engine includes all debugging sources; `frotz-release` does not.  In
 recompiling as necessary when the source changes, as with the debugger.
 
 There can be subtle differences between the debugger and the runtime, so having a playthrough using `frotz` or `frotz-release` may help uncover problems before your 
-players do.  Remember that the `dgt test`  command will run _all_ the 
+players do.  Remember that the `dgt skein test`  command will run _all_ the
 `.skein` files in the project directory, which is faster and easier than loading each one into the visual Skein.
 
 ## Limitations
@@ -325,7 +329,6 @@ players do.  Remember that the `dgt test`  command will run _all_ the
 The Skein has limitations, which are fundamentally based on
 the fact that it treats the interaction as a series of commands and responses; some of Dialog's capabilities are outside this simple model.
 
-* The Skein can't help you verify **font** changes, as all text from the debugger is output as plain text.
 * It can't help you with **status lines** as the debugger can't display those.
 * It does not handle [non-command input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
 * It doesn't allow for hyperlinks

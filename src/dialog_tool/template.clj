@@ -85,12 +85,12 @@
     (copy-rendered "template/.gitignore"
                    {}
                    (fs/path dir' ".gitignore"))
-    
+
     (copy-resource "template/stdlib.dg"
-               (fs/path dir' "lib" "dialog" "stdlib.dg"))
+                   (fs/path dir' "lib" "dialog" "stdlib.dg"))
 
     (copy-resource "template/stddebug.dg"
-               (fs/path dir' "lib" "dialog" "debug" "stddebug.dg"))
+                   (fs/path dir' "lib" "dialog" "debug" "stddebug.dg"))
 
     (copy-resource "template/default-cover.png"
                    (fs/path dir' "cover.png"))
@@ -102,5 +102,5 @@
 
     (perr "\nChange to directory " [:bold dir] " to begin work")
     (perr [:bold "dgt debug"] " to run the project in the Dialog debugger")
-    (perr [:bold "dgt new-skein"] " to open a web browser to the Skein UI")
+    (perr [:bold "dgt skein new"] " to open a web browser to the Skein UI")
     (perr [:bold "dgt help"] " for other options")))
