@@ -18,8 +18,4 @@ if [ ! -f "$UBER_JAR" ]; then
   exit 1
 fi
 
-if command -v bb >/dev/null 2>&1; then
-  exec bb --classpath "$UBER_JAR" -m dialog-tool.main "$@"
-else
-  exec java --class-path "$UBER_JAR" clojure.main -m dialog-tool.main "$@"
-fi
+exec java --class-path "$UBER_JAR" clojure.main -m dialog-tool.main "$@"

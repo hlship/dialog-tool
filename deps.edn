@@ -2,7 +2,7 @@
          "generated-resources"
          "resources"
          "release"]
- :deps  {io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-3"}}
+ :deps  {io.github.hlship/cli-tools {:mvn/version "0.16.0-beta-4"}}
  
  :tasks
  {:requires ([clj-commons.ansi :refer [pout]]
@@ -40,18 +40,18 @@
  {:clojure
   {:extra-deps {
                 ;; Dependencies only needed by the skein UI code (which now only runs with a JVM):
-                org.jetbrains.pty4j/pty4j          {:mvn/version "0.13.11"}
+                org.jetbrains.pty4j/pty4j          {:mvn/version "0.13.12"}
                 io.github.escherize/huff           {:mvn/version "0.2.21"}
                 io.github.tonsky/clj-simple-router {:mvn/version "0.1.2"}
                 ring/ring-core                     {:mvn/version "1.15.3"}
-                dev.data-star.clojure/sdk          {:mvn/version "1.0.0-RC7"}
-                dev.data-star.clojure/http-kit     {:mvn/version "1.0.0-RC7"
+                dev.data-star.clojure/sdk          {:mvn/version "1.0.0-RC8"}
+                dev.data-star.clojure/http-kit     {:mvn/version "1.0.0-RC8"
                                                     :exclusions  [http-kit/http-kit]}
                 plumula/diff                       {:mvn/version "0.1.1"}
                 
                 ;; Bundled Babashka dependencies:
-                selmer/selmer                      {:mvn/version "1.12.70"}
-                babashka/fs                        {:mvn/version "0.5.30"}
+                selmer/selmer                      {:mvn/version "1.13.1"}
+                babashka/fs                        {:mvn/version "0.5.31"}
                 babashka/process                   {:mvn/version "0.6.25"}
                 org.clojure/core.async             {:mvn/version "1.8.741"}
                 cheshire/cheshire                  {:mvn/version "6.1.0"}
@@ -72,6 +72,6 @@
                        "test-resources"]
          :extra-deps  {io.github.cognitect-labs/test-runner
                        {:git/tag "v0.5.1" :git/sha "dfb30dd"}
-                       nubank/matcher-combinators {:mvn/version "3.9.2"}}
+                       nubank/matcher-combinators {:mvn/version "3.10.0"}}
          :main-opts   ["-m" "cognitect.test-runner"]
          :exec-fn     cognitect.test-runner.api/test}}}

@@ -23,7 +23,7 @@ The easiest way to install `dgt` on macOS is via [Homebrew](https://brew.sh/), w
 brew install hlship/brew/dialog-tool
 ```
 
-This installs `dgt` along with all required tools: the Dialog compiler and debugger, Babashka, Frotz, ImageMagick, and Java.
+This installs `dgt` along with all required tools: the Dialog compiler and debugger, Frotz, ImageMagick, and Java.
 
 ### Manual install
 
@@ -36,8 +36,7 @@ The zip contains two files you need:
 Extract both files into the same directory, then add that directory to your `PATH`,
 or symlink `dgt` into a directory already on your `PATH`.
 
-Java 11 or later is required. [Babashka](https://github.com/babashka/babashka) is optional but recommended;
-when available, `dgt` will use it for faster startup.
+Java 11 or later is required.
 
 The following external tools must also be installed and on your `PATH`:
 
@@ -70,7 +69,7 @@ Creating magnum-opus ...
   
 Change to directory magnum-opus to begin work
 dgt debug to run the project in the Dialog debugger
-dgt new-skein to open a web browser to the Skein UI
+dgt skein new to open a web browser to the Skein UI
 dgt help for other options
 ```
 
@@ -117,7 +116,7 @@ to your project, in which to locate source files. All Dialog source files _direc
 are included.
 
 * :main - sources specific to your project
-* :debug - used by the commands `test`, `debug`, `skein`, etc.
+* :debug - used by the commands `skein test`, `debug`, `skein run`, etc.
 * :library - additional libraries, including the Dialog standard library
 
 Generally, source code that is specific to your project goes in :main; reusable code goes in :library and :debug; 
@@ -193,7 +192,7 @@ as status bar updates; to verify these, you must run using Frotz.
 The [Skein](doc/skein.md) is an interactive web interface for running, debugging, and
 testing your project.
 
-`dgt new-skein` will open up the skein UI for a new skein file.  
+`dgt skein new` will open up the skein UI for a new skein file.
 By default, the file is named `default.skein`, or you can provide a different
 name, as you may want to have multiple skein files. 
 
@@ -205,7 +204,7 @@ add new commands beneath any knot, and you can also rerun the project to any kno
 and the skein will identify any text that has changed.  You can even run *all* possible branches
 to completion.
 
-`dgt skein` will open an existing skein.
+`dgt skein run` will open an existing skein.
 
 ## Building and Bundling
 

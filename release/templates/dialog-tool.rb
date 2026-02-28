@@ -6,7 +6,6 @@ class DialogTool < Formula
   sha256 "{{sha}}"
   version_scheme 1 # Because version was borked in some prior releases due to -alpha-
 
-  depends_on "borkdude/brew/babashka"
   depends_on "dialog-if/brew/aamachine"
   depends_on "dialog-if/brew/dialog-if"
   depends_on "frotz"

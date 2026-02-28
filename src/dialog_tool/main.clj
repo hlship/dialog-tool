@@ -13,12 +13,14 @@
 
 (defn -main
   [& args]
-  (cli/dispatch {:tool-name            "dgt"
-                 :namespaces           '[dialog-tool.commands
-                                         net.lewisship.cli-tools.completions]
-                 :arguments            args
-                 :extra-tool-options   [["-v" "--version" "Show version information and exit"]
-                                        ["-d" "--debug" "Enable developer output"]]
+  (cli/dispatch {:tool-name "dgt"
+                 :namespaces '[dialog-tool.commands
+                               net.lewisship.cli-tools.completions]
+                 :groups {"skein" {:doc "Skein UI and testing commands"
+                                   :namespaces '[dialog-tool.skein.commands]}}
+                 :arguments args
+                 :extra-tool-options [["-v" "--version" "Show version information and exit"]
+                                      ["-d" "--debug" "Enable developer output"]]
                  :tool-options-handler option-handler})
   ;; TODO: This is needed for java invocation, maybe a cli-tools bug.
-  (cli/abort 0))
+  (cli/abort 0)) 

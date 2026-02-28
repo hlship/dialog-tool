@@ -12,8 +12,8 @@
                               "resources"]
                  :target-dir class-dir})
     (b/compile-clj {:basis      basis
-                    :ns-compile '[dialog-tool.skein.main
-                                  dialog-tool.commands
+                    :ns-compile '[dialog-tool.commands
+                                  dialog-tool.skein.commands
                                   dialog-tool.main]
                     :class-dir  class-dir})
     (b/uber {:class-dir class-dir
