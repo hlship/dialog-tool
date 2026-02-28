@@ -75,6 +75,10 @@ The above is an example of a new Skein for the Sand-dancer project.
 
 Let's break down the interface.
 
+>![WARNING]
+> These screen shots have not been brought up to date with the recent changes that capture font and color
+> information from the Dialog debugger.
+
 ![](skein-tour.png)
 
 At the top of the Skein is the navigation bar.
@@ -325,7 +329,6 @@ players do.  Remember that the `dgt test`  command will run _all_ the
 The Skein has limitations, which are fundamentally based on
 the fact that it treats the interaction as a series of commands and responses; some of Dialog's capabilities are outside this simple model.
 
-* The Skein can't help you verify **font** changes, as all text from the debugger is output as plain text.
 * It can't help you with **status lines** as the debugger can't display those.
 * It does not handle [non-command input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
 * It doesn't allow for hyperlinks
