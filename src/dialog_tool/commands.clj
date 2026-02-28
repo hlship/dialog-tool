@@ -3,6 +3,7 @@
             [babashka.process :as p]
             [clj-commons.ansi :refer [pout perr]]
             [clojure.string :as string]
+            [dialog-tool.env :as env]
             [dialog-tool.template :as template]
             [dialog-tool.bundle :as bundle]
             [net.lewisship.cli-tools :as cli :refer [defcommand]]
@@ -81,16 +82,16 @@
                     (perr [:faint "Project format is aa; compiling to z8 for frotz"])
                     :z8)
                   format)
-        path (build/build-project project
-                                  {:format format'
-                                   :debug? debug?})
-        command (if dumb? "dfrotz" "frotz")
-        extra-args (when dumb?
-                     ["-m" "-q"])
-        args (concat extra-args
-                     frotz-args
-                     [(str path)])]
-    (apply p/exec command args)))
+        path    (build/build-project project
+                                     {:format format'
+                                      :debug? debug?})
+        command (concat [(if dumb? "dfrotz" "frotz")]
+                        (when dumb?
+                          ["-m" "-q"])
+                        frotz-args
+                        [(str path)])]
+    (env/debug-command command)
+    (apply p/shell command)))
 
 (defcommand sources
   "Print the sources for the project in compilation order."
@@ -104,5 +105,3 @@
         (doseq [path paths]
           (pout [{:font :cyan
                   :width longest} path]))))))
-
-
