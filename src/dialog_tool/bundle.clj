@@ -9,6 +9,7 @@
             [dialog-tool.project-file :as pf]
             [net.lewisship.cli-tools :as cli]
             [clojure.string :as string]
+            [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.template :as t]
@@ -31,7 +32,7 @@
         _ (sk.process/read-response! process)
         info (reduce (fn [m k]
                        (assoc m k
-                                (extract-text process (str "(story " (name k) ")"))))
+                              (extract-text process (str "(story " (name k) ")"))))
                      nil
                      [:title :author :ifid :noun :blurb])
         response (sk.process/send-command! process "(story release $)")
@@ -40,10 +41,10 @@
     (assoc info :release release)))
 
 (defn- extract-walkthrough
-  "Returns the text of the walkthough, or nil."
+  "Returns the text of the walkthrough, or nil."
   [project]
   (let [{:keys [walkthrough-skein]
-         :or   {walkthrough-skein "default.skein"}} project]
+         :or {walkthrough-skein "default.skein"}} project]
     (when (and walkthrough-skein
                (fs/exists? walkthrough-skein))
       (let [tree (try
@@ -53,7 +54,9 @@
             knot (tree/find-by-label tree "WALKTHROUGH")]
         (when knot
           (->> (tree/knots-from-root tree (:id knot))
-               (map :response)
+               ;; Skip transcript comments (commands starting with *)
+               (remove #(some-> (:command %) (string/starts-with? "*")))
+               (map #(ansi/strip-ansi (:response %)))
                (reduce str)))))))
 
 (defn bundle-project
@@ -106,14 +109,14 @@
                                       (str "text "
                                            (-> path fs/size h/filesize))))]
       (t/copy-rendered "bundle/index.html"
-                       {:story                   story
-                        :story-file              compiled-name
-                        :story-file-description  (str
-                                                   (-> project :format name)
-                                                   " "
-                                                   (-> compiled-path
-                                                       fs/size
-                                                       h/filesize))
+                       {:story story
+                        :story-file compiled-name
+                        :story-file-description (str
+                                                 (-> project :format name)
+                                                 " "
+                                                 (-> compiled-path
+                                                     fs/size
+                                                     h/filesize))
                         :walkthrough-description walkthrough-description}
                        (fs/path bundle-out-dir "index.html")))
 

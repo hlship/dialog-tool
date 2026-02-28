@@ -160,3 +160,8 @@
             (doseq [marker (closing-markers effects)]
               (.append sb marker))
             (.toString sb)))))))
+
+(defn strip-ansi
+  "Removes ANSI escape sequences from a string."
+  [s]
+  (string/replace s #"\x1b\[[0-9;]*m" ""))
