@@ -42,7 +42,6 @@
         (if (neg? n-read)
           (close! output-ch)
           (do
-            (print (String/valueOf buffer 0 n-read))
             (.append sb buffer 0 n-read)
             (check-for-end-of-response sb output-ch post-process)
             (recur)))))))
@@ -59,26 +58,26 @@
   (let [{:keys [pre-flight post-process use-pty?]} opts
         ;; pre-flight is optional, used to build the .zblorb file for example,
         ;; so it must be before starting the process.
-        _         (when pre-flight
-                    (pre-flight))
-        process   (if use-pty?
-                    (-> (PtyProcessBuilder.)
-                        (.setCommand (into-array String cmd))
-                        (.setInitialColumns (int 80))
-                        (.setInitialRows Integer/MAX_VALUE)
-                        .start)
-                    (-> (ProcessBuilder. cmd)
-                        .start))
+        _ (when pre-flight
+            (pre-flight))
+        process (if use-pty?
+                  (-> (PtyProcessBuilder.)
+                      (.setCommand (into-array String cmd))
+                      (.setInitialColumns (int 80))
+                      (.setInitialRows Integer/MAX_VALUE)
+                      .start)
+                  (-> (ProcessBuilder. cmd)
+                      .start))
         output-ch (chan)]
     (env/debug-command cmd)
-    {:process      process
-     :project      project
-     :hash         (pf/project-hash project)
-     :cmd          cmd
-     :opts         opts
+    {:process process
+     :project project
+     :hash (pf/project-hash project)
+     :cmd cmd
+     :opts opts
      :stdin-writer (-> process .outputWriter PrintWriter.)
-     :output-ch    output-ch
-     :thread       (start-thread (.inputReader process) output-ch (or post-process identity))}))
+     :output-ch output-ch
+     :thread (start-thread (.inputReader process) output-ch (or post-process identity))}))
 
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger."
@@ -90,7 +89,10 @@
                  "--width" "80"]
                 (into (pf/expand-sources project {:debug? true})))]
     (start! project cmd {:use-pty? true
-                         :post-process #(string/replace % "\r" "")})))
+                         :post-process (fn [s]
+                                         (-> s
+                                             (string/replace "\r" "")
+                                             (string/replace-first #"^\u001b\[0m" "")))})))
 
 (def engines #{:dgdebug :frotz :frotz-release})
 

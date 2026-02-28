@@ -10,7 +10,6 @@
     (conj coll v)
     coll))
 
-
 (defn- combine-lines
   [prior-line new-line]
   (str prior-line
@@ -22,7 +21,7 @@
 (defn- pre-parse
   "Trims lines and combines unindented lines with prior line."
   [lines]
-  (loop [result     []
+  (loop [result []
          prior-line nil
          [line & remaining-lines] lines]
     (cond
@@ -47,7 +46,6 @@
       :else
       ;; Not indented
       (recur result (combine-lines prior-line line) remaining-lines))))
-
 
 (defn- flatten-pred
   [pred-name value]
@@ -82,35 +80,35 @@
   are merged into ($ is $ $), as a special case."
   [predicates]
   (let [{:keys [object-flags global-flags global-vars object-vars]} predicates
-        parent-preds        (get object-vars parent-pred)
-        obj->relation       (reduce (fn [m [k v]]
-                                      (assoc m k v))
-                                    {}
-                                    (get object-vars relation-pred))
-        location-vars       (reduce (fn [m [what where]]
-                                      (assoc m
-                                             (flatten-pred location-pred what)
-                                             (flatten-pred+ location-pred
-                                                            what
-                                                            (get obj->relation what "<unset>")
-                                                            where)))
-                                    {}
-                                    parent-preds)
-        object-tuples       (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
-                                  [object-name object-value] object+values]
-                              [(flatten-pred pred-name object-name)
-                               (flatten-pred+ pred-name object-name object-value)])
-        global-tuples       (for [[pred-name object-value] global-vars]
-                              [pred-name (flatten-pred pred-name object-value)])
+        parent-preds (get object-vars parent-pred)
+        obj->relation (reduce (fn [m [k v]]
+                                (assoc m k v))
+                              {}
+                              (get object-vars relation-pred))
+        location-vars (reduce (fn [m [what where]]
+                                (assoc m
+                                       (flatten-pred location-pred what)
+                                       (flatten-pred+ location-pred
+                                                      what
+                                                      (get obj->relation what "<unset>")
+                                                      where)))
+                              {}
+                              parent-preds)
+        object-tuples (for [[pred-name object+values] (dissoc object-vars parent-pred relation-pred)
+                            [object-name object-value] object+values]
+                        [(flatten-pred pred-name object-name)
+                         (flatten-pred+ pred-name object-name object-value)])
+        global-tuples (for [[pred-name object-value] global-vars]
+                        [pred-name (flatten-pred pred-name object-value)])
         active-object-flags (for [[pred-name object-names] object-flags
                                   object-name object-names]
                               (flatten-pred pred-name object-name))]
     {:flags (-> global-flags
                 (concat active-object-flags)
                 set)
-     :vars  (-> location-vars
-                (into object-tuples)
-                (into global-tuples))}))
+     :vars (-> location-vars
+               (into object-tuples)
+               (into global-tuples))}))
 
 (defn- soft-end?
   [line]
@@ -204,6 +202,11 @@
           (let [[output' remaining-lines] (object-var output lines)]
             (recur state output' remaining-lines)))))))
 
+(defn- strip-ansi
+  "Removes ANSI escape sequences from a string."
+  [s]
+  (string/replace s #"\x1b\[[0-9;]*m" ""))
+
 (defn parse
   "Parse the captured response for the command \"@dynamic\" into a predicates map that can be further processed.
   
@@ -218,6 +221,7 @@
   are merged into ($ is $ $), as a special case."
   [response]
   (->> response
+       strip-ansi
        string/split-lines
        ;; The first line is ">@dynamic", then "GLOBAL FLAGS"
        (drop 2)

@@ -1,6 +1,7 @@
 (ns dialog-tool.skein.ui.app
   (:require [clojure.string :as string]
             [dialog-tool.skein.dynamic :as dynamic]
+            [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.utils :as utils :refer [classes]]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
@@ -10,14 +11,14 @@
 
 (defn render-diff
   "Render the difference between response and unblessed as hiccup markup.
-   When unblessed is nil, just renders the response as-is.
-   When unblessed is present, shows word-level diff:
-   - Removed text (in response but not unblessed): red strikethrough
-   - Added text (in unblessed but not response): blue bold
-   - Unchanged text: normal styling"
+   When unblessed is nil, converts ANSI codes to styled HTML spans.
+   When unblessed is present, converts ANSI codes to visible pseudo-markers
+   (e.g. [B], [BLUE]) then shows word-level diff."
   [response unblessed]
   (if unblessed
-    (let [changes (diff/diff-text response unblessed)]
+    (let [response (ansi/ansi->markers response)
+          unblessed (ansi/ansi->markers unblessed)
+          changes (diff/diff-text response unblessed)]
       (into [:<>]
             (map (fn [{:keys [type value]}]
                    (case type
@@ -25,8 +26,8 @@
                      :removed [:span.text-red-800.font-bold.line-through value]
                      :unchanged value)))
             changes))
-    ;; No unblessed, just show response as-is
-    response))
+    ;; No unblessed, render with ANSI styling
+    (ansi/ansi->hiccup response)))
 
 (defn navbar
   [session]
