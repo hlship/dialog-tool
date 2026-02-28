@@ -86,6 +86,10 @@ html {
   font-style: italic;
 }
 
+.ansi-underline {
+  text-decoration: underline;
+}
+
 .ansi-black {
   color: #1a1a1a;
 }

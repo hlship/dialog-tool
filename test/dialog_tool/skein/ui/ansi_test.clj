@@ -1,6 +1,6 @@
 (ns dialog-tool.skein.ui.ansi-test
   (:require [clojure.test :refer [deftest is testing]]
-            [dialog-tool.skein.ui.ansi :refer [ansi->hiccup ansi->markers]]))
+            [dialog-tool.skein.ui.ansi :refer [ansi->hiccup ansi->markers strip-ansi]]))
 
 (def ESC "\u001b")
 
@@ -12,6 +12,7 @@
 (def RESET (sgr 0))
 (def BOLD (sgr 1))
 (def ITALIC (sgr 3))
+(def UNDERLINE (sgr 4))
 (def RED (sgr 31))
 (def BLUE (sgr 34))
 
@@ -30,6 +31,10 @@
 (deftest hiccup-italic
   (is (= [:<> [:span {:class "ansi-italic"} "hello"]]
          (ansi->hiccup (str ITALIC "hello")))))
+
+(deftest hiccup-underline
+  (is (= [:<> [:span {:class "ansi-underline"} "hello"]]
+         (ansi->hiccup (str UNDERLINE "hello")))))
 
 (deftest hiccup-color
   (is (= [:<> [:span {:class "ansi-red"} "error"]]
@@ -78,6 +83,10 @@
   (is (= "[I]hello[/I]"
          (ansi->markers (str ITALIC "hello" RESET)))))
 
+(deftest markers-underline
+  (is (= "[U]hello[/U]"
+         (ansi->markers (str UNDERLINE "hello" RESET)))))
+
 (deftest markers-color
   (is (= "[RED]error[/RED]"
          (ansi->markers (str RED "error" RESET)))))
@@ -111,3 +120,9 @@
     ;; SGR 6 is "rapid blink", not something we support
     (is (= "[?]hello[/?]"
            (ansi->markers (str (sgr 6) "hello" RESET))))))
+
+;; --- strip-ansi ---
+
+(deftest strip-ansi-removes-sgr
+  (is (= "hello world"
+         (strip-ansi (str BOLD "hello" RESET " " UNDERLINE "world" RESET)))))
