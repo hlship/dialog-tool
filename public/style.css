@@ -1,6 +1,20 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* Restore popover hidden state that Tailwind's preflight overrides */
+[popover]:not(:popover-open) {
+  display: none;
+}
+
+/* Hide popovers until positioned by JS to prevent flash */
+[popover]:popover-open {
+  visibility: hidden;
+}
+
+[popover].positioned {
+  visibility: visible;
+}
+
 /* Prevent layout shift when popovers/modals set overflow:hidden on body */
 html {
   scrollbar-gutter: stable;
