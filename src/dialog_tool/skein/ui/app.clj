@@ -150,8 +150,8 @@
         root? (zero? id)]
     [:div.border-x-4 {:id (str "knot-" id)
                       :class border-class}
-     [:div.bg-yellow-50.w-full.whitespace-pre.relative.p-2
-      [:div.whitespace-normal.flex.flex-row.items-center.absolute.top-2.right-2.gap-x-2
+     [:div.bg-yellow-50.w-full.whitespace-pre.p-2
+      [:div.whitespace-normal.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-16.z-10.bg-yellow-50.rounded-bl-lg.pl-2.pb-1
        (when locked
          [:div.icon.icon-lock {:title "Locked"}])
        (when label
