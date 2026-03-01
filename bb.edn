@@ -5,9 +5,10 @@
  {:requires ([clj-commons.ansi :refer [pout]]
              [clojure.string :as string]
              [babashka.fs :as fs]
+             [babashka.process :as p]
              [dgt.release :as r :refer [sh]])
-  test      (sh "clojure -M:test")
-  tailwind  (sh "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")
+  test      (p/shell "clojure -M:test")
+  tailwind  (p/shell "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")
   package   (r/package "test")
   release   (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
                   zip-file (r/package tag)
