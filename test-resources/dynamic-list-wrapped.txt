@@ -1,0 +1,71 @@
+> @dynamic
+[0m[1m[36mGLOBAL FLAGS[0m[36m
+[0m[36m        (scene debugging enabled)                off
+        (last action was conversationally active) off (changed)
+        (tutorial mode enabled)                  off
+        (score notifications are on)             off
+        (conversation debug logging)             off
+        (inhibiting next tick)                   off
+        (tracing actions)                        off
+        (narrator's it is protected)             off (changed)
+        (inhibit conversation suggestions)       off
+        (player can see)                         on (changed)
+        (implicit action wants direction)        off (changed)
+        (allowing parse errors)                  off (changed)
+        (game has ended)                         off
+        (head noun is required)                  off (changed)
+[0m[36m
+[0m[1m[36mPER-OBJECT FLAGS[0m[36m
+[0m[36m        ($ is handled)                          
+        ($ is hidden)                           
+        ($ is closed)                           
+        ($ is locked)                           
+        ($ is off)                              
+        ($ has spoken this tick)                
+                #tree
+        ($ in progress)                         
+        ($ has completed)                       
+        ($ has started)                         
+        ($ has been suggested)                  
+        ($ has been performed)                  
+        ($ is visited)                          
+                #altar
+        ($ is choice-exhausted)                 
+        ($ is exposed)                          
+[0m[36m
+[0m[1m[36mGLOBAL VARIABLES[0m[36m
+[0m[36m        (conversation partner $)                #tree
+        (discussable quips $)                   [#vegetable #mineral #vertebrate
+ #invertebrate]
+        (current quip $)                        #animal
+        (previous quip $)                       <unset>
+        (grandparent quip $)                    #animal
+        (suggestion $ was just performed)       <unset>
+        (current player $)                      #player
+        (current room $)                        #altar
+        (current score $)                       0
+        (current scope ceiling $)               #altar
+        (deferred commandline $)                <unset>
+        (reported score is $)                   0
+        (last command was $)                    [animal]
+        (implicit action is $)                  <unset>
+        (player's it refers to $)               #tree
+        (narrator's it refers to $)             <unset>
+        (her refers to $)                       <unset>
+        (him refers to $)                       <unset>
+        (them refers to $)                      <unset>
+        (current node $)                        <unset>
+        (previous node $)                       <unset>
+        (current actor $)                       #player
+[0m[36m
+[0m[1m[36mPER-OBJECT VARIABLES[0m[36m
+[0m[36m        ($ has parent $)                        
+                #player                         #altar
+                #tree                           #altar
+        ($ has relation $)                      
+                #player                         #in
+                #tree                           #in
+        ($ is recollected by $)                 
+                #animal                         [#tree #player]
+        ($ has conversation queue $)            
+                #tree                           []

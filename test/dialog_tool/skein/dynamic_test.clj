@@ -73,3 +73,18 @@
           {:vars
            {"(#bartender has conversation queue $)" "(#bartender has conversation queue [[#postponed-obligatory #play-billiards]])"}}
           parsed))))
+
+(deftest parse-when-list-word-wrapped
+  ;; This data was extracted from the "tree of life" example in dialog-extensions
+  ;; This also checks the more recent code that strips out the ANSI sequences
+  (let [predicates (-> "dynamic-list-wrapped.txt"
+                       file-contents
+                       parse)]
+    (is (match?
+          ;; The old parser got confused because (AFAIK) a word break inside a list has a single space
+          ;; before the new value on the subsequent line and this confused the logic, 
+          ;; and a nil predicate was added as a global var.
+          ;; dbdebug may do things differently in the GLOBAL VARIABLES section than in the PER-OBJECT VARIABLES
+          ;; section.
+          {:vars {nil m/absent}}
+          predicates))))

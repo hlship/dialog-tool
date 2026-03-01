@@ -39,12 +39,12 @@
       (re-matches #"[A-Z \-]+" line)
       (recur (conj result line) nil remaining-lines)
 
-      ;; Indented line: finish prior line if necessary, start a new line as prior
-      (string/starts-with? line " ")
+      ;; Two spaces are a new predicate
+      (string/starts-with? line "  ")
       (recur (maybe-conj result prior-line) (string/trim line) remaining-lines)
 
       :else
-      ;; Not indented
+      ;; Not indented (or only indented one space, which seems to happen for global variables that split inside lists)
       (recur result (combine-lines prior-line line) remaining-lines))))
 
 (defn- flatten-pred

@@ -94,7 +94,13 @@
            :skein-path "../sanddancer-dialog/default.skein"
            :port 10140
            :development-mode? true})
-  
+
+  (start! "../dialog-extensions/tree"
+          {:engine :dgdebug
+           :skein-path "../dialog-extensions/tree/default.skein"
+           :port 10140
+           :development-mode? true})
+
 
   (start! "../sanddancer-dialog"
           {:engine :dgdebug
