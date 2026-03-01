@@ -3,7 +3,7 @@
 
 (defn dropdown
   "A dropdown using the HTML Popover API for proper layering above sticky elements.
-   The button's popoverTargetElement is set up via data-init to avoid needing unique IDs.
+   Each dropdown generates a unique ID to link the trigger button to its popover menu.
 
    Options:
    - :label - content to display in the trigger button
@@ -12,16 +12,19 @@
   [{:keys [label disabled button-class]
     :or {label "Drop Down"
          button-class "btn-primary"}} & items]
-  [:div
-   [:button {:class (classes "btn m-0" button-class)
-             :disabled disabled
-             :data-init "setupDropdown(el)"}
-    label]
-   [:ul.menu.bg-base-100.rounded-box.p-2.w-96.max-h-96.overflow-y-auto.flex-nowrap
-    {:popover "auto"
-     :class "shadow-xl/30"
-     :data-on:click "el.hidePopover()"}
-    items]])
+  (let [id (str "dd-" (random-uuid))]
+    [:div
+     [:button {:class (classes "btn m-0" button-class)
+               :disabled disabled
+               :popovertarget id}
+      label]
+     [:ul.menu.bg-base-100.rounded-box.p-2.w-96.max-h-96.overflow-y-auto.flex-nowrap
+      {:id id
+       :popover "auto"
+       :class "shadow-xl/30"
+       :data-on:toggle "if(evt.newState==='open') positionDropdown(el)"
+       :data-on:click "el.hidePopover()"}
+      items]]))
 
 (defn button
   "A button styled for use inside a dropdown menu. Styled per Tailwind Plus patterns.
