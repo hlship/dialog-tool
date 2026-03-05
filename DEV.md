@@ -25,7 +25,7 @@ Developing the UI requires an additional window.
 - The graph view (currently it's just a serial view, one path through the graph)
 - Buttons to jump to next/prev command
 - Search the Skein
-- Add an indicator that there are invisible whitespace changes in a diff
+- ~~Add an indicator that there are invisible whitespace changes in a diff~~
 - Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
 - Color-blind indicators or mode
 - Present source file warnings/errors in a modal when detected?

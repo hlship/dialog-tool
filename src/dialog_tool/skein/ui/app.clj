@@ -9,6 +9,14 @@
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.tree :as tree]))
 
+(defn- visible-whitespace
+  "Replaces whitespace characters with visible alternates for use in diff segments.
+   Spaces become middle-dots (·) and newlines become ↵ followed by the actual newline."
+  [s]
+  (-> s
+      (string/replace " " "·")
+      (string/replace "\n" "↵\n")))
+
 (defn render-diff
   "Render the difference between response and unblessed as hiccup markup.
    When unblessed is nil, converts ANSI codes to styled HTML spans.
@@ -22,8 +30,8 @@
       (into [:<>]
             (map (fn [{:keys [type value]}]
                    (case type
-                     :added [:span.text-blue-700.font-bold value]
-                     :removed [:span.text-red-800.font-bold.line-through value]
+                     :added [:span.text-blue-700.font-bold (visible-whitespace value)]
+                     :removed [:span.text-red-800.font-bold.line-through (visible-whitespace value)]
                      :unchanged value)))
             changes))
     ;; No unblessed, render with ANSI styling
