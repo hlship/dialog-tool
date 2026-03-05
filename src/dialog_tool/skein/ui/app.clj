@@ -112,7 +112,7 @@
                         (into (map #(vector :changed (second %)) changed))
                         (sort-by second compare-pred))]
         (when (seq tuples)
-          [:div.flex.flex-wrap.gap-1.mt-4.text-xs
+          [:div.font-sans.flex.flex-wrap.gap-1.mt-4.text-xs
            (for [[kind predicate] tuples]
              (case kind
                :added [:span.rounded-box.border.border-success.bg-success.bg-opacity-20.text-success-content.px-2.py-1
@@ -122,7 +122,7 @@
                :changed [:span.rounded-box.border.border-info.bg-info.bg-opacity-10.px-2.py-1
                          predicate]))]))
       ;; When missing dynamic state, warn user to replay
-      [:div.inline-flex.items-center.gap-2.text-sm.bg-info.rounded-sm.opacity-75.px-2.py-1.mt-2
+      [:div.font-sans.inline-flex.items-center.gap-2.text-sm.bg-info.rounded-sm.opacity-75.px-2.py-1.mt-2
        [:div.icon.icon-warning]
        [:em "Replay to collect world state data"]])))
 
