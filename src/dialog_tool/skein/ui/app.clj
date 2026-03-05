@@ -151,7 +151,7 @@
         (count children)])]))
 
 (defn- render-knot
-  [tree knot {:keys [debug-enabled?]}]
+  [tree knot {:keys [debug-enabled? fixed-width?]}]
   (let [{:keys [id label response unblessed status children dynamic-response locked]} knot
         border-class (status->border-class status)
         disable-bless? (= :ok status)
@@ -159,7 +159,8 @@
     [:div.border-x-4 {:id (str "knot-" id)
                       :class border-class}
      [:div.bg-yellow-50.w-full.whitespace-pre.p-2
-      [:div.whitespace-normal.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-16.bg-yellow-50.rounded-bl-lg.pl-2.pb-1
+      {:class (when (or fixed-width? (= :error status)) "font-mono")}
+      [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-16.bg-yellow-50.rounded-bl-lg.pl-2.pb-1
        (when locked
          [:div.icon.icon-lock {:title "Locked"}])
        (when label
@@ -205,7 +206,7 @@
 
 (defn render-app
   [sse-gen session {:keys [scroll-to-new-command? scroll-to-knot-id flash]}]
-  (let [{:keys [tree debug-enabled? show-dynamic?]} session
+  (let [{:keys [tree debug-enabled? show-dynamic? fixed-width?]} session
         knots (tree/selected-knots tree)
         leaf-knot (last knots)
         scroll-to-bottom? (or scroll-to-new-command?
@@ -219,7 +220,8 @@
                             [navbar session]
                             [:div.container.mx-lg.mx-auto.mt-16
                              (map (fn [knot]
-                                    (render-knot tree knot {:debug-enabled? (and debug-enabled? show-dynamic?)}))
+                                    (render-knot tree knot {:debug-enabled? (and debug-enabled? show-dynamic?)
+                                                            :fixed-width? fixed-width?}))
                                   knots)
                              [new-command/new-command-input (:id leaf-knot)]]])
     (if scroll-to-bottom?
@@ -239,7 +241,12 @@
      :disabled (not debug-enabled?)}
     [:div.icon.icon-globe]]
 
-   [:div.rounded-box.bg-primary-content
+   [:div.rounded-box.bg-primary-content.flex.flex-col.items-start
+    [:label.label.p-2
+     [:input.toggle {:type "checkbox"
+                     :data-bind "fixedWidth"
+                     :data-on:change "@get('/app/')"}]
+     "Fixed-width font"]
     [:label.label.p-2
      [:input.toggle {:type "checkbox"
                      :data-bind "showDynamic"

@@ -70,9 +70,12 @@
   [f]
   (fn [request]
     (let [{:keys [*session signals]} request
-          {show-dynamic :showDynamic} signals]
+          {show-dynamic :showDynamic
+           fixed-width :fixedWidth} signals]
       (when (some? show-dynamic)
         (swap! *session assoc :show-dynamic? show-dynamic))
+      (when (some? fixed-width)
+        (swap! *session assoc :fixed-width? fixed-width))
       (f request))))
 
 (defn- normalize-input
