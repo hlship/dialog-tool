@@ -17,12 +17,20 @@
   [width ["-w" "--width NUMBER" "Output width (omit to use terminal width)"
           :parse-fn parse-long
           :validate [some? "Not a number"
-                     pos-int? "Must be at least one"]]]
+                     pos-int? "Must be at least one"]]
+   ;; NOTE: I think there's a bug in clojure.tools.cli that's preventing this
+   ;; from working.
+   :in-order true
+   :args
+   debug-args ["ARGS" "Additional arguments passed to dgdebug"
+               :optional true
+               :repeatable true]]
   (let [project (pf/read-project)
         extra-args (cond-> []
                      width (conj "--width" width))
         cmd (-> [(pf/command-path project "dgdebug") "--quit"]
                 (into extra-args)
+                (into debug-args)
                 (into (pf/expand-sources project {:debug? true})))
         *process (p/process {:cmd cmd
                              :inherit true})
@@ -52,8 +60,7 @@
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
   (build/build-project (pf/read-project)
                        {:debug? debug?
-                        :verbose? verbose
-                        :format format}))
+                        :verbose? verbose :format format}))
 
 (defcommand bundle
   "Bundle the project into a Zip archive that can be deployed to a web host."
@@ -69,11 +76,11 @@
   "
   [debug? debug-opt
    dumb? ["-D" "--dumb" "Run using dfrotz instead of frotz"]
+   :in-order true
    :args
    frotz-args ["ARGS" "Extra arguments passed to frotz"
                :optional true
                :repeatable true]
-   :in-order true
    :command "run"]
   (let [project (pf/read-project)
         {:keys [format]} project
