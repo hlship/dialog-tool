@@ -111,8 +111,11 @@
       (fn [sse-gen]
         (when command
           (swap! *session session/command! parent-knot-id command)
-          (ui.app/render-app sse-gen @*session {:scroll-to-new-command? true})
-          (utils/patch-signals! sse-gen {:newCommand ""}))))))
+          ;; This needs to be done first, otherwise looks like a race condition
+          ;; that can result in the text carrying over instead of being blanked
+          ;; out.
+          (utils/patch-signals! sse-gen {:newCommand ""})
+          (ui.app/render-app sse-gen @*session {:scroll-to-new-command? true}))))))
 
 (defn- bless-knot
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
