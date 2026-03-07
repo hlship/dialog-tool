@@ -85,7 +85,7 @@
 
   (-> @*session :debug-enabled?)
 
-  (-> @*session :tree :dynamic (get 0))
+  (-> @*session :tree :knots (get 1772732178667))
 
   (@*shutdown)
 
@@ -114,6 +114,7 @@
           {:skein-path "../dialog-extensions/who/frotz.skein"
            :port 10140
            :seed 10101
+           :development-mode? true
            :engine :frotz})
 
 ;;
