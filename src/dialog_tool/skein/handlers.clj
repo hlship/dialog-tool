@@ -337,7 +337,7 @@
   (let [[error session'] (session/delete! @*session (knot-id request))]
     (reset! *session session')
     (if error
-      (render-app request {:flash error})
+      (render-app request {:flash {:message error :type :error}})
       (render-app request {:flash "Deleted"}))))
 
 (defn- show-dynamic-state
@@ -362,7 +362,7 @@
   (let [[error session'] (session/splice-out! @*session (knot-id request))]
     (reset! *session session')
     (if error
-      (render-app request {:flash error})
+      (render-app request {:flash {:message error :type :error}})
       (render-app request {:flash "Spliced out"}))))
 
 (defn- jump-to-status
