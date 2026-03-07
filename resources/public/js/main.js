@@ -1,6 +1,6 @@
 // Dialog Tool Frontend - Vanilla JavaScript
 
-import './datastar.js';
+import { attribute } from './datastar.js';
 import { computePosition, flip, shift, autoUpdate } from './floating-ui-dom.js';
 
 window.positionDropdown = function(menu, evt) {
@@ -72,6 +72,49 @@ document.addEventListener('datastar-fetch', (e) => {
   const type = e.detail?.type;
   if (type === 'retrying' || type === 'retries-failed' || type === 'error') {
     showNetworkErrorModal();
+  }
+});
+
+/**
+ * Datastar plugin: data-accel
+ *
+ * Declares a keyboard accelerator (Cmd on Mac, Ctrl on Windows/Linux) that
+ * triggers a click on the element. The key character comes from the attribute
+ * key, and the __shift modifier requires Shift to be held.
+ *
+ * Suppressed when a modal is open or the element has the disabled attribute.
+ *
+ * Usage in Hiccup:
+ *   :data-accel "s"           ;; Cmd/Ctrl+S triggers el.click()
+ *   :data-accel "z"           ;; Cmd/Ctrl+Z
+ *   :data-accel__shift "z"    ;; Cmd/Ctrl+Shift+Z
+ */
+const isMac = navigator.platform.startsWith('Mac') || navigator.userAgent.includes('Mac');
+const modSymbol = isMac ? '⌘' : 'Ctrl+';
+
+attribute({
+  name: 'accel',
+  requirement: { key: 'denied', value: 'must' },
+  apply({ el, value, mods }) {
+    const accelKey = value;
+    const needsShift = mods.has('shift');
+
+    // Set DaisyUI tooltip showing the shortcut, e.g. "⌘S" or "Ctrl+Shift+Z"
+    const label = modSymbol + (needsShift ? (isMac ? '⇧' : 'Shift+') : '') + accelKey.toUpperCase();
+    el.setAttribute('data-tip', label);
+
+    const handler = (e) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key !== accelKey) return;
+      if (!!e.shiftKey !== needsShift) return;
+      if (el.hasAttribute('disabled')) return;
+      if (document.querySelector('#modal-container > *')) return;
+      e.preventDefault();
+      el.click();
+    };
+
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
   }
 });
 

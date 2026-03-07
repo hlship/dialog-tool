@@ -68,17 +68,28 @@
         (for [{:keys [id label]} labeled-knots]
           [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
            label])]
-       [:div.btn.btn-primary {:data-on:click "@post('/action/replay-all')"}
+       [:div.btn.btn-primary.tooltip.tooltip-bottom
+        {:data-on:click "@post('/action/replay-all')"
+         :data-accel "p"
+         :data-preserve-attr "data-tip"}
         [:div.icon.icon-play] "Replay All"]
-       [:div.btn.btn-primary
+       [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click "@post('/action/save')"
+         :data-accel "s"
+         :data-preserve-attr "data-tip"
          :class (when dirty? "btn-soft")}
         [:div.icon.icon-save] "Save"]
-       [:div.btn.btn-primary {:data-on:click "@get('/action/undo')"
-                              :disabled (not can-undo?)}
+       [:div.btn.btn-primary.tooltip.tooltip-bottom
+        {:data-on:click "@get('/action/undo')"
+         :data-accel "z"
+         :data-preserve-attr "data-tip"
+         :disabled (not can-undo?)}
         [:div.icon.icon-undo] "Undo"]
-       [:div.btn.btn-primary {:data-on:click "@get('/action/redo')"
-                              :disabled (not can-redo?)}
+       [:div.btn.btn-primary.tooltip.tooltip-bottom
+        {:data-on:click "@get('/action/redo')"
+         :data-accel__shift "z"
+         :data-preserve-attr "data-tip"
+         :disabled (not can-redo?)}
         [:div.icon.icon-redo] "Redo"]
        [:div.btn.btn-primary {:data-on:click "@get('/action/quit')"}
         [:div.icon.icon-quit] "Quit"]]]]))

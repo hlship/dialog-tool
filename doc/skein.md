@@ -214,6 +214,21 @@ to be managed files under source code control.
 
 The `dgt skein test` command can be used, from the command line, to do the same work as _Replay All_ and verify that all possible Skein leaves are still valid.
 
+## Keyboard Shortcuts
+
+The navigation bar commands have keyboard accelerators, using ⌘ (Cmd) on Mac or Ctrl on Windows/Linux:
+
+| Shortcut | Action |
+|----------|--------|
+| ⌘P / Ctrl+P | Replay All |
+| ⌘S / Ctrl+S | Save |
+| ⌘Z / Ctrl+Z | Undo |
+| ⌘⇧Z / Ctrl+Shift+Z | Redo |
+
+Hover over the navigation bar buttons to see the shortcut for your platform in a tooltip.
+
+Shortcuts are suppressed when a modal dialog is open, and disabled shortcuts (e.g., Undo when there's nothing to undo) are ignored.
+
 ## Beyond Player Commands
 
 The text that you enter as a command is not limited to player commands for your project.  Just as with the Dialog debugger, you can enter
