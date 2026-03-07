@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.ui.modals
-  (:require [dialog-tool.skein.ui.components.modal :as modal]))
+  (:require [dialog-tool.skein.ui.ansi :as ansi]
+            [dialog-tool.skein.ui.components.modal :as modal]))
 
 (defn close-window
   []
@@ -100,7 +101,7 @@
     :buttons [modal/cancel-button {:label "OK"}]}
    [:div.whitespace-pre.text-sm.font-mono.overflow-y-auto.max-h-96
     {:data-init "el.focus()"}
-    dynamic-response]])
+    (ansi/ansi->hiccup dynamic-response)]])
 
 (defn quit-modal
   "Renders a quit confirmation modal with options to cancel, save and quit, or quit without saving."
