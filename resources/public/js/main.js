@@ -1,15 +1,40 @@
 // Dialog Tool Frontend - Vanilla JavaScript
 
 import './datastar.js';
+import { computePosition, flip, shift, autoUpdate } from './floating-ui-dom.js';
 
-window.positionDropdown = function(menu) {
+window.positionDropdown = function(menu, evt) {
+  // Clean up any previous autoUpdate listener
+  if (menu._floatingCleanup) {
+    menu._floatingCleanup();
+    menu._floatingCleanup = null;
+  }
+
+  if (evt.newState !== 'open') {
+    // Remove positioned so next open starts hidden (prevents flash)
+    menu.classList.remove('positioned');
+    return;
+  }
+
   const btn = menu.previousElementSibling;
-  const rect = btn.getBoundingClientRect();
-  menu.style.position = 'fixed';
-  menu.style.top = rect.top + 'px';
-  menu.style.left = (rect.left - menu.offsetWidth) + 'px';
-  menu.style.margin = '0';
-  menu.classList.add('positioned');
+
+  // autoUpdate calls our callback immediately and again on scroll/resize,
+  // keeping the menu anchored to the button.
+  menu._floatingCleanup = autoUpdate(btn, menu, () => {
+    computePosition(btn, menu, {
+      placement: 'left-start',
+      strategy: 'fixed',
+      middleware: [flip(), shift({padding: 5})]
+    }).then(({x, y}) => {
+      Object.assign(menu.style, {
+        position: 'fixed',
+        margin: '0',
+        left: x + 'px',
+        top: y + 'px'
+      });
+      menu.classList.add('positioned');
+    });
+  });
 }
 
 /**
