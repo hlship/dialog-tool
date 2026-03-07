@@ -237,8 +237,7 @@
   [:div.fab#fab
    [:div.btn.btn-lg.btn-circle.btn-primary
     {:tabindex "0"
-     :role "button"
-     :disabled (not debug-enabled?)}
+     :role "button"}
     [:div.icon.icon-globe]]
 
    [:div.rounded-box.bg-primary-content.flex.flex-col.items-start
