@@ -30,7 +30,6 @@ Developing the UI requires an additional window.
 - Present source file warnings/errors in a modal when detected?
 - add ability to paste in a transcript (or create a skein from a transcript)
 - use core.cache (or memoize) for caching (of text diffs)
-- Keyboard accelerators (such as ^S to save skein)
 - Ability to build for multiple targets `[:zblorb :aamachine]`  -- how will this interact with `dgt bundle`?
 
 ## Releasing
