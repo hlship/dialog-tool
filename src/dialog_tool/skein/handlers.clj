@@ -111,8 +111,11 @@
       (fn [sse-gen]
         (when command
           (swap! *session session/command! parent-knot-id command)
-          (ui.app/render-app sse-gen @*session {:scroll-to-new-command? true})
-          (utils/patch-signals! sse-gen {:newCommand ""}))))))
+          ;; This needs to be done first, otherwise looks like a race condition
+          ;; that can result in the text carrying over instead of being blanked
+          ;; out.
+          (utils/patch-signals! sse-gen {:newCommand ""})
+          (ui.app/render-app sse-gen @*session {:scroll-to-new-command? true}))))))
 
 (defn- bless-knot
   "Blesses the specified knot, copying its unblessed response to be the blessed response."
@@ -334,7 +337,7 @@
   (let [[error session'] (session/delete! @*session (knot-id request))]
     (reset! *session session')
     (if error
-      (render-app request {:flash error})
+      (render-app request {:flash {:message error :type :error}})
       (render-app request {:flash "Deleted"}))))
 
 (defn- show-dynamic-state
@@ -359,7 +362,7 @@
   (let [[error session'] (session/splice-out! @*session (knot-id request))]
     (reset! *session session')
     (if error
-      (render-app request {:flash error})
+      (render-app request {:flash {:message error :type :error}})
       (render-app request {:flash "Spliced out"}))))
 
 (defn- jump-to-status

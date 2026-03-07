@@ -55,19 +55,16 @@
 
 (defn- start!
   [project ^List cmd opts]
-  (let [{:keys [pre-flight post-process use-pty?]} opts
+  (let [{:keys [pre-flight post-process]} opts
         ;; pre-flight is optional, used to build the .zblorb file for example,
         ;; so it must be before starting the process.
         _ (when pre-flight
             (pre-flight))
-        process (if use-pty?
-                  (-> (PtyProcessBuilder.)
-                      (.setCommand (into-array String cmd))
-                      (.setInitialColumns (int 80))
-                      (.setInitialRows Integer/MAX_VALUE)
-                      .start)
-                  (-> (ProcessBuilder. cmd)
-                      .start))
+        process (-> (PtyProcessBuilder.)
+                    (.setCommand (into-array String cmd))
+                    (.setInitialColumns (int 80))
+                    (.setInitialRows Integer/MAX_VALUE)
+                    .start)
         output-ch (chan)]
     (env/debug-command cmd)
     {:process process
@@ -78,6 +75,10 @@
      :stdin-writer (-> process .outputWriter PrintWriter.)
      :output-ch output-ch
      :thread (start-thread (.inputReader process) output-ch (or post-process identity))}))
+
+(defn- trim-returns
+  [s]
+  (string/replace s "\r" ""))
 
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger."
@@ -91,7 +92,7 @@
     (start! project cmd {:use-pty? true
                          :post-process (fn [s]
                                          (-> s
-                                             (string/replace "\r" "")
+                                             trim-returns 
                                              (string/replace-first #"^\u001b\[0m" "")))})))
 
 (def engines #{:dgdebug :frotz :frotz-release})
@@ -133,6 +134,12 @@
         cmd ["dfrotz"
              ;; Flags: quiet, no *more*
              "-q" "-m"
+             ;; Although dfortz has "-f ansi", when enabled
+             ;; it is closer to a ncurses kind of output,
+             ;; with right padding of lines, and ANSI 
+             ;; Erase in Line (CSI K) sequences.
+             ;; So, validate your formatting using dgdebug,
+             ;; and validate your zcode with dfrotz.
              "-s" (str seed)
              "-w" "80"
              (str path)]]
@@ -140,7 +147,7 @@
     (start! project
             cmd
             {:pre-flight pre
-             :echo-command true})))
+             :post-process trim-returns})))
 
 (defmethod start-process! :frotz
   [project-root _ seed]
@@ -154,30 +161,16 @@
   [process]
   (-> process :output-ch <!!))
 
-(defn- inject-command
-  [command response]
-  (str
-   (subs response 0 2)
-   command
-   "\n"
-   (subs response 2)))
-
 (defn send-command!
   "Sends a player command to the process, blocking until a response to the command
   is available.  Returns the response."
   [process ^String command]
   (let [{:keys [^PrintWriter stdin-writer opts]} process
-        {:keys [echo-command]} opts
         _ (doto stdin-writer
             (.print command)
             .println
-            .flush)
-        raw-response (read-response! process)]
-    ;; dgdebug echos back what it receives on its stdin, but dfrotz does not.
-    ;; The echo-command flag lets us fake it.
-    (if echo-command
-      (inject-command command raw-response)
-      raw-response)))
+            .flush)]
+    (read-response! process)))
 
 (defn kill!
   "Kills the process and returns nil."

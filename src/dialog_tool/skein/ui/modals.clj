@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.ui.modals
-  (:require [dialog-tool.skein.ui.components.modal :as modal]))
+  (:require [dialog-tool.skein.ui.ansi :as ansi]
+            [dialog-tool.skein.ui.components.modal :as modal]))
 
 (defn close-window
   []
@@ -14,7 +15,8 @@
   [id command error]
   [modal/modal
    (cond-> {:title "Edit Command"
-            :signals {:editCommand command}}
+            :signals {:editCommand command}
+            :buttons nil}
      error (assoc :error error))
    [:form {:data-on:submit__stop (str "@post('/action/edit-command/" id "')")}
     [:div.mb-4
@@ -24,13 +26,17 @@
       {:type "text"
        :data-bind "editCommand"
        :data-init "el.select()"
-       :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]]])
+       :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+    [:div.flex.justify-end.gap-2
+     [modal/cancel-button {}]
+     [modal/ok-button {}]]]])
 
 (defn insert-parent
   [id command error]
   [modal/modal
    (cond-> {:title "Insert Parent"
-            :signals {:insertCommand command}}
+            :signals {:insertCommand command}
+            :buttons nil}
      error (assoc :error error))
    [:form {:data-on:submit__stop (str "@post('/action/insert-parent/" id "')")}
     [:div.mb-4
@@ -40,7 +46,10 @@
       {:type "text"
        :data-bind "insertCommand"
        :data-init "el.select()"
-       :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]]])
+       :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+    [:div.flex.justify-end.gap-2
+     [modal/cancel-button {}]
+     [modal/ok-button {}]]]])
 
 (defn edit-label
   "Renders the edit label modal with optional error message."
@@ -100,7 +109,7 @@
     :buttons [modal/cancel-button {:label "OK"}]}
    [:div.whitespace-pre.text-sm.font-mono.overflow-y-auto.max-h-96
     {:data-init "el.focus()"}
-    dynamic-response]])
+    (ansi/ansi->hiccup dynamic-response)]])
 
 (defn quit-modal
   "Renders a quit confirmation modal with options to cancel, save and quit, or quit without saving."

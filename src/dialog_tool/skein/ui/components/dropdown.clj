@@ -22,7 +22,7 @@
       {:id id
        :popover "auto"
        :class "shadow-xl/30"
-       :data-on:toggle "if(evt.newState==='open') positionDropdown(el)"
+       :data-on:toggle "positionDropdown(el, evt)"
        :data-on:click "el.hidePopover()"}
       items]]))
 
