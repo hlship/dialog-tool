@@ -86,6 +86,7 @@
   (let [project (pf/read-project project-root)
         cmd (-> [(pf/command-path project "dgdebug")
                  "--quit"
+                 "--numbered"
                  "--seed" (str seed)
                  "--width" "80"]
                 (into (pf/expand-sources project {:debug? true})))]

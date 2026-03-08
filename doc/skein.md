@@ -285,6 +285,42 @@ Dynamic state is **not** stored in the Skein file, or used as the basis for mark
 
 After loading the Skein, you should use the _Replay All_ command to collect all the dynamic state data.
 
+## Tracing
+
+When running with the `dgdebug` engine, you can trace the execution of any command.
+This is useful for understanding how Dialog processes a command: which predicates are queried,
+which succeed or fail, and the full call hierarchy.
+
+From a knot's action menu, the _Trace ..._ item will replay to
+the knot's parent and then execute the knot's command with the
+Dialog debugger's trace mode enabled. The results are displayed in a
+modal dialog.
+
+The trace modal shows a tree of trace events, each tagged with one of four types:
+
+| Type | Meaning |
+|------|---------|
+| ENTER | A predicate is being entered (a new rule is being tried) |
+| QUERY | A sub-predicate is being queried |
+| FOUND | A predicate or query succeeded |
+| NOW | A dynamic predicate is being updated via `(now)` |
+
+Each node shows the predicate and the source file location (file and line number).
+Nodes with children can be expanded or collapsed by clicking the arrow toggle.
+
+The _Expand All_ and _Collapse All_ buttons control the entire tree at once.
+
+### Searching
+
+The search field at the top of the trace modal lets you search for predicates
+or source file names (case-insensitive).  When you type a search term, the tree
+automatically expands to reveal all matching nodes, which are highlighted with a yellow background.
+
+Clearing the search field collapses the tree back.
+
+> The _Trace_ action is only available when the Skein is using the `dgdebug` engine, and only
+> for non-root knots (the root knot has no command to trace).
+
 ## Time Travel
 
 From any knot's action menu, the _New Child_ item will allow you to create a new child knot.  This will deselect any children of the knot, and move focus to the player command text field.
@@ -330,7 +366,7 @@ The default engine is `dgdebug`, but you can also use `frotz` or `frotz-release`
 
 The latter two run the Skein using the `frotz` command line tool instead of `dgdebug`.
 
-When `frotz` is used, you will not see dynamic predicate data, as that requires the Dialog debugger. Likewise, you will not be able to enter queries or `(now)` expressions.
+When `frotz` is used, you will not see dynamic predicate data, as that requires the Dialog debugger. Likewise, you will not be able to enter queries or `(now)` expressions, and command tracing is not available.
 
 The `frotz` engine includes all debugging sources; `frotz-release` does not.  In both cases, the Skein will compile your sources into Z-code to run inside `frotz`,
 recompiling as necessary when the source changes, as with the debugger.

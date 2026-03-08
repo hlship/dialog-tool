@@ -1,6 +1,7 @@
 (ns dialog-tool.skein.ui.modals
   (:require [dialog-tool.skein.ui.ansi :as ansi]
-            [dialog-tool.skein.ui.components.modal :as modal]))
+            [dialog-tool.skein.ui.components.modal :as modal]
+            [dialog-tool.skein.ui.trace-view :as trace-view]))
 
 (defn close-window
   []
@@ -130,3 +131,23 @@
        :data-on:click "@post('/action/quit-without-saving')"}
       "Quit Without Saving"]
      [modal/cancel-button {}]]]])
+
+(defn trace-modal
+  "Renders a modal dialog displaying the trace tree for a command.
+   
+   trace-state is the :trace map from the session, containing:
+   - :tree - the parsed trace tree
+   - :expanded - set of expanded node paths  
+   - :search - current search term
+   - :node-count - total node count
+   - :command - the command that was traced"
+  [trace-state]
+  [modal/modal
+   {:title (str "Trace: " (:command trace-state))
+    :signals {:traceSearch (or (:search trace-state) "")}
+    :buttons nil}
+   [:div.flex.flex-col {:class "min-w-[70vw] min-h-[50vh]"}
+    [:div.flex-1
+     [trace-view/render-trace-tree trace-state]]
+    [:div.flex.justify-end.pt-4
+     [modal/cancel-button {:label "Close"}]]]])
