@@ -135,3 +135,52 @@ html {
 .ansi-white {
   color: #aaaaaa;
 }
+
+/* Dialog source syntax highlighting classes */
+.dg-comment {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.dg-keyword {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.dg-object {
+  color: #0d9488;
+}
+
+.dg-variable {
+  color: #d97706;
+}
+
+.dg-number {
+  color: #9333ea;
+}
+
+.dg-dict-word {
+  color: #16a34a;
+}
+
+.dg-predicate {
+  color: #2563eb;
+}
+
+.dg-heading {
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.dg-escape {
+  color: #ea580c;
+}
+
+.dg-punctuation {
+  color: #6b7280;
+}
+
+.dg-error {
+  color: #dc2626;
+  text-decoration: wavy underline;
+}

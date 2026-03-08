@@ -8,6 +8,7 @@
             [selmer.parser :as s]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.trace :as trace]
+            [dialog-tool.skein.syntax :as syntax]
             [dialog-tool.skein.ui.modals :as modals]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.trace-view :as trace-view]
@@ -463,11 +464,14 @@
   (let [node-path (first path-params)]
     (if-let [[file-path line resolved] (resolve-trace-source @*session node-path)]
       (let [raw-lines (read-source-lines resolved)
+            dg? (string/ends-with? file-path ".dg")
             lines (map-indexed
                    (fn [idx text]
                      (let [n (inc idx)]
                        {:number n
-                        :text text
+                        :text (if dg?
+                                (syntax/highlight-line text)
+                                (syntax/html-escape text))
                         :highlighted (= n line)}))
                    raw-lines)]
         {:status 200
@@ -488,6 +492,7 @@
   (let [node-path (first path-params)]
     (if-let [[file-path line resolved] (resolve-trace-source @*session node-path)]
       (let [raw-lines (read-source-lines resolved)
+            dg? (string/ends-with? file-path ".dg")
             context 4
             start (max 0 (- line context 1))
             end (min (count raw-lines) (+ line context))
@@ -496,7 +501,9 @@
                    (fn [idx text]
                      (let [n (+ start idx 1)]
                        {:number n
-                        :text text
+                        :text (if dg?
+                                (syntax/highlight-line text)
+                                (syntax/html-escape text))
                         :highlighted (= n line)}))
                    window)]
         {:status 200
