@@ -81,8 +81,9 @@
     (is (string? body))
     ;; SSE body should contain Datastar fragment events
     (is (string/includes? body "datastar"))
-    ;; Should contain the game's initial output
-    (is (string/includes? body "Featureless Space"))))
+    ;; Should contain the game's initial output; spaces are rendered as
+    ;; visible middle dots (·) because the knot is unblessed.
+    (is (string/includes? body "Featureless\u00b7Space"))))
 
 (deftest select-knot-test
   (let [response (GET "/action/select/0")
