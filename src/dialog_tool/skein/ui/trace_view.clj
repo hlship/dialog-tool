@@ -13,6 +13,20 @@
             [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.ui.utils :refer [classes]]))
 
+(defn- render-source-link
+  "Renders a source reference as a clickable link that opens the source viewer
+   in a new window, or as plain text if the source can't be parsed.
+   node-path is the dot-separated tree path used to look up the source server-side."
+  [source node-path]
+  (if (trace/parse-source source)
+    [:a.text-xs.text-blue-500.ml-auto.flex-shrink-0.font-mono.hover:text-blue-700.hover:underline
+     {:href (str "/action/source/" node-path)
+      :target "_blank"
+      :title source}
+     source]
+    [:span.text-xs.text-gray-400.ml-auto.flex-shrink-0.font-mono
+     source]))
+
 (def ^:private type->badge-class
   {:enter "bg-blue-100 text-blue-800"
    :query "bg-purple-100 text-purple-800"
@@ -50,9 +64,8 @@
       [:span.font-mono.text-sm.truncate
        {:class (when match? "font-bold")}
        predicate]
-      ;; Source (dimmed, right-aligned)
-      [:span.text-xs.text-gray-400.ml-auto.flex-shrink-0.font-mono
-       source]]
+      ;; Source (link to source viewer)
+      [render-source-link source path]]
      ;; Children (only if expanded)
      (when (and has-children? is-expanded?)
        [:div

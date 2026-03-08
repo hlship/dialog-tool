@@ -114,3 +114,29 @@
             (+ acc 1 (count-nodes (:children node))))
           0
           tree))
+
+(defn get-node
+  "Retrieves a node from the tree by its dot-separated path string (e.g. \"0.2.1\").
+   The first index selects from the root-level nodes, subsequent indices select
+   from :children. Returns the node map, or nil if the path is invalid."
+  [tree path]
+  (let [indices (map parse-long (string/split path #"\."))]
+    (loop [[idx & more] indices
+           nodes tree]
+      (when (and (some? idx) (< idx (count nodes)))
+        (let [node (nth nodes idx)]
+          (if (seq more)
+            (recur more (:children node))
+            node))))))
+
+(defn parse-source
+  "Parses a source string like 'file.dg:42' into [file-path line-number],
+   or returns nil if it can't be parsed."
+  [source]
+  (when source
+    (let [idx (string/last-index-of source ":")]
+      (when (and idx (pos? idx))
+        (let [file-path (subs source 0 idx)
+              line-str (subs source (inc idx))]
+          (when-let [line (parse-long line-str)]
+            [file-path line]))))))

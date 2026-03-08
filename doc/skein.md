@@ -306,6 +306,9 @@ The trace modal shows a tree of trace events, each tagged with one of four types
 | NOW | A dynamic predicate is being updated via `(now)` |
 
 Each node shows the predicate and the source file location (file and line number).
+The source location is a link; clicking it opens the source file in a new browser tab,
+with line numbers displayed and the referenced line highlighted and scrolled into view.
+
 Nodes with children can be expanded or collapsed by clicking the arrow toggle.
 
 The _Expand All_ and _Collapse All_ buttons control the entire tree at once.

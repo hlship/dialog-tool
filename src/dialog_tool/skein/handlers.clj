@@ -14,6 +14,8 @@
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.utils :as utils]
             [dialog-tool.env :as env]
+            [dialog-tool.project-file :as pf]
+            [babashka.fs :as fs]
             [clj-commons.ansi :refer [pout]]
             [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
 
@@ -427,6 +429,48 @@
   (swap! *session assoc-in [:trace :expanded] #{})
   (render-trace-results request))
 
+(defn- view-source
+  "Serves a standalone HTML page displaying a Dialog source file with line numbers.
+   The node path (e.g. \"0.2.1\") comes from path-params and identifies a node in
+   the current trace tree. The node's :source field is parsed to get the file path
+   and line number."
+  [{:keys [*session path-params]}]
+  (let [node-path (first path-params)
+        tree (get-in @*session [:trace :tree])
+        node (when tree (trace/get-node tree node-path))
+        [file-path line] (when node (trace/parse-source (:source node)))]
+    (if-not file-path
+      {:status 404
+       :headers {"Content-Type" "text/plain"}
+       :body "Source not found"}
+      (let [project (-> @*session :process :project)
+            root-dir (pf/root-dir project)
+            resolved (fs/path root-dir file-path)]
+        (if-not (fs/exists? resolved)
+          {:status 404
+           :headers {"Content-Type" "text/plain"}
+           :body (str "Source file not found: " file-path)}
+          (let [content (slurp (str resolved))
+                raw-lines (string/split content #"\n" -1)
+                raw-lines (if (and (> (count raw-lines) 1)
+                                   (= "" (peek raw-lines)))
+                            (pop (vec raw-lines))
+                            raw-lines)
+                lines (map-indexed
+                       (fn [idx text]
+                         (let [n (inc idx)]
+                           {:number n
+                            :text text
+                            :highlighted (= n line)}))
+                       raw-lines)]
+            {:status 200
+             :headers {"Content-Type" "text/html"}
+             :body (s/render-file "skein/source.html"
+                                  {:file-path file-path
+                                   :line line
+                                   :line-count (count raw-lines)
+                                   :lines lines})}))))))
+
 (defn- toggle-lock-knot
   "Toggles the locked state of the specified knot."
   [{:keys [*session] :as request}]
@@ -613,6 +657,9 @@
 
    "POST /action/trace/*" req
    (trace-knot req)
+
+   "GET /action/source/**" req
+   (view-source req)
 
    "GET /**" [path]
     ;; During local development, generated-resources/public/style.css will come from here
