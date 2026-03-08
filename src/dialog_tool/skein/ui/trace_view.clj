@@ -22,7 +22,9 @@
     [:a.text-xs.text-blue-500.ml-auto.flex-shrink-0.font-mono.hover:text-blue-700.hover:underline
      {:href (str "/action/source/" node-path)
       :target "_blank"
-      :title source}
+      :title source
+      :data-on:mouseenter__debounce_400ms (str "showSourcePreview(el,'" node-path "')")
+      :data-on:mouseleave "hideSourcePreview()"}
      source]
     [:span.text-xs.text-gray-400.ml-auto.flex-shrink-0.font-mono
      source]))

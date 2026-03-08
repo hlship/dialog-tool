@@ -150,4 +150,6 @@
     [:div.flex-1
      [trace-view/render-trace-tree trace-state]]
     [:div.flex.justify-end.pt-4
-     [modal/cancel-button {:label "Close"}]]]])
+     [modal/cancel-button {:label "Close"}]]
+    [:div#source-preview-popup.hidden.fixed.z-50.bg-white.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
+     {:class "max-w-[80vw]"}]]])

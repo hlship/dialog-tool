@@ -309,6 +309,10 @@ Each node shows the predicate and the source file location (file and line number
 The source location is a link; clicking it opens the source file in a new browser tab,
 with line numbers displayed and the referenced line highlighted and scrolled into view.
 
+Hovering over a source link for a short time displays a floating preview popup showing
+a few lines of source context around the referenced line, with the target line highlighted.
+This lets you quickly glance at the source without leaving the trace view.
+
 Nodes with children can be expanded or collapsed by clicking the arrow toggle.
 
 The _Expand All_ and _Collapse All_ buttons control the entire tree at once.

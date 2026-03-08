@@ -118,4 +118,58 @@ attribute({
   }
 });
 
+/**
+ * Source preview popup on hover.
+ *
+ * A static #source-preview-popup element lives in index.html (initially hidden).
+ * The delay before showing is handled by Datastar's __debounce modifier on the
+ * data-on:mouseenter attribute. This JS just fetches the preview content,
+ * injects it, and positions the popup via Floating UI.
+ */
+let previewCleanup = null;
+let previewController = null;
+
+window.showSourcePreview = async function(el, nodePath) {
+  hideSourcePreview();
+  const popup = document.getElementById('source-preview-popup');
+  if (!popup) return;
+  try {
+    previewController = new AbortController();
+    const resp = await fetch('/action/source-preview/' + nodePath, {
+      signal: previewController.signal
+    });
+    previewController = null;
+    if (!resp.ok) return;
+    popup.innerHTML = await resp.text();
+    popup.classList.remove('hidden');
+    previewCleanup = autoUpdate(el, popup, () => {
+      computePosition(el, popup, {
+        placement: 'top',
+        strategy: 'fixed',
+        middleware: [flip(), shift({ padding: 8 })]
+      }).then(({ x, y }) => {
+        Object.assign(popup.style, { left: x + 'px', top: y + 'px' });
+      });
+    });
+  } catch (e) {
+    // Aborted or network error — silently ignore
+  }
+};
+
+window.hideSourcePreview = function() {
+  if (previewController) {
+    previewController.abort();
+    previewController = null;
+  }
+  if (previewCleanup) {
+    previewCleanup();
+    previewCleanup = null;
+  }
+  const popup = document.getElementById('source-preview-popup');
+  if (popup) {
+    popup.classList.add('hidden');
+    popup.innerHTML = '';
+  }
+};
+
 console.log('Dialog Tool UI initialized');

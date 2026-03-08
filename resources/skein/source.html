@@ -5,62 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/style.css" rel="stylesheet">
     <title>{{file-path}} — Dialog Source</title>
-    <style>
-        body { margin: 0; padding: 0; background: #fff; }
-        .source-container {
-            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .source-table { border-collapse: collapse; width: 100%; }
-        .line-row:hover { background: #f0f4ff; }
-        .line-row.highlighted { background: #fef08a; }
-        .gutter {
-            text-align: right;
-            padding: 0 12px 0 16px;
-            color: #9ca3af;
-            user-select: none;
-            vertical-align: top;
-            border-right: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-        .gutter.highlighted { color: #92400e; font-weight: bold; }
-        .code { padding: 0 16px; white-space: pre; }
-        .header {
-            background: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .header .file-name {
-            font-weight: 600;
-            font-size: 16px;
-            font-family: ui-monospace, SFMono-Regular, monospace;
-        }
-        .header .line-info { color: #6b7280; font-size: 14px; }
-    </style>
 </head>
-<body>
+<body class="m-0 p-0 bg-white">
 
-<div class="header">
-    <span class="file-name">{{file-path}}</span>
+<div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
+    <span class="font-semibold text-base font-mono">{{file-path}}</span>
     {% if line %}
-    <span class="line-info">Line {{line}} of {{line-count}}</span>
+    <span class="text-gray-500 text-sm">Line {{line}} of {{line-count}}</span>
     {% endif %}
 </div>
 
-<div class="source-container">
-    <table class="source-table">
+<div class="font-mono text-sm leading-relaxed">
+    <table class="border-collapse w-full">
         <tbody>
             {% for source-line in lines %}
-            <tr id="L{{source-line.number}}" class="line-row{% if source-line.highlighted %} highlighted{% endif %}">
-                <td class="gutter{% if source-line.highlighted %} highlighted{% endif %}">{{source-line.number}}</td>
-                <td class="code">{{source-line.text}}</td>
+            <tr id="L{{source-line.number}}" class="{% if source-line.highlighted %}bg-yellow-200{% else %}hover:bg-blue-50{% endif %}">
+                <td class="text-right pr-3 pl-4 select-none align-top border-r border-gray-200 whitespace-nowrap {% if source-line.highlighted %}text-amber-800 font-bold{% else %}text-gray-400{% endif %}">{{source-line.number}}</td>
+                <td class="px-4 whitespace-pre">{{source-line.text}}</td>
             </tr>
             {% endfor %}
         </tbody>

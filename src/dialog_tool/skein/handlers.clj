@@ -429,47 +429,85 @@
   (swap! *session assoc-in [:trace :expanded] #{})
   (render-trace-results request))
 
+(defn- resolve-trace-source
+  "Given the session and a node path string, resolves the trace node's source
+   to a [file-path line resolved-path] triple, or nil if the node or source
+   can't be found."
+  [session node-path]
+  (let [tree (get-in session [:trace :tree])
+        node (when tree (trace/get-node tree node-path))
+        [file-path line] (when node (trace/parse-source (:source node)))]
+    (when file-path
+      (let [project (-> session :process :project)
+            root-dir (pf/root-dir project)
+            resolved (fs/path root-dir file-path)]
+        (when (fs/exists? resolved)
+          [file-path line resolved])))))
+
+(defn- read-source-lines
+  "Reads a source file and returns a vector of text lines (trailing empty line stripped)."
+  [resolved-path]
+  (let [content (slurp (str resolved-path))
+        raw-lines (string/split content #"\n" -1)]
+    (if (and (> (count raw-lines) 1)
+             (= "" (peek raw-lines)))
+      (pop (vec raw-lines))
+      (vec raw-lines))))
+
 (defn- view-source
   "Serves a standalone HTML page displaying a Dialog source file with line numbers.
    The node path (e.g. \"0.2.1\") comes from path-params and identifies a node in
    the current trace tree. The node's :source field is parsed to get the file path
    and line number."
   [{:keys [*session path-params]}]
-  (let [node-path (first path-params)
-        tree (get-in @*session [:trace :tree])
-        node (when tree (trace/get-node tree node-path))
-        [file-path line] (when node (trace/parse-source (:source node)))]
-    (if-not file-path
+  (let [node-path (first path-params)]
+    (if-let [[file-path line resolved] (resolve-trace-source @*session node-path)]
+      (let [raw-lines (read-source-lines resolved)
+            lines (map-indexed
+                   (fn [idx text]
+                     (let [n (inc idx)]
+                       {:number n
+                        :text text
+                        :highlighted (= n line)}))
+                   raw-lines)]
+        {:status 200
+         :headers {"Content-Type" "text/html"}
+         :body (s/render-file "skein/source.html"
+                              {:file-path file-path
+                               :line line
+                               :line-count (count raw-lines)
+                               :lines lines})})
       {:status 404
        :headers {"Content-Type" "text/plain"}
-       :body "Source not found"}
-      (let [project (-> @*session :process :project)
-            root-dir (pf/root-dir project)
-            resolved (fs/path root-dir file-path)]
-        (if-not (fs/exists? resolved)
-          {:status 404
-           :headers {"Content-Type" "text/plain"}
-           :body (str "Source file not found: " file-path)}
-          (let [content (slurp (str resolved))
-                raw-lines (string/split content #"\n" -1)
-                raw-lines (if (and (> (count raw-lines) 1)
-                                   (= "" (peek raw-lines)))
-                            (pop (vec raw-lines))
-                            raw-lines)
-                lines (map-indexed
-                       (fn [idx text]
-                         (let [n (inc idx)]
-                           {:number n
-                            :text text
-                            :highlighted (= n line)}))
-                       raw-lines)]
-            {:status 200
-             :headers {"Content-Type" "text/html"}
-             :body (s/render-file "skein/source.html"
-                                  {:file-path file-path
-                                   :line line
-                                   :line-count (count raw-lines)
-                                   :lines lines})}))))))
+       :body "Source not found"})))
+
+(defn- source-preview
+  "Returns an HTML fragment showing a small window of source code around the
+   referenced line (4 lines of context above and below). Used for hover previews."
+  [{:keys [*session path-params]}]
+  (let [node-path (first path-params)]
+    (if-let [[file-path line resolved] (resolve-trace-source @*session node-path)]
+      (let [raw-lines (read-source-lines resolved)
+            context 4
+            start (max 0 (- line context 1))
+            end (min (count raw-lines) (+ line context))
+            window (subvec raw-lines start end)
+            lines (map-indexed
+                   (fn [idx text]
+                     (let [n (+ start idx 1)]
+                       {:number n
+                        :text text
+                        :highlighted (= n line)}))
+                   window)]
+        {:status 200
+         :headers {"Content-Type" "text/html"}
+         :body (s/render-file "skein/source-preview.html"
+                              {:file-path file-path
+                               :line line
+                               :lines lines})})
+      {:status 404
+       :headers {"Content-Type" "text/plain"}
+       :body "Source not found"})))
 
 (defn- toggle-lock-knot
   "Toggles the locked state of the specified knot."
@@ -657,6 +695,9 @@
 
    "POST /action/trace/*" req
    (trace-knot req)
+
+   "GET /action/source-preview/*" req
+   (source-preview req)
 
    "GET /action/source/**" req
    (view-source req)
