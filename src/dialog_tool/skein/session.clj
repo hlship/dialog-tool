@@ -288,3 +288,26 @@
 (defn get-knot
   [session id]
   (-> session :tree (tree/get-knot id)))
+
+(defn trace-command!
+  "Replays to the parent of the given knot, then executes the knot's command
+   with tracing enabled. Returns [trace-response session'] where trace-response
+   is the raw response containing trace lines. The tree's response for the knot
+   is NOT updated (since it contains trace noise).
+   
+   Only works with the dgdebug engine."
+  [session knot-id]
+  (let [{:keys [tree]} session
+        {:keys [command parent-id]} (tree/get-knot tree knot-id)
+        ;; Replay to parent (may restart process)
+        session' (do-replay-to! session parent-id)
+        process (:process session')
+        ;; Enable tracing, execute command, disable tracing
+        _ (sk.process/send-command! process "(trace on)")
+        trace-response (sk.process/send-command! process command)
+        _ (sk.process/send-command! process "(trace off)")
+        ;; Update position and capture dynamic state
+        session'' (-> session'
+                      (assoc :active-knot-id knot-id)
+                      capture-dynamic)]
+    [trace-response session'']))

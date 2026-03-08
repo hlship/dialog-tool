@@ -7,11 +7,16 @@
             [clojure.string :as string]
             [selmer.parser :as s]
             [dialog-tool.skein.session :as session]
+            [dialog-tool.skein.trace :as trace]
+            [dialog-tool.skein.syntax :as syntax]
             [dialog-tool.skein.ui.modals :as modals]
             [dialog-tool.skein.tree :as tree]
+            [dialog-tool.skein.ui.trace-view :as trace-view]
             [dialog-tool.skein.ui.app :as ui.app]
             [dialog-tool.skein.ui.utils :as utils]
             [dialog-tool.env :as env]
+            [dialog-tool.project-file :as pf]
+            [babashka.fs :as fs]
             [clj-commons.ansi :refer [pout]]
             [starfederation.datastar.clojure.adapter.http-kit2 :as hk-gen]))
 
@@ -264,7 +269,7 @@
 (defn- dismiss-modal
   "Dismisses any open modal by clearing the modal-container."
   [{:keys [*session]}]
-  (swap! *session dissoc :continue)
+  (swap! *session dissoc :continue :trace)
   {:status 200
    :body (html [:div#modal-container])})
 
@@ -347,6 +352,169 @@
     {:status 200
      :body (html
             (modals/dynamic-state trimmed))}))
+
+(defn- render-trace-modal
+  "Renders the full trace modal from the current session's :trace state."
+  [request]
+  (let [{:keys [*session]} request
+        trace-state (:trace @*session)]
+    {:status 200
+     :body (html (modals/trace-modal trace-state))}))
+
+(defn- render-trace-results
+  "Renders just the trace results area (for search/toggle/expand/collapse updates
+   that should not disturb the search input or modal chrome)."
+  [request]
+  (let [{:keys [*session]} request
+        trace-state (:trace @*session)]
+    {:status 200
+     :body (html (trace-view/render-trace-results trace-state))}))
+
+(defn- trace-knot
+  "Runs the knot's command with tracing enabled and displays the trace modal."
+  [{:keys [*session] :as request}]
+  (swap! *session session/check-for-changed-sources)
+  (let [id (knot-id request)
+        command (:command (session/get-knot @*session id))
+        [trace-response session'] (session/trace-command! @*session id)
+        _ (reset! *session session')
+        parsed (trace/parse-trace trace-response)
+        tree (trace/build-tree parsed)
+        trace-state {:tree tree
+                     :expanded #{}
+                     :search ""
+                     :node-count (trace/count-nodes tree)
+                     :command command}]
+    (swap! *session assoc :trace trace-state)
+    (render-trace-modal request)))
+
+(defn- trace-toggle
+  "Toggles a node's expanded/collapsed state in the trace tree."
+  [{:keys [*session] :as request}]
+  (let [path (-> request :path-params first)]
+    (swap! *session update-in [:trace :expanded]
+           (fn [expanded]
+             (if (contains? expanded path)
+               (disj expanded path)
+               (conj (or expanded #{}) path))))
+    (render-trace-results request)))
+
+(defn- trace-search
+  "Updates the search term and expands paths to matching nodes."
+  [{:keys [*session signals] :as request}]
+  (let [{:keys [traceSearch]} signals
+        search (or traceSearch "")]
+    (swap! *session
+           (fn [session]
+             (let [tree (get-in session [:trace :tree])
+                   expanded (if (string/blank? search)
+                              #{}
+                              (let [marked (trace/search-tree tree search)]
+                                (trace-view/collect-matching-paths marked)))]
+               (-> session
+                   (assoc-in [:trace :search] search)
+                   (assoc-in [:trace :expanded] expanded)))))
+    (render-trace-results request)))
+
+(defn- trace-expand-all
+  "Expands all nodes in the trace tree."
+  [{:keys [*session] :as request}]
+  (let [tree (get-in @*session [:trace :tree])
+        all-paths (trace-view/collect-all-paths tree)]
+    (swap! *session assoc-in [:trace :expanded] all-paths)
+    (render-trace-results request)))
+
+(defn- trace-collapse-all
+  "Collapses all nodes in the trace tree."
+  [{:keys [*session] :as request}]
+  (swap! *session assoc-in [:trace :expanded] #{})
+  (render-trace-results request))
+
+(defn- resolve-trace-source
+  "Given the session and a node path string, resolves the trace node's source
+   to a [file-path line resolved-path] triple, or nil if the node or source
+   can't be found."
+  [session node-path]
+  (let [tree (get-in session [:trace :tree])
+        node (when tree (trace/get-node tree node-path))
+        [file-path line] (when node (trace/parse-source (:source node)))]
+    (when file-path
+      (let [project (-> session :process :project)
+            root-dir (pf/root-dir project)
+            resolved (fs/path root-dir file-path)]
+        (when (fs/exists? resolved)
+          [file-path line resolved])))))
+
+(defn- read-source-lines
+  "Reads a source file and returns a vector of text lines (trailing empty line stripped)."
+  [resolved-path]
+  (let [content (slurp (str resolved-path))
+        raw-lines (string/split content #"\n" -1)]
+    (if (and (> (count raw-lines) 1)
+             (= "" (peek raw-lines)))
+      (pop (vec raw-lines))
+      (vec raw-lines))))
+
+(defn- view-source
+  "Serves a standalone HTML page displaying a Dialog source file with line numbers.
+   The node path (e.g. \"0.2.1\") comes from path-params and identifies a node in
+   the current trace tree. The node's :source field is parsed to get the file path
+   and line number."
+  [{:keys [*session path-params]}]
+  (let [node-path (first path-params)]
+    (if-let [[file-path line resolved] (resolve-trace-source @*session node-path)]
+      (let [raw-lines (read-source-lines resolved)
+            dg? (string/ends-with? file-path ".dg")
+            lines (map-indexed
+                   (fn [idx text]
+                     (let [n (inc idx)]
+                       {:number n
+                        :text (if dg?
+                                (syntax/highlight-line text)
+                                (syntax/html-escape text))
+                        :highlighted (= n line)}))
+                   raw-lines)]
+        {:status 200
+         :headers {"Content-Type" "text/html"}
+         :body (s/render-file "skein/source.html"
+                              {:file-path file-path
+                               :line line
+                               :line-count (count raw-lines)
+                               :lines lines})})
+      {:status 404
+       :headers {"Content-Type" "text/plain"}
+       :body "Source not found"})))
+
+(defn- source-preview
+  "Returns an HTML fragment showing a small window of source code around the
+   referenced line (4 lines of context above and below). Used for hover previews."
+  [{:keys [*session path-params]}]
+  (let [node-path (first path-params)]
+    (if-let [[file-path line resolved] (resolve-trace-source @*session node-path)]
+      (let [raw-lines (read-source-lines resolved)
+            dg? (string/ends-with? file-path ".dg")
+            context 4
+            start (max 0 (- line context 1))
+            end (min (count raw-lines) (+ line context))
+            window (subvec raw-lines start end)
+            lines (map-indexed
+                   (fn [idx text]
+                     (let [n (+ start idx 1)]
+                       {:number n
+                        :text (if dg?
+                                (syntax/highlight-line text)
+                                (syntax/html-escape text))
+                        :highlighted (= n line)}))
+                   window)]
+        {:status 200
+         :headers {"Content-Type" "text/html"}
+         :body (s/render-file "skein/source-preview.html"
+                              {:file-path file-path
+                               :line line
+                               :lines lines})})
+      {:status 404
+       :headers {"Content-Type" "text/plain"}
+       :body "Source not found"})))
 
 (defn- toggle-lock-knot
   "Toggles the locked state of the specified knot."
@@ -519,6 +687,27 @@
 
    "GET /action/dynamic/*" req
    (show-dynamic-state req)
+
+   "POST /action/trace/toggle/*" req
+   (trace-toggle req)
+
+   "POST /action/trace/search" req
+   (trace-search req)
+
+   "POST /action/trace/expand-all" req
+   (trace-expand-all req)
+
+   "POST /action/trace/collapse-all" req
+   (trace-collapse-all req)
+
+   "POST /action/trace/*" req
+   (trace-knot req)
+
+   "GET /action/source-preview/*" req
+   (source-preview req)
+
+   "GET /action/source/**" req
+   (view-source req)
 
    "GET /**" [path]
     ;; During local development, generated-resources/public/style.css will come from here

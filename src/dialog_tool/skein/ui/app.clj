@@ -162,7 +162,7 @@
         (count children)])]))
 
 (defn- render-knot
-  [tree knot {:keys [debug-enabled? fixed-width?]}]
+  [tree knot {:keys [debug-enabled? show-dynamic? fixed-width?]}]
   (let [{:keys [id label response unblessed status children dynamic-response locked]} knot
         border-class (status->border-class status)
         disable-bless? (= :ok status)
@@ -193,6 +193,10 @@
                           :disabled (nil? dynamic-response)}
          "Dynamic State ..."
          "Show full dynamic state"]
+        (when (and debug-enabled? (not root?))
+          [dropdown/button {:data-on:click (str "@post('/action/trace/" id "')")}
+           "Trace ..."
+           "Trace command execution"])
         (when-not root?
           [:<>
            [dropdown/button {:data-on:click (str "@get('/action/edit-label/" id "')")}
@@ -211,7 +215,7 @@
        (render-children-navigation tree knot)]
       [render-diff response unblessed]
       [:hr.clear-right.text-stone-200]
-      (when (and debug-enabled?
+      (when (and debug-enabled? show-dynamic?
                  (not= 0 id))
         [render-dynamic tree knot])]]))
 
@@ -231,7 +235,8 @@
                             [navbar session]
                             [:div.container.mx-lg.mx-auto.mt-16
                              (map (fn [knot]
-                                    (render-knot tree knot {:debug-enabled? (and debug-enabled? show-dynamic?)
+                                    (render-knot tree knot {:debug-enabled? debug-enabled?
+                                                            :show-dynamic? show-dynamic?
                                                             :fixed-width? fixed-width?}))
                                   knots)
                              [new-command/new-command-input (:id leaf-knot)]]])

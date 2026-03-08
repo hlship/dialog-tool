@@ -1,0 +1,428 @@
+> i
+| 3 FOUND (get input [i]) ../lib/dialog/stdlib.dg:4888
+| 3 QUERY ([i] = [* | $]) ../lib/dialog/stdlib.dg:4893
+| 2 FOUND (prompt and input [i]) ../lib/dialog/stdlib.dg:4877
+| 2 QUERY (parse commandline [i] with choices []) ../lib/dialog/stdlib.dg:4880
+| 3 ENTER (parse commandline [i] with choices []) ../lib/dialog/stdlib.dg:5767
+| 3 QUERY (save undo 1) ../lib/dialog/stdlib.dg:5769
+| 3 QUERY (nonempty []) ../lib/dialog/stdlib.dg:5775
+| 3 NOW ~(allowing parse errors) ../lib/dialog/stdlib.dg:5782
+| 3 QUERY (parse action sequence [i]) ../lib/dialog/stdlib.dg:5783
+| 4 ENTER (parse action sequence [i]) ../lib/dialog/stdlib.dg:5788
+| 4 QUERY (split [i] by [. ; then] into $ and $) ../lib/dialog/stdlib.dg:5789
+| 4 QUERY (parse action [i]) ../lib/dialog/stdlib.dg:5794
+| 5 ENTER (parse action [i]) ../lib/dialog/stdlib.dg:5801
+| 5 QUERY (current player $) ../lib/dialog/stdlib.dg:5803
+| 5 FOUND (current player #player) ../lib/dialog/stdlib.dg:5803
+| 5 NOW (current actor #player) ../lib/dialog/stdlib.dg:5804
+| 5 QUERY ([i] = [$]) ../lib/dialog/stdlib.dg:5810
+| 5 FOUND ([i] = [i]) ../lib/dialog/stdlib.dg:5810
+| 5 QUERY (@i is one of [again g]) ../lib/dialog/stdlib.dg:5811
+| 5 QUERY ([i] = [oops $]) ../lib/dialog/stdlib.dg:5815
+| 5 NOW (last command was [i]) ../lib/dialog/stdlib.dg:5827
+| 5 QUERY (rewrite [i] into $) ../lib/dialog/stdlib.dg:5828
+| 6 ENTER (rewrite [i] into [i]) ../lib/dialog/stdlib.dg:5194
+| 5 FOUND (rewrite [i] into [i]) ../lib/dialog/stdlib.dg:5828
+| 5 NOW ~(head noun is required) ../lib/dialog/stdlib.dg:5833
+| 5 QUERY *(understand [i] as $) ../lib/dialog/stdlib.dg:5835
+| 6 ENTER (understand [i] as $) ../lib/ext/tc.dg:631
+| 6 QUERY (conversation partner $) ../lib/ext/tc.dg:632
+| 6 ENTER (understand [i] as $) ../lib/dialog/stdlib.dg:3282
+| 6 QUERY *(grammar entry @i $ $) ../lib/dialog/stdlib.dg:3283
+| 7 ENTER (grammar entry @i [] [inventory]) ../lib/dialog/stdlib.dg:1523
+| 6 FOUND (grammar entry @i [] [inventory]) ../lib/dialog/stdlib.dg:3283
+| 6 QUERY *(match grammar [] against [] into $) ../lib/dialog/stdlib.dg:3284
+| 7 ENTER (match grammar [] against [] into []) ../lib/dialog/stdlib.dg:3293
+| 6 FOUND (match grammar [] against [] into []) ../lib/dialog/stdlib.dg:3284
+| 6 QUERY (populate template [inventory] with []) ../lib/dialog/stdlib.dg:3285
+| 7 ENTER (populate template [inventory] with []) ../lib/dialog/stdlib.dg:3354
+| 7 QUERY (fully bound @inventory) ../lib/dialog/stdlib.dg:3354
+| 7 FOUND (fully bound @inventory) ../lib/dialog/stdlib.dg:3354
+| 7 QUERY (populate template [] with []) ../lib/dialog/stdlib.dg:3355
+| 8 ENTER (populate template [] with []) ../lib/dialog/stdlib.dg:3353
+| 7 FOUND (populate template [] with []) ../lib/dialog/stdlib.dg:3355
+| 6 FOUND (populate template [inventory] with []) ../lib/dialog/stdlib.dg:3285
+| 5 FOUND (understand [i] as [inventory]) ../lib/dialog/stdlib.dg:5835
+| 6 ENTER (understand [i] as $) ../lib/dialog/stdlib.dg:3287
+| 6 QUERY *(grammar entry @i $ $ reversed) ../lib/dialog/stdlib.dg:3288
+| 6 ENTER (understand [i] as [go $]) ../lib/dialog/stdlib.dg:3366
+| 6 QUERY *(understand [i] as direction $) ../lib/dialog/stdlib.dg:3368
+| 7 ENTER (understand [i] as direction $) ../lib/dialog/stdlib.dg:5204
+| 7 QUERY (parse direction list [i] $) ../lib/dialog/stdlib.dg:5205
+| 8 ENTER (parse direction list [i] [$ | $]) ../lib/dialog/stdlib.dg:5212
+| 8 QUERY *(split [i] by [, and] into $ and $) ../lib/dialog/stdlib.dg:5213
+| 8 ENTER (parse direction list [i] [$]) ../lib/dialog/stdlib.dg:5218
+| 8 QUERY *(parse direction [i] $) ../lib/dialog/stdlib.dg:5219
+| 9 ENTER (parse direction [i] $) ../lib/dialog/stdlib.dg:5229
+| 9 QUERY (nonempty [i]) ../lib/dialog/stdlib.dg:5230
+| 9 FOUND (nonempty [i]) ../lib/dialog/stdlib.dg:5230
+| 6 ENTER (understand [i] as [tell $ to | $]) ../lib/dialog/stdlib.dg:3370
+| 6 QUERY *(split [i] by [,] into $ and $) ../lib/dialog/stdlib.dg:3371
+| 6 ENTER (understand [i] as $) ../lib/dialog/stdlib.dg:3383
+| 6 QUERY (implicit action is $) ../lib/dialog/stdlib.dg:3384
+| 6 ENTER (understand [i] as [i]) ../lib/dialog/stdlib.dg:3407
+| 6 QUERY (understand [i]) ../lib/dialog/stdlib.dg:3408
+| 5 QUERY (remove duplicates [[inventory]] $) ../lib/dialog/stdlib.dg:5840
+| 6 ENTER (remove duplicates [[inventory]] $) ../lib/dialog/stdlib.dg:6451
+| 6 QUERY ([inventory] is one of []) ../lib/dialog/stdlib.dg:6452
+| 6 ENTER (remove duplicates [[inventory]] [[inventory] | $]) ../lib/dialog/stdlib.dg:6455
+| 6 QUERY (remove duplicates [] $) ../lib/dialog/stdlib.dg:6456
+| 7 ENTER (remove duplicates [] []) ../lib/dialog/stdlib.dg:6449
+| 6 FOUND (remove duplicates [] []) ../lib/dialog/stdlib.dg:6456
+| 5 FOUND (remove duplicates [[inventory]] [[inventory]]) ../lib/dialog/stdlib.dg:5840
+| 5 QUERY ([[inventory]] = [$]) ../lib/dialog/stdlib.dg:5841
+| 5 FOUND ([[inventory]] = [[inventory]]) ../lib/dialog/stdlib.dg:5841
+| 5 QUERY (try-complex [inventory]) ../lib/dialog/stdlib.dg:5843
+| 6 ENTER (try-complex [inventory]) ../lib/dialog/stdlib.dg:3544
+| 6 QUERY (action [inventory] preserves the question) ../lib/dialog/stdlib.dg:3545
+| 7 ENTER (action [inventory] preserves the question) ../lib/dialog/stdlib.dg:6137
+| 6 FOUND (action [inventory] preserves the question) ../lib/dialog/stdlib.dg:3545
+| 6 QUERY (allowed action [inventory]) ../lib/dialog/stdlib.dg:3549
+| 7 ENTER (allowed action [inventory]) ../lib/dialog/stdlib.dg:5732
+| 7 QUERY (current node $) ../lib/dialog/stdlib.dg:5732
+| 6 FOUND (allowed action [inventory]) ../lib/dialog/stdlib.dg:3549
+| 6 QUERY ([] is one of [inventory]) ../lib/dialog/stdlib.dg:3552
+| 6 QUERY (strip decorations from [inventory] into $) ../lib/dialog/stdlib.dg:3556
+| 7 ENTER (strip decorations from [inventory] into [inventory | $]) ../lib/dialog/stdlib.dg:3680
+| 7 QUERY (strip decorations from [] into $) ../lib/dialog/stdlib.dg:3681
+| 8 ENTER (strip decorations from [] into []) ../lib/dialog/stdlib.dg:3671
+| 7 FOUND (strip decorations from [] into []) ../lib/dialog/stdlib.dg:3681
+| 6 FOUND (strip decorations from [inventory] into [inventory]) ../lib/dialog/stdlib.dg:3556
+| 6 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:3560
+| 6 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:3560
+| 6 QUERY (nonempty @inventory) ../lib/dialog/stdlib.dg:3562
+| 6 QUERY (object @inventory) ../lib/dialog/stdlib.dg:3564
+| 6 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:3572
+| 6 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:3572
+| 6 QUERY (nonempty @inventory) ../lib/dialog/stdlib.dg:3572
+| 6 QUERY (try regrouped [inventory]) ../lib/dialog/stdlib.dg:3597
+| 7 ENTER (try regrouped [inventory]) ../lib/dialog/stdlib.dg:3601
+| 7 QUERY *([inventory] recursively contains $) ../lib/dialog/stdlib.dg:3603
+| 8 ENTER ([inventory] recursively contains $) ../lib/dialog/stdlib.dg:6493
+| 8 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:6494
+| 8 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:6494
+| 8 QUERY (@inventory = $) ../lib/dialog/stdlib.dg:6496
+| 8 FOUND (@inventory = @inventory) ../lib/dialog/stdlib.dg:6496
+| 7 FOUND ([inventory] recursively contains @inventory) ../lib/dialog/stdlib.dg:3603
+| 7 QUERY (object @inventory) ../lib/dialog/stdlib.dg:3604
+| 8 QUERY (nonempty @inventory) ../lib/dialog/stdlib.dg:6498
+| 7 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:3608
+| 7 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:3608
+| 7 QUERY (nonempty @inventory) ../lib/dialog/stdlib.dg:3609
+| 7 QUERY (try [inventory]) ../lib/dialog/stdlib.dg:3613
+| 8 ENTER (try [inventory]) ../lib/dialog/stdlib.dg:3488
+| 8 QUERY (tracing actions) ../lib/dialog/stdlib.dg:3489
+| 8 QUERY (refuse [inventory]) ../lib/dialog/stdlib.dg:3492
+| 9 ENTER (refuse [inventory]) ../lib/dialog/stdlib.dg:3510
+| 9 QUERY *(action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3511
+|10 ENTER (action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3518
+|10 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|10 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|10 QUERY (object @inventory) ../lib/dialog/stdlib.dg:3520
+| 9 ENTER (refuse [inventory]) ../lib/dialog/stdlib.dg:3514
+| 9 QUERY *(action [inventory] requires $ to be touched) ../lib/dialog/stdlib.dg:3515
+|10 ENTER (action [inventory] requires $ to be touched) ../lib/dialog/stdlib.dg:3524
+|10 QUERY *(action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3525
+|11 ENTER (action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3518
+|11 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|11 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|11 QUERY (object @inventory) ../lib/dialog/stdlib.dg:3520
+| 8 QUERY *(before [inventory]) ../lib/dialog/stdlib.dg:3493
+| 8 QUERY (refuse [inventory]) ../lib/dialog/stdlib.dg:3494
+| 9 ENTER (refuse [inventory]) ../lib/dialog/stdlib.dg:3510
+| 9 QUERY *(action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3511
+|10 ENTER (action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3518
+|10 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|10 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|10 QUERY (object @inventory) ../lib/dialog/stdlib.dg:3520
+| 9 ENTER (refuse [inventory]) ../lib/dialog/stdlib.dg:3514
+| 9 QUERY *(action [inventory] requires $ to be touched) ../lib/dialog/stdlib.dg:3515
+|10 ENTER (action [inventory] requires $ to be touched) ../lib/dialog/stdlib.dg:3524
+|10 QUERY *(action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3525
+|11 ENTER (action [inventory] requires $ to be present) ../lib/dialog/stdlib.dg:3518
+|11 QUERY *($ is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|11 FOUND (@inventory is one of [inventory]) ../lib/dialog/stdlib.dg:3519
+|11 QUERY (object @inventory) ../lib/dialog/stdlib.dg:3520
+| 8 QUERY (instead of [inventory]) ../lib/dialog/stdlib.dg:3495
+| 9 ENTER (instead of [inventory]) ../lib/dialog/stdlib.dg:3529
+| 9 QUERY (prevent [inventory]) ../lib/dialog/stdlib.dg:3530
+| 9 QUERY (perform [inventory]) ../lib/dialog/stdlib.dg:3531
+|10 ENTER (perform [inventory]) ../lib/dialog/stdlib.dg:1529
+|10 QUERY (current player $) ../lib/dialog/stdlib.dg:1530
+|10 FOUND (current player #player) ../lib/dialog/stdlib.dg:1530
+|10 QUERY *($ has parent #player) ../lib/dialog/stdlib.dg:1531
+|10 QUERY *($ is worn by #player top-down) ../lib/dialog/stdlib.dg:1532
+|11 ENTER ($ is worn by #player top-down) ../lib/dialog/stdlib.dg:6365
+|11 QUERY *($ has parent #player) ../lib/dialog/stdlib.dg:6366
+|10 QUERY (empty []) ../lib/dialog/stdlib.dg:1533
+|10 FOUND (empty []) ../lib/dialog/stdlib.dg:1533
+|10 QUERY (narrate holding nothing) ../lib/dialog/stdlib.dg:1534
+|11 ENTER (narrate holding nothing) ../lib/dialog/stdlib.dg:1545
+You have no possessions.
+|10 FOUND (narrate holding nothing) ../lib/dialog/stdlib.dg:1534
+|10 QUERY (empty []) ../lib/dialog/stdlib.dg:1538
+|10 FOUND (empty []) ../lib/dialog/stdlib.dg:1538
+|10 QUERY (narrate wearing nothing) ../lib/dialog/stdlib.dg:1539
+|11 ENTER (narrate wearing nothing) ../lib/dialog/stdlib.dg:1548
+|10 FOUND (narrate wearing nothing) ../lib/dialog/stdlib.dg:1539
+| 9 FOUND (perform [inventory]) ../lib/dialog/stdlib.dg:3531
+| 9 QUERY *(after [inventory]) ../lib/dialog/stdlib.dg:3532
+|10 ENTER (after [inventory]) ../lib/ext/tutorial-mode.dg:85
+|10 QUERY (suggestion $ was just performed) ../lib/ext/tutorial-mode.dg:86
+|10 QUERY *(tutorial suggestion $) ../lib/ext/tutorial-mode.dg:87
+|11 ENTER (tutorial suggestion #inventory) ../lib/ext/tutorial-mode-standard-actions.dg:5
+|10 FOUND (tutorial suggestion #inventory) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#inventory has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#inventory has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #examine-something) ../lib/ext/tutorial-mode-standard-actions.dg:13
+|10 FOUND (tutorial suggestion #examine-something) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#examine-something has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#examine-something has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #look-self) ../lib/ext/tutorial-mode-standard-actions.dg:32
+|10 FOUND (tutorial suggestion #look-self) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#look-self has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#look-self has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #take-something) ../lib/ext/tutorial-mode-standard-actions.dg:43
+|10 FOUND (tutorial suggestion #take-something) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#take-something has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#take-something has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #drop-something) ../lib/ext/tutorial-mode-standard-actions.dg:62
+|10 FOUND (tutorial suggestion #drop-something) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#drop-something has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#drop-something has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #wear-some-clothing) ../lib/ext/tutorial-mode-standard-actions.dg:74
+|10 FOUND (tutorial suggestion #wear-some-clothing) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#wear-some-clothing has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#wear-some-clothing has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #go-somewhere) ../lib/ext/tutorial-mode-standard-actions.dg:93
+|10 FOUND (tutorial suggestion #go-somewhere) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#go-somewhere has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#go-somewhere has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #ask-for-exits) ../lib/ext/tutorial-mode-standard-actions.dg:130
+|10 FOUND (tutorial suggestion #ask-for-exits) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#ask-for-exits has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#ask-for-exits has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #enter-something) ../lib/ext/tutorial-mode-standard-actions.dg:139
+|10 FOUND (tutorial suggestion #enter-something) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#enter-something has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#enter-something has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #climb-something) ../lib/ext/tutorial-mode-standard-actions.dg:156
+|10 FOUND (tutorial suggestion #climb-something) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#climb-something has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#climb-something has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #enter-conversation) ../lib/ext/tutorial-mode-tc.dg:2
+|10 FOUND (tutorial suggestion #enter-conversation) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#enter-conversation has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#enter-conversation has been suggested) ../lib/ext/tutorial-mode.dg:91
+|11 ENTER (tutorial suggestion #make-conversation) ../lib/ext/tutorial-mode-tc.dg:20
+|10 FOUND (tutorial suggestion #make-conversation) ../lib/ext/tutorial-mode.dg:87
+|10 QUERY (#make-conversation has been performed) ../lib/ext/tutorial-mode.dg:88
+|10 QUERY (#make-conversation has been suggested) ../lib/ext/tutorial-mode.dg:91
+| 8 FOUND (instead of [inventory]) ../lib/dialog/stdlib.dg:3495
+| 7 FOUND (try [inventory]) ../lib/dialog/stdlib.dg:3613
+| 7 QUERY (command [inventory]) ../lib/dialog/stdlib.dg:3615
+| 7 QUERY (tick) ../lib/dialog/stdlib.dg:3616
+| 8 ENTER (tick) ../lib/dialog/stdlib.dg:3792
+| 8 QUERY (inhibiting next tick) ../lib/dialog/stdlib.dg:3793
+| 8 QUERY (update environment around player) ../lib/dialog/stdlib.dg:3796
+| 9 ENTER (update environment around player) ../lib/dialog/stdlib.dg:706
+| 9 QUERY (current player $) ../lib/dialog/stdlib.dg:707
+| 9 FOUND (current player #player) ../lib/dialog/stdlib.dg:707
+| 9 QUERY (#player is in room $) ../lib/dialog/stdlib.dg:707
+|10 ENTER (#player is in room #player) ../lib/dialog/stdlib.dg:6262
+|10 QUERY (room #player) ../lib/dialog/stdlib.dg:6262
+|10 ENTER (#player is in room $) ../lib/dialog/stdlib.dg:6264
+|10 QUERY (#player has parent $) ../lib/dialog/stdlib.dg:6265
+|10 FOUND (#player has parent #office) ../lib/dialog/stdlib.dg:6265
+|10 QUERY (#office is in room $) ../lib/dialog/stdlib.dg:6266
+|11 ENTER (#office is in room #office) ../lib/dialog/stdlib.dg:6262
+|11 QUERY (room #office) ../lib/dialog/stdlib.dg:6262
+|11 FOUND (room #office) ../lib/dialog/stdlib.dg:6262
+|10 FOUND (#office is in room #office) ../lib/dialog/stdlib.dg:6266
+| 9 FOUND (#player is in room #office) ../lib/dialog/stdlib.dg:707
+| 9 NOW (current room #office) ../lib/dialog/stdlib.dg:708
+| 9 QUERY (recompute visibility) ../lib/dialog/stdlib.dg:713
+|10 ENTER (recompute visibility) ../lib/dialog/stdlib.dg:485
+|10 QUERY (current player $) ../lib/dialog/stdlib.dg:486
+|10 FOUND (current player #player) ../lib/dialog/stdlib.dg:486
+|10 QUERY (visibility ceiling of #player is $) ../lib/dialog/stdlib.dg:487
+|11 ENTER (visibility ceiling of #player is $) ../lib/dialog/stdlib.dg:455
+|11 QUERY (#player has parent $) ../lib/dialog/stdlib.dg:456
+|11 FOUND (#player has parent #office) ../lib/dialog/stdlib.dg:456
+|11 QUERY (visibility ceiling of #office is $) ../lib/dialog/stdlib.dg:468
+|12 ENTER (visibility ceiling of #office is $) ../lib/dialog/stdlib.dg:455
+|12 QUERY (#office has parent $) ../lib/dialog/stdlib.dg:456
+|12 QUERY ($ = #office) ../lib/dialog/stdlib.dg:471
+|12 FOUND (#office = #office) ../lib/dialog/stdlib.dg:471
+|11 FOUND (visibility ceiling of #office is #office) ../lib/dialog/stdlib.dg:468
+|10 FOUND (visibility ceiling of #player is #office) ../lib/dialog/stdlib.dg:487
+|10 QUERY (light reaches ceiling #office) ../lib/dialog/stdlib.dg:488
+|11 ENTER (light reaches ceiling #office) ../lib/dialog/stdlib.dg:476
+|11 QUERY (room #office) ../lib/dialog/stdlib.dg:476
+|11 FOUND (room #office) ../lib/dialog/stdlib.dg:476
+|10 FOUND (light reaches ceiling #office) ../lib/dialog/stdlib.dg:488
+|10 NOW (current scope ceiling #office) ../lib/dialog/stdlib.dg:489
+|10 NOW (player can see) ../lib/dialog/stdlib.dg:490
+| 9 FOUND (recompute visibility) ../lib/dialog/stdlib.dg:713
+| 9 QUERY (#office is visited) ../lib/dialog/stdlib.dg:714
+| 9 FOUND (#office is visited) ../lib/dialog/stdlib.dg:714
+| 8 FOUND (update environment around player) ../lib/dialog/stdlib.dg:3796
+| 8 QUERY *(on every tick) ../lib/dialog/stdlib.dg:3798
+| 9 ENTER (on every tick) ../lib/ext/scenes.dg:40
+| 9 QUERY (identify completed scenes) ../lib/ext/scenes.dg:41
+|10 ENTER (identify completed scenes) ../lib/ext/scenes.dg:45
+|10 QUERY *(scene $) ../lib/ext/scenes.dg:47
+|11 ENTER (scene #penny-dropped) penny.dg:60
+|10 FOUND (scene #penny-dropped) ../lib/ext/scenes.dg:47
+|10 QUERY (#penny-dropped in progress) ../lib/ext/scenes.dg:48
+|11 ENTER (scene #the-beat) penny.dg:73
+|10 FOUND (scene #the-beat) ../lib/ext/scenes.dg:47
+|10 QUERY (#the-beat in progress) ../lib/ext/scenes.dg:48
+| 9 FOUND (identify completed scenes) ../lib/ext/scenes.dg:41
+| 9 QUERY (tick scenes in progress) ../lib/ext/scenes.dg:42
+|10 ENTER (tick scenes in progress) ../lib/ext/scenes.dg:59
+|10 QUERY *(scene $) ../lib/ext/scenes.dg:61
+|11 ENTER (scene #penny-dropped) penny.dg:60
+|10 FOUND (scene #penny-dropped) ../lib/ext/scenes.dg:61
+|10 QUERY (#penny-dropped in progress) ../lib/ext/scenes.dg:62
+|11 ENTER (scene #the-beat) penny.dg:73
+|10 FOUND (scene #the-beat) ../lib/ext/scenes.dg:61
+|10 QUERY (#the-beat in progress) ../lib/ext/scenes.dg:62
+| 9 FOUND (tick scenes in progress) ../lib/ext/scenes.dg:42
+| 9 QUERY (identify starting scenes) ../lib/ext/scenes.dg:43
+|10 ENTER (identify starting scenes) ../lib/ext/scenes.dg:70
+|10 QUERY *(scene $) ../lib/ext/scenes.dg:72
+|11 ENTER (scene #penny-dropped) penny.dg:60
+|10 FOUND (scene #penny-dropped) ../lib/ext/scenes.dg:72
+|10 QUERY (ready to start scene #penny-dropped) ../lib/ext/scenes.dg:73
+|11 ENTER (ready to start scene #penny-dropped) ../lib/ext/scenes.dg:85
+|11 QUERY (#penny-dropped in progress) ../lib/ext/scenes.dg:86
+|11 QUERY (#penny-dropped has completed) ../lib/ext/scenes.dg:87
+|10 FOUND (ready to start scene #penny-dropped) ../lib/ext/scenes.dg:73
+|10 QUERY (start #penny-dropped) ../lib/ext/scenes.dg:74
+|11 ENTER (start #penny-dropped) penny.dg:62
+|11 QUERY *(#penny has parent #office) penny.dg:63
+|11 ENTER (scene #the-beat) penny.dg:73
+|10 FOUND (scene #the-beat) ../lib/ext/scenes.dg:72
+|10 QUERY (ready to start scene #the-beat) ../lib/ext/scenes.dg:73
+|11 ENTER (ready to start scene #the-beat) ../lib/ext/scenes.dg:85
+|11 QUERY (#the-beat in progress) ../lib/ext/scenes.dg:86
+|11 QUERY (#the-beat has completed) ../lib/ext/scenes.dg:87
+|10 FOUND (ready to start scene #the-beat) ../lib/ext/scenes.dg:73
+|10 QUERY (start #the-beat) ../lib/ext/scenes.dg:74
+|11 ENTER (start #the-beat) penny.dg:74
+|11 QUERY (#metronome is active) penny.dg:75
+| 9 FOUND (identify starting scenes) ../lib/ext/scenes.dg:43
+| 8 FOUND (on every tick) ../lib/dialog/stdlib.dg:3798
+| 9 ENTER (on every tick) ../lib/ext/tc.dg:345
+| 9 NOW ~($ has spoken this tick) ../lib/ext/tc.dg:348
+| 9 QUERY (conversation partner $) ../lib/ext/tc.dg:349
+| 9 ENTER (on every tick) ../lib/ext/tc.dg:412
+| 9 QUERY (rebuild discussable quips) ../lib/ext/tc.dg:413
+|10 ENTER (rebuild discussable quips) ../lib/ext/tc.dg:415
+|10 NOW (discussable quips []) ../lib/ext/tc.dg:416
+|10 QUERY (conversation partner $) ../lib/ext/tc.dg:417
+| 9 ENTER (on every tick) ../lib/ext/tc.dg:427
+| 9 QUERY (current quip $) ../lib/ext/tc.dg:428
+| 9 ENTER (on every tick) ../lib/ext/tc.dg:440
+| 9 NOW ~(last action was conversationally active) ../lib/ext/tc.dg:441
+| 8 FOUND (on every tick) ../lib/dialog/stdlib.dg:3798
+| 9 ENTER (on every tick) ../lib/dialog/stdlib.dg:3804
+| 9 QUERY (current room $) ../lib/dialog/stdlib.dg:3805
+| 9 FOUND (current room #office) ../lib/dialog/stdlib.dg:3805
+| 9 QUERY *(on every tick in #office) ../lib/dialog/stdlib.dg:3806
+| 9 ENTER (on every tick) ../lib/dialog/stdlib.dg:3808
+| 9 QUERY (narrator's it is protected) ../lib/dialog/stdlib.dg:3809
+| 9 QUERY (player's it refers to $) ../lib/dialog/stdlib.dg:3811
+| 8 FOUND (on every tick) ../lib/dialog/stdlib.dg:3798
+| 8 QUERY *(late on every tick) ../lib/dialog/stdlib.dg:3799
+| 9 ENTER (late on every tick) ../lib/ext/tc.dg:445
+| 9 QUERY (inhibit conversation suggestions) ../lib/ext/tc.dg:448
+| 9 QUERY (discussable quips $) ../lib/ext/tc.dg:452
+| 9 FOUND (discussable quips []) ../lib/ext/tc.dg:452
+| 9 QUERY (nonempty []) ../lib/ext/tc.dg:453
+| 9 ENTER (late on every tick) ../lib/ext/tutorial-mode.dg:21
+| 9 QUERY (tutorial mode enabled) ../lib/ext/tutorial-mode.dg:22
+| 9 ENTER (late on every tick) ../lib/ext/tutorial-mode.dg:26
+| 9 NOW ~(suggestion $ was just performed) ../lib/ext/tutorial-mode.dg:27
+| 8 FOUND (late on every tick) ../lib/dialog/stdlib.dg:3799
+| 7 FOUND (tick) ../lib/dialog/stdlib.dg:3616
+
+| 6 FOUND (try regrouped [inventory]) ../lib/dialog/stdlib.dg:3597
+| 5 FOUND (try-complex [inventory]) ../lib/dialog/stdlib.dg:5843
+| 4 FOUND (parse action [i]) ../lib/dialog/stdlib.dg:5794
+| 3 FOUND (parse action sequence [i]) ../lib/dialog/stdlib.dg:5783
+| 2 FOUND (parse commandline [i] with choices []) ../lib/dialog/stdlib.dg:4880
+| 1 FOUND (read-parse-act) ../lib/dialog/stdlib.dg:4823
+| 1 QUERY (fail) ../lib/dialog/stdlib.dg:4823
+| 1 FOUND (repeat forever) ../lib/dialog/stdlib.dg:4823
+| 1 QUERY (read-parse-act) ../lib/dialog/stdlib.dg:4823
+| 2 ENTER (read-parse-act) ../lib/dialog/stdlib.dg:4838
+| 2 QUERY (rebuild scope) ../lib/dialog/stdlib.dg:4839
+| 3 ENTER (rebuild scope) ../lib/dialog/stdlib.dg:651
+| 3 QUERY (update environment around player) ../lib/dialog/stdlib.dg:652
+| 4 ENTER (update environment around player) ../lib/dialog/stdlib.dg:706
+| 4 QUERY (current player $) ../lib/dialog/stdlib.dg:707
+| 4 FOUND (current player #player) ../lib/dialog/stdlib.dg:707
+| 4 QUERY (#player is in room $) ../lib/dialog/stdlib.dg:707
+| 5 ENTER (#player is in room #player) ../lib/dialog/stdlib.dg:6262
+| 5 QUERY (room #player) ../lib/dialog/stdlib.dg:6262
+| 5 ENTER (#player is in room $) ../lib/dialog/stdlib.dg:6264
+| 5 QUERY (#player has parent $) ../lib/dialog/stdlib.dg:6265
+| 5 FOUND (#player has parent #office) ../lib/dialog/stdlib.dg:6265
+| 5 QUERY (#office is in room $) ../lib/dialog/stdlib.dg:6266
+| 6 ENTER (#office is in room #office) ../lib/dialog/stdlib.dg:6262
+| 6 QUERY (room #office) ../lib/dialog/stdlib.dg:6262
+| 6 FOUND (room #office) ../lib/dialog/stdlib.dg:6262
+| 5 FOUND (#office is in room #office) ../lib/dialog/stdlib.dg:6266
+| 4 FOUND (#player is in room #office) ../lib/dialog/stdlib.dg:707
+| 4 NOW (current room #office) ../lib/dialog/stdlib.dg:708
+| 4 QUERY (recompute visibility) ../lib/dialog/stdlib.dg:713
+| 5 ENTER (recompute visibility) ../lib/dialog/stdlib.dg:485
+| 5 QUERY (current player $) ../lib/dialog/stdlib.dg:486
+| 5 FOUND (current player #player) ../lib/dialog/stdlib.dg:486
+| 5 QUERY (visibility ceiling of #player is $) ../lib/dialog/stdlib.dg:487
+| 6 ENTER (visibility ceiling of #player is $) ../lib/dialog/stdlib.dg:455
+| 6 QUERY (#player has parent $) ../lib/dialog/stdlib.dg:456
+| 6 FOUND (#player has parent #office) ../lib/dialog/stdlib.dg:456
+| 6 QUERY (visibility ceiling of #office is $) ../lib/dialog/stdlib.dg:468
+| 7 ENTER (visibility ceiling of #office is $) ../lib/dialog/stdlib.dg:455
+| 7 QUERY (#office has parent $) ../lib/dialog/stdlib.dg:456
+| 7 QUERY ($ = #office) ../lib/dialog/stdlib.dg:471
+| 7 FOUND (#office = #office) ../lib/dialog/stdlib.dg:471
+| 6 FOUND (visibility ceiling of #office is #office) ../lib/dialog/stdlib.dg:468
+| 5 FOUND (visibility ceiling of #player is #office) ../lib/dialog/stdlib.dg:487
+| 5 QUERY (light reaches ceiling #office) ../lib/dialog/stdlib.dg:488
+| 6 ENTER (light reaches ceiling #office) ../lib/dialog/stdlib.dg:476
+| 6 QUERY (room #office) ../lib/dialog/stdlib.dg:476
+| 6 FOUND (room #office) ../lib/dialog/stdlib.dg:476
+| 5 FOUND (light reaches ceiling #office) ../lib/dialog/stdlib.dg:488
+| 5 NOW (current scope ceiling #office) ../lib/dialog/stdlib.dg:489
+| 5 NOW (player can see) ../lib/dialog/stdlib.dg:490
+| 4 FOUND (recompute visibility) ../lib/dialog/stdlib.dg:713
+| 4 QUERY (#office is visited) ../lib/dialog/stdlib.dg:714
+| 4 FOUND (#office is visited) ../lib/dialog/stdlib.dg:714
+| 3 FOUND (update environment around player) ../lib/dialog/stdlib.dg:652
+| 3 QUERY (forget pronouns out of scope) ../lib/dialog/stdlib.dg:653
+| 4 ENTER (forget pronouns out of scope) ../lib/dialog/stdlib.dg:4529
+| 4 QUERY (player's it refers to $) ../lib/dialog/stdlib.dg:4530
+| 4 QUERY (narrator's it refers to $) ../lib/dialog/stdlib.dg:4533
+| 4 QUERY (him refers to $) ../lib/dialog/stdlib.dg:4536
+| 4 QUERY (her refers to $) ../lib/dialog/stdlib.dg:4539
+| 4 QUERY (them refers to $) ../lib/dialog/stdlib.dg:4543
+| 3 FOUND (forget pronouns out of scope) ../lib/dialog/stdlib.dg:653
+| 2 FOUND (rebuild scope) ../lib/dialog/stdlib.dg:4839
+| 2 QUERY (deferred commandline $) ../lib/dialog/stdlib.dg:4840
+| 2 QUERY (game has ended) ../lib/dialog/stdlib.dg:4845
+
+| 2 QUERY (current node $) ../lib/dialog/stdlib.dg:4857
+| 2 QUERY (redraw status bar) ../lib/dialog/stdlib.dg:4875
+| 3 ENTER (redraw status bar) ../lib/dialog/stdlib.dg:4938
+| 2 FOUND (redraw status bar) ../lib/dialog/stdlib.dg:4875
+| 2 QUERY ($ = []) ../lib/dialog/stdlib.dg:4876
+| 2 FOUND ([] = []) ../lib/dialog/stdlib.dg:4876
+| 2 QUERY (prompt and input $) ../lib/dialog/stdlib.dg:4877
+| 3 ENTER (prompt and input $) ../lib/dialog/stdlib.dg:4886
+| 3 QUERY *(repeat forever) ../lib/dialog/stdlib.dg:4887
+| 3 FOUND (repeat forever) ../lib/dialog/stdlib.dg:4887
+>

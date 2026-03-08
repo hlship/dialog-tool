@@ -1,0 +1,11 @@
+<div class="px-2.5 py-1.5 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis font-mono">{{file-path}}:{{line}}</div>
+<table class="border-collapse w-full font-mono text-xs leading-relaxed">
+    <tbody>
+        {% for source-line in lines %}
+        <tr class="{% if source-line.highlighted %}bg-yellow-200{% endif %}">
+            <td class="text-right pr-2 pl-2.5 select-none border-r border-gray-200 whitespace-nowrap {% if source-line.highlighted %}text-amber-800 font-bold{% else %}text-gray-400{% endif %}">{{source-line.number}}</td>
+            <td class="px-2.5 whitespace-pre">{{source-line.text|safe}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
