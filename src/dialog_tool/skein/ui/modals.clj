@@ -146,10 +146,10 @@
    {:title (str "Trace: " (:command trace-state))
     :signals {:traceSearch (or (:search trace-state) "")}
     :buttons nil}
-   [:div.flex.flex-col {:class "min-w-[70vw] min-h-[50vh]"}
-    [:div.flex-1
+   [:div.flex.flex-col {:class "w-[85vw] h-[80vh]"}
+    [:div.flex-1.min-h-0.flex.flex-col
      [trace-view/render-trace-tree trace-state]]
-    [:div.flex.justify-end.pt-4
+    [:div.flex.justify-end.pt-4.flex-shrink-0
      [modal/cancel-button {:label "Close"}]]
     [:div#source-preview-popup.hidden.fixed.z-50.bg-white.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
      {:class "max-w-[80vw]"}]]])
