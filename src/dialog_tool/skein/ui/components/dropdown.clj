@@ -18,10 +18,10 @@
                :disabled disabled
                :popovertarget id}
       label]
-     [:ul.menu.bg-base-100.rounded-box.p-2.w-96.max-h-96.overflow-y-auto.flex-nowrap
+     [:ul.menu.bg-base-100.rounded-box.p-2.w-96.overflow-y-auto.flex-nowrap
       {:id id
        :popover "auto"
-       :class "shadow-xl/30"
+       :class "shadow-xl/30 max-h-[30rem]"
        :data-on:toggle "positionDropdown(el, evt)"
        :data-on:click "el.hidePopover()"}
       items]]))

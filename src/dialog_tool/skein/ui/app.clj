@@ -189,6 +189,21 @@
          "Replay" "Run from start to here"]
         [dropdown/button {:data-on:click (str "@post('/action/new-child/" id "')")}
          "New Child" "Add a new command after this"]
+        (when-not root?
+          [:<>
+           [dropdown/button {:data-on:click (str "@get('/action/edit-command/" id "')")}
+            "Edit Command ..." "Change the knot's command"]
+           [dropdown/button {:data-on:click (str "@get('/action/edit-label/" id "')")}
+            "Edit Label ..." "Change label for knot"]
+           [dropdown/button {:data-on:click (str "@post('/action/toggle-lock/" id "')")}
+            "Toggle Lock" "Lock or unlock this knot"]
+           [dropdown/button {:data-on:click (str "@get('/action/insert-parent/" id "')")}
+            "Insert Parent" "Insert a command before this"]
+           [dropdown/button {:data-on:click (str "@post('/action/delete/" id "')")}
+            "Delete" "Delete this knot and all children"]
+           [dropdown/button {:data-on:click (str "@post('/action/splice-out/" id "')")
+                             :disabled (not (seq children))}
+            "Splice Out" "Delete this knot, reparent children up"]])
         [dropdown/button {:data-on:click (str "@get('/action/dynamic/" id "')")
                           :disabled (nil? dynamic-response)}
          "Dynamic State ..."
@@ -196,22 +211,7 @@
         (when (and debug-enabled? (not root?))
           [dropdown/button {:data-on:click (str "@post('/action/trace/" id "')")}
            "Trace ..."
-           "Trace command execution"])
-        (when-not root?
-          [:<>
-           [dropdown/button {:data-on:click (str "@get('/action/edit-label/" id "')")}
-            "Edit Label" "Change label for knot"]
-           [dropdown/button {:data-on:click (str "@post('/action/toggle-lock/" id "')")}
-            "Toggle Lock" "Lock or unlock this knot"]
-           [dropdown/button {:data-on:click (str "@get('/action/edit-command/" id "')")}
-            "Edit Command" "Change the knot's command"]
-           [dropdown/button {:data-on:click (str "@get('/action/insert-parent/" id "')")}
-            "Insert Parent" "Insert a command before this"]
-           [dropdown/button {:data-on:click (str "@post('/action/delete/" id "')")}
-            "Delete" "Delete this knot and all children"]
-           [dropdown/button {:data-on:click (str "@post('/action/splice-out/" id "')")
-                             :disabled (not (seq children))}
-            "Splice Out" "Delete this knot, reparent children up"]])]
+           "Trace command execution"])]
        (render-children-navigation tree knot)]
       [render-diff response unblessed]
       [:hr.clear-right.text-stone-200]
