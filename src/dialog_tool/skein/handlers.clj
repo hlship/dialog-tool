@@ -363,12 +363,15 @@
 
 (defn- render-trace-results
   "Renders just the trace results area (for search/toggle/expand/collapse updates
-   that should not disturb the search input or modal chrome)."
-  [request]
-  (let [{:keys [*session]} request
-        trace-state (:trace @*session)]
-    {:status 200
-     :body (html (trace-view/render-trace-results trace-state))}))
+   that should not disturb the search input or modal chrome).
+   scroll-to-id, when provided, is the :id of the node to scroll into view."
+  ([request]
+   (render-trace-results request nil))
+  ([request scroll-to-id]
+   (let [{:keys [*session]} request
+         trace-state (:trace @*session)]
+     {:status 200
+      :body (html (trace-view/render-trace-results trace-state scroll-to-id))})))
 
 (defn- trace-knot
   "Runs the knot's command with tracing enabled and displays the trace modal."
@@ -379,11 +382,10 @@
         [trace-response session'] (session/trace-command! @*session id)
         _ (reset! *session session')
         parsed (trace/parse-trace trace-response)
-        tree (trace/build-tree parsed)
-        trace-state {:tree tree
-                     :expanded #{}
+        nodes (trace/build-tree parsed)
+        trace-state {:nodes nodes
                      :search ""
-                     :node-count (trace/count-nodes tree)
+                     :node-count (trace/count-nodes nodes)
                      :command command}]
     (swap! *session assoc :trace trace-state)
     (render-trace-modal request)))
@@ -391,52 +393,64 @@
 (defn- trace-toggle
   "Toggles a node's expanded/collapsed state in the trace tree."
   [{:keys [*session] :as request}]
-  (let [path (-> request :path-params first)]
-    (swap! *session update-in [:trace :expanded]
-           (fn [expanded]
-             (if (contains? expanded path)
-               (disj expanded path)
-               (conj (or expanded #{}) path))))
+  (let [node-id (parse-long (-> request :path-params first))]
+    (swap! *session update-in [:trace :nodes] trace/toggle-expanded node-id)
     (render-trace-results request)))
 
+(defn- apply-trace-search
+  "Applies a search term to the trace state: marks matching nodes, expands
+   ancestor nodes to reveal them, and updates the session.
+   Returns the updated session."
+  [*session search]
+  (swap! *session
+         (fn [session]
+           (let [nodes (get-in session [:trace :nodes])
+                 updated (if (string/blank? search)
+                           (trace/collapse-all nodes)
+                           (trace/expand-to-matches (trace/search-tree nodes search)))]
+             (-> session
+                 (assoc-in [:trace :search] search)
+                 (assoc-in [:trace :nodes] updated))))))
+
 (defn- trace-search
-  "Updates the search term and expands paths to matching nodes."
+  "Updates the search term and expands to matching nodes."
   [{:keys [*session signals] :as request}]
   (let [{:keys [traceSearch]} signals
         search (or traceSearch "")]
-    (swap! *session
-           (fn [session]
-             (let [tree (get-in session [:trace :tree])
-                   expanded (if (string/blank? search)
-                              #{}
-                              (let [marked (trace/search-tree tree search)]
-                                (trace-view/collect-matching-paths marked)))]
-               (-> session
-                   (assoc-in [:trace :search] search)
-                   (assoc-in [:trace :expanded] expanded)))))
+    (apply-trace-search *session search)
     (render-trace-results request)))
+
+(defn- trace-find
+  "Like trace-search, but also scrolls the first matching node into view.
+   Triggered when the user presses Enter in the search field."
+  [{:keys [*session signals] :as request}]
+  (let [{:keys [traceSearch]} signals
+        search (or traceSearch "")
+        session' (apply-trace-search *session search)
+        scroll-to-id (when-not (string/blank? search)
+                       (trace/find-first-match (get-in session' [:trace :nodes])))]
+    (render-trace-results request scroll-to-id)))
 
 (defn- trace-expand-all
   "Expands all nodes in the trace tree."
   [{:keys [*session] :as request}]
-  (let [tree (get-in @*session [:trace :tree])
-        all-paths (trace-view/collect-all-paths tree)]
-    (swap! *session assoc-in [:trace :expanded] all-paths)
-    (render-trace-results request)))
+  (swap! *session update-in [:trace :nodes] trace/expand-all)
+  (render-trace-results request))
 
 (defn- trace-collapse-all
   "Collapses all nodes in the trace tree."
   [{:keys [*session] :as request}]
-  (swap! *session assoc-in [:trace :expanded] #{})
+  (swap! *session update-in [:trace :nodes] trace/collapse-all)
   (render-trace-results request))
 
 (defn- resolve-trace-source
-  "Given the session and a node path string, resolves the trace node's source
+  "Given the session and a node ID string, resolves the trace node's source
    to a [file-path line resolved-path] triple, or nil if the node or source
    can't be found."
-  [session node-path]
-  (let [tree (get-in session [:trace :tree])
-        node (when tree (trace/get-node tree node-path))
+  [session node-id-str]
+  (let [nodes (get-in session [:trace :nodes])
+        node-id (parse-long node-id-str)
+        node (when (and nodes node-id) (trace/get-node nodes node-id))
         [file-path line] (when node (trace/parse-source (:source node)))]
     (when file-path
       (let [project (-> session :process :project)
@@ -694,6 +708,9 @@
    "POST /action/trace/search" req
    (trace-search req)
 
+   "POST /action/trace/find" req
+   (trace-find req)
+
    "POST /action/trace/expand-all" req
    (trace-expand-all req)
 
@@ -706,7 +723,7 @@
    "GET /action/source-preview/*" req
    (source-preview req)
 
-   "GET /action/source/**" req
+   "GET /action/source/*" req
    (view-source req)
 
    "GET /**" [path]

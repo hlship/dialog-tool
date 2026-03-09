@@ -2,13 +2,11 @@
   "Renders a trace tree as interactive hiccup for the trace modal.
    
    The trace state is stored in the session as:
-   {:trace {:tree [...]          ; parsed trace tree (from trace/build-tree)
-            :expanded #{...}     ; set of path strings for expanded nodes
+   {:trace {:nodes {id -> node}  ; flat node map (see trace ns)
             :search \"\"         ; current search term
-            :node-count n}}      ; total node count
+            :node-count n}}      ; total visible node count
    
-   Node paths are dot-separated index strings (e.g. \"0\", \"0.2\", \"0.2.1\")
-   identifying a node's position in the tree."
+   Node 0 is an invisible root whose :children are the top-level node IDs."
   (:require [clojure.string :as string]
             [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.ui.utils :refer [classes]]))
@@ -16,14 +14,14 @@
 (defn- render-source-link
   "Renders a source reference as a clickable link that opens the source viewer
    in a new window, or as plain text if the source can't be parsed.
-   node-path is the dot-separated tree path used to look up the source server-side."
-  [source node-path]
+   node-id is the node's unique numeric :id used to look up the source server-side."
+  [source node-id]
   (if (trace/parse-source source)
     [:a.text-xs.text-blue-500.ml-auto.flex-shrink-0.font-mono.hover:text-blue-700.hover:underline
-     {:href (str "/action/source/" node-path)
+     {:href (str "/action/source/" node-id)
       :target "_blank"
       :title source
-      :data-on:mouseenter__debounce_400ms (str "showSourcePreview(el,'" node-path "')")
+      :data-on:mouseenter__debounce_400ms (str "showSourcePreview(el,'" node-id "')")
       :data-on:mouseleave "hideSourcePreview()"}
      source]
     [:span.text-xs.text-gray-400.ml-auto.flex-shrink-0.font-mono
@@ -43,20 +41,22 @@
 
 (defn- render-node
   "Renders a single trace tree node and its visible children.
-   path is the dot-separated index string for this node."
-  [node path expanded]
-  (let [{:keys [type predicate source children match?]} node
+   nodes is the flat node map, scroll-to-id is the optional :id to scroll into view."
+  [nodes node-id scroll-to-id]
+  (let [{:keys [id type predicate source children match? expanded]} (get nodes node-id)
         has-children? (seq children)
-        is-expanded? (contains? expanded path)]
-    [:div.ml-4 {:key path}
+        scroll-to? (= id scroll-to-id)]
+    [:div.ml-4 {:key id}
      [:div.flex.items-center.gap-1.py-0.5.group.hover:bg-gray-50.rounded
-      {:class (when match? "bg-yellow-100")}
+      (cond-> {}
+        match? (assoc :class "bg-yellow-100")
+        scroll-to? (assoc :data-init "el.scrollIntoView({block:'center',behavior:'smooth'})"))
       ;; Expand/collapse toggle
       (if has-children?
         [:button.w-5.h-5.flex.items-center.justify-center.text-gray-400.hover:text-gray-700.rounded.cursor-pointer.flex-shrink-0
          {:type "button"
-          :data-on:click (str "@post('/action/trace/toggle/" path "')")}
-         (if is-expanded? "▾" "▸")]
+          :data-on:click (str "@post('/action/trace/toggle/" id "')")}
+         (if expanded "▾" "▸")]
         [:span.w-5.h-5.inline-block.flex-shrink-0])
       ;; Type badge
       [:span {:class (classes "text-xs font-mono px-1.5 py-0.5 rounded flex-shrink-0"
@@ -67,43 +67,44 @@
        {:class (when match? "font-bold")}
        predicate]
       ;; Source (link to source viewer)
-      [render-source-link source path]]
+      [render-source-link source id]]
      ;; Children (only if expanded)
-     (when (and has-children? is-expanded?)
+     (when (and has-children? expanded)
        [:div
-        (map-indexed
-         (fn [idx child]
-           (render-node child (str path "." idx) expanded))
-         children)])]))
+        (for [child-id children]
+          (render-node nodes child-id scroll-to-id))])]))
 
 (defn render-trace-results
   "Renders just the trace tree results area (the part that updates on interactions).
    This has a stable `#trace-tree-results` ID so Datastar can patch it independently
-   without disrupting the search input."
-  [{:keys [tree expanded search node-count]}]
-  (let [display-tree (if (string/blank? search)
-                       tree
-                       (trace/search-tree tree search))]
-    [:div#trace-tree-results
-     ;; Expand/collapse all controls + node count
-     [:div.flex.items-center.gap-2.mb-2
-      [:button.btn.btn-xs.btn-ghost
-       {:type "button"
-        :data-on:click "@post('/action/trace/expand-all')"}
-       "Expand All"]
-      [:button.btn.btn-xs.btn-ghost
-       {:type "button"
-        :data-on:click "@post('/action/trace/collapse-all')"}
-       "Collapse All"]
-      [:span.text-xs.text-gray-400.ml-auto
-       (str node-count " nodes")]]
-     ;; Tree view (scrollable)
-     [:div.overflow-y-auto.border.rounded.p-2.bg-white
-      {:class "max-h-[60vh]"}
-      (map-indexed
-       (fn [idx node]
-         (render-node node (str idx) expanded))
-       display-tree)]]))
+   without disrupting the search input.
+
+   scroll-to-id, when non-nil, is the :id of the first matching node to scroll
+   into view (used by the find action)."
+  ([trace-state]
+   (render-trace-results trace-state nil))
+  ([{:keys [nodes search node-count]} scroll-to-id]
+   (let [display-nodes (if (string/blank? search)
+                         nodes
+                         (trace/search-tree nodes search))
+         root (get display-nodes 0)]
+     [:div#trace-tree-results.flex-1.min-h-0.flex.flex-col
+      ;; Expand/collapse all controls + node count (pinned)
+      [:div.flex.items-center.gap-2.mb-2.flex-shrink-0
+       [:button.btn.btn-xs.btn-ghost
+        {:type "button"
+         :data-on:click "@post('/action/trace/expand-all')"}
+        "Expand All"]
+       [:button.btn.btn-xs.btn-ghost
+        {:type "button"
+         :data-on:click "@post('/action/trace/collapse-all')"}
+        "Collapse All"]
+       [:span.text-xs.text-gray-400.ml-auto
+        (str node-count " nodes")]]
+      ;; Tree view (scrollable)
+      [:div.flex-1.overflow-y-auto.border.rounded.p-2.bg-white
+       (for [child-id (:children root)]
+         (render-node display-nodes child-id scroll-to-id))]])))
 
 (defn render-trace-tree
   "Renders the full trace tree view with search input and results.
@@ -111,48 +112,14 @@
    
    trace-state is the :trace map from the session."
   [trace-state]
-  [:div
-   ;; Search bar (not re-rendered on interactions)
-   [:div.mb-3.flex.items-center.gap-2
+  [:<>
+   ;; Search bar (not re-rendered on interactions, pinned at top)
+   [:div.mb-3.flex.items-center.gap-2.flex-shrink-0
     [:input.input.input-bordered.input-sm.flex-1
      {:type "text"
       :placeholder "Search predicates or sources..."
       :data-bind "traceSearch"
-      :data-on:keydown__debounce_300ms "@post('/action/trace/search')"
+      :data-on:keydown__debounce_300ms "evt.key === 'Enter' ? @post('/action/trace/find') : @post('/action/trace/search')"
       :data-init "el.focus()"}]]
    ;; Results area (re-rendered independently)
    [render-trace-results trace-state]])
-
-(defn collect-all-paths
-  "Collects all node paths that have children, for use with expand-all."
-  ([tree]
-   (collect-all-paths tree "" #{}))
-  ([nodes prefix result]
-   (reduce
-    (fn [acc [idx node]]
-      (let [path (if (empty? prefix)
-                   (str idx)
-                   (str prefix "." idx))]
-        (if (seq (:children node))
-          (collect-all-paths (:children node) path (conj acc path))
-          acc)))
-    result
-    (map-indexed vector nodes))))
-
-(defn collect-matching-paths
-  "Collects paths of all nodes with :has-match? true that have children.
-   These are the paths that should be expanded to reveal search matches.
-   The tree must have been processed by trace/search-tree first."
-  ([tree]
-   (collect-matching-paths tree "" #{}))
-  ([nodes prefix result]
-   (reduce
-    (fn [acc [idx node]]
-      (let [path (if (empty? prefix)
-                   (str idx)
-                   (str prefix "." idx))]
-        (if (and (:has-match? node) (seq (:children node)))
-          (collect-matching-paths (:children node) path (conj acc path))
-          acc)))
-    result
-    (map-indexed vector nodes))))
