@@ -311,3 +311,20 @@
                       (assoc :active-knot-id knot-id)
                       capture-dynamic)]
     [trace-response session'']))
+
+(defn trace-startup!
+  "Traces game startup by restarting the process with the --trace flag.
+   The traced startup response is captured, then the process is restarted
+   normally (without --trace) to restore clean state.
+   
+   Returns [trace-response session'] like trace-command!."
+  [session]
+  (let [{:keys [process start-process-fn]} session
+        ;; Start a temporary process with --trace to capture traced startup
+        _ (sk.process/kill! process)
+        traced-process (start-process-fn {:extra-arguments ["--trace"]})
+        trace-response (sk.process/read-response! traced-process)
+        ;; Kill the traced process and restart normally
+        _ (sk.process/kill! traced-process)
+        session' (do-restart! session)]
+    [trace-response session']))
