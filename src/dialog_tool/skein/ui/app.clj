@@ -211,7 +211,7 @@
         (when debug-enabled?
           [dropdown/button {:data-on:click (str "@post('/action/trace/" id "')")}
            "Trace ..."
-           (if root? "Trace game startup" "Trace command execution")])]
+           (if root? "Trace startup" "Trace command execution")])]
        (render-children-navigation tree knot)]
       [render-diff response unblessed]
       [:hr.clear-right.text-stone-200]

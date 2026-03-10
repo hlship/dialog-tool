@@ -381,7 +381,7 @@
   (let [id (knot-id request)
         root? (zero? id)
         command (if root?
-                  "Game Startup"
+                  "Startup"
                   (:command (session/get-knot @*session id)))
         [trace-response session'] (if root?
                                     (session/trace-startup! @*session)
