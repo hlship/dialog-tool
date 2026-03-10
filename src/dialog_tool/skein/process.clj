@@ -81,28 +81,36 @@
   (string/replace s "\r" ""))
 
 (defn start-debug-process!
-  "Starts a Skein process using the Dialog debugger."
-  [project-root seed]
-  (let [project (pf/read-project project-root)
-        cmd (-> [(pf/command-path project "dgdebug")
-                 "--quit"
-                 "--numbered"
-                 "--seed" (str seed)
-                 "--width" "80"]
-                (into (pf/expand-sources project {:debug? true})))]
-    (start! project cmd {:use-pty? true
-                         :post-process (fn [s]
-                                         (-> s
-                                             trim-returns 
-                                             (string/replace-first #"^\u001b\[0m" "")))})))
+  "Starts a Skein process using the Dialog debugger.
+   opts is an optional map; :extra-arguments are added to the command line
+   before the source files."
+  ([project-root seed]
+   (start-debug-process! project-root seed nil))
+  ([project-root seed opts]
+   (let [project (pf/read-project project-root)
+         cmd (-> [(pf/command-path project "dgdebug")
+                  "--quit"
+                  "--numbered"
+                  "--seed" (str seed)
+                  "--width" "80"]
+                 (into (:extra-arguments opts))
+                 (into (pf/expand-sources project {:debug? true})))]
+     (start! project cmd {:use-pty? true
+                          :post-process (fn [s]
+                                          (-> s
+                                              trim-returns
+                                              (string/replace-first #"^\u001b\[0m" "")))}))))
 
 (def engines #{:dgdebug :frotz :frotz-release})
 
-(defmulti start-process! (fn [_project-root engine _seed] engine))
+(defmulti start-process!
+  "Starts a game process. opts is an optional map; :extra-arguments are
+   additional command-line arguments passed to the engine."
+  (fn [_project-root engine _seed & _opts] engine))
 
 (defmethod start-process! :dgdebug
-  [project-root _ seed]
-  (start-debug-process! project-root seed))
+  [project-root _ seed & [opts]]
+  (start-debug-process! project-root seed opts))
 
 (def ^:private *patch-path
   (delay

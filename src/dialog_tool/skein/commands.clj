@@ -20,7 +20,7 @@
   (let [tree (sk.file/load-tree skein-path)
         {:keys [engine seed]
          :or {engine :dgdebug}} (:meta tree)
-        start-process #(sk.process/start-process! nil engine seed)
+        start-process (fn [& [opts]] (sk.process/start-process! nil engine seed opts))
         session (s/create-loaded! start-process skein-path tree)
         leaf-ids (->> tree
                       tree/leaf-knots

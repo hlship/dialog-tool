@@ -58,7 +58,7 @@
         engine' (or (get-in tree [:meta :engine])
                     engine
                     :dgdebug)
-        start-process #(sk.process/start-process! root-dir engine' seed')
+        start-process (fn [& [opts]] (sk.process/start-process! root-dir engine' seed' opts))
         session (if tree
                   (s/create-loaded! start-process skein-path tree)
                   (s/create-new! start-process skein-path engine' seed'))

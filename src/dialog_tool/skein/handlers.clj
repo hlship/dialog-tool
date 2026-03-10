@@ -374,12 +374,18 @@
       :body (html (trace-view/render-trace-results trace-state scroll-to-id))})))
 
 (defn- trace-knot
-  "Runs the knot's command with tracing enabled and displays the trace modal."
+  "Runs the knot's command with tracing enabled and displays the trace modal.
+   For the root node (id 0), traces game startup by restarting with --trace."
   [{:keys [*session] :as request}]
   (swap! *session session/check-for-changed-sources)
   (let [id (knot-id request)
-        command (:command (session/get-knot @*session id))
-        [trace-response session'] (session/trace-command! @*session id)
+        root? (zero? id)
+        command (if root?
+                  "Game Startup"
+                  (:command (session/get-knot @*session id)))
+        [trace-response session'] (if root?
+                                    (session/trace-startup! @*session)
+                                    (session/trace-command! @*session id))
         _ (reset! *session session')
         parsed (trace/parse-trace trace-response)
         nodes (trace/build-tree parsed)
