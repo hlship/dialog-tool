@@ -129,12 +129,12 @@
 (def engines #{:dgdebug :frotz :frotz-release})
 
 (defmulti start-process!
-  "Starts a game process. opts is an optional map; :extra-arguments are
+  "Starts a game process. opts is a map; :extra-arguments are
    additional command-line arguments passed to the engine."
-  (fn [_project-root engine _seed & _opts] engine))
+  (fn [_project-root engine _seed _opts] engine))
 
 (defmethod start-process! :dgdebug
-  [project-root _ seed & [opts]]
+  [project-root _ seed opts]
   (start-debug-process! project-root seed opts))
 
 (def ^:private *patch-path
@@ -148,9 +148,10 @@
       path)))
 
 (defn- start-frotz-process
-  [project-root seed debug?]
+  [project-root seed opts]
   (let [project (pf/read-project project-root)
         {project-name :name} project
+        {:keys [debug?]} opts
         project-dir (pf/root-dir project)
         output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
         path (fs/path output-dir (str project-name ".zblorb"))
@@ -160,7 +161,7 @@
                                    "--output" (str path)]
                                   ;; the patch prevents the status line from being presented
                                   ;; (otherwise it shows up inline)
-                                  (pf/expand-sources project {:debug? true
+                                  (pf/expand-sources project {:debug? debug?
                                                               :pre-patch [@*patch-path]}))]
                 (env/debug-command command)
                 (p/check
@@ -184,12 +185,12 @@
              :post-process trim-returns})))
 
 (defmethod start-process! :frotz
-  [project-root _ seed]
-  (start-frotz-process project-root seed true))
+  [project-root _ seed opts]
+  (start-frotz-process project-root seed (assoc opts :debug? true)))
 
 (defmethod start-process! :frotz-release
-  [project-root _ seed]
-  (start-frotz-process project-root seed false))
+  [project-root _ seed opts]
+  (start-frotz-process project-root seed (assoc opts :debug? false)))
 
 (defn read-response!
   [process]
