@@ -1,0 +1,31 @@
+#garden
+(room *)
+(name *) Kaleidoscope
+(look *)
+    A winding path through a garden filled with a
+    disorderly collection of wildly colorful flowers.
+    (if) (#rose is pristine)
+    (then)
+    A single rose lies across the path.
+    (endif)
+
+#player
+(current player *)
+(descr *)
+(* is #in #garden)
+
+(style class @red)
+    color: red;
+    
+(style class @green)
+    color: green;
+    
+#rose
+(name *) rose
+(item *)
+(* is #in #garden)
+(descr *)
+    (span @red) {
+     A beautiful red rose topping a
+     (span @green) { thorny, green stem (no space)  }
+    .}

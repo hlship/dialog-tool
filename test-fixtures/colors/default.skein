@@ -1,0 +1,33 @@
+seed: 29454
+engine: :frotz
+--------------------------------------------------------------------------------
+id: 0
+label: START
+--------------------------------------------------------------------------------
+The Featureless Space
+An interactive fiction by The Intrepid Author.
+Release 0. Serial number 260311.
+Dialog compiler version 1a/01. Library version 1.1.0. Debugging extension 1.1.
+
+Kaleidoscope
+A winding path through a garden filled with a disorderly collection of wildly
+colorful flowers. A single rose lies across the path.
+
+--------------------------------------------------------------------------------
+id: 1773273000864
+parent-id: 0
+command: x rose
+--------------------------------------------------------------------------------
+> x rose
+A beautiful red rose topping a thorny, green stem.
+
+--------------------------------------------------------------------------------
+id: 1773273000865
+parent-id: 1773273000864
+command: l
+--------------------------------------------------------------------------------
+> l
+Kaleidoscope
+A winding path through a garden filled with a disorderly collection of wildly
+colorful flowers. A single rose lies across the path.
+

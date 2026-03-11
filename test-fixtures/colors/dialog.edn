@@ -1,0 +1,10 @@
+{:name   "Kaleidoscope"
+ :format :zblorb
+ :build
+ {:zblorb
+  {:options ["--cover"     "cover.png"
+             "--cover-alt" "Kaleidoscope"]}}
+ :sources
+ {:main    ["src"]
+  :debug   ["lib/dialog/debug"]
+  :library ["lib/dialog"]}}
