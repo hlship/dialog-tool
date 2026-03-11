@@ -80,6 +80,30 @@
   [s]
   (string/replace s "\r" ""))
 
+(def ^:private sgr-pattern #"\u001b\[[0-9;]*m")
+
+(def ^:private sgr-reset "\u001b[0m")
+
+(defn- close-ansi
+  "Appends an SGR reset sequence to the string if the last ANSI SGR escape
+   in the string is not itself a reset. This ensures that when the skein file
+   is viewed in a terminal, formatting from one response doesn't bleed into
+   the next."
+  [s]
+  (let [last-reset (string/last-index-of s sgr-reset)
+        ;; Check if there are any SGR sequences after the last reset
+        has-trailing-sgr? (re-find sgr-pattern
+                                   (if last-reset
+                                     (subs s (+ last-reset (count sgr-reset)))
+                                     s))]
+    (if has-trailing-sgr?
+      (let [last-nl (string/last-index-of s \newline)]
+        (if (and last-nl (= last-nl (dec (count s))))
+          ;; Insert reset before the trailing newline
+          (str (subs s 0 last-nl) sgr-reset "\n")
+          (str s sgr-reset)))
+      s)))
+
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger.
    opts is an optional map; :extra-arguments are added to the command line
@@ -99,7 +123,8 @@
                           :post-process (fn [s]
                                           (-> s
                                               trim-returns
-                                              (string/replace-first #"^\u001b\[0m" "")))}))))
+                                              (string/replace-first #"^\u001b\[0m" "")
+                                              close-ansi))}))))
 
 (def engines #{:dgdebug :frotz :frotz-release})
 
