@@ -338,7 +338,7 @@ automatically expands to reveal all matching nodes, which are highlighted with a
 
 Clearing the search field collapses the tree back.
 
-## Finding
+### Finding
 
 If you enter text into the search field and hit enter, the tree display will select a node
 matching the text and scroll that into view.  Terms like `before`, `instead of`, or `perform` are
