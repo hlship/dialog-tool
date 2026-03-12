@@ -75,10 +75,6 @@ The above is an example of a new Skein for the Sand-dancer project.
 
 Let's break down the interface.
 
->![WARNING]
-> These screen shots have not been brought up to date with the recent changes that capture font and color
-> information from the Dialog debugger.
-
 ![](skein-tour.png)
 
 At the top of the Skein is the navigation bar.
@@ -121,11 +117,16 @@ The Skein stores the most recent response from the running project for each knot
 align, the knot is valid; When they differ, the knot is in error.
 when there is no blessed response yet, the knot is new.
 
+Unblessed text is always shown in a fixed width font; certain styling (such as color and font weight) is identified with bracket delimiters (the `[CYAN]` and `[B]` markers), and whitespace is made visible.
+
+
 If we click the _Bless_ action the Skein will update:
 
 ![](skein-root-blessed.png)
 
 Notice that the knot counts in the navigation bar has changed to 1/0/0 ... one single knot whose response matches the expected response, no new knots, no knots in error.  The knot's text is now  in a plain font, not bold blue, and the knot's borders are grey.
+
+The font, by default, reverts to proportional, which is appropriate for most projects.
 
 ## Entering New Commands
 
@@ -159,8 +160,18 @@ picked up):
 
 ![](skein-knot-error.png)
 
-Now the knot is in error and the text shows deleted text (in red, with overstrike) and
-added text (in blue).  If you are happy with this new text, you can bless the changes and continue.
+The knot is now in error:  The Skein displays
+the new response in fixed width; it identifies
+the changed text:  red text for deleted,
+blue text for added, and white space ins changed
+sections is made visible.
+
+Because Dialog word-wraps all the output, changing
+even a couple of words can have a ripple effect all
+the way down through the knot's response.
+
+Now that you can identify the changes, you can decide whether to bless them, or change the source and replay the knot again.
+
 
 ## Replay All
 
@@ -294,7 +305,9 @@ which succeed or fail, and the full call hierarchy.
 From a knot's action menu, the _Trace ..._ item will replay to
 the knot's parent and then execute the knot's command with the
 Dialog debugger's trace mode enabled. The results are displayed in a
-modal dialog.
+modal dialog:
+
+![](skein-trace.png)
 
 The trace modal shows a tree of trace events, each tagged with one of four types:
 
@@ -387,6 +400,7 @@ players do.  Remember that the `dgt skein test`  command will run _all_ the
 The Skein has limitations, which are fundamentally based on
 the fact that it treats the interaction as a series of commands and responses; some of Dialog's capabilities are outside this simple model.
 
-* It can't help you with **status lines** as the debugger can't display those.
+* It can't help you with **status lines** as the debugger can't display those
 * It does not handle [non-command input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
 * It doesn't allow for hyperlinks
+* Neither `dgdebug` nor `dfrotz` honors colors specified in style classes
