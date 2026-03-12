@@ -311,12 +311,12 @@ modal dialog:
 
 The trace modal shows a tree of trace events, each tagged with one of four types:
 
-| Type | Meaning |
-|------|---------|
-| ENTER | A predicate is being entered (a new rule is being tried) |
-| QUERY | A sub-predicate is being queried |
-| FOUND | A predicate or query succeeded |
-| NOW | A dynamic predicate is being updated via `(now)` |
+| Type   | Meaning                                                  |
+|--------|----------------------------------------------------------|
+| ENTER  | A predicate is being entered (a new rule is being tried) |
+| QUERY  | A sub-predicate is being queried                         |
+| FOUND  | A predicate or query succeeded                           |
+| NOW    | A dynamic predicate is being updated via `(now)`         |
 
 Each node shows the predicate and the source file location (file and line number).
 The source location is a link; clicking it opens the source file in a new browser tab,
@@ -338,8 +338,12 @@ automatically expands to reveal all matching nodes, which are highlighted with a
 
 Clearing the search field collapses the tree back.
 
-> The _Trace_ action is only available when the Skein is using the `dgdebug` engine, and only
-> for non-root knots (the root knot has no command to trace).
+## Finding
+
+If you enter text into the search field and hit enter, the tree display will select a node
+matching the text and scroll that into view.  Terms like `before`, `instead of`, or `perform` are
+particularly handy for skipping the considerable amount of rules that simply attempt to 
+understand the player's command before an action is identified.
 
 ## Time Travel
 
