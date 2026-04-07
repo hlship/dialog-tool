@@ -8,6 +8,10 @@ Run tests with `bb test`.
 
 Developing the UI requires an additional window.
 
+### DaisyUI
+
+`npm install`
+
 ### Tailwind
 
 `brew install tailwindcss`
@@ -41,5 +45,5 @@ Developing the UI requires an additional window.
   - Need `gh` installed
   - Prints out info about release
   - Generates `out/dialog-tool.rb` from template
-- Copy `out/dialog-tool.rb` to `hlship/homebrew-brew` repo
+- Copy `out/dialog-tool.rb` to `hlship/homebrew-brew` repo (`/Formulas` directory) 
   - Commit and push -- it's live!

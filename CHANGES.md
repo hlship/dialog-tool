@@ -1,4 +1,4 @@
-# 2.0 -- UNRELEASED 2024
+# 2.0 -- UNRELEASED 2026
 
 Rewritten in Babashka. Added the Skein for development and testing support.
 

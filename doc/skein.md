@@ -99,7 +99,7 @@ Each knot has a button that raises a popup menu of knot-specific actions, and a 
 button for a popup menu to navigate to child knots.
 
 The text and border of the knot identifies its status.  The
-text in the screenshot is in bold blue, to indicate it is new, and the knot's border is yellow to indicate this is a new knot.
+text in the screenshot is in bold blue, to indicate it is new, and the knot's border is yellow to indicate this is a new knot.  The new text also has visible whitespace.
 
 At the bottom of the Skein is a place to enter the next player command
 and, floating at the bottom right, the floating action button; we'll come back to these later.
@@ -117,8 +117,8 @@ The Skein stores the most recent response from the running project for each knot
 align, the knot is valid; When they differ, the knot is in error.
 when there is no blessed response yet, the knot is new.
 
-Unblessed text is always shown in a fixed width font; certain styling (such as color and font weight) is identified with bracket delimiters (the `[CYAN]` and `[B]` markers), and whitespace is made visible.
-
+Unblessed text is always shown in a fixed width font; certain styling (such as color and font weight) is identified with bracket delimiters (the `[CYAN]` and `[B]` markers). Further, in changed text,
+whitespace is made visible.
 
 If we click the _Bless_ action the Skein will update:
 
@@ -382,6 +382,17 @@ if they are new (or in error) _or_ if some child or descendent
 of the knot is new (or in error).
 
 This menu item coloration is to assist you in navigating from the root down to the knot, or knots, that are new or in error.
+
+## Reloading
+
+In your `dialog.edn`, you will typically specify directories whose files are part of your project.
+The Skein is smarter than `dgdebug` here, because it will detect when files are added, deleted, or
+renamed in these directories and re-run `dgdebug` with the updated source files list, automatically.
+
+The Skein also notices changes to `dialog.edn` itself.
+
+Because of this, you can keep the Skein running even when modifying your source files and source
+directories and the Skein will just keep up.  But don't forget to `Replay All` after such changes!
 
 ## Engines
 
