@@ -10,8 +10,8 @@
   [target options project output-path]
   (let [{:keys [verbose? debug?]} options
         {:keys [build]} project
-        build'        (merge (:default build)
-                             (get build target))
+        build' (merge (:default build)
+                      (get build target))
         build-options (:options build')]
     (cond-> ["--format" (name target)
              "--output" (str output-path)]
@@ -27,30 +27,29 @@
 
   Returns the path to the compiled file."
   [target project sources output-dir options]
-  (let [ext         (if (= target :aa)
-                      "aastory"
-                      (name target))
+  (let [ext (if (= target :aa)
+              "aastory"
+              (name target))
         output-path (fs/path output-dir (str (:name project) "." ext))
-        args        (into (dialogc-args target options project output-path)
-                          sources)
-        command     (into [(pf/command-path project "dialogc")] args)
-        _           (do
-                      (perr [:cyan "Building " output-path " ..."])
-                      (env/debug-command command))
-        {:keys [exit]} @(p/process {:cmd     command
+        args (into (dialogc-args target options project output-path)
+                   sources)
+        command (into [(pf/command-path project "dialogc")] args)
+        _ (do
+            (perr [:cyan "Building " output-path " ..."])
+            (env/debug-command command))
+        {:keys [exit]} @(p/process {:cmd command
                                     :inherit true})]
     (when-not (zero? exit)
       (cli/exit exit))
     output-path))
 
 (defn build-project
-  "Builds a project; returns the path of the compiled file."
+  "Builds a project for a single target; returns the path of the compiled file.
+
+  The target to build is specified via the :target key in options (a single keyword)."
   [project options]
   (let [{:keys [target debug?]} options
-        target     (or target (:target project))
-        _     (when-not target
-                (cli/abort "No :target defined for project"))
         output-dir (fs/path "out" (if debug? "debug" "release"))
-        sources    (pf/expand-sources project options)]
+        sources (pf/expand-sources project options)]
     (fs/create-dirs output-dir)
     (invoke-dialogc target project sources output-dir options)))

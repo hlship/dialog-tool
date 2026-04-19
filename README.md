@@ -135,17 +135,19 @@ in your `dialog.edn`, but if you are starting from scratch, the directory-based 
 
 ### Target
 
-The :target key defines the output when the project is built; :zblorb is a good general choice.
+The :target key defines the output when the project is built. It may be a single keyword
+(e.g., `:target :zblorb`) or a vector of keywords (e.g., `:target [:zblorb :z8]`).
+:zblorb is a good general choice.
 In specific situations you may want to build for :z5, :z8, or :aa.  The differences between
 these targets are described in [the Dialog manual](https://dialog-if.github.io/manual/dialog/1a01/software.html).
 
-`dgt build` only builds the one target, but has command line options to override the target from what's
-in `dialog.edn`.
+`dgt build` builds all targets defined in the project; use the `--target` option to build
+a single specific target instead.
 
 ### Build Config
 
-The :build key contains build configuration for each target. When bundling, you may build once according
-to the project's target, and a second time in :aa target for the web.
+The :build key contains build configuration for each target. When bundling, all project targets
+are built, plus :aa (for the web player) if not already included.
 
 The :options key is used to specify additional options to add to the `dialogc` command line.
 This is typically used to set the heap size information.

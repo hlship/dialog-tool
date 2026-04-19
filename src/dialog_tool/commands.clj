@@ -52,15 +52,22 @@
                                  {:project-name (or project-name project-dir)}))
 
 (defcommand build
-  "Compile the project to a file ready to execute with an interpreter."
+  "Compile the project to a file ready to execute with an interpreter.
+
+  When --target is specified, builds for that single target.
+  Otherwise, builds for all targets defined in the project."
   [target (cli/select-option "-t" "--target TARGET"
                              "Output target:"
                              #{:zblorb :z5 :z8 :aa})
    debug? debug-opt
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
-  (build/build-project (pf/read-project)
-                       {:debug? debug?
-                        :verbose? verbose :target target}))
+  (let [project (pf/read-project)
+        base-options {:debug? debug?
+                      :verbose? verbose}]
+    (if target
+      (build/build-project project (assoc base-options :target target))
+      (doseq [t (:target project)]
+        (build/build-project project (assoc base-options :target t))))))
 
 (defcommand bundle
   "Bundle the project into a Zip archive that can be deployed to a web host."
@@ -83,15 +90,16 @@
                :repeatable true]
    :command "run"]
   (let [project (pf/read-project)
-        {:keys [target]} project
-        target' (if (= target :aa)
-                  (do
-                    (perr [:faint "Project target is aa; compiling to z8 for frotz"])
-                    :z8)
-                  target)
-        path    (build/build-project project
-                                     {:target target'
-                                      :debug? debug?})
+        targets (:target project)
+        ;; frotz can't run :aa targets; pick the first non-:aa target,
+        ;; or fall back to :z8 if only :aa is available
+        target (or (first (remove #{:aa} targets))
+                   (do
+                     (perr [:faint "Project target is aa; compiling to z8 for frotz"])
+                     :z8))
+        path (build/build-project project
+                                  {:target target
+                                   :debug? debug?})
         command (concat [(if dumb? "dfrotz" "frotz")]
                         (when dumb?
                           ["-m" "-q"])

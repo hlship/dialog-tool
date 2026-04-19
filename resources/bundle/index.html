@@ -16,7 +16,9 @@
 </div>
 <div class="links">
 	<ul>
-	<li><div class="download"><a href="{{story-file}}">Story File</a> <span class="filetype">({{story-file-description}})</span></div></li>
+	{% for sf in story-files %}
+	<li><div class="download"><a href="{{sf.name}}">Story File</a> <span class="filetype">({{sf.description}})</span></div></li>
+	{% endfor %}
 	<div class="auxiliary">
 		<li><a href="introduction-to-if.pdf">Introduction to IF</a> <span class="filetype">(pdf,&nbsp;612KB)</span></li>
 		<li><a href="play-if-card.pdf">IF in One Page</a> <span class="filetype">(pdf, 263KB)</li>
