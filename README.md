@@ -11,6 +11,10 @@ including what individual source files to use, and then provides commands to:
 - run tests derived from your skein files
 - package your project for release
 
+> [!WARNING]
+> `dgt` can be sensitive to the exact version of Dialog; this release is based on Dialog 01/0a. If you have
+> a different version of Dialog installed, you may encounter problems.
+
 ## Installing
 
 ### Homebrew (macOS)
@@ -34,7 +38,7 @@ The zip contains two files you need:
 Extract both files into the same directory, then add that directory to your `PATH`,
 or symlink `dgt` into a directory already on your `PATH`.
 
-Java 11 or later is required.
+Java 16 or later is required, though Java 24 or better is preferred.
 
 The following external tools must also be installed and on your `PATH`:
 
@@ -120,7 +124,7 @@ are included.
 > [!WARNING]
 > The order in which files in a source directory are loaded is unspecified. If it ever makes a difference,
 > don't rely on ordering; split files across directories and use the load order of directories, which is
-> under your control.
+> under your control, or list the individual files in the directory in the appropriate order.
 
 Generally, source code that is specific to your project goes in :main; reusable code goes in :library and :debug; 
 this may include code obtained from others, including the standard library.
