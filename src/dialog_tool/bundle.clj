@@ -63,9 +63,9 @@
   [project]
   (let [project-name (:name project)
         compiled-path (build/build-project project nil)
-        aa-path (if (= :aa (:format project))
+        aa-path (if (= :aa (:target project))
                   compiled-path
-                  (build/build-project project {:format :aa}))
+                  (build/build-project project {:target :aa}))
         compiled-name (fs/file-name compiled-path)
         story (extract-story-info project)
         zip-file (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
@@ -112,7 +112,7 @@
                        {:story story
                         :story-file compiled-name
                         :story-file-description (str
-                                                 (-> project :format name)
+                                                 (-> project :target name)
                                                  " "
                                                  (-> compiled-path
                                                      fs/size

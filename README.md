@@ -91,7 +91,7 @@ A minimal example `dialog.edn` (as created by `dgt new`):
  
 ```
 {:name "magnum-opus"
- :format :zblorb
+ :target :zblorb
  :build
  {:zblorb
   {:options ["--cover"     "cover.png" 
@@ -133,24 +133,24 @@ Alternately, a source may be a specific file, which is simply added to the list 
 If you are coming to `dgt` from a different approach, it may be easier to just list all the files, in order,
 in your `dialog.edn`, but if you are starting from scratch, the directory-based approach is easier.
 
-### Format
+### Target
 
-The :format key defines the output when the project is built; :zblorb is a good general choice.
+The :target key defines the output when the project is built; :zblorb is a good general choice.
 In specific situations you may want to build for :z5, :z8, or :aa.  The differences between
-these formats are described in [the Dialog manual](https://dialog-if.github.io/manual/dialog/1a01/software.html).
+these targets are described in [the Dialog manual](https://dialog-if.github.io/manual/dialog/1a01/software.html).
 
-`dgt build` only builds the one format, but has command line options to override the format from what's
+`dgt build` only builds the one target, but has command line options to override the target from what's
 in `dialog.edn`.
 
 ### Build Config
 
-The :build key contains build configuration for each format. When bundling, you may build once according
-to the project's format, and a second time in :aa format for the web.
+The :build key contains build configuration for each target. When bundling, you may build once according
+to the project's target, and a second time in :aa target for the web.
 
 The :options key is used to specify additional options to add to the `dialogc` command line.
 This is typically used to set the heap size information.
 
-Under :build, the :default key contains defaults for building (any format); the specific build map (:zblorb, in our example)
+Under :build, the :default key contains defaults for building (any target); the specific build map (:zblorb, in our example)
 is merged on top of the :default map, if present.
 
 ### Bin Dir
@@ -219,7 +219,7 @@ to completion.
 
 ## Building and Bundling
 
-The `dgt build` command is used to build your project; the :format key of `dialog.edn` determines how it
+The `dgt build` command is used to build your project; the :target key of `dialog.edn` determines how it
 will be built; the default is :zblorb; The [ZBlorb format](https://en.wikipedia.org/wiki/Blorb) can contain not only the compiled output of your project, but
 also sounds and images.
 

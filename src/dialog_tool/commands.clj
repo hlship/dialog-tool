@@ -53,14 +53,14 @@
 
 (defcommand build
   "Compile the project to a file ready to execute with an interpreter."
-  [format (cli/select-option "-f" "--format FORMAT"
-                             "Output format:"
+  [target (cli/select-option "-t" "--target TARGET"
+                             "Output target:"
                              #{:zblorb :z5 :z8 :aa})
    debug? debug-opt
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
   (build/build-project (pf/read-project)
                        {:debug? debug?
-                        :verbose? verbose :format format}))
+                        :verbose? verbose :target target}))
 
 (defcommand bundle
   "Bundle the project into a Zip archive that can be deployed to a web host."
@@ -70,7 +70,7 @@
 (defcommand run-project
   "Runs the project using the frotz command.
 
-  Note: --dumb has output format issues.
+  Note: --dumb has output target issues.
 
   Use -- before any frotz arguments.
   "
@@ -83,14 +83,14 @@
                :repeatable true]
    :command "run"]
   (let [project (pf/read-project)
-        {:keys [format]} project
-        format' (if (= format :aa)
+        {:keys [target]} project
+        target' (if (= target :aa)
                   (do
-                    (perr [:faint "Project format is aa; compiling to z8 for frotz"])
+                    (perr [:faint "Project target is aa; compiling to z8 for frotz"])
                     :z8)
-                  format)
+                  target)
         path    (build/build-project project
-                                     {:format format'
+                                     {:target target'
                                       :debug? debug?})
         command (concat [(if dumb? "dfrotz" "frotz")]
                         (when dumb?

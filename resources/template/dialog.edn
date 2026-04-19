@@ -1,5 +1,5 @@
 {:name   "{{project-name}}"
- :format :zblorb
+ :target :zblorb
  :build
  {:zblorb
   {:options ["--cover"     "cover.png"
