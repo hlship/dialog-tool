@@ -7,13 +7,13 @@
             [net.lewisship.cli-tools :as cli]))
 
 (defn- dialogc-args
-  [format options project output-path]
+  [target options project output-path]
   (let [{:keys [verbose? debug?]} options
         {:keys [build]} project
         build'        (merge (:default build)
-                             (get build format))
+                             (get build target))
         build-options (:options build')]
-    (cond-> ["--format" (name format)
+    (cond-> ["--format" (name target)
              "--output" (str output-path)]
 
       verbose? (conj "--verbose")
@@ -26,12 +26,12 @@
   "Invokes dialogc to compile the sources from the project.
 
   Returns the path to the compiled file."
-  [format project sources output-dir options]
-  (let [ext         (if (= format :aa)
+  [target project sources output-dir options]
+  (let [ext         (if (= target :aa)
                       "aastory"
-                      (name format))
+                      (name target))
         output-path (fs/path output-dir (str (:name project) "." ext))
-        args        (into (dialogc-args format options project output-path)
+        args        (into (dialogc-args target options project output-path)
                           sources)
         command     (into [(pf/command-path project "dialogc")] args)
         _           (do
@@ -46,11 +46,11 @@
 (defn build-project
   "Builds a project; returns the path of the compiled file."
   [project options]
-  (let [{:keys [format debug?]} options
-        format     (or format (:format project))
-        _     (when-not format
-                (cli/abort "No :format defined for project"))
+  (let [{:keys [target debug?]} options
+        target     (or target (:target project))
+        _     (when-not target
+                (cli/abort "No :target defined for project"))
         output-dir (fs/path "out" (if debug? "debug" "release"))
         sources    (pf/expand-sources project options)]
     (fs/create-dirs output-dir)
-    (invoke-dialogc format project sources output-dir options)))
+    (invoke-dialogc target project sources output-dir options)))
