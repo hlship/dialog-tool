@@ -113,9 +113,17 @@
     ;; for later comparison.
     (hex-string bs)))
 
+(def ^:private windows?
+  (-> (System/getProperty "os.name")
+      (.toLowerCase)
+      (.contains "win")))
+
 (defn command-path
   [project command]
-  (let [{:keys [bin-dir]} project]
+  (let [{:keys [bin-dir]} project
+        command' (if windows?
+                   (str command ".exe")
+                   command)]
     (if bin-dir
-      (str bin-dir "/" command)
-      command)))
+      (str bin-dir "/" command')
+      command')))

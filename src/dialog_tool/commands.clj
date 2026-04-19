@@ -100,7 +100,7 @@
         path (build/build-project project
                                   {:target target
                                    :debug? debug?})
-        command (concat [(if dumb? "dfrotz" "frotz")]
+        command (concat [(pf/command-path project (if dumb? "dfrotz" "frotz"))]
                         (when dumb?
                           ["-m" "-q"])
                         frotz-args
