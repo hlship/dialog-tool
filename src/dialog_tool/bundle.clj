@@ -80,8 +80,10 @@
         built-by-target (into {} (map (juxt :target identity)) built)
         ;; The :aa build is for the web player
         aa-build (get built-by-target :aa)
-        ;; Story files are the non-:aa builds (for download)
-        story-files (filterv #(not= :aa (:target %)) built)
+        ;; Story files are for download; include :aa only if explicitly in project targets
+        story-files (if (some #{:aa} targets)
+                      built
+                      (filterv #(not= :aa (:target %)) built))
         story (extract-story-info project)
         zip-file (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
         bundle-out-dir (fs/path "." "out" "web")]
