@@ -7,13 +7,25 @@
            (java.nio.file.attribute FileTime)
            (java.security MessageDigest)))
 
+(defn- normalize-target
+  "Normalizes the :target key to always be a vector of keywords.
+  A single keyword (e.g., :zblorb) becomes [:zblorb]; a sequence stays as-is.
+  Also supports the legacy :format key (renamed to :target).
+  Defaults to [:zblorb] when neither :target nor :format is specified."
+  [project]
+  (let [target (or (:target project) (:format project))]
+    (cond-> (dissoc project :format)
+      (keyword? target) (assoc :target [target])
+      (sequential? target) (assoc :target (vec target))
+      (nil? target) (assoc :target [:zblorb]))))
+
 (defn read-project
   ;; 0 arity is normal, 1 arity is just for testing purposes
   ([]
    (read-project ""))
   ([root-dir]
    (let [root-dir' (fs/path (or root-dir ""))
-         path (fs/path root-dir '"dialog.edn")]
+         path (fs/path root-dir' "dialog.edn")]
      (when-not (fs/exists? path)
        (abort (str path) " does not exist"))
      (try
@@ -21,10 +33,11 @@
            fs/file
            slurp
            edn/read-string
+           normalize-target
            (assoc ::root-dir root-dir'))
        (catch Throwable t
          (abort "Could not read " [:bold path] ": "
-               (ex-message t)))))))
+                (ex-message t)))))))
 
 (defn- expand-source
   [root-dir source]
@@ -47,13 +60,13 @@
    (expand-sources project nil))
   ([project {:keys [debug? pre-patch]}]
    (let [{::keys [root-dir]
-          :keys  [sources]} project
+          :keys [sources]} project
          {:keys [main debug library]} sources
          sources (concat
-                   pre-patch
-                   main
-                   (when debug? debug)
-                   library)]
+                  pre-patch
+                  main
+                  (when debug? debug)
+                  library)]
      (->> sources
           (mapcat #(expand-source root-dir %))
           (map str)))))
@@ -66,7 +79,7 @@
   [^MessageDigest digest ^Path f]
   (let [^FileTime last-modified (-> (fs/read-attributes f "lastModifiedTime")
                                     :lastModifiedTime)
-        b                       (ByteBuffer/allocate 8)]
+        b (ByteBuffer/allocate 8)]
     (.putLong b (.toMillis last-modified))
     (.flip b)
     (.update digest b)))
@@ -86,16 +99,16 @@
   the hash."
   [project]
   (let [{::keys [root-dir]
-         :keys  [sources]} project
+         :keys [sources]} project
         {:keys [main debug library]} sources
-        digest    (MessageDigest/getInstance "SHA-1")
+        digest (MessageDigest/getInstance "SHA-1")
         root-path (fs/path root-dir "dialog.edn")
-        _         (->> [main debug library]
-                       (reduce into [root-path])
-                       (mapcat #(expand-source root-dir %))
-                       sort
-                       (run! #(update-digest-from-file digest %)))
-        bs        (.digest digest)]
+        _ (->> [main debug library]
+               (reduce into [root-path])
+               (mapcat #(expand-source root-dir %))
+               sort
+               (run! #(update-digest-from-file digest %)))
+        bs (.digest digest)]
     ;; Byte arrays don't compare as equals, so convert to a hex string
     ;; for later comparison.
     (hex-string bs)))

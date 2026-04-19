@@ -59,14 +59,31 @@
                (map #(ansi/strip-ansi (:response %)))
                (reduce str)))))))
 
+(defn- build-target
+  "Builds a single target, returning a map with :target, :path, :name, and :description."
+  [project target]
+  (let [path (build/build-project project {:target target})]
+    {:target target
+     :path path
+     :name (str (fs/file-name path))
+     :description (str (name target)
+                       " "
+                       (-> path fs/size h/filesize))}))
+
 (defn bundle-project
   [project]
   (let [project-name (:name project)
-        compiled-path (build/build-project project nil)
-        aa-path (if (= :aa (:target project))
-                  compiled-path
-                  (build/build-project project {:target :aa}))
-        compiled-name (fs/file-name compiled-path)
+        targets (:target project)
+        ;; Build all unique targets needed: project targets + :aa for web player
+        all-targets (distinct (conj (vec targets) :aa))
+        built (mapv #(build-target project %) all-targets)
+        built-by-target (into {} (map (juxt :target identity)) built)
+        ;; The :aa build is for the web player
+        aa-build (get built-by-target :aa)
+        ;; Story files are for download; include :aa only if explicitly in project targets
+        story-files (if (some #{:aa} targets)
+                      built
+                      (filterv #(not= :aa (:target %)) built))
         story (extract-story-info project)
         zip-file (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
         bundle-out-dir (fs/path "." "out" "web")]
@@ -80,7 +97,7 @@
     (p/shell (pf/command-path project "aambundle")
              "--target" "web"
              "--output" (str bundle-out-dir)
-             (str aa-path))
+             (str (:path aa-build)))
     (perr [:cyan "  out/web/resources/..."])
 
     ;; Overwrite the default style.css with this one
@@ -95,7 +112,10 @@
       (t/copy-resource (str "bundle/" source)
                        (fs/path bundle-out-dir source)))
 
-    (t/copy-file compiled-path (fs/path bundle-out-dir compiled-name))
+    ;; Copy all story files (non-:aa compiled outputs) into the bundle
+    (doseq [{:keys [path]} story-files]
+      (t/copy-file path (fs/path bundle-out-dir (str (fs/file-name path)))))
+
     (t/copy-file "cover.png" (fs/path bundle-out-dir "cover.png"))
 
     (perr [:cyan "  out/web/cover-small.jpg"])
@@ -110,13 +130,7 @@
                                            (-> path fs/size h/filesize))))]
       (t/copy-rendered "bundle/index.html"
                        {:story story
-                        :story-file compiled-name
-                        :story-file-description (str
-                                                 (-> project :target name)
-                                                 " "
-                                                 (-> compiled-path
-                                                     fs/size
-                                                     h/filesize))
+                        :story-files story-files
                         :walkthrough-description walkthrough-description}
                        (fs/path bundle-out-dir "index.html")))
 
