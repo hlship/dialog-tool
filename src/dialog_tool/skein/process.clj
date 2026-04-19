@@ -156,7 +156,7 @@
         output-dir (fs/path project-dir "out" "skein" (if debug? "debug" "release"))
         path (fs/path output-dir (str project-name ".zblorb"))
         pre (fn []
-              (let [command (into ["dialogc"
+              (let [command (into [(pf/command-path project "dialogc")
                                    "--format" "zblorb"
                                    "--output" (str path)]
                                   ;; the patch prevents the status line from being presented
@@ -166,7 +166,7 @@
                 (env/debug-command command)
                 (p/check
                  (p/sh command))))
-        cmd ["dfrotz"
+        cmd [(pf/command-path project "dfrotz")
              ;; Flags: quiet, no *more*
              "-q" "-m"
              ;; Although dfortz has "-f ansi", when enabled

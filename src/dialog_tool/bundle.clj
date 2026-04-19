@@ -119,7 +119,7 @@
     (t/copy-file "cover.png" (fs/path bundle-out-dir "cover.png"))
 
     (perr [:cyan "  out/web/cover-small.jpg"])
-    (p/shell "magick cover.png -resize 120 out/web/cover-small.jpg")
+    (p/shell (pf/command-path project "magick") "cover.png" "-resize" "120" "out/web/cover-small.jpg")
 
     (let [walkthrough (extract-walkthrough project)
           walkthrough-description (when walkthrough
