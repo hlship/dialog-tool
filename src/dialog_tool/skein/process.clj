@@ -114,9 +114,11 @@
    (let [project (pf/read-project project-root)
          cmd (-> [(pf/command-path project "dgdebug")
                   "--quit"
+                  "--no-header"
                   "--numbered"
                   "--seed" (str seed)
-                  "--width" "80"]
+                  "--width" "80"
+                  "--height" "-1"]
                  (into (:extra-arguments opts))
                  (into (pf/expand-sources project {:debug? true})))]
      (start! project cmd {:use-pty? true

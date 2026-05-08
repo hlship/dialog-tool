@@ -86,7 +86,9 @@
 
   (-> @*session :debug-enabled?)
 
-  (-> @*session :tree :knots (get 1772732178667))
+  (-> @*session :tree :knots (get 0))
+  
+  (->> @*session :tree :knots vals (filter #(-> % :id nil?)))
 
   (@*shutdown)
 
