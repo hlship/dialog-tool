@@ -5,6 +5,8 @@ Rewritten in Babashka. Added the Skein for development and testing support.
 Added trace mode to the Skein: trace command execution through the Dialog debugger,
 with an interactive tree view, expand/collapse, and search (dgdebug engine only).
 
+The Skein now automatically performs a Replay All when first launched.
+
 # 1.4 -- 29 Sep 2020
 
 Remove the `bless` command; it is now all done from the `test` command.

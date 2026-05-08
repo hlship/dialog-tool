@@ -221,7 +221,8 @@ add new commands beneath any knot, and you can also rerun the project to any kno
 and the skein will identify any text that has changed.  You can even run *all* possible branches
 to completion.
 
-`dgt skein run` will open an existing skein.
+`dgt skein run` will open an existing skein. When launched, the Skein automatically
+replays all branches to ensure responses and dynamic state are up to date.
 
 ## Building and Bundling
 
