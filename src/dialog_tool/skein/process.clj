@@ -117,7 +117,7 @@
                   "--no-header"
                   "--numbered"
                   "--seed" (str seed)
-                  "--width" "80"
+                  "--width" "-1"
                   "--height" "-1"]
                  (into (:extra-arguments opts))
                  (into (pf/expand-sources project {:debug? true})))]

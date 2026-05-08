@@ -333,9 +333,9 @@
           ;; Clear the continue flag
           (swap! *session dissoc :continue)
 
-          ;; Close progress modal and render final state
-          (ui.app/render-app sse-gen @*session {:flash flash})
-          (utils/patch-elements! sse-gen [:div#modal-container]))))))
+          ;; Close progress modal, then render final state
+          (utils/patch-elements! sse-gen [:div#modal-container])
+          (ui.app/render-app sse-gen @*session {:flash flash}))))))
 
 (defn- delete-knot
   "Deletes the specified knot and all its descendants."
