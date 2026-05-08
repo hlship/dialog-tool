@@ -50,7 +50,7 @@
      [:div.mx-auto.flex.items-center.gap-2.container
       [:div.self-center.truncate.text-xl.font-semibold.shrink.min-w-0
        skein-path]
-      [:div.join.shrink-0
+      [:div.join.shrink-0.mx-auto
        [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-warning.p-2.font-semibold
         (when (pos? new)
