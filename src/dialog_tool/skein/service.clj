@@ -9,11 +9,9 @@
             [org.httpkit.server :as hk])
   (:import (java.net ServerSocket)))
 
-^:clj-reload/keep
-(def *session (atom nil))
+(defonce *session (atom nil))
 
-^:clj-reload/keep
-(def *shutdown (atom nil))
+(defonce *shutdown (atom nil))
 
 (defn- service-handler-proxy
   [request]
@@ -96,7 +94,7 @@
           {:engine :dgdebug
            :skein-path "../sanddancer-dialog/default.skein"
            :port 10140
-           :development-mode? true})
+           :development-mode? false})
 
   (start! "../dialog-extensions/tree"
           {:engine :dgdebug
