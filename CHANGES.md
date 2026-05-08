@@ -7,6 +7,11 @@ with an interactive tree view, expand/collapse, and search (dgdebug engine only)
 
 The Skein now automatically performs a Replay All when first launched.
 
+Updated to use new dgdebug flags: `--no-header`, `--height -1`, `--width -1`, and `--numbered`.
+Game output now wraps naturally to the browser window width rather than at a fixed 80 columns.
+
+The Skein navbar is now responsive; button labels hide at narrow window widths, showing only icons.
+
 # 1.4 -- 29 Sep 2020
 
 Remove the `bless` command; it is now all done from the `test` command.

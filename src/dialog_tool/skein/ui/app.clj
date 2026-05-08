@@ -47,10 +47,10 @@
     [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
                            "px-2 sm:px-4 py-2.5"
                            "fixed w-full z-20 top-0 start-0 border-b")}
-     [:div.mx-auto.flex.flex-wrap.justify-between.items-center.container
-      [:div.self-center.whitespace-nowrap.text-xl.font-semibold
+     [:div.mx-auto.flex.items-center.gap-2.container
+      [:div.self-center.truncate.text-xl.font-semibold.shrink.min-w-0
        skein-path]
-      [:div.join
+      [:div.join.shrink-0
        [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-warning.p-2.font-semibold
         (when (pos? new)
@@ -62,9 +62,9 @@
           {:class "cursor-pointer"
            :data-on:click "@get('/action/jump-to-status/error')"})
         error]]
-      [:div.flex.md:order-2.space-x-2
+      [:div.flex.items-center.gap-1.shrink-0.ml-auto
        [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                           :label [:<> [:div.icon.icon-jump] "Jump"]}
+                           :label [:<> [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"]]}
         (for [{:keys [id label]} labeled-knots]
           [dropdown/button {:data-on:click (str "@get('/action/select/" id "')")}
            label])]
@@ -72,27 +72,27 @@
         {:data-on:click "@post('/action/replay-all')"
          :data-accel "p"
          :data-preserve-attr "data-tip"}
-        [:div.icon.icon-play] "Replay All"]
+        [:div.icon.icon-play] [:span.hidden.lg:inline "Replay All"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click "@post('/action/save')"
          :data-accel "s"
          :data-preserve-attr "data-tip"
          :class (when dirty? "btn-soft")}
-        [:div.icon.icon-save] "Save"]
+        [:div.icon.icon-save] [:span.hidden.lg:inline "Save"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click "@get('/action/undo')"
          :data-accel "z"
          :data-preserve-attr "data-tip"
          :disabled (not can-undo?)}
-        [:div.icon.icon-undo] "Undo"]
+        [:div.icon.icon-undo] [:span.hidden.lg:inline "Undo"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click "@get('/action/redo')"
          :data-accel__shift "z"
          :data-preserve-attr "data-tip"
          :disabled (not can-redo?)}
-        [:div.icon.icon-redo] "Redo"]
+        [:div.icon.icon-redo] [:span.hidden.lg:inline "Redo"]]
        [:div.btn.btn-primary {:data-on:click "@get('/action/quit')"}
-        [:div.icon.icon-quit] "Quit"]]]]))
+        [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
   {:ok "border-slate-100"
@@ -164,7 +164,7 @@
         root? (zero? id)]
     [:div.border-x-4 {:id (str "knot-" id)
                       :class border-class}
-     [:div.bg-yellow-50.w-full.whitespace-pre.p-2
+     [:div.bg-yellow-50.w-full.whitespace-pre-wrap.p-2
       {:class (when (or fixed-width? (= :error status)) "font-mono")}
       [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-16.bg-yellow-50.rounded-bl-lg.pl-2.pb-1
        (when locked
