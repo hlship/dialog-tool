@@ -4,9 +4,7 @@
   (:gen-class))
 
 (defn option-handler
-  [{:keys [version debug]} _dispatch-options callback]
-  (when version
-    (cli/abort 0 (env/version)))
+  [{:keys [debug]} _dispatch-options callback]
 
   (binding [env/*debug* (boolean debug)]
     (callback)))
@@ -16,11 +14,10 @@
   (cli/dispatch {:tool-name "dgt"
                  :namespaces '[dialog-tool.commands
                                net.lewisship.cli-tools.completions]
-                 :groups {"skein" {:doc "Skein UI and testing commands"
+                 :version (env/version)
+                 :groups {"skein" {:doc        "Skein UI and testing commands"
                                    :namespaces '[dialog-tool.skein.commands]}}
                  :arguments args
-                 :extra-tool-options [["-v" "--version" "Show version information and exit"]
-                                      ["-d" "--debug" "Enable developer output"]]
+                 :extra-tool-options [["-d" "--debug" "Enable developer output"]]
                  :tool-options-handler option-handler})
-  ;; TODO: This is needed for java invocation, maybe a cli-tools bug.
   (cli/abort 0)) 
