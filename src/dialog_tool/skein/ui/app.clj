@@ -114,8 +114,8 @@
   [tree knot]
   (let [{:keys [parent-id dynamic-state]} knot
         before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
-    (if (and (seq dynamic-state)
-             (seq before-dynamic-state))
+    (when (and (seq dynamic-state)
+               (seq before-dynamic-state))
       (let [{:keys [added removed changed]} (dynamic/diff before-dynamic-state dynamic-state)
             tuples (->> []
                         (into (map #(vector :added %) added))
@@ -131,12 +131,7 @@
                :removed [:span.rounded-box.border.border-warning.bg-warning.bg-opacity-20.text-warning-content.px-2.py-1
                          [:span.font-bold.mr-1 "−"] predicate]
                :changed [:span.rounded-box.border.border-info.bg-info.bg-opacity-10.px-2.py-1
-                         predicate]))]))
-      ;; When missing dynamic state, warn user to replay
-      [:div.font-sans.inline-flex.items-center.gap-2.text-sm.bg-info.rounded-sm.opacity-75.px-2.py-1.mt-2
-       [:div.icon.icon-warning]
-       [:em "Replay to collect world state data"]])))
-
+                         predicate]))])))))
 (defn- render-children-navigation
   [tree knot]
   (let [children (tree/children tree knot)

@@ -75,7 +75,8 @@
                                 (System/exit 0)))]
     (reset! *session (assoc session
                             :development-mode? development-mode?
-                            :debug-enabled? (= engine' :dgdebug)))
+                            :debug-enabled? (= engine' :dgdebug)
+                            :replay-on-launch? true))
     (reset! *shutdown shutdown-service-fn)
     port'))
 

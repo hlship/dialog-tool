@@ -294,6 +294,7 @@
 (defn- replay-all
   "Replays to all leaf knots with SSE progress updates."
   [{:keys [*session] :as request}]
+  (swap! *session dissoc :replay-on-launch?)
   (utils/with-short-sse
     request
     (fn [sse-gen]
@@ -699,7 +700,9 @@
    (quit-without-saving req)
 
    "GET /app" req
-   (render-app req)
+   (if (:replay-on-launch? @(:*session req))
+     (replay-all req)
+     (render-app req))
 
    "GET /fab" req
    {:status 200
