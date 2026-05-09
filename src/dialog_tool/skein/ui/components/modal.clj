@@ -41,7 +41,7 @@
   [:div#modal-container
    {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
    [:div.bg-white.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
-    {:data-on:click__stop ""
+    {:data-on:click__stop "return"
      :data-on:keydown (h/action
                        (when (= $key "Escape")
                          (swap! cursor dissoc :modal)))

@@ -289,12 +289,12 @@
                                                                    {:type :dynamic-state :knot-id id}))}
                                            "Dynamic State ..."
                                            "Show full dynamic state")
-                          (when debug-enabled?
-                            (dropdown/button {:data-on:click (h/action)}
-                                            ;; TODO: trace support
-
-                                             "Trace ..."
-                                             (if root? "Trace startup" "Trace command execution"))))
+                                                                              (when debug-enabled?
+                                                                                (dropdown/button {:data-on:click (h/action
+                                                                                                                  nil ;; TODO: trace support
+                                                                                                                  )}
+                                                                                                 "Trace ..."
+                                                                                                 (if root? "Trace startup" "Trace command execution"))))
        (render-children-navigation cursor tree knot)]
       (render-diff response unblessed)
       [:hr.clear-right.text-stone-200]
@@ -360,8 +360,6 @@
   Hyper calls this whenever the cursor changes and pushes the diff via SSE."
   [req]
   (let [cursor (h/global-cursor :session)
-        ;; Clear transient UI state on page load so it doesn't persist across refreshes
-        _ (swap! cursor dissoc :flash :modal :progress)
         session @cursor
         {:keys [tree debug-enabled? show-dynamic? fixed-width? flash]} session
         knots (tree/selected-knots tree)
