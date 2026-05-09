@@ -20,10 +20,10 @@
 
 (defn- create-handler
   "Creates the Hyper Ring handler, seeding the skein session into app-state."
-  [session]
+  [app-state*]
   (h/create-handler
    #'routes
-   :app-state (atom (assoc (state/init-state) :session session))
+   :app-state app-state*
    :static-resources "public"
    :datastar-script [:script {:type "module"
                               :src "/js/main.js"}]
@@ -31,6 +31,9 @@
           [:link {:rel "stylesheet" :href "/style.css"}]]))
 
 (defonce *app (atom nil))
+
+;; Holds the hyper app-state atom for direct access (e.g. stop! cleanup)
+(defonce *handler-app-state (atom nil))
 
 (defn- free-port
   []
@@ -74,19 +77,20 @@
                         :development-mode? development-mode?
                         :debug-enabled? (= engine' :dgdebug)
                         :replay-on-launch? true
-                        :exit-when-shutdown? exit-when-shutdown?)]
-    (reset! *app
-            (h/start! (create-handler session') {:port port'}))
+                        :exit-when-shutdown? exit-when-shutdown?)
+        app-state* (atom (assoc-in (state/init-state) [:global :session] session'))]
+    (reset! *handler-app-state app-state*)
+    (reset! *app (h/start! (create-handler app-state*) {:port port'}))
     port'))
 
 (defn stop!
   []
-  (when-let [app @*app]
+  (when-let [stop-fn @*app]
     ;; Kill the running process if any
-    (when-let [session (:session @(:hyper/app-state app))]
+    (when-let [session (get-in @*handler-app-state [:global :session])]
       (when-let [process (:process session)]
         (sk.process/kill! process)))
-    (h/stop! app)
+    (h/stop! stop-fn)
     (reset! *app nil)
     (println "Shut down")))
 

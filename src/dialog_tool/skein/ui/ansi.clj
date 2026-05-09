@@ -87,7 +87,7 @@
     (let [segments (parse-segments text)]
       (loop [remaining segments
              effects {}
-             result [:<>]]
+             result []]
         (if-let [[seg-type seg-value] (first remaining)]
           (case seg-type
             :sgr (recur (rest remaining)
@@ -100,7 +100,7 @@
                                  (if classes
                                    [:span {:class classes} seg-value]
                                    seg-value)))))
-          result)))))
+          (seq result))))))
 
 (defn- opening-marker
   "Returns the opening pseudo-marker for an SGR code, or nil for reset (0)."

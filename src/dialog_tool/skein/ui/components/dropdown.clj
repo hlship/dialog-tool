@@ -49,6 +49,6 @@
       [:button attrs
        [:span label]
        (when sub-label
-         [:<>
+         (list
           [:br]
-          [:span.text-xs.mt-0.5 sub-label]])]])))
+          [:span.text-xs.mt-0.5 sub-label]))]])))

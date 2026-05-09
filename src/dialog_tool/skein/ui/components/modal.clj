@@ -24,9 +24,9 @@
    label])
 
 (def ^:private default-buttons
-  [:<>
-   [cancel-button {}]
-   [ok-button {}]])
+  (list
+   (cancel-button {})
+   (ok-button {})))
 
 (defn modal
   "Renders a modal dialog overlay.

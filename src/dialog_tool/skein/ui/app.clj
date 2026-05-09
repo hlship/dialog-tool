@@ -29,13 +29,12 @@
     (let [response (ansi/ansi->markers response)
           unblessed (ansi/ansi->markers unblessed)
           changes (diff/diff-text response unblessed)]
-      (into [:<>]
-            (map (fn [{:keys [type value]}]
-                   (case type
-                     :added [:span.text-blue-700.font-bold (visible-whitespace value)]
-                     :removed [:span.text-red-800.font-bold.line-through (visible-whitespace value)]
-                     :unchanged value)))
-            changes))
+      (map (fn [{:keys [type value]}]
+             (case type
+               :added [:span.text-blue-700.font-bold (visible-whitespace value)]
+               :removed [:span.text-red-800.font-bold.line-through (visible-whitespace value)]
+               :unchanged value))
+           changes))
     ;; No unblessed, render with ANSI styling
     (ansi/ansi->hiccup response)))
 
@@ -100,11 +99,11 @@
            :data-on:click (h/action (jump-to-status! cursor :error))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
-       [dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                           :label [:<> [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"]]}
+       (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
+                           :label (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])}
         (for [{:keys [id label]} labeled-knots]
-          [dropdown/button {:data-on:click (h/action (swap! cursor session/select-knot id))}
-           label])]
+          (dropdown/button {:data-on:click (h/action (swap! cursor session/select-knot id))}
+           label)))
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click (h/action (replay-all! cursor))
          :data-accel "p"
@@ -182,16 +181,16 @@
   (let [children (tree/children tree knot)
         {:keys [descendant-status]} knot]
     [:div.indicator
-     [dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class descendant-status))
+     (dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class descendant-status))
                          :disabled (< (count children) 2)
                          :label [:div.icon.icon-children]}
       (map (fn [{:keys [id label command]}]
              (let [status (tree/greatest-status (tree/knot-status tree id)
                                                 (tree/descendant-status tree id))]
-               [dropdown/button {:bg-class (status->button-class status)
+               (dropdown/button {:bg-class (status->button-class status)
                                  :data-on:click (h/action (swap! cursor session/select-knot id))}
-                (or label command)]))
-           children)]
+                (or label command))))
+           children))
      (when (> (count children) 1)
        [:div
         {:class (classes
@@ -206,7 +205,7 @@
   (let [{:keys [id label response unblessed status children dynamic-response locked]} knot
         border-class (status->border-class status)
         disable-bless? (= :ok status)
-        root? (zero? id)]
+        root? (= 0 id)]
     [:div.border-x-4 {:id (str "knot-" id)
                       :class border-class}
      [:div.bg-yellow-50.w-full.whitespace-pre-wrap.p-2
@@ -216,55 +215,55 @@
          [:div.icon.icon-lock {:title "Locked"}])
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
-       [dropdown/dropdown {:label [:div.icon.icon-dots-vertical]
+       (dropdown/dropdown {:label [:div.icon.icon-dots-vertical]
                            :button-class "btn p-0"}
-        [dropdown/button {:disabled disable-bless?
+        (dropdown/button {:disabled disable-bless?
                           :data-on:click (h/action
                                           (swap! cursor session/bless id)
                                           (swap! cursor assoc :flash "Blessed"))}
-         "Bless" "Accept changes"]
+         "Bless" "Accept changes")
         (when-not root?
-          [dropdown/button {:disabled disable-bless?
+          (dropdown/button {:disabled disable-bless?
                             :data-on:click (h/action
                                             (swap! cursor session/bless-to id)
                                             (swap! cursor assoc :flash "Blessed to here"))}
-           "Bless To Here" "Accept changes from root to here"])
-        [dropdown/button {:data-on:click (h/action
+           "Bless To Here" "Accept changes from root to here"))
+        (dropdown/button {:data-on:click (h/action
                                           (swap! cursor session/check-for-changed-sources)
                                           (swap! cursor session/replay-to! id)
                                           (swap! cursor assoc :flash "Replayed"))}
-         "Replay" "Run from start to here"]
-        [dropdown/button {:data-on:click (h/action
+         "Replay" "Run from start to here")
+        (dropdown/button {:data-on:click (h/action
                                           (swap! cursor session/prepare-new-child! id))}
-         "New Child" "Add a new command after this"]
+         "New Child" "Add a new command after this")
         (when-not root?
-          [:<>
-           [dropdown/button {:data-on:click (h/action
+          (list
+           (dropdown/button {:data-on:click (h/action
                                              (swap! cursor assoc :modal
                                                     {:type :edit-command :knot-id id}))}
-            "Edit Command ..." "Change the knot's command"]
-           [dropdown/button {:data-on:click (h/action
+            "Edit Command ..." "Change the knot's command")
+           (dropdown/button {:data-on:click (h/action
                                              (swap! cursor assoc :modal
                                                     {:type :edit-label :knot-id id}))}
-            "Edit Label ..." "Change label for knot"]
-           [dropdown/button {:data-on:click (h/action
+            "Edit Label ..." "Change label for knot")
+           (dropdown/button {:data-on:click (h/action
                                              (swap! cursor session/toggle-lock id)
                                              (let [locked? (get-in @cursor [:tree :knots id :locked])]
                                                (swap! cursor assoc :flash (if locked? "Locked" "Unlocked"))))}
-            "Toggle Lock" "Lock or unlock this knot"]
-           [dropdown/button {:data-on:click (h/action
+            "Toggle Lock" "Lock or unlock this knot")
+           (dropdown/button {:data-on:click (h/action
                                              (swap! cursor assoc :modal
                                                     {:type :insert-parent :knot-id id}))}
-            "Insert Parent" "Insert a command before this"]
-           [dropdown/button {:data-on:click (h/action
+            "Insert Parent" "Insert a command before this")
+           (dropdown/button {:data-on:click (h/action
                                              (let [[error session'] (session/delete! @cursor id)]
                                                (reset! cursor session')
                                                (swap! cursor assoc :flash
                                                       (if error
                                                         {:message error :type :error}
                                                         "Deleted"))))}
-            "Delete" "Delete this knot and all children"]
-           [dropdown/button {:disabled (not (seq children))
+            "Delete" "Delete this knot and all children")
+           (dropdown/button {:disabled (not (seq children))
                              :data-on:click (h/action
                                              (let [[error session'] (session/splice-out! @cursor id)]
                                                (reset! cursor session')
@@ -272,25 +271,25 @@
                                                       (if error
                                                         {:message error :type :error}
                                                         "Spliced out"))))}
-            "Splice Out" "Delete this knot, reparent children up"]])
-        [dropdown/button {:disabled (nil? dynamic-response)
+            "Splice Out" "Delete this knot, reparent children up")))
+        (dropdown/button {:disabled (nil? dynamic-response)
                           :data-on:click (h/action
                                           (swap! cursor assoc :modal
                                                  {:type :dynamic-state :knot-id id}))}
          "Dynamic State ..."
-         "Show full dynamic state"]
+         "Show full dynamic state")
         (when debug-enabled?
-          [dropdown/button {:data-on:click (h/action
+          (dropdown/button {:data-on:click (h/action
                                             ;; TODO: trace support
                                             )}
            "Trace ..."
-           (if root? "Trace startup" "Trace command execution")])]
+           (if root? "Trace startup" "Trace command execution"))))
        (render-children-navigation cursor tree knot)]
-      [render-diff response unblessed]
+      (render-diff response unblessed)
       [:hr.clear-right.text-stone-200]
       (when (and debug-enabled? show-dynamic?
                  (not= 0 id))
-        [render-dynamic tree knot])]]))
+        (render-dynamic tree knot))]]))
 
 (defn- render-fab
   [cursor session]
@@ -328,18 +327,18 @@
     (h/watch! cursor)
     [:div.relative.px-8
      (when flash
-       [flash/flash-message flash])
+       (flash/flash-message flash))
      ;; Progress modal for long-running operations
      (when progress
        ;; TODO: render progress modal from :progress state
        nil)
-     [navbar cursor session]
+     (navbar cursor session)
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [knot]
              (render-knot cursor tree knot {:debug-enabled? debug-enabled?
                                             :show-dynamic? show-dynamic?
                                             :fixed-width? fixed-width?}))
            knots)
-      [new-command/new-command-input cursor (:id leaf-knot)]]
+      (new-command/new-command-input cursor (:id leaf-knot))]
      ;; FAB for settings
-     [render-fab cursor session]]))
+     (render-fab cursor session)]))
