@@ -12,8 +12,8 @@
 (defn- get-session
   "Reads the current session from hyper's app-state."
   []
-  (get-in @(deref (requiring-resolve 'dialog-tool.skein.service/*handler-app-state))
-          [:global :session]))
+  (let [app-state* ((requiring-resolve 'dialog-tool.skein.service/app-state*))]
+    (get-in @app-state* [:global :session])))
 
 (defn- resolve-trace-source
   "Given the session and a node ID string, resolves the trace node's source

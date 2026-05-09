@@ -35,10 +35,8 @@
    :head [[:link {:rel "icon" :type "image/x-icon" :href "/favicon.ico"}]
           [:link {:rel "stylesheet" :href "/style.css"}]]))
 
+;; Holds {:stop-fn ..., :app-state* ...} when the service is running.
 (defonce *app (atom nil))
-
-;; Holds the hyper app-state atom for direct access (e.g. stop! cleanup)
-(defonce *handler-app-state (atom nil))
 
 (defn- free-port
   []
@@ -88,11 +86,16 @@
     (reset! *app (h/start! (create-handler app-state*) {:port port'}))
     port'))
 
+(defn app-state*
+  "Returns the hyper app-state atom, or nil if the service isn't running."
+  []
+  (:app-state* @*app))
+
 (defn stop!
   []
-  (when-let [stop-fn @*app]
+  (when-let [{:keys [stop-fn app-state*]} @*app]
     ;; Kill the running process if any
-    (when-let [session (get-in @*handler-app-state [:global :session])]
+    (when-let [session (get-in @app-state* [:global :session])]
       (when-let [process (:process session)]
         (sk.process/kill! process)))
     (h/stop! stop-fn)
@@ -103,7 +106,7 @@
 
   @*app
 
-  (-> @(:hyper/app-state @*app) :session)
+  (get-in @(app-state*) [:global :session])
 
   (stop!)
 
