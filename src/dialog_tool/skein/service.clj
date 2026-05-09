@@ -46,7 +46,8 @@
 
   Returns the port opened."
   [root-dir opts]
-  (let [{:keys [skein-path port seed engine development-mode?]} opts
+  (let [{:keys [skein-path port seed engine development-mode? exit-when-shutdown?]
+         :or   {exit-when-shutdown? true}} opts
         port' (or port (free-port))
         tree (when (fs/exists? skein-path)
                (sk.file/load-tree skein-path))
@@ -69,7 +70,7 @@
                               (when-let [process (:process @*session)]
                                 (sk.process/kill! process))
                               (println "Shut down")
-                              (when-not development-mode?
+                              (when (and exit-when-shutdown? (not development-mode?))
                                 (System/exit 0)))]
     (reset! *session (assoc session
                             :development-mode? development-mode?
@@ -94,28 +95,33 @@
           {:engine :dgdebug
            :skein-path "../sanddancer-dialog/default.skein"
            :port 10140
+           :exit-when-shutdown? false
            :development-mode? false})
 
   (start! "../dialog-extensions/tree"
           {:engine :dgdebug
            :skein-path "../dialog-extensions/tree/default.skein"
            :port 10140
+           :exit-when-shutdown? false
            :development-mode? true})
 
 
   (start! "../sanddancer-dialog"
           {:engine :dgdebug
-           :skein-path "/tmp/sd.skein"})
+           :skein-path "/tmp/sd.skein"
+           :exit-when-shutdown? false})
 
   (start! "../dialog-extensions/who"
           {:development-mode? true
-           :skein-path "../dialog-extensions/who/default.skein"})
+           :skein-path "../dialog-extensions/who/default.skein"
+           :exit-when-shutdown? false})
 
   (start! "../dialog-extensions/who"
           {:skein-path "../dialog-extensions/who/frotz.skein"
            :port 10140
            :seed 10101
            :development-mode? true
+           :exit-when-shutdown? false
            :engine :frotz})
 
 ;;
