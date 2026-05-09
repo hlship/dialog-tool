@@ -2,6 +2,7 @@
   (:require [clojure.string :as string]
             [dialog-tool.skein.dynamic :as dynamic]
             [dialog-tool.skein.session :as session]
+            [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
@@ -289,12 +290,27 @@
                                                                    {:type :dynamic-state :knot-id id}))}
                                            "Dynamic State ..."
                                            "Show full dynamic state")
-                                                                              (when debug-enabled?
-                                                                                (dropdown/button {:data-on:click (h/action
-                                                                                                                  nil ;; TODO: trace support
-                                                                                                                  )}
-                                                                                                 "Trace ..."
-                                                                                                 (if root? "Trace startup" "Trace command execution"))))
+                                                                                                        (when debug-enabled?
+                                                                                                          (dropdown/button {:data-on:click (h/action
+                                                                                                                                            (swap! cursor session/check-for-changed-sources)
+                                                                                                                                            (let [command (if root?
+                                                                                                                                                           "Startup"
+                                                                                                                                                           (:command (tree/get-knot (:tree @cursor) id)))
+                                                                                                                                                  [trace-response session']
+                                                                                                                                                  (if root?
+                                                                                                                                                    (session/trace-startup! @cursor)
+                                                                                                                                                    (session/trace-command! @cursor id))
+                                                                                                                                                                                                                      parsed (trace/parse-trace trace-response)
+                                                                                                                                                                                                                      nodes (trace/build-tree parsed)]
+                                                                                                                                                                                                                  (reset! cursor session')
+                                                                                                                                                                                                                  (swap! cursor assoc
+                                                                                                                                                                                                                         :trace {:nodes nodes
+                                                                                                                                                                                                                                 :search ""
+                                                                                                                                                                                                                                 :node-count (trace/count-nodes nodes)
+                                                                                                                                                                                                                                 :command command}
+                                                                                                                                                     :modal {:type :trace})))}
+                                                                                                                           "Trace ..."
+                                                                                                                           (if root? "Trace startup" "Trace command execution"))))
        (render-children-navigation cursor tree knot)]
       (render-diff response unblessed)
       [:hr.clear-right.text-stone-200]
@@ -352,6 +368,9 @@
 
           :quit
           (modals/quit-modal cursor)
+
+          :trace
+          (modals/trace-modal cursor (:trace session))
 
           nil)))))
 

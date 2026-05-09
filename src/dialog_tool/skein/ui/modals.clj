@@ -4,6 +4,7 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.components.modal :as modal]
+            [dialog-tool.skein.ui.trace-view :as trace-view]
             [hyper.core :as h]))
 
 (defn edit-command
@@ -164,3 +165,16 @@
                        (swap! cursor dissoc :modal))}
       "Quit Without Saving"]
      (modal/cancel-button {:cursor cursor})]]))
+
+(defn trace-modal
+  "Renders a modal displaying the trace tree for a command."
+  [cursor trace-state]
+  (modal/modal
+   {:title (str "Trace: " (:command trace-state))
+    :cursor cursor
+    :buttons nil}
+   [:div.flex.flex-col {:class "w-[85vw] h-[80vh]"}
+    [:div.flex-1.min-h-0.flex.flex-col
+     (trace-view/render-trace-tree cursor trace-state)]
+    [:div.flex.justify-end.pt-4.flex-shrink-0
+     (modal/cancel-button {:cursor cursor :label "Close"})]]))
