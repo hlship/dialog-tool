@@ -220,14 +220,15 @@
   In addition, the ($ has parent $) and ($ has relation $) predicates
   are merged into ($ is $ $), as a special case."
   [response]
-  (->> response
-       strip-ansi
-       string/split-lines
+  (when response
+    (->> response
+         strip-ansi
+         string/split-lines
        ;; The first line is ">@dynamic", then "GLOBAL FLAGS"
        (drop 2)
        pre-parse
        (parse* :global-flags {:global-flags #{}})
-       flatten-predicates))
+       flatten-predicates)))
 
 (defn diff
   "Analyzes the before and after predicates (from flatten-predicates) and returns a map of :added, :removed,
