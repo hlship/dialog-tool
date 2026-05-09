@@ -65,26 +65,52 @@
         (swap! cursor assoc-in [:last-jump status] next-id)
         (swap! cursor session/select-knot next-id)))))
 
+(defn- swap-session!
+  "Swaps the session in the app-state atom. Works from any thread."
+  ([app-state* f]
+   (swap! app-state* update-in [:global :session] f))
+  ([app-state* f & args]
+   (apply swap! app-state* update-in [:global :session] f args)))
+
+(defn- get-session
+  [app-state*]
+  (get-in @app-state* [:global :session]))
+
 (defn- replay-all!
-  [cursor]
-  (let [initial-tree (:tree @cursor)
+  "Replays all leaf knots. Can be called from a cursor (h/action) or
+  from app-state* (replay-on-launch future thread)."
+  [app-state*]
+  (let [initial-tree (:tree (get-session app-state*))
         leaf-knots (tree/leaf-knots initial-tree)]
-    (swap! cursor session/capture-undo)
-    (swap! cursor session/check-for-changed-sources)
-    (swap! cursor assoc :continue true)
-    (doseq [[idx knot] (map-indexed vector leaf-knots)
-            :while (:continue @cursor)]
-      (swap! cursor assoc :progress {:current (inc idx)
-                                     :total (count leaf-knots)
-                                     :label (:label knot)
-                                     :operation "Replaying All"})
-      (swap! cursor #(session/do-replay-to! % (:id knot))))
-    (let [cancelled? (not (:continue @cursor))]
-      (swap! cursor dissoc :continue :progress)
-      (flash! cursor (if cancelled? "Replay cancelled" "Replay complete")))))
+    (swap-session! app-state* session/capture-undo)
+    (swap-session! app-state* session/check-for-changed-sources)
+    (swap-session! app-state* assoc :continue true)
+    (let [total (count leaf-knots)]
+      (doseq [[idx knot] (map-indexed vector leaf-knots)
+              :while (:continue (get-session app-state*))]
+        ;; Combine progress update and replay into a single swap to minimize re-renders
+        (swap-session! app-state*
+                       (fn [session]
+                         (-> session
+                             (assoc :progress {:current (inc idx)
+                                              :total total
+                                              :label (:label knot)
+                                              :operation "Replaying All"})
+                             (session/do-replay-to! (:id knot)))))))
+    (let [cancelled? (not (:continue (get-session app-state*)))]
+      (swap-session! app-state* dissoc :continue :progress)
+      (swap-session! app-state* assoc :flash (if cancelled? "Replay cancelled" "Replay complete"))
+      (future
+        (Thread/sleep 3000)
+        (swap-session! app-state* dissoc :flash)))))
+
+(defn- replay-all-from-app-state!
+  "Entry point for replay-on-launch from a future thread."
+  [app-state*]
+  (replay-all! app-state*))
 
 (defn navbar
-  [cursor session]
+  [cursor session app-state*]
   (let [{:keys [skein-path tree dirty?]} session
         can-undo? (-> session :undo-stack not-empty)
         can-redo? (-> session :redo-stack not-empty)
@@ -115,7 +141,7 @@
                             (dropdown/button {:data-on:click (h/action (swap! cursor session/select-knot id))}
                                              label)))
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click (h/action (replay-all! cursor))
+        {:data-on:click (h/action (replay-all! app-state*))
          :data-accel "p"
          :data-preserve-attr "data-tip"}
         [:div.icon.icon-play] [:span.hidden.lg:inline "Replay All"]]
@@ -379,6 +405,11 @@
   Hyper calls this whenever the cursor changes and pushes the diff via SSE."
   [req]
   (let [cursor (h/global-cursor :session)
+        app-state* (:hyper/app-state req)
+        ;; On first connection, kick off replay-all asynchronously.
+        _ (when (:replay-on-launch? @cursor)
+            (swap! cursor dissoc :replay-on-launch?)
+            (future (replay-all! app-state*)))
         session @cursor
         {:keys [tree debug-enabled? show-dynamic? fixed-width? flash]} session
         knots (tree/selected-knots tree)
@@ -387,7 +418,7 @@
     [:div.relative.px-8
      (when flash
        (flash/flash-message flash))
-     (navbar cursor session)
+     (navbar cursor session app-state*)
      [:div.container.mx-lg.mx-auto.mt-16
       (map (fn [knot]
              (render-knot cursor tree knot {:debug-enabled? debug-enabled?

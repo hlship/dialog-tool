@@ -117,7 +117,12 @@
   (modal/modal
    {:title operation
     :cursor cursor
-    :buttons (list (modal/cancel-button {:cursor cursor :label "Cancel"}))}
+    :buttons (list
+              [:button.btn
+               {:type "button"
+                :data-on:click__stop (h/action
+                                      (swap! cursor assoc :continue false))}
+               "Cancel"])}
    [:div
     [:div {:class "flex justify-between mb-2"}
      [:span {:class "text-sm font-medium text-gray-700"}

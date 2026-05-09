@@ -82,8 +82,8 @@
                         :replay-on-launch? true
                         :exit-when-shutdown? exit-when-shutdown?)
         app-state* (atom (assoc-in (state/init-state) [:global :session] session'))]
-    (reset! *handler-app-state app-state*)
-    (reset! *app (h/start! (create-handler app-state*) {:port port'}))
+    (reset! *app {:stop-fn (h/start! (create-handler app-state*) {:port port'})
+                  :app-state* app-state*})
     port'))
 
 (defn app-state*
