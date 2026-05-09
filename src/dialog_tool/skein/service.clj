@@ -5,6 +5,7 @@
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
+            [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.ui.app :as ui.app]
             [hyper.core :as h]
             [hyper.state :as state])
@@ -16,7 +17,11 @@
 (def ^:private routes
   [["/" {:name :skein
          :title "Dialog Skein"
-         :get #'ui.app/skein-page}]])
+         :get #'ui.app/skein-page}]
+   ["/action/source/:id" {:hyper/disabled? true
+                           :get #'source/view-source}]
+   ["/action/source-preview/:id" {:hyper/disabled? true
+                                   :get #'source/source-preview}]])
 
 (defn- create-handler
   "Creates the Hyper Ring handler, seeding the skein session into app-state."

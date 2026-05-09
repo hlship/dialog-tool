@@ -110,7 +110,12 @@
         :data-on:keydown__debounce_300ms
         (h/action
          (let [search (or $value "")]
-           (apply-trace-search cursor search)))
+           (apply-trace-search cursor search)
+           (when (= $key "Enter")
+             ;; Scroll to first matching node
+             (let [nodes (get-in @cursor [:trace :nodes])]
+               (when-let [match-id (trace/find-first-match nodes)]
+                 (swap! cursor assoc-in [:trace :scroll-to] match-id))))))
         :data-init "el.focus()"}]]
      ;; Expand/collapse all controls + node count
      [:div.flex.items-center.gap-2.mb-2.flex-shrink-0
@@ -129,4 +134,4 @@
      ;; Tree view (scrollable)
      [:div.flex-1.overflow-y-auto.border.rounded.p-2.bg-white
       (for [child-id (:children root)]
-        (render-node display-nodes cursor child-id nil))])))
+        (render-node display-nodes cursor child-id (:scroll-to trace-state)))])))
