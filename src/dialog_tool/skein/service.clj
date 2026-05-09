@@ -5,6 +5,7 @@
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
+            [dialog-tool.skein.ui.app :as ui.app]
             [hyper.core :as h]
             [hyper.state :as state])
   (:import (java.net ServerSocket)))
@@ -13,14 +14,9 @@
 ;; Handlers access it via (h/global-cursor :session).
 
 (def ^:private routes
-  ;; Reitit-style route definitions. The :get handler is a render function
-  ;; that receives the Ring request and returns hiccup.
-  ;; These will be filled in as we migrate handlers in Phase 3.
   [["/" {:name :skein
          :title "Dialog Skein"
-         :get (fn [_req]
-                [:div {:class "text-center text-gray-500 mt-16"}
-                 "Skein loading..."])}]])
+         :get #'ui.app/skein-page}]])
 
 (defn- create-handler
   "Creates the Hyper Ring handler, seeding the skein session into app-state."
