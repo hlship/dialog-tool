@@ -58,13 +58,14 @@
 (defn expand-sources
   ([project]
    (expand-sources project nil))
-  ([project {:keys [debug? pre-patch]}]
+  ([project {:keys [debug? test? pre-patch]}]
    (let [{::keys [root-dir]
           :keys [sources]} project
-         {:keys [main debug library]} sources
+         {:keys [main test debug library]} sources
          sources (concat
                   pre-patch
                   main
+                  (when test? test)
                   (when debug? debug)
                   library)]
      (->> sources
@@ -100,10 +101,10 @@
   [project]
   (let [{::keys [root-dir]
          :keys [sources]} project
-        {:keys [main debug library]} sources
+        {:keys [main test debug library]} sources
         digest (MessageDigest/getInstance "SHA-1")
         root-path (fs/path root-dir "dialog.edn")
-        _ (->> [main debug library]
+        _ (->> [main test debug library]
                (reduce into [root-path])
                (mapcat #(expand-source root-dir %))
                sort

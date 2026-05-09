@@ -51,7 +51,7 @@ Each Dialog project has a `dialog.edn` at its root. Key fields:
 - `:target` — Build target(s): a single keyword (`:zblorb`) or a vector of keywords (`[:zblorb :aa]`).
   Normalized to a vector internally by `project_file.clj`.
 - `:build` — Per-target build options (e.g., cover image flags)
-- `:sources` — Source directories organized as `:main`, `:debug`, `:library`
+- `:sources` — Source directories organized as `:main`, `:test`, `:debug`, `:library`
 
 ## Important Rules
 
