@@ -92,6 +92,9 @@
     (copy-resource "template/stddebug.dg"
                    (fs/path dir' "lib" "dialog" "debug" "stddebug.dg"))
 
+    (copy-resource "template/unit.dg"
+                   (fs/path dir' "lib" "test" "unit.dg"))
+
     (copy-resource "template/default-cover.png"
                    (fs/path dir' "cover.png"))
 

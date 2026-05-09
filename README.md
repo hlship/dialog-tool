@@ -64,6 +64,7 @@ Creating magnum-opus ...
   src/magnum-opus.dg
   lib/dialog/stdlib.dg
   lib/dialog/debug/stddebug.dg
+  lib/test/unit.dg
   cover.png
   bundle/index.html
   bundle/play.css
@@ -102,6 +103,7 @@ A minimal example `dialog.edn` (as created by `dgt new`):
              "--cover-alt" "Magnum-opus"]}}
  :sources
  {:main    ["src"]
+  :test    ["lib/test"]
   :debug   ["lib/dialog/debug"]
   :library ["lib/dialog"]}}
 ```                   
@@ -113,11 +115,12 @@ and _in what order_ they should apply (which is very critical to how Dialog oper
 Further, during development and testing you will often include extra "debug" sources that should not 
 be included when building and packaging your project for release.
 
-`dgt` uses three categories of sources.  For each category, you may specify a number of directories, relative
+`dgt` uses four categories of sources.  For each category, you may specify a number of directories, relative
 to your project, in which to locate source files. All Dialog source files _directly_ in each directory
 are included.
 
 * :main - sources specific to your project
+* :test - unit test sources, loaded when running tests (unit test support is forthcoming)
 * :debug - used by the commands `skein test`, `debug`, `skein run`, etc.
 * :library - additional libraries, including the Dialog standard library
 

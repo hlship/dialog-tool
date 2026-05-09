@@ -12,6 +12,9 @@ Game output now wraps naturally to the browser window width rather than at a fix
 
 The Skein navbar is now responsive; button labels hide at narrow window widths, showing only icons.
 
+`dgt new` now includes `lib/test/unit.dg` for unit testing support.
+Added `:test` source category to `dialog.edn`, loaded alongside `:debug` sources.
+
 # 1.4 -- 29 Sep 2020
 
 Remove the `bless` command; it is now all done from the `test` command.

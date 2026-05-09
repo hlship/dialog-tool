@@ -6,5 +6,6 @@
              "--cover-alt" "{{project-name|capitalize}}"]}}
  :sources
  {:main    ["src"]
+  :test    ["lib/test"]
   :debug   ["lib/dialog/debug"]
   :library ["lib/dialog"]}}
