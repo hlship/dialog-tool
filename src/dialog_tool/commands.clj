@@ -40,8 +40,12 @@
 (defcommand new-project
   "Create a new empty Dialog project from a template.
 
-  The name of the project will match the directory name, if the project name is omitted."
-  [:command "new"
+  The name of the project will match the directory name, if the project name is omitted.
+
+  With --flat, all library files are placed directly in lib/ and
+  dialog.edn lists individual files rather than directories."
+  [flat? ["-f" "--flat" "Use flat project layout"]
+   :command "new"
    :args
    project-dir ["DIR" "New directory to create"
                 :parse-fn fs/path
@@ -49,7 +53,8 @@
    project-name ["NAME" "Name of project "
                  :optional true]]
   (template/create-from-template project-dir
-                                 {:project-name (or project-name project-dir)}))
+                                 {:project-name (str (or project-name project-dir))
+                                  :flat? flat?}))
 
 (defcommand build
   "Compile the project to a file ready to execute with an interpreter.

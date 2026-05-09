@@ -64,7 +64,7 @@ Creating magnum-opus ...
   src/magnum-opus.dg
   lib/dialog/stdlib.dg
   lib/dialog/debug/stddebug.dg
-  lib/test/unit.dg
+  lib/dialog/test/unit.dg
   cover.png
   bundle/index.html
   bundle/play.css
@@ -79,6 +79,9 @@ dgt help for other options
 The exact files created by `dgt new` may change over time.
 
 The directory must not already exist.
+
+With the `--flat` option, library files are placed directly in `lib/` (instead of subdirectories)
+and `dialog.edn` lists individual source files rather than directories.
 
 `dgt new` will create a unique [IFID](https://linusakesson.net/dialog/docs/beyondprg.html) for your project; it
 will be part of the content in the `meta.dg` file. 
@@ -103,7 +106,7 @@ A minimal example `dialog.edn` (as created by `dgt new`):
              "--cover-alt" "Magnum-opus"]}}
  :sources
  {:main    ["src"]
-  :test    ["lib/test"]
+  :test    ["lib/dialog/test"]
   :debug   ["lib/dialog/debug"]
   :library ["lib/dialog"]}}
 ```                   
