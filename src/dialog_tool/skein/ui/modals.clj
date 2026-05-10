@@ -182,4 +182,7 @@
     [:div.flex-1.min-h-0.flex.flex-col
      (trace-view/render-trace-tree cursor trace-state)]
     [:div.flex.justify-end.pt-4.flex-shrink-0
-     (modal/cancel-button {:cursor cursor :label "Close"})]]))
+     (modal/cancel-button {:cursor cursor :label "Close"})]
+    ;; Hidden popup for source preview on hover (positioned by JS)
+    [:div#source-preview-popup.hidden.fixed.z-50.bg-white.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
+     {:class "max-w-[80vw]"}]]))
