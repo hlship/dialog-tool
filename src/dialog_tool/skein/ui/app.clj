@@ -86,36 +86,41 @@
   so that progress updates don't trigger full page re-renders.
   The session is accumulated locally and only committed at the end."
   [app-state*]
-  (let [session (-> (get-session app-state*)
-                    session/capture-undo
-                    session/check-for-changed-sources)
-        leaf-knots (tree/leaf-knots (:tree session))
-        total (count leaf-knots)
-        continue? (volatile! true)]
-    ;; Store continue flag in progress so cancel can stop the loop
-    (set-progress! app-state* {:continue true})
-    (let [final-session
-          (reduce (fn [session [idx knot]]
-                    (if-not (:continue (get-in @app-state* [:global :progress]))
-                      (reduced session)
-                      (do
-                        (set-progress! app-state*
-                                       {:current (inc idx)
-                                        :total total
-                                        :label (:label knot)
-                                        :operation "Replaying All"
-                                        :continue true})
-                        (session/do-replay-to! session (:id knot)))))
-                  session
-                  (map-indexed vector leaf-knots))
-          cancelled? (not (:continue (get-in @app-state* [:global :progress])))]
-      ;; Clear progress and commit the final session in one swap
-      (set-progress! app-state* nil)
-      (swap-session! app-state* (constantly final-session))
-      (swap-session! app-state* assoc :flash (if cancelled? "Replay cancelled" "Replay complete"))
-      (future
-        (Thread/sleep 3000)
-        (swap-session! app-state* dissoc :flash)))))
+  (try
+    (let [session (-> (get-session app-state*)
+                      session/capture-undo
+                      session/check-for-changed-sources)
+          leaf-knots (tree/leaf-knots (:tree session))
+          total (count leaf-knots)]
+      ;; Store continue flag in progress so cancel can stop the loop
+      (set-progress! app-state* {:continue true})
+      (let [final-session
+            (reduce (fn [session [idx knot]]
+                      (if-not (:continue (get-in @app-state* [:global :progress]))
+                        (reduced session)
+                        (do
+                          (set-progress! app-state*
+                                         {:current (inc idx)
+                                          :total total
+                                          :label (:label knot)
+                                          :operation "Replaying All"
+                                          :continue true})
+                          (session/do-replay-to! session (:id knot)))))
+                    session
+                    (map-indexed vector leaf-knots))
+            cancelled? (not (:continue (get-in @app-state* [:global :progress])))]
+        ;; Commit the final session
+        (swap-session! app-state* (constantly final-session))
+        (swap-session! app-state* assoc :flash (if cancelled? "Replay cancelled" "Replay complete"))
+        (future
+          (Thread/sleep 3000)
+          (swap-session! app-state* dissoc :flash))))
+    (catch Throwable t
+      (println "Error during replay-all:" t)
+      (swap-session! app-state* assoc :flash {:message (str "Replay error: " (ex-message t))
+                                               :type :error}))
+    (finally
+      (set-progress! app-state* nil))))
 
 (defn navbar
   [cursor session app-state*]
