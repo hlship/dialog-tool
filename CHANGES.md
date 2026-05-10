@@ -12,6 +12,11 @@ Game output now wraps naturally to the browser window width rather than at a fix
 
 The Skein navbar is now responsive; button labels hide at narrow window widths, showing only icons.
 
+Migrated the Skein web UI from the Datastar Clojure SDK to
+[Hyper](https://github.com/dynamic-alpha/hyper), a reactive server-rendered
+framework built on Datastar. The UI is now a single render function with
+server-side actions instead of individual HTTP endpoints.
+
 `dgt new` now includes `lib/dialog/test/unit.dg` for unit testing support.
 Added `:test` source category to `dialog.edn`, loaded alongside `:debug` sources.
 
