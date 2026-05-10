@@ -12,7 +12,7 @@
    - a string (treated as :info type, auto-fades)
    - a map with :message and :type (:info or :error)
 
-   :info messages auto-fade after 0.5 seconds.
+   :info messages auto-fade after 2 seconds.
    :error messages persist until the user clicks the close button."
   [flash]
   (let [{:keys [message type]} (if (string? flash)
@@ -31,7 +31,7 @@
                error? (assoc :tabindex "-1"
                              :data-init "el.focus()"
                              :onkeydown (str "if(event.key==='Escape'){" remove-script "}"))
-               (not error?) (assoc :data-init (str "el.style.opacity = '1'; setTimeout(() => { el.style.opacity = '0'; setTimeout(() => " remove-script ", 600) }, 3000)")))
+               (not error?) (assoc :data-init (str "el.style.opacity = '1'; setTimeout(() => { el.style.opacity = '0'; setTimeout(() => " remove-script ", 600) }, 2000)")))
         [:span message]
         (when error?
           [:button {:type "button"
