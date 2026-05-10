@@ -22,7 +22,8 @@
         id (str "flash-" (random-uuid))]
     (let [remove-script (str "document.getElementById('" id "').parentElement.remove()")]
       [:div {:class "fixed top-20 left-1/2 -translate-x-1/2 z-50"
-             :style {:pointer-events (if error? "auto" "none")}}
+             :style {:pointer-events (if error? "auto" "none")}
+             :data-ignore-morph true}
        [:div (cond-> {:id id
                       :class (if error?
                                "flex items-center gap-3 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg"
@@ -30,7 +31,7 @@
                error? (assoc :tabindex "-1"
                              :data-init "el.focus()"
                              :onkeydown (str "if(event.key==='Escape'){" remove-script "}"))
-               (not error?) (assoc :data-init "el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 4000)"))
+               (not error?) (assoc :data-init (str "el.style.opacity = '1'; setTimeout(() => { el.style.opacity = '0'; setTimeout(() => " remove-script ", 600) }, 4000)")))
         [:span message]
         (when error?
           [:button {:type "button"
