@@ -112,16 +112,16 @@
      (modal/ok-button {})]]))
 
 (defn progress
-  "Renders a progress modal for tracking operation progress."
-  [cursor {:keys [current total label operation]}]
+  "Renders a progress modal for tracking operation progress.
+  app-state* is the hyper app-state atom (progress is stored at [:global :progress])."
+  [app-state* {:keys [current total label operation]}]
   (modal/modal
    {:title operation
-    :cursor cursor
     :buttons (list
               [:button.btn
                {:type "button"
                 :data-on:click__stop (h/action
-                                      (swap! cursor assoc :continue false))}
+                                      (swap! app-state* assoc-in [:global :progress :continue] false))}
                "Cancel"])}
    [:div
     [:div {:class "flex justify-between mb-2"}

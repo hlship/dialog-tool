@@ -76,38 +76,46 @@
   [app-state*]
   (get-in @app-state* [:global :session]))
 
+(defn- set-progress!
+  "Updates the progress atom in app-state. Only the progress modal watches this."
+  [app-state* progress]
+  (swap! app-state* assoc-in [:global :progress] progress))
+
 (defn- replay-all!
-  "Replays all leaf knots. Can be called from a cursor (h/action) or
-  from app-state* (replay-on-launch future thread)."
+  "Replays all leaf knots. Progress is tracked in a separate :progress key
+  so that progress updates don't trigger full page re-renders.
+  The session is accumulated locally and only committed at the end."
   [app-state*]
-  (let [initial-tree (:tree (get-session app-state*))
-        leaf-knots (tree/leaf-knots initial-tree)]
-    (swap-session! app-state* session/capture-undo)
-    (swap-session! app-state* session/check-for-changed-sources)
-    (swap-session! app-state* assoc :continue true)
-    (let [total (count leaf-knots)]
-      (doseq [[idx knot] (map-indexed vector leaf-knots)
-              :while (:continue (get-session app-state*))]
-        ;; Combine progress update and replay into a single swap to minimize re-renders
-        (swap-session! app-state*
-                       (fn [session]
-                         (-> session
-                             (assoc :progress {:current (inc idx)
-                                              :total total
-                                              :label (:label knot)
-                                              :operation "Replaying All"})
-                             (session/do-replay-to! (:id knot)))))))
-    (let [cancelled? (not (:continue (get-session app-state*)))]
-      (swap-session! app-state* dissoc :continue :progress)
+  (let [session (-> (get-session app-state*)
+                    session/capture-undo
+                    session/check-for-changed-sources)
+        leaf-knots (tree/leaf-knots (:tree session))
+        total (count leaf-knots)
+        continue? (volatile! true)]
+    ;; Store continue flag in progress so cancel can stop the loop
+    (set-progress! app-state* {:continue true})
+    (let [final-session
+          (reduce (fn [session [idx knot]]
+                    (if-not (:continue (get-in @app-state* [:global :progress]))
+                      (reduced session)
+                      (do
+                        (set-progress! app-state*
+                                       {:current (inc idx)
+                                        :total total
+                                        :label (:label knot)
+                                        :operation "Replaying All"
+                                        :continue true})
+                        (session/do-replay-to! session (:id knot)))))
+                  session
+                  (map-indexed vector leaf-knots))
+          cancelled? (not (:continue (get-in @app-state* [:global :progress])))]
+      ;; Clear progress and commit the final session in one swap
+      (set-progress! app-state* nil)
+      (swap-session! app-state* (constantly final-session))
       (swap-session! app-state* assoc :flash (if cancelled? "Replay cancelled" "Replay complete"))
       (future
         (Thread/sleep 3000)
         (swap-session! app-state* dissoc :flash)))))
-
-(defn- replay-all-from-app-state!
-  "Entry point for replay-on-launch from a future thread."
-  [app-state*]
-  (replay-all! app-state*))
 
 (defn navbar
   [cursor session app-state*]
@@ -369,12 +377,14 @@
        "Show dynamic state"]]]))
 
 (defn- render-modal
-  "Renders the appropriate modal based on the :modal key in the session."
-  [cursor session]
-  (let [{:keys [modal tree progress]} session]
+  "Renders the appropriate modal based on the :modal key in the session,
+  or the :progress key in the app-state."
+  [cursor session app-state*]
+  (let [{:keys [modal tree]} session
+        progress (get-in @app-state* [:global :progress])]
     (cond
       progress
-      (modals/progress cursor progress)
+      (modals/progress app-state* progress)
 
       modal
       (let [{:keys [type knot-id error]} modal
@@ -407,14 +417,25 @@
   (let [cursor (h/global-cursor :session)
         app-state* (:hyper/app-state req)
         ;; On first connection, kick off replay-all asynchronously.
-        _ (when (:replay-on-launch? @cursor)
-            (swap! cursor dissoc :replay-on-launch?)
-            (future (replay-all! app-state*)))
+        ;; Atomic check-and-clear to prevent double-replay when the page
+        ;; function is called for both initial HTTP and SSE connection.
+        _ (let [should-replay? (atom false)]
+            (swap! app-state*
+                   (fn [state]
+                     (if (get-in state [:global :session :replay-on-launch?])
+                       (do (reset! should-replay? true)
+                           (update-in state [:global :session] dissoc :replay-on-launch?))
+                       state)))
+            (when @should-replay?
+              (future (replay-all! app-state*))))
         session @cursor
         {:keys [tree debug-enabled? show-dynamic? fixed-width? flash]} session
         knots (tree/selected-knots tree)
         leaf-knot (last knots)]
     (h/watch! cursor)
+    ;; Watch the progress path separately so progress updates re-render the modal
+    ;; without triggering a full page re-render of all knots
+    (h/watch! (h/global-cursor :progress))
     [:div.relative.px-8
      (when flash
        (flash/flash-message flash))
@@ -427,6 +448,6 @@
            knots)
       (new-command/new-command-input cursor (:id leaf-knot))]
      ;; Modal overlay
-     (render-modal cursor session)
+     (render-modal cursor session app-state*)
      ;; FAB for settings
      (render-fab cursor session)]))
