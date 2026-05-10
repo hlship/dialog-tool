@@ -40,6 +40,18 @@
     ;; No unblessed, render with ANSI styling
     (ansi/ansi->hiccup response)))
 
+(defn shutdown!
+  "Shows a close message, then shuts down after the browser receives the update.
+  Reads the :shutdown-fn from app-state."
+  [cursor app-state*]
+  ;; Set closing state so the page renders the close message
+  (swap! cursor assoc :closing? true)
+  (future
+    ;; Give hyper time to push the closing message to the browser
+    (Thread/sleep 500)
+    (when-let [shutdown-fn (get-in @app-state* [:global :shutdown-fn])]
+      (shutdown-fn))))
+
 ;; Pending flash message — stored outside the session cursor so it doesn't
 ;; persist across re-renders. The render function consumes and clears it.
 (def ^:private *pending-flash (atom nil))
@@ -183,9 +195,8 @@
         [:div.icon.icon-redo] [:span.hidden.lg:inline "Redo"]]
        [:div.btn.btn-primary {:data-on:click (h/action
                                               (if (:dirty? @cursor)
-                                                (swap! cursor assoc :modal {:type :quit})))}
-                                                ;; TODO: actual shutdown when not dirty
-
+                                                (swap! cursor assoc :modal {:type :quit})
+                                                (shutdown! cursor app-state*)))}
         [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
@@ -407,7 +418,7 @@
           (modals/dynamic-state cursor (:dynamic-response knot))
 
           :quit
-          (modals/quit-modal cursor)
+          (modals/quit-modal cursor app-state*)
 
           :trace
           (modals/trace-modal cursor (:trace session))
@@ -433,27 +444,33 @@
             (when @should-replay?
               (future (replay-all! app-state*))))
         session @cursor
-        {:keys [tree debug-enabled? show-dynamic? fixed-width?]} session
-        ;; Consume pending flash atomically — only shows once per render
-        flash (first (reset-vals! *pending-flash nil))
-        knots (tree/selected-knots tree)
-        leaf-knot (last knots)]
+        {:keys [tree debug-enabled? show-dynamic? fixed-width? closing?]} session]
     (h/watch! cursor)
-    ;; Watch the progress path separately so progress updates re-render the modal
-    ;; without triggering a full page re-render of all knots
-    (h/watch! (h/global-cursor :progress))
-    [:div.relative.px-8
-     (when flash
-       (flash/flash-message flash))
-     (navbar cursor session app-state*)
-     [:div.container.mx-lg.mx-auto.mt-16
-      (map (fn [knot]
-             (render-knot cursor tree knot {:debug-enabled? debug-enabled?
-                                            :show-dynamic? show-dynamic?
-                                            :fixed-width? fixed-width?}))
-           knots)
-      (new-command/new-command-input cursor (:id leaf-knot))]
-     ;; Modal overlay
-     (render-modal cursor session app-state*)
-     ;; FAB for settings
-     (render-fab cursor session)]))
+    (if closing?
+      ;; Server is shutting down — show close message
+      [:div.flex.items-center.justify-center.h-screen
+       [:div.text-center
+        [:h2.text-2xl.font-semibold.text-gray-700.mb-4 "Skein Shutdown"]
+        [:p.text-gray-500 "You may close this window now."]]]
+      ;; Normal page render
+      (let [flash (first (reset-vals! *pending-flash nil))
+            knots (tree/selected-knots tree)
+            leaf-knot (last knots)]
+        ;; Watch the progress path separately so progress updates re-render the modal
+        ;; without triggering a full page re-render of all knots
+        (h/watch! (h/global-cursor :progress))
+        [:div.relative.px-8
+         (when flash
+           (flash/flash-message flash))
+         (navbar cursor session app-state*)
+         [:div.container.mx-lg.mx-auto.mt-16
+          (map (fn [knot]
+                 (render-knot cursor tree knot {:debug-enabled? debug-enabled?
+                                                :show-dynamic? show-dynamic?
+                                                :fixed-width? fixed-width?}))
+               knots)
+          (new-command/new-command-input cursor (:id leaf-knot))]
+         ;; Modal overlay
+         (render-modal cursor session app-state*)
+         ;; FAB for settings
+         (render-fab cursor session)]))))

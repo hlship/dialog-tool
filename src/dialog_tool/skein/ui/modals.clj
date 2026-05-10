@@ -147,7 +147,7 @@
 
 (defn quit-modal
   "Renders a quit confirmation modal."
-  [cursor]
+  [cursor app-state*]
   (modal/modal
    {:title "Unsaved Changes"
     :cursor cursor
@@ -160,14 +160,14 @@
       {:type "button"
        :data-on:click (h/action
                        (swap! cursor session/save!)
-                       ;; TODO: actual shutdown
-                       (swap! cursor dissoc :modal))}
+                       (swap! cursor dissoc :modal)
+                       ((requiring-resolve 'dialog-tool.skein.ui.app/shutdown!) cursor app-state*))}
       "Save and Quit"]
      [:button.btn.btn-warning
       {:type "button"
        :data-on:click (h/action
-                       ;; TODO: actual shutdown
-                       (swap! cursor dissoc :modal))}
+                       (swap! cursor dissoc :modal)
+                       ((requiring-resolve 'dialog-tool.skein.ui.app/shutdown!) cursor app-state*))}
       "Quit Without Saving"]
      (modal/cancel-button {:cursor cursor})]]))
 

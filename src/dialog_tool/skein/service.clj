@@ -81,8 +81,19 @@
                         :debug-enabled? (= engine' :dgdebug)
                         :replay-on-launch? true
                         :exit-when-shutdown? exit-when-shutdown?)
-        app-state* (atom (assoc-in (state/init-state) [:global :session] session'))]
-    (reset! *app {:stop-fn (h/start! (create-handler app-state*) {:port port'})
+        app-state* (atom (-> (state/init-state)
+                             (assoc-in [:global :session] session')))
+        stop-fn (h/start! (create-handler app-state*) {:port port'})
+        shutdown-fn (fn []
+                      (stop-fn)
+                      (when-let [process (:process (get-in @app-state* [:global :session]))]
+                        (sk.process/kill! process))
+                      (println "Shut down")
+                      (when (and exit-when-shutdown? (not development-mode?))
+                        (System/exit 0)))]
+    ;; Store shutdown-fn in app-state so the UI quit handler can access it
+    (swap! app-state* assoc-in [:global :shutdown-fn] shutdown-fn)
+    (reset! *app {:stop-fn stop-fn
                   :app-state* app-state*})
     port'))
 
@@ -93,14 +104,10 @@
 
 (defn stop!
   []
-  (when-let [{:keys [stop-fn app-state*]} @*app]
-    ;; Kill the running process if any
-    (when-let [session (get-in @app-state* [:global :session])]
-      (when-let [process (:process session)]
-        (sk.process/kill! process)))
-    (h/stop! stop-fn)
-    (reset! *app nil)
-    (println "Shut down")))
+  (when-let [{:keys [app-state*]} @*app]
+    (when-let [shutdown-fn (get-in @app-state* [:global :shutdown-fn])]
+      (shutdown-fn))
+    (reset! *app nil)))
 
 (comment
 
