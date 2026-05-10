@@ -30,7 +30,7 @@
                error? (assoc :tabindex "-1"
                              :data-init "el.focus()"
                              :onkeydown (str "if(event.key==='Escape'){" remove-script "}"))
-               (not error?) (assoc :data-init "el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 500)"))
+               (not error?) (assoc :data-init "el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 4000)"))
         [:span message]
         (when error?
           [:button {:type "button"
