@@ -42,14 +42,14 @@
 
 (defn shutdown!
   "Shows a close message, then shuts down after the browser receives the update.
-  Reads the :shutdown-fn from app-state."
-  [cursor app-state*]
+  The shutdown-fn is stored in app-state at [:global :shutdown-fn] by the service."
+  [cursor *app-state]
   ;; Set closing state so the page renders the close message
   (swap! cursor assoc :closing? true)
   (future
     ;; Give hyper time to push the closing message to the browser
     (Thread/sleep 500)
-    (when-let [shutdown-fn (get-in @app-state* [:global :shutdown-fn])]
+    (when-let [shutdown-fn (get-in @*app-state [:global :shutdown-fn])]
       (shutdown-fn))))
 
 ;; Pending flash message — stored outside the session cursor so it doesn't
@@ -81,39 +81,39 @@
 
 (defn- swap-session!
   "Swaps the session in the app-state atom. Works from any thread."
-  ([app-state* f]
-   (swap! app-state* update-in [:global :session] f))
-  ([app-state* f & args]
-   (apply swap! app-state* update-in [:global :session] f args)))
+  ([*app-state f]
+   (swap! *app-state update-in [:global :session] f))
+  ([*app-state f & args]
+   (apply swap! *app-state update-in [:global :session] f args)))
 
 (defn- get-session
-  [app-state*]
-  (get-in @app-state* [:global :session]))
+  [*app-state]
+  (get-in @*app-state [:global :session]))
 
 (defn- set-progress!
   "Updates the progress atom in app-state. Only the progress modal watches this."
-  [app-state* progress]
-  (swap! app-state* assoc-in [:global :progress] progress))
+  [*app-state progress]
+  (swap! *app-state assoc-in [:global :progress] progress))
 
 (defn- replay-all!
   "Replays all leaf knots. Progress is tracked in a separate :progress key
   so that progress updates don't trigger full page re-renders.
   The session is accumulated locally and only committed at the end."
-  [app-state*]
+  [*app-state]
   (try
-    (let [session (-> (get-session app-state*)
+    (let [session (-> (get-session *app-state)
                       session/capture-undo
                       session/check-for-changed-sources)
           leaf-knots (tree/leaf-knots (:tree session))
           total (count leaf-knots)]
       ;; Store continue flag in progress so cancel can stop the loop
-      (set-progress! app-state* {:continue true})
+      (set-progress! *app-state {:continue true})
       (let [final-session
             (reduce (fn [session [idx knot]]
-                      (if-not (:continue (get-in @app-state* [:global :progress]))
+                      (if-not (:continue (get-in @*app-state [:global :progress]))
                         (reduced session)
                         (do
-                          (set-progress! app-state*
+                          (set-progress! *app-state
                                          {:current (inc idx)
                                           :total total
                                           :label (:label knot)
@@ -122,19 +122,19 @@
                           (session/do-replay-to! session (:id knot)))))
                     session
                     (map-indexed vector leaf-knots))
-            cancelled? (not (:continue (get-in @app-state* [:global :progress])))]
+            cancelled? (not (:continue (get-in @*app-state [:global :progress])))]
         ;; Commit the final session and show flash
-        (swap-session! app-state* (constantly final-session))
+        (swap-session! *app-state (constantly final-session))
         (reset! *pending-flash (if cancelled? "Replay cancelled" "Replay complete"))))
     (catch Throwable t
       (println "Error during replay-all:" t)
       (reset! *pending-flash {:message (str "Replay error: " (ex-message t))
                               :type :error}))
     (finally
-      (set-progress! app-state* nil))))
+      (set-progress! *app-state nil))))
 
 (defn navbar
-  [cursor session app-state*]
+  [cursor session *app-state]
   (let [{:keys [skein-path tree dirty?]} session
         can-undo? (-> session :undo-stack not-empty)
         can-redo? (-> session :redo-stack not-empty)
@@ -165,7 +165,7 @@
                             (dropdown/button {:data-on:click (h/action (swap! cursor session/select-knot id))}
                                              label)))
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click (h/action (replay-all! app-state*))
+        {:data-on:click (h/action (replay-all! *app-state))
          :data-accel "p"
          :data-preserve-attr "data-tip"}
         [:div.icon.icon-play] [:span.hidden.lg:inline "Replay All"]]
@@ -196,7 +196,7 @@
        [:div.btn.btn-primary {:data-on:click (h/action
                                               (if (:dirty? @cursor)
                                                 (swap! cursor assoc :modal {:type :quit})
-                                                (shutdown! cursor app-state*)))}
+                                                (shutdown! cursor *app-state)))}
         [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
@@ -339,27 +339,27 @@
                                                                    {:type :dynamic-state :knot-id id}))}
                                            "Dynamic State ..."
                                            "Show full dynamic state")
-                                                                                                        (when debug-enabled?
-                                                                                                          (dropdown/button {:data-on:click (h/action
-                                                                                                                                            (swap! cursor session/check-for-changed-sources)
-                                                                                                                                            (let [command (if root?
-                                                                                                                                                           "Startup"
-                                                                                                                                                           (:command (tree/get-knot (:tree @cursor) id)))
-                                                                                                                                                  [trace-response session']
-                                                                                                                                                  (if root?
-                                                                                                                                                    (session/trace-startup! @cursor)
-                                                                                                                                                    (session/trace-command! @cursor id))
-                                                                                                                                                                                                                      parsed (trace/parse-trace trace-response)
-                                                                                                                                                                                                                      nodes (trace/build-tree parsed)]
-                                                                                                                                                                                                                  (reset! cursor session')
-                                                                                                                                                                                                                  (swap! cursor assoc
-                                                                                                                                                                                                                         :trace {:nodes nodes
-                                                                                                                                                                                                                                 :search ""
-                                                                                                                                                                                                                                 :node-count (trace/count-nodes nodes)
-                                                                                                                                                                                                                                 :command command}
-                                                                                                                                                     :modal {:type :trace})))}
-                                                                                                                           "Trace ..."
-                                                                                                                           (if root? "Trace startup" "Trace command execution"))))
+                          (when debug-enabled?
+                            (dropdown/button {:data-on:click (h/action
+                                                              (swap! cursor session/check-for-changed-sources)
+                                                              (let [command (if root?
+                                                                              "Startup"
+                                                                              (:command (tree/get-knot (:tree @cursor) id)))
+                                                                    [trace-response session']
+                                                                    (if root?
+                                                                      (session/trace-startup! @cursor)
+                                                                      (session/trace-command! @cursor id))
+                                                                    parsed (trace/parse-trace trace-response)
+                                                                    nodes (trace/build-tree parsed)]
+                                                                (reset! cursor session')
+                                                                (swap! cursor assoc
+                                                                       :trace {:nodes nodes
+                                                                               :search ""
+                                                                               :node-count (trace/count-nodes nodes)
+                                                                               :command command}
+                                                                       :modal {:type :trace})))}
+                                             "Trace ..."
+                                             (if root? "Trace startup" "Trace command execution"))))
        (render-children-navigation cursor tree knot)]
       (render-diff response unblessed)
       [:hr.clear-right.text-stone-200]
@@ -394,12 +394,12 @@
 (defn- render-modal
   "Renders the appropriate modal based on the :modal key in the session,
   or the :progress key in the app-state."
-  [cursor session app-state*]
+  [cursor session *app-state]
   (let [{:keys [modal tree]} session
-        progress (get-in @app-state* [:global :progress])]
+        progress (get-in @*app-state [:global :progress])]
     (cond
       progress
-      (modals/progress app-state* progress)
+      (modals/progress *app-state progress)
 
       modal
       (let [{:keys [type knot-id error]} modal
@@ -418,7 +418,7 @@
           (modals/dynamic-state cursor (:dynamic-response knot))
 
           :quit
-          (modals/quit-modal cursor app-state*)
+          (modals/quit-modal cursor *app-state)
 
           :trace
           (modals/trace-modal cursor (:trace session))
@@ -430,19 +430,19 @@
   Hyper calls this whenever the cursor changes and pushes the diff via SSE."
   [req]
   (let [cursor (h/global-cursor :session)
-        app-state* (:hyper/app-state req)
+        *app-state (:hyper/app-state req)
         ;; On first connection, kick off replay-all asynchronously.
         ;; Atomic check-and-clear to prevent double-replay when the page
         ;; function is called for both initial HTTP and SSE connection.
         _ (let [should-replay? (atom false)]
-            (swap! app-state*
+            (swap! *app-state
                    (fn [state]
                      (if (get-in state [:global :session :replay-on-launch?])
                        (do (reset! should-replay? true)
                            (update-in state [:global :session] dissoc :replay-on-launch?))
                        state)))
             (when @should-replay?
-              (future (replay-all! app-state*))))
+              (future (replay-all! *app-state))))
         session @cursor
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing?]} session]
     (h/watch! cursor)
@@ -462,7 +462,7 @@
         [:div.relative.px-8
          (when flash
            (flash/flash-message flash))
-         (navbar cursor session app-state*)
+         (navbar cursor session *app-state)
          [:div.container.mx-lg.mx-auto.mt-16
           (map (fn [knot]
                  (render-knot cursor tree knot {:debug-enabled? debug-enabled?
@@ -471,6 +471,6 @@
                knots)
           (new-command/new-command-input cursor (:id leaf-knot))]
          ;; Modal overlay
-         (render-modal cursor session app-state*)
+         (render-modal cursor session *app-state)
          ;; FAB for settings
          (render-fab cursor session)]))))

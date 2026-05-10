@@ -10,10 +10,10 @@
             [selmer.parser :as s]))
 
 (defn- get-session
-  "Reads the current session from hyper's app-state."
-  []
-  (let [app-state* ((requiring-resolve 'dialog-tool.skein.service/app-state*))]
-    (get-in @app-state* [:global :session])))
+  "Reads the current session from hyper's app-state on the request."
+  [req]
+  (when-let [*app-state (:hyper/app-state req)]
+    (get-in @*app-state [:global :session])))
 
 (defn- resolve-trace-source
   "Given the session and a node ID string, resolves the trace node's source
@@ -43,7 +43,7 @@
   "Serves a standalone HTML page displaying a Dialog source file."
   [req]
   (let [node-id (-> req :path-params :id)]
-    (if-let [[file-path line resolved] (resolve-trace-source (get-session) node-id)]
+    (if-let [[file-path line resolved] (resolve-trace-source (get-session req) node-id)]
       (let [raw-lines (read-source-lines resolved)
             dg? (string/ends-with? file-path ".dg")
             lines (map-indexed
@@ -70,7 +70,7 @@
   "Returns an HTML fragment for hover preview of source code."
   [req]
   (let [node-id (-> req :path-params :id)]
-    (if-let [[file-path line resolved] (resolve-trace-source (get-session) node-id)]
+    (if-let [[file-path line resolved] (resolve-trace-source (get-session req) node-id)]
       (let [raw-lines (read-source-lines resolved)
             dg? (string/ends-with? file-path ".dg")
             context 4

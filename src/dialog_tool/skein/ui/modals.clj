@@ -114,14 +114,14 @@
 (defn progress
   "Renders a progress modal for tracking operation progress.
   app-state* is the hyper app-state atom (progress is stored at [:global :progress])."
-  [app-state* {:keys [current total label operation]}]
+  [*app-state {:keys [current total label operation]}]
   (modal/modal
    {:title operation
     :buttons (list
               [:button.btn
                {:type "button"
                 :data-on:click__stop (h/action
-                                      (swap! app-state* assoc-in [:global :progress :continue] false))}
+                                      (swap! *app-state assoc-in [:global :progress :continue] false))}
                "Cancel"])}
    [:div
     [:div {:class "flex justify-between mb-2"}
@@ -147,7 +147,7 @@
 
 (defn quit-modal
   "Renders a quit confirmation modal."
-  [cursor app-state*]
+  [cursor *app-state]
   (modal/modal
    {:title "Unsaved Changes"
     :cursor cursor
@@ -161,13 +161,13 @@
        :data-on:click (h/action
                        (swap! cursor session/save!)
                        (swap! cursor dissoc :modal)
-                       ((requiring-resolve 'dialog-tool.skein.ui.app/shutdown!) cursor app-state*))}
+                       ((requiring-resolve 'dialog-tool.skein.ui.app/shutdown!) cursor *app-state))}
       "Save and Quit"]
      [:button.btn.btn-warning
       {:type "button"
        :data-on:click (h/action
                        (swap! cursor dissoc :modal)
-                       ((requiring-resolve 'dialog-tool.skein.ui.app/shutdown!) cursor app-state*))}
+                       ((requiring-resolve 'dialog-tool.skein.ui.app/shutdown!) cursor *app-state))}
       "Quit Without Saving"]
      (modal/cancel-button {:cursor cursor})]]))
 

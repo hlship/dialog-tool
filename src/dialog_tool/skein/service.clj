@@ -19,29 +19,37 @@
          :title "Dialog Skein"
          :get #'ui.app/skein-page}]
    ["/action/source/:id" {:hyper/disabled? true
-                           :get #'source/view-source}]
+                          :get #'source/view-source}]
    ["/action/source-preview/:id" {:hyper/disabled? true
-                                   :get #'source/source-preview}]])
+                                  :get #'source/source-preview}]])
 
 (defn- create-handler
   "Creates the Hyper Ring handler, seeding the skein session into app-state."
-  [app-state*]
+  [*app-state]
   (h/create-handler
    #'routes
-   :app-state app-state*
+   :app-state *app-state
    :static-resources "public"
    :datastar-script [:script {:type "module"
                               :src "/js/main.js"}]
    :head [[:link {:rel "icon" :type "image/x-icon" :href "/favicon.ico"}]
           [:link {:rel "stylesheet" :href "/style.css"}]]))
 
-;; Holds {:stop-fn ..., :app-state* ...} when the service is running.
+;; The hyper app-state atom. Passed directly to create-handler.
+;; The shutdown fn is stored at [:global :shutdown-fn].
 (defonce *app (atom nil))
 
 (defn- free-port
   []
   (with-open [s (ServerSocket. 0)]
     (.getLocalPort s)))
+
+(defn stop!
+  "Stops the running service, kills the game process, and resets *app."
+  []
+  (when-let [shutdown (get-in @*app [:global :shutdown-fn])]
+    (shutdown)
+    (reset! *app nil)))
 
 (defn start!
   "Starts a service with the Skein for the given path, or a new empty skein
@@ -62,7 +70,7 @@
   Returns the port opened."
   [root-dir opts]
   (let [{:keys [skein-path port seed engine development-mode? exit-when-shutdown?]
-         :or   {exit-when-shutdown? true}} opts
+         :or {exit-when-shutdown? true}} opts
         port' (or port (free-port))
         tree (when (fs/exists? skein-path)
                (sk.file/load-tree skein-path))
@@ -79,41 +87,22 @@
         session' (assoc session
                         :development-mode? development-mode?
                         :debug-enabled? (= engine' :dgdebug)
-                        :replay-on-launch? true
-                        :exit-when-shutdown? exit-when-shutdown?)
-        app-state* (atom (-> (state/init-state)
-                             (assoc-in [:global :session] session')))
-        stop-fn (h/start! (create-handler app-state*) {:port port'})
-        shutdown-fn (fn []
-                      (stop-fn)
-                      (when-let [process (:process (get-in @app-state* [:global :session]))]
-                        (sk.process/kill! process))
-                      (println "Shut down")
-                      (when (and exit-when-shutdown? (not development-mode?))
-                        (System/exit 0)))]
-    ;; Store shutdown-fn in app-state so the UI quit handler can access it
-    (swap! app-state* assoc-in [:global :shutdown-fn] shutdown-fn)
-    (reset! *app {:stop-fn stop-fn
-                  :app-state* app-state*})
+                        :replay-on-launch? (some? tree))
+        stop-server (do
+                     (reset! *app (-> (state/init-state)
+                                      (assoc-in [:global :session] session')))
+                     (h/start! (create-handler *app) {:port port'}))]
+    (swap! *app assoc-in [:global :shutdown-fn]
+           (fn []
+             (stop-server)
+             (when-let [process (:process (get-in @*app [:global :session]))]
+               (sk.process/kill! process))
+             (println "Shut down")
+             (when (and exit-when-shutdown? (not development-mode?))
+               (System/exit 0))))
     port'))
 
-(defn app-state*
-  "Returns the hyper app-state atom, or nil if the service isn't running."
-  []
-  (:app-state* @*app))
-
-(defn stop!
-  []
-  (when-let [{:keys [app-state*]} @*app]
-    (when-let [shutdown-fn (get-in @app-state* [:global :shutdown-fn])]
-      (shutdown-fn))
-    (reset! *app nil)))
-
 (comment
-
-  @*app
-
-  (get-in @(app-state*) [:global :session])
 
   (stop!)
 
