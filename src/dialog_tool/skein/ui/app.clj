@@ -40,13 +40,15 @@
     ;; No unblessed, render with ANSI styling
     (ansi/ansi->hiccup response)))
 
+;; Pending flash message — stored outside the session cursor so it doesn't
+;; persist across re-renders. The render function consumes and clears it.
+(def ^:private *pending-flash (atom nil))
+
 (defn- flash!
-  "Sets a flash message on the cursor and schedules it to auto-clear after 3 seconds."
-  [cursor message]
-  (swap! cursor assoc :flash message)
-  (future
-    (Thread/sleep 3000)
-    (swap! cursor dissoc :flash)))
+  "Queues a flash message to be shown on the next render.
+  Does not modify the session cursor — the render function reads and clears this."
+  [_cursor message]
+  (reset! *pending-flash message))
 
 (defn- jump-to-status!
   [cursor status]
@@ -109,16 +111,13 @@
                     session
                     (map-indexed vector leaf-knots))
             cancelled? (not (:continue (get-in @app-state* [:global :progress])))]
-        ;; Commit the final session
+        ;; Commit the final session and show flash
         (swap-session! app-state* (constantly final-session))
-        (swap-session! app-state* assoc :flash (if cancelled? "Replay cancelled" "Replay complete"))
-        (future
-          (Thread/sleep 3000)
-          (swap-session! app-state* dissoc :flash))))
+        (reset! *pending-flash (if cancelled? "Replay cancelled" "Replay complete"))))
     (catch Throwable t
       (println "Error during replay-all:" t)
-      (swap-session! app-state* assoc :flash {:message (str "Replay error: " (ex-message t))
-                                               :type :error}))
+      (reset! *pending-flash {:message (str "Replay error: " (ex-message t))
+                              :type :error}))
     (finally
       (set-progress! app-state* nil))))
 
@@ -434,7 +433,9 @@
             (when @should-replay?
               (future (replay-all! app-state*))))
         session @cursor
-        {:keys [tree debug-enabled? show-dynamic? fixed-width? flash]} session
+        {:keys [tree debug-enabled? show-dynamic? fixed-width?]} session
+        ;; Consume pending flash atomically — only shows once per render
+        flash (first (reset-vals! *pending-flash nil))
         knots (tree/selected-knots tree)
         leaf-knot (last knots)]
     (h/watch! cursor)
