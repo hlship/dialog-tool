@@ -1,0 +1,9 @@
+%% This is a sample unit test which can be run with `dgt test`.
+
+%% You may have any number of unit test sources.
+%% Refer to the Dialog Manual for more information.
+
+#sample-unit-test
+(test *)
+(run *)
+    (42 = 42)

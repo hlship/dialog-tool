@@ -215,6 +215,15 @@ as status bar updates; to verify these, you must run using Frotz.
 `dgt test` runs your project's unit tests, using all sources (:main, :debug, :test, and :library). 
 The exit status of the command is 0 if all unit test pass, or 1 if any tests fail.
 
+A new project includes a sample unit test that you can run:
+
+```text
+$ dgt test
+Attempting 1 test.
+Testing #sample-unit-test: Passed!
+1 test passed successfully.
+```
+
 ## Running the Skein
 
 The [Skein](doc/skein.md) is an interactive web interface for running, debugging, and
