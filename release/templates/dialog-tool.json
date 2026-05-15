@@ -1,0 +1,20 @@
+{
+    "version": "{{tag}}",
+    "description": "Assist building projects for the Dialog programming language",
+    "homepage": "https://github.com/hlship/dialog-tool",
+    "license": "Apache-2.0",
+    "depends": "main/imagemagick",
+    "suggest": {
+        "JDK": ["java/temurin-lts-jdk"],
+        "Dialog compiler": ["dialog-if"],
+        "Å-machine compiler": ["aamachine"]
+    },
+    "url": "https://github.com/hlship/dialog-tool/releases/download/{{tag}}/{{zip-name}}",
+    "hash": "{{sha}}",
+    "extract_dir": "",
+    "bin": "dgt.cmd",
+    "checkver": "github",
+    "autoupdate": {
+        "url": "https://github.com/hlship/dialog-tool/releases/download/$version/dialog-tool-$version.zip"
+    }
+}
