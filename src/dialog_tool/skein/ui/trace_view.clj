@@ -9,7 +9,8 @@
    Node 0 is an invisible root whose :children are the top-level node IDs."
   (:require [clojure.string :as string]
             [dialog-tool.skein.trace :as trace]
-            [dialog-tool.skein.ui.utils :refer [classes]]))
+            [dialog-tool.skein.ui.utils :refer [classes]]
+            [hyper.core :as h]))
 
 (defn- render-source-link
   "Renders a source reference as a clickable link that opens the source viewer
@@ -41,8 +42,9 @@
 
 (defn- render-node
   "Renders a single trace tree node and its visible children.
-   nodes is the flat node map, scroll-to-id is the optional :id to scroll into view."
-  [nodes node-id scroll-to-id]
+   nodes is the flat node map, cursor is the session cursor,
+   scroll-to-id is the optional :id to scroll into view."
+  [nodes cursor node-id scroll-to-id]
   (let [{:keys [id type predicate source children match? expanded]} (get nodes node-id)
         has-children? (seq children)
         scroll-to? (= id scroll-to-id)]
@@ -55,7 +57,8 @@
       (if has-children?
         [:button.w-5.h-5.flex.items-center.justify-center.text-gray-400.hover:text-gray-700.rounded.cursor-pointer.flex-shrink-0
          {:type "button"
-          :data-on:click (str "@post('/action/trace/toggle/" id "')")}
+          :data-on:click (h/action
+                          (swap! cursor update-in [:trace :nodes] trace/toggle-expanded id))}
          (if expanded "▾" "▸")]
         [:span.w-5.h-5.inline-block.flex-shrink-0])
       ;; Type badge
@@ -67,59 +70,68 @@
        {:class (when match? "font-bold")}
        predicate]
       ;; Source (link to source viewer)
-      [render-source-link source id]]
+      (render-source-link source id)]
      ;; Children (only if expanded)
      (when (and has-children? expanded)
        [:div
         (for [child-id children]
-          (render-node nodes child-id scroll-to-id))])]))
+          (render-node nodes cursor child-id scroll-to-id))])]))
 
-(defn render-trace-results
-  "Renders just the trace tree results area (the part that updates on interactions).
-   This has a stable `#trace-tree-results` ID so Datastar can patch it independently
-   without disrupting the search input.
-
-   scroll-to-id, when non-nil, is the :id of the first matching node to scroll
-   into view (used by the find action)."
-  ([trace-state]
-   (render-trace-results trace-state nil))
-  ([{:keys [nodes search node-count]} scroll-to-id]
-   (let [display-nodes (if (string/blank? search)
-                         nodes
-                         (trace/search-tree nodes search))
-         root (get display-nodes 0)]
-     [:div#trace-tree-results.flex-1.min-h-0.flex.flex-col
-      ;; Expand/collapse all controls + node count (pinned)
-      [:div.flex.items-center.gap-2.mb-2.flex-shrink-0
-       [:button.btn.btn-xs.btn-ghost
-        {:type "button"
-         :data-on:click "@post('/action/trace/expand-all')"}
-        "Expand All"]
-       [:button.btn.btn-xs.btn-ghost
-        {:type "button"
-         :data-on:click "@post('/action/trace/collapse-all')"}
-        "Collapse All"]
-       [:span.text-xs.text-gray-400.ml-auto
-        (str node-count " nodes")]]
-      ;; Tree view (scrollable)
-      [:div.flex-1.overflow-y-auto.border.rounded.p-2.bg-white
-       (for [child-id (:children root)]
-         (render-node display-nodes child-id scroll-to-id))]])))
+(defn- apply-trace-search
+  "Applies a search term to the trace state in the cursor."
+  [cursor search]
+  (swap! cursor
+         (fn [session]
+           (let [nodes (get-in session [:trace :nodes])
+                 updated (if (string/blank? search)
+                           (trace/collapse-all nodes)
+                           (trace/expand-to-matches (trace/search-tree nodes search)))]
+             (-> session
+                 (assoc-in [:trace :search] search)
+                 (assoc-in [:trace :nodes] updated))))))
 
 (defn render-trace-tree
-  "Renders the full trace tree view with search input and results.
-   Used for the initial modal render only.
-   
-   trace-state is the :trace map from the session."
-  [trace-state]
-  [:<>
-   ;; Search bar (not re-rendered on interactions, pinned at top)
-   [:div.mb-3.flex.items-center.gap-2.flex-shrink-0
-    [:input.input.input-bordered.input-sm.flex-1
-     {:type "text"
-      :placeholder "Search predicates or sources..."
-      :data-bind "traceSearch"
-      :data-on:keydown__debounce_300ms "evt.key === 'Enter' ? @post('/action/trace/find') : @post('/action/trace/search')"
-      :data-init "el.focus()"}]]
-   ;; Results area (re-rendered independently)
-   [render-trace-results trace-state]])
+  "Renders the full trace tree view with search input, controls, and results.
+   cursor is the session cursor, trace-state is the :trace map from the session."
+  [cursor trace-state]
+  (let [{:keys [nodes search node-count]} trace-state
+        display-nodes (if (string/blank? search)
+                        nodes
+                        (trace/search-tree nodes search))
+        root (get display-nodes 0)
+        search-signal (h/local-signal :trace-search (or search ""))]
+    (list
+     ;; Search bar
+     [:div.mb-3.flex.items-center.gap-2.flex-shrink-0
+      [:input.input.input-bordered.input-sm.flex-1
+       {:type "text"
+        :placeholder "Search predicates or sources..."
+        :data-bind (:name search-signal)
+        :data-on:keydown__debounce_300ms
+        (h/action
+         (let [search (or $value "")]
+           (apply-trace-search cursor search)
+           (when (= $key "Enter")
+             ;; Scroll to first matching node
+             (let [nodes (get-in @cursor [:trace :nodes])]
+               (when-let [match-id (trace/find-first-match nodes)]
+                 (swap! cursor assoc-in [:trace :scroll-to] match-id))))))
+        :data-init "el.focus()"}]]
+     ;; Expand/collapse all controls + node count
+     [:div.flex.items-center.gap-2.mb-2.flex-shrink-0
+      [:button.btn.btn-xs.btn-ghost
+       {:type "button"
+        :data-on:click (h/action
+                        (swap! cursor update-in [:trace :nodes] trace/expand-all))}
+       "Expand All"]
+      [:button.btn.btn-xs.btn-ghost
+       {:type "button"
+        :data-on:click (h/action
+                        (swap! cursor update-in [:trace :nodes] trace/collapse-all))}
+       "Collapse All"]
+      [:span.text-xs.text-gray-400.ml-auto
+       (str node-count " nodes")]]
+     ;; Tree view (scrollable)
+     [:div.flex-1.overflow-y-auto.border.rounded.p-2.bg-white
+      (for [child-id (:children root)]
+        (render-node display-nodes cursor child-id (:scroll-to trace-state)))])))

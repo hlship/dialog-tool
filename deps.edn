@@ -1,25 +1,26 @@
 {:paths ["src"
          "generated-resources"
          "resources"]
- :deps  {io.github.hlship/cli-tools         {:mvn/version "0.16.0-beta-6"}
-         org.jetbrains.pty4j/pty4j          {:mvn/version "0.13.12"}
-         io.github.escherize/huff           {:mvn/version "0.2.21"}
-         io.github.tonsky/clj-simple-router {:mvn/version "0.1.2"}
-         ring/ring-core                     {:mvn/version "1.15.4"}
-         dev.data-star.clojure/sdk          {:mvn/version "1.0.0-RC10"}
-         dev.data-star.clojure/http-kit     {:mvn/version "1.0.0-RC10"
-                                             :exclusions  [http-kit/http-kit]}
-         plumula/diff                       {:mvn/version "0.1.1"}
-         selmer/selmer                      {:mvn/version "1.13.1"}
-         babashka/fs                        {:mvn/version "0.5.33"}
-         babashka/process                   {:mvn/version "0.6.25"}
-         org.clojure/core.async             {:mvn/version "1.9.865"}
-         cheshire/cheshire                  {:mvn/version "6.2.0"}
-         http-kit/http-kit                  {:mvn/version "2.8.1"}
-         org.clojure/tools.cli              {:mvn/version "1.4.256"}
-         
+ :deps  {io.github.hlship/cli-tools                       {:mvn/version "0.16.0-beta-7"}
+         org.jetbrains.pty4j/pty4j                        {:mvn/version "0.13.12"}
+         dynamic-alpha/hyper                              {:git/url "https://github.com/dynamic-alpha/hyper"
+                                                           :git/sha "3ead994e36930d4b42e1ce579db819383794834a"}
+         ;; hyper depends on brotli4j, which uses Maven profiles to pull in native
+         ;; libraries for the *build* machine's OS/arch only. Explicitly include
+         ;; all target platforms so the uberjar works everywhere.
+         com.aayushatharva.brotli4j/native-osx-aarch64    {:mvn/version "1.23.0"}
+         com.aayushatharva.brotli4j/native-osx-x86_64     {:mvn/version "1.23.0"}
+         com.aayushatharva.brotli4j/native-linux-x86_64   {:mvn/version "1.23.0"}
+         com.aayushatharva.brotli4j/native-windows-x86_64 {:mvn/version "1.23.0"}
+         plumula/diff                                     {:mvn/version "0.1.1"}
+         selmer/selmer                                    {:mvn/version "1.13.1"}
+         babashka/fs                                      {:mvn/version "0.5.33"}
+         babashka/process                                 {:mvn/version "0.6.25"}
+         org.clojure/core.async                           {:mvn/version "1.9.865"}
+         org.clojure/tools.cli                            {:mvn/version "1.4.256"}
+
          ;; Kill the runtime warning
-         org.slf4j/slf4j-nop                {:mvn/version "2.0.17"}}
+         org.slf4j/slf4j-nop                              {:mvn/version "2.0.18"}}
 
  :aliases
  {:build

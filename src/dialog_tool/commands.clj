@@ -18,9 +18,7 @@
           :parse-fn parse-long
           :validate [some? "Not a number"
                      pos-int? "Must be at least one"]]
-   ;; NOTE: I think there's a bug in clojure.tools.cli that's preventing this
-   ;; from working.
-   :in-order true
+   :pass-through true
    :args
    debug-args ["ARGS" "Additional arguments passed to dgdebug"
                :optional true
@@ -88,7 +86,7 @@
   "
   [debug? debug-opt
    dumb? ["-D" "--dumb" "Run using dfrotz instead of frotz"]
-   :in-order true
+   :pass-through true
    :args
    frotz-args ["ARGS" "Extra arguments passed to frotz"
                :optional true

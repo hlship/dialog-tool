@@ -1,16 +1,17 @@
 (ns dialog-tool.skein.ui.components.modal
   "Modal dialog component with backdrop and ESC key handling."
-  (:require [cheshire.core]))
+  (:require [hyper.core :as h]))
 
 (defn cancel-button
   "Renders a Cancel button that dismisses the modal.
 
    Options:
-   - :label - Button text (default: 'Cancel')"
-  [{:keys [label] :or {label "Cancel"}}]
+   - :label - Button text (default: 'Cancel')
+   - :cursor - The session cursor (required for dismissal)"
+  [{:keys [label cursor] :or {label "Cancel"}}]
   [:button.btn
    {:type "button"
-    :data-on:click__stop "@post('/action/dismiss-modal')"}
+    :data-on:click__stop (h/action (swap! cursor dissoc :modal))}
    label])
 
 (defn ok-button
@@ -23,34 +24,27 @@
    {:type "submit"}
    label])
 
-(def ^:private default-buttons
-  [:<>
-   [cancel-button {}]
-   [ok-button {}]])
-
 (defn modal
   "Renders a modal dialog overlay.
 
    Options:
    - :title - Dialog title
-   - :signals - Optional map of signals to initialize (will be JSON-encoded as data-signals)
+   - :cursor - The session cursor (for ESC dismissal)
    - :buttons - Buttons to display at bottom of form
    - :error - Optional error message to display at the top of the modal
 
    The modal:
    - Can be dismissed by pressing ESC
    - Centers content and provides standard styling"
-  [{:keys [title signals buttons error]
-    :or {buttons default-buttons}}
+  [{:keys [title cursor buttons error]}
    content]
   [:div#modal-container
-   (merge
-    {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
-    (when signals
-      {:data-signals (cheshire.core/generate-string signals)}))
+   {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
    [:div.bg-white.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
-    {:data-on:click__stop ""
-     :data-on:keydown "evt.key === 'Escape' && @post('/action/dismiss-modal')"
+    {:data-on:click__stop "return"
+     :data-on:keydown (h/action
+                       (when (= $key "Escape")
+                         (swap! cursor dissoc :modal)))
      :tabindex "-1"
      :data-init "el.focus()"}
     ;; Header

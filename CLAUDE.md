@@ -23,7 +23,12 @@ The tool provides commands for:
   - `bundle.clj` — Web bundle packaging
   - `project_file.clj` — Reading and processing `dialog.edn` project files
   - `template.clj` — Project template creation
-  - `skein/` — Skein subsystem (session management, tree structure, web UI, process control)
+  - `skein/` — Skein subsystem (session management, tree structure, web UI via Hyper, process control)
+    - `service.clj` — HTTP server lifecycle, routes, app-state
+    - `ui/app.clj` — Main page render function and actions
+    - `ui/modals.clj` — Modal dialog rendering
+    - `source_handlers.clj` — Source view/preview Ring endpoints
+    - `session.clj`, `tree.clj`, `process.clj` — Core skein logic
 - `test/` — Tests (run with `bb test` or `clj -M:test`)
 - `resources/` — Templates, bundled assets, skein resources
 - `release/` — Babashka release scripts and Homebrew formula template
@@ -34,8 +39,8 @@ The tool provides commands for:
 - **Clojure** with `deps.edn` for dependency management
 - **Babashka** (`bb.edn`) for task running (tests, releases, tailwind)
 - **cli-tools** (`io.github.hlship/cli-tools`) for CLI option parsing and command dispatch
-- **Datastar** + **Huff** + **DaisyUI** for the Skein web UI
-- **http-kit** as the web server
+- **Hyper** (reactive server-rendered framework on Datastar) + **Chassis** + **DaisyUI** for the Skein web UI
+- **http-kit** as the web server (via Hyper)
 - **pty4j** for pseudo-terminal process interaction with `dgdebug`
 
 ## Development

@@ -1,31 +1,56 @@
 (ns dialog-tool.skein.service
-  "Wraps the Skein session in an HTTP service, exposing static resources and an
-  API."
+  "Wraps the Skein session in an HTTP service using Hyper for reactive
+  server-rendered UI over Datastar/SSE."
   (:require [babashka.fs :as fs]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.session :as s]
-            [dialog-tool.skein.handlers :refer [service-handler]]
-            [org.httpkit.server :as hk])
+            [dialog-tool.skein.source-handlers :as source]
+            [dialog-tool.skein.ui.app :as ui.app]
+            [hyper.core :as h]
+            [hyper.state :as state])
   (:import (java.net ServerSocket)))
 
-(defonce *session (atom nil))
+;; The Skein session is stored in hyper's app-state atom under the :session key.
+;; Handlers access it via (h/global-cursor :session).
 
-(defonce *shutdown (atom nil))
+(def ^:private routes
+  [["/" {:name :skein
+         :title "Dialog Skein"
+         :get #'ui.app/skein-page}]
+   ["/action/replay-all" {:post #'ui.app/replay-all!}]
+   ["/action/source/:id" {:hyper/disabled? true
+                          :get #'source/view-source}]
+   ["/action/source-preview/:id" {:hyper/disabled? true
+                                  :get #'source/source-preview}]])
 
-(defn- service-handler-proxy
-  [request]
-  (let [handler (if (-> *session deref :development-mode?)
-                  (requiring-resolve 'dialog-tool.skein.handlers/service-handler)
-                  service-handler)]
-    (handler (assoc request
-                    :*session *session
-                    :*shutdown *shutdown))))
+(defn- create-handler
+  "Creates the Hyper Ring handler, seeding the skein session into app-state."
+  [*app-state]
+  (h/create-handler
+   #'routes
+   :app-state *app-state
+   :static-resources "public"
+   :datastar-script [:script {:type "module"
+                              :src "/js/main.js"}]
+   :head [[:link {:rel "icon" :type "image/x-icon" :href "/favicon.ico"}]
+          [:link {:rel "stylesheet" :href "/style.css"}]]))
+
+;; The hyper app-state atom. Passed directly to create-handler.
+;; The shutdown fn is stored at [:global :shutdown-fn].
+(defonce *app (atom nil))
 
 (defn- free-port
   []
   (with-open [s (ServerSocket. 0)]
     (.getLocalPort s)))
+
+(defn stop!
+  "Stops the running service, kills the game process, and resets *app."
+  []
+  (when-let [shutdown (get-in @*app [:global :shutdown-fn])]
+    (shutdown)
+    (reset! *app nil)))
 
 (defn start!
   "Starts a service with the Skein for the given path, or a new empty skein
@@ -42,12 +67,11 @@
   Likewise, the :engine comes from meta, then as supplied, then :dgdebug as a default.
 
   Does not join the service.
-  
 
   Returns the port opened."
   [root-dir opts]
   (let [{:keys [skein-path port seed engine development-mode? exit-when-shutdown?]
-         :or   {exit-when-shutdown? true}} opts
+         :or {exit-when-shutdown? true}} opts
         port' (or port (free-port))
         tree (when (fs/exists? skein-path)
                (sk.file/load-tree skein-path))
@@ -61,35 +85,27 @@
         session (if tree
                   (s/create-loaded! start-process skein-path tree)
                   (s/create-new! start-process skein-path engine' seed'))
-        shutdown-fn (hk/run-server service-handler-proxy
-                                   {:port port'
-                                    :ip "localhost"
-                                    :server-header "Dialog Skein Service"})
-        shutdown-service-fn (fn []
-                              (shutdown-fn)
-                              (when-let [process (:process @*session)]
-                                (sk.process/kill! process))
-                              (println "Shut down")
-                              (when (and exit-when-shutdown? (not development-mode?))
-                                (System/exit 0)))]
-    (reset! *session (assoc session
-                            :development-mode? development-mode?
-                            :debug-enabled? (= engine' :dgdebug)
-                            :replay-on-launch? true))
-    (reset! *shutdown shutdown-service-fn)
+        session' (assoc session
+                        :development-mode? development-mode?
+                        :debug-enabled? (= engine' :dgdebug)
+                        :replay-on-launch? (some? tree))
+        stop-server (do
+                     (reset! *app (-> (state/init-state)
+                                      (assoc-in [:global :session] session')))
+                     (h/start! (create-handler *app) {:port port'}))]
+    (swap! *app assoc-in [:global :shutdown-fn]
+           (fn []
+             (stop-server)
+             (when-let [process (:process (get-in @*app [:global :session]))]
+               (sk.process/kill! process))
+             (println "Shut down")
+             (when (and exit-when-shutdown? (not development-mode?))
+               (System/exit 0))))
     port'))
 
 (comment
 
-  @*session
-
-  (-> @*session :debug-enabled?)
-
-  (-> @*session :tree :knots (get 0))
-  
-  (->> @*session :tree :knots vals (filter #(-> % :id nil?)))
-
-  (@*shutdown)
+  (stop!)
 
   (start! "../sanddancer-dialog"
           {:engine :dgdebug
@@ -104,7 +120,6 @@
            :port 10140
            :exit-when-shutdown? false
            :development-mode? true})
-
 
   (start! "../sanddancer-dialog"
           {:engine :dgdebug
