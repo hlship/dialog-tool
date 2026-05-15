@@ -9,6 +9,7 @@ distributed as an uberjar.
 The tool provides commands for:
 - Creating new projects from a template (`dgt new`)
 - Running projects in the Dialog debugger (`dgt debug`)
+- Running project unit tests under `dgdebug --unit-test` with all sources (`dgt test`)
 - Running a web-based Skein UI for interactive testing (`dgt skein`)
 - Building projects to various targets (`dgt build`)
 - Bundling projects for web deployment (`dgt bundle`)

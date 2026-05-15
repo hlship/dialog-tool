@@ -123,7 +123,7 @@ to your project, in which to locate source files. All Dialog source files _direc
 are included.
 
 * :main - sources specific to your project
-* :test - unit test sources, loaded when running tests (unit test support is forthcoming)
+* :test - unit test sources, loaded when running `dgt test`
 * :debug - used by the commands `skein test`, `debug`, `skein run`, etc.
 * :library - additional libraries, including the Dialog standard library
 
@@ -209,6 +209,20 @@ By default, debug sources are excluded, but you can run with the `--debug` switc
 
 Neither the debugger nor the Skein can present all the possible Dialog screen effects, such
 as status bar updates; to verify these, you must run using Frotz.
+
+## Running unit tests
+
+`dgt test` runs your project's unit tests, using all sources (:main, :debug, :test, and :library). 
+The exit status of the command is 0 if all unit test pass, or 1 if any tests fail.
+
+A new project includes a sample unit test that you can run:
+
+```text
+$ dgt test
+Attempting 1 test.
+Testing #sample-unit-test: Passed!
+1 test passed successfully.
+```
 
 ## Running the Skein
 

@@ -38,7 +38,7 @@
   "Copies binary resource path (on the classpath) to a target path."
   [resource-path target]
   (setup-target target)
-  (with-open [in (-> resource-path io/resource io/input-stream)
+  (with-open [in  (-> resource-path io/resource io/input-stream)
               out (-> target maybe-create fs/file io/output-stream)]
     (io/copy in out)))
 
@@ -62,18 +62,30 @@
   path to :main in sources. When flat?, the individual file path is added;
   otherwise the directory."
   [sources dir flat? resource-path context file-name]
-  (let [target-path (str "src/" file-name)
-        source-entry (if flat? target-path "src")]
+  (let [{:keys [category]
+         :or   {category :main}} context
+        target-dir   (cond flat?
+                           "src"
+
+                           (= category :main)
+                           "src"
+
+                           :else
+                           "test")
+        target-path  (str target-dir "/" file-name)
+        source-entry (if flat? target-path target-dir)]
     (copy-rendered resource-path context (fs/path dir target-path))
-    (conj-source sources :main source-entry)))
+    (conj-source sources category source-entry)))
 
 (defn- add-lib
   "Copies a classpath resource to the project. When flat?, the file goes directly
   into base-dir; otherwise it goes into base-dir/sub-dir. The appropriate path
   is added to source-key in sources."
-  [sources dir flat? resource-path source-key base-dir sub-dir file-name]
-  (let [target-dir (if flat? base-dir (str base-dir "/" sub-dir))
-        target-path (str target-dir "/" file-name)
+  [sources dir flat? resource-path source-key sub-dir file-name]
+  (let [target-dir   (if flat?
+                       "src"
+                       (str "lib/" sub-dir))
+        target-path  (str target-dir "/" file-name)
         source-entry (if flat? target-path target-dir)]
     (copy-resource resource-path (fs/path dir target-path))
     (conj-source sources source-key source-entry)))
@@ -101,11 +113,14 @@
                       (add-source dir' flat? "template/project.dg"
                                   {}
                                   (str project-name ".dg"))
+                      (add-source dir' flat? "template/unit-tests.dg"
+                                  {:category :test}
+                                  "unit-tests.dg")
 
                       ;; Library sources (placement depends on flat?)
-                      (add-lib dir' flat? "template/stdlib.dg" :library "lib" "dialog" "stdlib.dg")
-                      (add-lib dir' flat? "template/stddebug.dg" :debug "lib" "dialog/debug" "stddebug.dg")
-                      (add-lib dir' flat? "template/unit.dg" :test "lib" "dialog/test" "unit.dg"))]
+                      (add-lib dir' flat? "template/stdlib.dg" :library "dialog" "stdlib.dg")
+                      (add-lib dir' flat? "template/stddebug.dg" :debug "dialog/debug" "stddebug.dg")
+                      (add-lib dir' flat? "template/unit.dg" :test "dialog/test" "unit.dg"))]
 
       (copy-rendered "template/dialog.edn"
                      {:project-name project-name
