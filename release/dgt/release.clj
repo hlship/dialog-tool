@@ -52,6 +52,10 @@
                      (fs/file build-dir "dgt")
                      {:uber-jar (fs/file-name uber-file)})
 
+    (render-template "templates/dgt.cmd"
+                     (fs/file build-dir "dgt.cmd")
+                     {:uber-jar (fs/file-name uber-file)})
+
     (sh "chmod a+x" (fs/file build-dir "dgt"))
 
     (sh "cp -R"

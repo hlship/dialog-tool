@@ -16,7 +16,8 @@
                   create-opts (cond-> ["--verify-tag" "--generate-notes"]
                                 (string/includes? tag "alpha")
                                 (conj "--prerelease"))
-                  formula (-> zip-file fs/parent (fs/file "dialog-tool.rb"))]
+                  formula (-> zip-file fs/parent (fs/file "dialog-tool.rb"))
+                  scoop-manifest (-> zip-file fs/parent (fs/file "dialog-tool.json"))]
               (apply sh "gh release create" tag create-opts)
               (sh "gh release upload --clobber" tag zip-file)
               (println)
@@ -34,4 +35,11 @@
                  :uber-jar (str "dialog-tool-" tag ".jar")
                  :zip-name (fs/file-name zip-file)})
               (println)
-              (pout "Wrote formula to " [:bold formula]))}}
+              (pout "Wrote Homebrew formula to " [:bold formula])
+              (r/render-template "templates/dialog-tool.json"
+                scoop-manifest
+                {:tag      tag
+                 :sha      sha
+                 :uber-jar (str "dialog-tool-" tag ".jar")
+                 :zip-name (fs/file-name zip-file)})
+              (pout "Wrote Scoop manifest to " [:bold scoop-manifest]))}}
