@@ -18,6 +18,7 @@
   [["/" {:name :skein
          :title "Dialog Skein"
          :get #'ui.app/skein-page}]
+   ["/action/replay-all" {:post #'ui.app/replay-all!}]
    ["/action/source/:id" {:hyper/disabled? true
                           :get #'source/view-source}]
    ["/action/source-preview/:id" {:hyper/disabled? true

@@ -1,7 +1,8 @@
 (ns dialog-tool.skein.ui.ansi
   "Converts ANSI SGR escape codes to either styled Hiccup markup (for blessed output)
    or visible pseudo-markers (for diff output where styling is overridden by diff spans)."
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [dev.onionpancakes.chassis.core :as chassis]))
 
 (def ^:private sgr-pattern
   "Matches ANSI CSI SGR sequences: ESC [ <params> m"
@@ -87,7 +88,7 @@
     (let [segments (parse-segments text)]
       (loop [remaining segments
              effects {}
-             result []]
+             result ^::chassis/content []]
         (if-let [[seg-type seg-value] (first remaining)]
           (case seg-type
             :sgr (recur (rest remaining)
@@ -100,7 +101,7 @@
                                  (if classes
                                    [:span {:class classes} seg-value]
                                    seg-value)))))
-          (seq result))))))
+          result)))))
 
 (defn- opening-marker
   "Returns the opening pseudo-marker for an SGR code, or nil for reset (0)."
