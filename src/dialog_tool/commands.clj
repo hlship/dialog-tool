@@ -23,14 +23,33 @@
    debug-args ["ARGS" "Additional arguments passed to dgdebug"
                :optional true
                :repeatable true]]
-  (let [project (pf/read-project)
+  (let [project    (pf/read-project)
         extra-args (cond-> []
                      width (conj "--width" width))
-        cmd (-> [(pf/command-path project "dgdebug") "--quit"]
-                (into extra-args)
-                (into debug-args)
-                (into (pf/expand-sources project {:debug? true})))
-        *process (p/process {:cmd cmd
+        cmd        (-> [(pf/command-path project "dgdebug") "--quit"]
+                       (into extra-args)
+                       (into debug-args)
+                       (into (pf/expand-sources project {:debug? true})))
+        _          (env/debug-command cmd)
+        *process   (p/process {:cmd     cmd
+                               :inherit true})
+        {:keys [exit]} @*process]
+    (cli/exit exit)))
+
+(defcommand test-project
+  "Run the project in the Dialog debugger with test sources included."
+  [:command "test"
+   :pass-through true
+   :args
+   debug-args ["ARGS" "Additional arguments passed to dgdebug"
+               :optional true
+               :repeatable true]]
+  (let [project  (pf/read-project)
+        cmd      (-> [(pf/command-path project "dgdebug") "--unit-test"]
+                     (into debug-args)
+                     (into (pf/expand-sources project {:debug? true :test? true})))
+        _        (env/debug-command cmd)
+        *process (p/process {:cmd     cmd
                              :inherit true})
         {:keys [exit]} @*process]
     (cli/exit exit)))
@@ -52,7 +71,7 @@
                  :optional true]]
   (template/create-from-template project-dir
                                  {:project-name (str (or project-name project-dir))
-                                  :flat? flat?}))
+                                  :flat?        flat?}))
 
 (defcommand build
   "Compile the project to a file ready to execute with an interpreter.
@@ -64,8 +83,8 @@
                              #{:zblorb :z5 :z8 :aa})
    debug? debug-opt
    verbose ["-v" "--verbose" "Enable additional compiler output"]]
-  (let [project (pf/read-project)
-        base-options {:debug? debug?
+  (let [project      (pf/read-project)
+        base-options {:debug?   debug?
                       :verbose? verbose}]
     (if target
       (build/build-project project (assoc base-options :target target))
@@ -96,13 +115,13 @@
         targets (:target project)
         ;; frotz can't run :aa targets; pick the first non-:aa target,
         ;; or fall back to :z8 if only :aa is available
-        target (or (first (remove #{:aa} targets))
-                   (do
-                     (perr [:faint "Project target is aa; compiling to z8 for frotz"])
-                     :z8))
-        path (build/build-project project
-                                  {:target target
-                                   :debug? debug?})
+        target  (or (first (remove #{:aa} targets))
+                    (do
+                      (perr [:faint "Project target is aa; compiling to z8 for frotz"])
+                      :z8))
+        path    (build/build-project project
+                                     {:target target
+                                      :debug? debug?})
         command (concat [(pf/command-path project (if dumb? "dfrotz" "frotz"))]
                         (when dumb?
                           ["-m" "-q"])
@@ -117,10 +136,10 @@
    test? ["-t" "--test" "Include test sources"]
    one? ["-1" "--single-line" "Output as a single line, colon-separated"]]
   (let [project (pf/read-project)
-        paths (pf/expand-sources project {:debug? debug? :test? test?})]
+        paths   (pf/expand-sources project {:debug? debug? :test? test?})]
     (if one?
       (println (string/join ":" paths))
       (let [longest (apply max (map count paths))]
         (doseq [path paths]
-          (pout [{:font :cyan
+          (pout [{:font  :cyan
                   :width longest} path]))))))

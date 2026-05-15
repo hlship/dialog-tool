@@ -20,6 +20,8 @@ server-side actions instead of individual HTTP endpoints.
 `dgt new` now includes `lib/dialog/test/unit.dg` for unit testing support.
 Added `:test` source category to `dialog.edn`, loaded alongside `:debug` sources.
 
+Added `dgt test` command: runs unit tests defined by the project.
+
 # 1.4 -- 29 Sep 2020
 
 Remove the `bless` command; it is now all done from the `test` command.
