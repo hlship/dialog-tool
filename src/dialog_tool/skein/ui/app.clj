@@ -49,11 +49,12 @@
   (future
     ;; Give hyper time to push the closing message to the browser
     (Thread/sleep 500)
-    (when-let [shutdown-fn (get-in @*app-state [:global :shutdown-fn])]
-      (shutdown-fn))))
+    ((get-in @*app-state [:global :shutdown-fn]))))
 
 ;; Pending flash message — stored outside the session cursor so it doesn't
 ;; persist across re-renders. The render function consumes and clears it.
+;; TODO: Never happy to have a global like this, there must be a better way
+;; to deal with this.
 (def ^:private *pending-flash (atom nil))
 
 (defn- flash!
@@ -86,6 +87,10 @@
   ([*app-state f & args]
    (apply swap! *app-state update-in [:global :session] f args)))
 
+(defn- reset-session!
+  [*app-state session]
+  (swap! *app-state assoc-in [:global :session] session))
+
 (defn- get-session
   [*app-state]
   (get-in @*app-state [:global :session]))
@@ -95,6 +100,21 @@
   [*app-state progress]
   (swap! *app-state assoc-in [:global :progress] progress))
 
+(defn- complete-session-operation
+  "Invoked after a command that operates on the process; if there was a startup error
+  after restarting the process (because of a source code error) then sets up the source error
+  modal dialog.
+  
+  If there's no error, updates the flash message."
+  [session flash-message]
+  (let [{:keys [error]} session]
+    (when-not error
+      (reset! *pending-flash flash-message))
+    (cond-> session
+      error (-> (dissoc :error)
+                (assoc :modal {:type  :source-error
+                               :error error})))))
+
 (defn replay-to!
   "Replays to a specific knot."
   [req]
@@ -102,10 +122,9 @@
         knot-id (get-in req [:hyper/route :path-params :id])
         session (-> (get-session *app-state)
                     session/check-for-changed-sources
-                    (session/replay-to! knot-id))]
-    ;; TODO: deal w/ :error
+                    (session/replay-to! knot-id)
+                    (complete-session-operation "Replayed"))]
     (swap-session! *app-state (constantly session))
-    (flash! "Replayed")
     {:status 200}))
 
 (defn replay-all!
@@ -123,12 +142,13 @@
                        session/capture-undo
                        session/check-for-changed-sources)
         leaf-knots (tree/leaf-knots (:tree session))
-        total      (count leaf-knots)]
+        total      (count leaf-knots)
+        cancelled? #(not (get-in @*app-state [:global :progress :continue]))]
     ;; Store continue flag in progress so cancel can stop the loop
     (set-progress! *app-state {:continue true})
-    (let [final-session
-                     (reduce (fn [session [idx knot]]
-                               (if-not (get-in @*app-state [:global :progress :continue])
+    (let [session' (reduce (fn [session [idx knot]]
+                             (if (or (cancelled?)
+                                     (:error session))
                                  (reduced session)
                                  (do
                                    (set-progress! *app-state
@@ -139,18 +159,12 @@
                                                    :continue  true})
                                    (session/do-replay-to! session (:id knot)))))
                              session
-                             (map-indexed vector leaf-knots))
-          {:keys [error]} final-session
-          session'   (cond-> final-session
-                       error (-> (dissoc :error)
-                                 (assoc :modal {:type  :source-error
-                                                :error error})))
-          cancelled? (not (:continue (get-in @*app-state [:global :progress])))]
-      ;; Commit the final session and show flash
-      (swap! *app-state assoc-in [:global :session] session')
-      (set-progress! *app-state nil)
-      (when-not error
-        (reset! *pending-flash (if cancelled? "Replay cancelled" "Replay complete")))))
+                           (map-indexed vector leaf-knots))]
+      ;;  Dismiss the progress dialog
+      (reset-session! *app-state
+                      (complete-session-operation session'
+                                                  (if (cancelled?) "Replay cancelled" "Replay complete")))
+      (set-progress! *app-state nil)))
   {:status 200})
 
 (defn navbar

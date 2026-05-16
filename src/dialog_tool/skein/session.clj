@@ -11,19 +11,14 @@
 
 (defn create-loaded!
   "Creates a new session from a tree loaded from the path, and a process started with
-  the skein's seed. The process should be just started so that we can read the initial
-  response."
+  the skein's seed."
   [start-process-fn skein-path tree]
-  (let [process (start-process-fn)
-        initial-response (sk.process/read-response! process)]
-    ;; TODO: Handle error on load, or lean on immediate Replay All?
-    {:skein-path skein-path
-     :undo-stack []
-     :redo-stack []
-     :process process
-     :start-process-fn start-process-fn
-     :tree (tree/update-response tree 0 initial-response)
-     :active-knot-id 0}))
+  {:skein-path       skein-path
+   :undo-stack       []
+   :redo-stack       []
+   :start-process-fn start-process-fn
+   :tree             tree
+   :active-knot-id   nil})
 
 (defn create-new!
   "Creates a new session for a new skein, using an existing process.  The process should be
@@ -82,7 +77,7 @@
         initial-response (sk.process/read-response! process')
         session'         (assoc session :process process')]
     (if-not (sk.process/alive? process')
-      (assoc session' :error (string/trim initial-response))
+      (assoc session' :error initial-response)
       (-> session'
           (assoc :active-knot-id 0)
           (dissoc :error)

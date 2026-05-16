@@ -48,7 +48,7 @@
           ;; Process died, pipe closed -- this can happen when there are errors in
           ;; the source code.  Provide as much as was read:
           (do
-            (>!! output-ch (-> sb str post-process))
+            (>!! output-ch (-> sb str post-process string/trim))
             (close! output-ch))
           (do
             (.append sb buffer 0 n-read)
@@ -206,4 +206,8 @@
   since this process was created."
   [process]
   (let [{:keys [project hash]} process]
-    (not= hash (pf/project-hash project))))
+    ;; If the project has not yet been loaded (i.e., immediately
+    ;; after startup and before the automatic Replay All has occurred)
+    ;; then assume a change to force the initial process to be launched.
+    (or (nil? project)
+        (not= hash (pf/project-hash project)))))

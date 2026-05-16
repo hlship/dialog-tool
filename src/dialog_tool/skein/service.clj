@@ -86,22 +86,27 @@
         session (if tree
                   (s/create-loaded! start-process skein-path tree)
                   (s/create-new! start-process skein-path engine' seed'))
+        *stop-server (atom nil)
         session' (assoc session
                         :development-mode? development-mode?
                         :debug-enabled? (= engine' :dgdebug)
-                        :replay-on-launch? (some? tree))
+                        :replay-on-launch? true)
+        shutdown-fn (fn []
+                      (h/stop! @*stop-server)
+                      (sk.process/kill! (get-in @*app [:global :session :process]))
+
+                      (println "Shut down")
+
+                      (when (and exit-when-shutdown? (not development-mode?))
+                        (System/exit 0)))
         stop-server (do
                      (reset! *app (-> (state/init-state)
-                                      (assoc-in [:global :session] session')))
+                                      (update :global
+                                              assoc
+                                              :session session'
+                                              :shutdown-fn shutdown-fn)))
                      (h/start! (create-handler *app) {:port port'}))]
-    (swap! *app assoc-in [:global :shutdown-fn]
-           (fn []
-             (stop-server)
-             (when-let [process (:process (get-in @*app [:global :session]))]
-               (sk.process/kill! process))
-             (println "Shut down")
-             (when (and exit-when-shutdown? (not development-mode?))
-               (System/exit 0))))
+    (reset! *stop-server stop-server)
     port'))
 
 (comment
