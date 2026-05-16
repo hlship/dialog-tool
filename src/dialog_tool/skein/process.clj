@@ -16,6 +16,11 @@
   (:import (com.pty4j PtyProcessBuilder)
            (java.io BufferedReader PrintWriter)
            (java.util List)))
+(defn alive?
+  "Given a process map, returns true if the underlying OS Process is still alive."
+  [process]
+  (let [^Process p (:process process)]
+    (.isAlive p)))
 
 (defn- check-for-end-of-response
   [sb output-ch post-process]
@@ -32,7 +37,7 @@
 
 (defn- read-loop
   [^BufferedReader r output-ch post-process]
-  (let [buffer-size 5000
+  (let [buffer-size 100000
         buffer (char-array buffer-size)
         sb (StringBuilder. buffer-size)]
     (loop []
@@ -40,7 +45,11 @@
       ;; up to the prompt (which will not have a trailing new line). Reading past the prompt will block.
       (let [n-read (.read r buffer 0 buffer-size)]
         (if (neg? n-read)
-          (close! output-ch)
+          ;; Process died, pipe closed -- this can happen when there are errors in
+          ;; the source code.  Provide as much as was read:
+          (do
+            (>!! output-ch (-> sb str post-process))
+            (close! output-ch))
           (do
             (.append sb buffer 0 n-read)
             (check-for-end-of-response sb output-ch post-process)
@@ -61,8 +70,8 @@
         _ (when pre-flight
             (pre-flight))
         process (-> (PtyProcessBuilder.)
-                    (.setCommand (into-array String cmd))
-                    (.setInitialColumns (int 80))
+                    (.setCommand ^String/1 (into-array String cmd))
+                    (.setInitialColumns (int 80))           ; needed anymore?
                     (.setInitialRows Integer/MAX_VALUE)
                     .start)
         output-ch (chan)]
@@ -101,6 +110,7 @@
                           :post-process (fn [s]
                                           (-> s
                                               trim-returns
+                                              ;; TODO: Is this still needed?
                                               (string/replace-first #"^\u001b\[0m" "")))}))))
 
 (def engines #{:dgdebug :frotz :frotz-release})
@@ -177,15 +187,14 @@
   "Sends a player command to the process, blocking until a response to the command
   is available.  Returns the response."
   [process ^String command]
-  (let [{:keys [^PrintWriter stdin-writer opts]} process
+  (let [{:keys [^PrintWriter stdin-writer]} process
         _ (doto stdin-writer
-            (.print command)
-            .println
+            (.println command)
             .flush)]
     (read-response! process)))
 
 (defn kill!
-  "Kills the process and returns nil."
+  "Kills the OS process and returns nil."
   [process]
   (let [{:keys [^Process process]} process]
     (when process

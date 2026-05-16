@@ -59,7 +59,7 @@
 (defn- flash!
   "Queues a flash message to be shown on the next render.
   Does not modify the session cursor — the render function reads and clears this."
-  [_cursor message]
+  [message]
   (reset! *pending-flash message))
 
 (defn- jump-to-status!
@@ -95,43 +95,62 @@
   [*app-state progress]
   (swap! *app-state assoc-in [:global :progress] progress))
 
+(defn replay-to!
+  "Replays to a specific knot."
+  [req]
+  (let [{*app-state :hyper/app-state} req
+        knot-id (get-in req [:hyper/route :path-params :id])
+        session (-> (get-session *app-state)
+                    session/check-for-changed-sources
+                    (session/replay-to! knot-id))]
+    ;; TODO: deal w/ :error
+    (swap-session! *app-state (constantly session))
+    (flash! "Replayed")
+    {:status 200}))
+
 (defn replay-all!
   "Replays all leaf knots. Progress is tracked in a separate :progress key
   so that progress updates don't trigger full page re-renders.
   The session is accumulated locally and only committed at the end."
-  [{*app-state :hyper/app-state}]
-  (try
-    (let [session    (-> (get-session *app-state)
-                         session/capture-undo
-                         session/check-for-changed-sources)
-          leaf-knots (tree/leaf-knots (:tree session))
-          total      (count leaf-knots)]
-      ;; Store continue flag in progress so cancel can stop the loop
-      (set-progress! *app-state {:continue true})
-      (let [final-session
-                       (reduce (fn [session [idx knot]]
-                                 (if-not (:continue (get-in @*app-state [:global :progress]))
-                                   (reduced session)
-                                   (do
-                                     (set-progress! *app-state
-                                                    {:current   (inc idx)
-                                                     :total     total
-                                                     :label     (:label knot)
-                                                     :operation "Replaying All"
-                                                     :continue  true})
-                                     (session/do-replay-to! session (:id knot)))))
-                               session
-                               (map-indexed vector leaf-knots))
-            cancelled? (not (:continue (get-in @*app-state [:global :progress])))]
-        ;; Commit the final session and show flash
-        (swap-session! *app-state (constantly final-session))
-        (reset! *pending-flash (if cancelled? "Replay cancelled" "Replay complete"))))
-    (catch Throwable t
-      (println "Error during replay-all:" t)
-      (reset! *pending-flash {:message (str "Replay error: " (ex-message t))
-                              :type    :error}))
-    (finally
-      (set-progress! *app-state nil)))
+  [req]
+  (let [{*app-state :hyper/app-state} req
+        ;; Ugly: this is to dismiss the source error modal dialog if the user clicks the "Replay All"
+        ;; button on it.
+        app-state  (swap-session! *app-state dissoc :modal)
+        session    (-> app-state
+                       :global
+                       :session
+                       session/capture-undo
+                       session/check-for-changed-sources)
+        leaf-knots (tree/leaf-knots (:tree session))
+        total      (count leaf-knots)]
+    ;; Store continue flag in progress so cancel can stop the loop
+    (set-progress! *app-state {:continue true})
+    (let [final-session
+                     (reduce (fn [session [idx knot]]
+                               (if-not (get-in @*app-state [:global :progress :continue])
+                                 (reduced session)
+                                 (do
+                                   (set-progress! *app-state
+                                                  {:current   (inc idx)
+                                                   :total     total
+                                                   :label     (:label knot)
+                                                   :operation "Replaying All"
+                                                   :continue  true})
+                                   (session/do-replay-to! session (:id knot)))))
+                             session
+                             (map-indexed vector leaf-knots))
+          {:keys [error]} final-session
+          session'   (cond-> final-session
+                       error (-> (dissoc :error)
+                                 (assoc :modal {:type  :source-error
+                                                :error error})))
+          cancelled? (not (:continue (get-in @*app-state [:global :progress])))]
+      ;; Commit the final session and show flash
+      (swap! *app-state assoc-in [:global :session] session')
+      (set-progress! *app-state nil)
+      (when-not error
+        (reset! *pending-flash (if cancelled? "Replay cancelled" "Replay complete")))))
   {:status 200})
 
 (defn navbar
@@ -173,7 +192,7 @@
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click      (h/action
                                (swap! cursor session/save!)
-                               (flash! cursor "Saved"))
+                               (flash! "Saved"))
          :data-accel         "s"
          :data-preserve-attr "data-tip"
          :class              (when dirty? "btn-soft")}
@@ -181,7 +200,7 @@
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click      (h/action
                                (swap! cursor session/undo)
-                               (flash! cursor "Undo"))
+                               (flash! "Undo"))
          :data-accel         "z"
          :data-preserve-attr "data-tip"
          :disabled           (not can-undo?)}
@@ -189,7 +208,7 @@
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click      (h/action
                                (swap! cursor session/redo)
-                               (flash! cursor "Redo"))
+                               (flash! "Redo"))
          :data-accel__shift  "z"
          :data-preserve-attr "data-tip"
          :disabled           (not can-redo?)}
@@ -283,18 +302,15 @@
                           (dropdown/button {:disabled      disable-bless?
                                             :data-on:click (h/action
                                                              (swap! cursor session/bless id)
-                                                             (flash! cursor "Blessed"))}
+                                                             (flash! "Blessed"))}
                                            "Bless" "Accept changes")
                           (when-not root?
                             (dropdown/button {:disabled      disable-bless?
                                               :data-on:click (h/action
                                                                (swap! cursor session/bless-to id)
-                                                               (flash! cursor "Blessed to here"))}
+                                                               (flash! "Blessed to here"))}
                                              "Bless To Here" "Accept changes from root to here"))
-                          (dropdown/button {:data-on:click (h/action
-                                                             (swap! cursor session/check-for-changed-sources)
-                                                             (swap! cursor session/replay-to! id)
-                                                             (flash! cursor "Replayed"))}
+                          (dropdown/button {:data-on:click (str "@post('/action/replay-to/" id "')")}
                                            "Replay" "Run from start to here")
                           (dropdown/button {:data-on:click (h/action
                                                              (swap! cursor session/prepare-new-child! id))}
@@ -312,7 +328,7 @@
                               (dropdown/button {:data-on:click (h/action
                                                                  (swap! cursor session/toggle-lock id)
                                                                  (let [locked? (get-in @cursor [:tree :knots id :locked])]
-                                                                   (flash! cursor (if locked? "Locked" "Unlocked"))))}
+                                                                   (flash! (if locked? "Locked" "Unlocked"))))}
                                                "Toggle Lock" "Lock or unlock this knot")
                               (dropdown/button {:data-on:click (h/action
                                                                  (swap! cursor assoc :modal
@@ -321,8 +337,7 @@
                               (dropdown/button {:data-on:click (h/action
                                                                  (let [[error session'] (session/delete! @cursor id)]
                                                                    (reset! cursor session')
-                                                                   (flash! cursor
-                                                                           (if error
+                                                                   (flash! (if error
                                                                              {:message error :type :error}
                                                                              "Deleted"))))}
                                                "Delete" "Delete this knot and all children")
@@ -330,8 +345,7 @@
                                                 :data-on:click (h/action
                                                                  (let [[error session'] (session/splice-out! @cursor id)]
                                                                    (reset! cursor session')
-                                                                   (flash! cursor
-                                                                           (if error
+                                                                   (flash! (if error
                                                                              {:message error :type :error}
                                                                              "Spliced out"))))}
                                                "Splice Out" "Delete this knot, reparent children up")))
@@ -424,6 +438,9 @@
 
           :trace
           (modals/trace-modal cursor (:trace session))
+
+          :source-error
+          (modals/source-error cursor)
 
           nil)))))
 

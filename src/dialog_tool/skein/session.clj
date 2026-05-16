@@ -16,6 +16,7 @@
   [start-process-fn skein-path tree]
   (let [process (start-process-fn)
         initial-response (sk.process/read-response! process)]
+    ;; TODO: Handle error on load, or lean on immediate Replay All?
     {:skein-path skein-path
      :undo-stack []
      :redo-stack []
@@ -48,18 +49,22 @@
 
 (defn- run-command!
   [session command]
-  (let [{:keys [tree active-knot-id process]} session
-        child-knot-id (tree/find-child-id tree active-knot-id command)
-        response (sk.process/send-command! process command)
-        session' (if child-knot-id
-                   (-> session
-                       (assoc :active-knot-id child-knot-id)
-                       (update :tree tree/update-response child-knot-id response))
-                   (let [new-knot-id (tree/next-id)]
-                     (-> session
-                         (assoc :active-knot-id new-knot-id)
-                         (update :tree tree/add-child active-knot-id new-knot-id command response))))]
-    (capture-dynamic session')))
+  ;; If there was a startup error, then don't try to execute further commands until
+  ;; that's resolved.
+  (if (:error session)
+    session
+    (let [{:keys [tree active-knot-id process]} session
+          child-knot-id (tree/find-child-id tree active-knot-id command)
+          response      (sk.process/send-command! process command)
+          session'      (if child-knot-id
+                          (-> session
+                              (assoc :active-knot-id child-knot-id)
+                              (update :tree tree/update-response child-knot-id response))
+                          (let [new-knot-id (tree/next-id)]
+                            (-> session
+                                (assoc :active-knot-id new-knot-id)
+                                (update :tree tree/add-child active-knot-id new-knot-id command response))))]
+      (capture-dynamic session'))))
 
 (defn- collect-commands
   [tree initial-knot-id]
@@ -68,17 +73,21 @@
        (map :command)))
 
 (defn- do-restart!
-  "Kills the current process and starts a new one."
+  "Kills the current process (if any) and starts a new one."
   [session]
   (let [{:keys [process start-process-fn]} session
-        _ (sk.process/kill! process)
-        process' (start-process-fn)
-        new-initial-response (sk.process/read-response! process')]
-    (-> session
-        (assoc :active-knot-id 0
-               :process process')
-        (update :tree tree/update-response 0 new-initial-response)
-        capture-dynamic)))
+        _                (sk.process/kill! process)
+        process'         (start-process-fn)
+        ;; Read the initial startup text (or the startup error)
+        initial-response (sk.process/read-response! process')
+        session'         (assoc session :process process')]
+    (if-not (sk.process/alive? process')
+      (assoc session' :error (string/trim initial-response))
+      (-> session'
+          (assoc :active-knot-id 0)
+          (dissoc :error)
+          (update :tree tree/update-response 0 initial-response)
+          capture-dynamic))))
 
 (defn check-for-changed-sources
   [session]
@@ -87,16 +96,21 @@
     session))
 
 (defn do-replay-to!
-  "Replays to a knot without capturing undo. Used internally by replay-to! and for batch operations."
+  "Replays to a knot without capturing undo. Used internally by replay-to!"
   [session knot-id]
   (let [commands (collect-commands (:tree session) knot-id)
         session' (reduce run-command! (do-restart! session) commands)]
-    (assoc session' :active-knot-id knot-id)))
+    (if (:error session)
+      session
+      (assoc session' :active-knot-id knot-id))))
 
 (defn command!
   "Sends a player command to the process as a child of the given parent knot.
   This will either update a child of the parent knot (with a possibly unblessed
   response) or will create a new child knot.
+  
+  It is possible that the process may fail at startup due to invalid code,
+  in which case the session will include an :error key.
 
   Returns the updated session."
   [session parent-knot-id command]
@@ -112,7 +126,10 @@
 (defn replay-to!
   "Restarts the game, then plays through all the commands leading up to the knot.
   This will either verify that each knot's response is unchanged, or capture
-  unblessed responses to be verified."
+  unblessed responses to be verified.
+  
+  Alternately, there may be a startup error, in which case the
+  returned session will have an :error key."
   [session knot-id]
   (do-replay-to! (capture-undo session) knot-id))
 

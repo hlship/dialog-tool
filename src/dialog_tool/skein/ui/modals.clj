@@ -7,6 +7,26 @@
             [dialog-tool.skein.ui.trace-view :as trace-view]
             [hyper.core :as h]))
 
+(defn source-error
+  [cursor]
+  (let [error (get-in @cursor [:modal :error])]
+    (modal/modal
+      {:title   "Source Error"
+       :cursor  cursor
+       :buttons nil}
+      [:div
+       [:div.whitespace-pre.text-sm..overflow-y-auto.max-h-96.pb-8
+        {:data-init "el.focus()"}
+        (ansi/ansi->hiccup error)]
+       "You should correct the error, then "
+       [:b "Replay All"]
+       "."
+       [:div.flex.justify-end.gap-2.mt-2
+        (modal/cancel-button {:cursor cursor})
+        [:button.btn.btn-primary
+         {:data-on:click "@post('/action/replay-all')"}
+         "Replay All"]]])))
+
 (defn edit-command
   "Renders the edit command modal."
   [cursor id command error]

@@ -19,6 +19,7 @@
          :title "Dialog Skein"
          :get #'ui.app/skein-page}]
    ["/action/replay-all" {:post #'ui.app/replay-all!}]
+   ["/action/replay-to/:id" {:post #'ui.app/replay-to!}]
    ["/action/source/:id" {:hyper/disabled? true
                           :get #'source/view-source}]
    ["/action/source-preview/:id" {:hyper/disabled? true
@@ -104,6 +105,8 @@
     port'))
 
 (comment
+  
+  (-> @*app :global :session :modal)
 
   (stop!)
 
@@ -113,6 +116,13 @@
            :port 10140
            :exit-when-shutdown? false
            :development-mode? false})
+
+
+  (start! "../failure"
+          {:engine              :dgdebug
+           :skein-path          "../failure/default.skein"
+           :port                10140
+           :exit-when-shutdown? false})
 
   (start! "../dialog-extensions/tree"
           {:engine :dgdebug
