@@ -18,12 +18,12 @@
   [["/" {:name :skein
          :title "Dialog Skein"
          :get #'ui.app/skein-page}]
-   ["/action/replay-all" {:post #'ui.app/replay-all!}]
-   ["/action/replay-to/:id" {:post #'ui.app/replay-to!}]
+   ["/action/replay-all" {:post ui.app/replay-all!}]
+   ["/action/replay-to/:id" {:post ui.app/replay-to!}]
    ["/action/source/:id" {:hyper/disabled? true
-                          :get #'source/view-source}]
+                          :get             source/view-source}]
    ["/action/source-preview/:id" {:hyper/disabled? true
-                                  :get #'source/source-preview}]])
+                                  :get             source/source-preview}]])
 
 (defn- create-handler
   "Creates the Hyper Ring handler, seeding the skein session into app-state."

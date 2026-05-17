@@ -40,6 +40,13 @@ Developing the UI requires an additional window.
 - source error dialog
   - should display a source preview (like the trace modal)
 - save preference for proportional vs. fixed width in the skein file
+- page looks odd when running a new skein against a sizable project
+  - blank space for the START knot
+  - no modal progress dialog
+  - then it blips into place
+  - might only be an issue for initial launch (in REPL), but won't that affect deployed all?
+- long unblessed text extends past the edge of the knot, rather than wrapping
+- new unblessed text should be mono-spaced but is proportional
 
 ## Releasing
 
