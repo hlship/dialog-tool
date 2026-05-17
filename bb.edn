@@ -7,9 +7,18 @@
              [babashka.fs :as fs]
              [babashka.process :as p]
              [dgt.release :as r :refer [sh]])
-  test      (p/shell "clojure -M:test")
+  test      (let [{:keys [exit]} (p/shell {:continue true} "clojure -M:test")]
+              (System/exit exit))
   tailwind  (p/shell "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")
   package   (r/package "test")
+  lint      (do
+              ;; First pass: analyze dependencies to populate .clj-kondo cache
+              (p/shell {:continue true}
+                "clj-kondo --copy-configs --dependencies --lint"
+                (-> (p/shell {:out :string} "clojure -A:dev:test -Spath") :out string/trim))
+              ;; Second pass: lint project sources using cached dependency info
+              (let [{:keys [exit]} (p/shell {:continue true} "clj-kondo --lint src test dev")]
+                (System/exit exit)))
   release   (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
                   zip-file (r/package tag)
                   sha (r/sha256 zip-file)

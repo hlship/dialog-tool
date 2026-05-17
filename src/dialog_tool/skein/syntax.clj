@@ -58,11 +58,6 @@
     "now" "just" "stoppable" "log" "link"
     "collect words" "from words"})
 
-(def ^:private keyword-with-args-re
-  "Pattern for keywords that take arguments: (collect ...), (accumulate ...), etc.
-   These need the keyword portion highlighted differently from the arguments."
-  #"(?i)collect|accumulate|into|determine\s+object|matching\s+all\s+of|span|div|(?:inline\s+)?status\s+bar|link(?:\s+resource)?")
-
 (def ^:private at-random-re
   "Pattern for the various forms of 'at random': (at random), (purely at random), (then at random), etc."
   #"(?:then\s+)?(?:purely\s+)?at\s+random")
@@ -80,8 +75,8 @@
 
 (defn- tokenize-inside-parens
   "Tokenizes content inside parentheses (after the opening paren, before the closing).
-   Returns HTML string. `keyword?` indicates if the whole expression is a keyword."
-  [content kw?]
+   Returns HTML string."
+  [content]
   (let [sb (StringBuilder.)
         len (count content)
         ;; Tokenize content character by character
@@ -108,7 +103,7 @@
                 (.append sb (wrap :keyword (html-escape nested)))
                 (do
                   (.append sb (wrap :predicate (html-escape "(")))
-                  (.append sb (tokenize-inside-parens inner false))
+                  (.append sb (tokenize-inside-parens inner))
                   (.append sb (wrap :predicate (html-escape ")"))))))
             (vreset! i @j))
 
@@ -233,7 +228,7 @@
                 (.append sb (wrap :keyword (html-escape full-expr)))
                 (do
                   (.append sb (wrap :predicate (html-escape "(")))
-                  (.append sb (tokenize-inside-parens inner false))
+                  (.append sb (tokenize-inside-parens inner))
                   (.append sb (wrap :predicate (html-escape ")"))))))
             (vreset! i @j))
 
@@ -359,7 +354,7 @@
         ;; Rule head: opening paren, inner content, closing paren
         (let [inner (subs line (inc start) (dec @j))]
           (.append sb (wrap :predicate (html-escape "(")))
-          (.append sb (tokenize-inside-parens inner false))
+          (.append sb (tokenize-inside-parens inner))
           (.append sb (wrap :predicate (html-escape ")"))))
         (vreset! i @j)))
     ;; Rest of line is body

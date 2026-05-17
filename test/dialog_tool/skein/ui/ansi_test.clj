@@ -25,46 +25,46 @@
   (is (= "hello world" (ansi->hiccup "hello world"))))
 
 (deftest hiccup-bold
-  (is (= [:<> [:span {:class "ansi-bold"} "hello"]]
+  (is (= [[:span {:class "ansi-bold"} "hello"]]
          (ansi->hiccup (str BOLD "hello")))))
 
 (deftest hiccup-italic
-  (is (= [:<> [:span {:class "ansi-italic"} "hello"]]
+  (is (= [[:span {:class "ansi-italic"} "hello"]]
          (ansi->hiccup (str ITALIC "hello")))))
 
 (deftest hiccup-underline
-  (is (= [:<> [:span {:class "ansi-underline"} "hello"]]
+  (is (= [[:span {:class "ansi-underline"} "hello"]]
          (ansi->hiccup (str UNDERLINE "hello")))))
 
 (deftest hiccup-color
-  (is (= [:<> [:span {:class "ansi-red"} "error"]]
+  (is (= [[:span {:class "ansi-red"} "error"]]
          (ansi->hiccup (str RED "error")))))
 
 (deftest hiccup-bold-and-color
-  (is (= [:<> [:span {:class "ansi-bold ansi-blue"} "title"]]
+  (is (= [[:span {:class "ansi-bold ansi-blue"} "title"]]
          (ansi->hiccup (str BOLD BLUE "title")))))
 
 (deftest hiccup-reset-clears-effects
-  (is (= [:<> [:span {:class "ansi-bold"} "bold"] " normal"]
+  (is (= [[:span {:class "ansi-bold"} "bold"] " normal"]
          (ansi->hiccup (str BOLD "bold" RESET " normal")))))
 
 (deftest hiccup-mixed-styled-and-unstyled
-  (is (= [:<> "before " [:span {:class "ansi-red"} "red"] " after"]
+  (is (= ["before " [:span {:class "ansi-red"} "red"] " after"]
          (ansi->hiccup (str "before " RED "red" RESET " after")))))
 
 (deftest hiccup-color-change
   (testing "changing color replaces previous color"
-    (is (= [:<> [:span {:class "ansi-red"} "red"] [:span {:class "ansi-blue"} "blue"]]
+    (is (= [[:span {:class "ansi-red"} "red"] [:span {:class "ansi-blue"} "blue"]]
            (ansi->hiccup (str RED "red" BLUE "blue"))))))
 
 (deftest hiccup-combined-sgr-params
   (testing "CSI 1;34 m sets bold+blue in one sequence"
-    (is (= [:<> [:span {:class "ansi-bold ansi-blue"} "both"]]
+    (is (= [[:span {:class "ansi-bold ansi-blue"} "both"]]
            (ansi->hiccup (str ESC "[1;34m" "both"))))))
 
 (deftest hiccup-bare-esc-bracket-m-is-reset
   (testing "ESC[m with no params is treated as reset"
-    (is (= [:<> [:span {:class "ansi-bold"} "bold"] " normal"]
+    (is (= [[:span {:class "ansi-bold"} "bold"] " normal"]
            (ansi->hiccup (str BOLD "bold" ESC "[m" " normal"))))))
 
 ;; --- ansi->markers ---

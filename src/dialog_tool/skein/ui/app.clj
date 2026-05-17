@@ -5,6 +5,7 @@
             [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
+            [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.flash :as flash]
             [dialog-tool.skein.ui.components.new-command :as new-command]
@@ -91,10 +92,6 @@
   [*app-state session]
   (swap! *app-state assoc-in [:global :session] session))
 
-(defn- get-session
-  [*app-state]
-  (get-in @*app-state [:global :session]))
-
 (defn- set-progress!
   "Updates the progress atom in app-state. Only the progress modal watches this."
   [*app-state progress]
@@ -111,20 +108,19 @@
     (when-not error
       (reset! *pending-flash flash-message))
     (cond-> session
-      error (-> (dissoc :error)
-                (assoc :modal {:type  :source-error
-                               :error error})))))
+      error (common/setup-source-error error))))
 
 (defn replay-to!
   "Replays to a specific knot."
   [req]
   (let [{*app-state :hyper/app-state} req
-        knot-id (get-in req [:hyper/route :path-params :id])
-        session (-> (get-session *app-state)
-                    session/check-for-changed-sources
-                    (session/replay-to! knot-id)
-                    (complete-session-operation "Replayed"))]
-    (swap-session! *app-state (constantly session))
+        knot-id (get-in req [:hyper/route :path-params :id])]
+    (swap-session! *app-state
+                   (fn [session]
+                     (-> session
+                         session/check-for-changed-sources
+                         (session/replay-to! knot-id)
+                         (complete-session-operation "Replayed"))))
     {:status 200}))
 
 (defn replay-all!

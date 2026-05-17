@@ -23,18 +23,23 @@ Developing the UI requires an additional window.
 
 - https://lllama.github.io/posts/data-bind-attr/
 
-
 ## TODO / Ideas / Plans/ Bugs
 
 - The graph view (currently it's just a serial view, one path through the graph)
 - Buttons to jump to next/prev command
 - Search the Skein
-- Recognize when the `dgdebug` command fails to launch entirely (currently, results in :unblessed as null)
 - Color-blind indicators or mode
-- Present source file warnings/errors in a modal when detected?
 - add ability to paste in a transcript (or create a skein from a transcript)
 - use core.cache (or memoize) for caching (of text diffs)
-- Ability to build for multiple targets `[:zblorb :aamachine]`  -- how will this interact with `dgt bundle`?
+- :modal should be top-level cursor, not nested inside :session
+- when adding a new command w/ source errors:
+  - source error dialog is raised
+  - source error dialog does dismiss when replay all is successful
+  - should re-focus on the text input field
+  - hitting enter in the field does not submit (because field is unchanged?)
+- source error dialog
+  - should display a source preview (like the trace modal)
+- save preference for proportional vs. fixed width in the skein file
 
 ## Releasing
 
