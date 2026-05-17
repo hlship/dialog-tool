@@ -12,7 +12,7 @@ including what individual source files to use, and then provides commands to:
 - package your project for release
 
 > [!WARNING]
-> `dgt` can be sensitive to the exact version of Dialog; this release is based on Dialog 01/0a. If you have
+> `dgt` can be sensitive to the exact version of Dialog; this release is based on Dialog 1b/02. If you have
 > a different version of Dialog installed, you may encounter problems.
 
 ## Installing
@@ -26,6 +26,10 @@ brew install hlship/brew/dialog-tool
 ```
 
 This installs `dgt` along with all required tools: the Dialog compiler and debugger, Frotz, ImageMagick, and Java.
+
+Once `dgt` is installed, `brew upgrade` will keep it up-to date with the latest version.
+
+The Homebrew installation also sets up zsh command completions for `dgt`.  Type `dgt <TAB>` to get started.
 
 ### Manual install
 
