@@ -71,7 +71,6 @@
             (pre-flight))
         process (-> (PtyProcessBuilder.)
                     (.setCommand ^String/1 (into-array String cmd))
-                    (.setInitialColumns (int 80))           ; needed anymore?
                     (.setInitialRows Integer/MAX_VALUE)
                     .start)
         output-ch (chan)]

@@ -45,6 +45,7 @@ Developing the UI requires an additional window.
   - no modal progress dialog
   - then it blips into place
   - might only be an issue for initial launch (in REPL), but won't that affect deployed all?
+  - possibly its cost of starting a Thread and/or initializing core.async
 - long unblessed text extends past the edge of the knot, rather than wrapping
 - new unblessed text should be mono-spaced but is proportional
 
