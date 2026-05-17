@@ -3,6 +3,7 @@
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
+            [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.modal :as modal]
             [dialog-tool.skein.ui.trace-view :as trace-view]
             [hyper.core :as h]))
@@ -27,6 +28,25 @@
          {:data-on:click "@post('/action/replay-all')"}
          "Replay All"]]])))
 
+(defn- do-edit-command
+  [cursor id raw-command]
+  (let [command (common/normalize-input raw-command)]
+    (swap! cursor
+           (fn [session]
+             (let [[operation-error session'] (-> session
+                                                  session/check-for-changed-sources
+                                                  (session/edit-command! id command))
+                   {:keys [error]} session']
+               (cond
+                 error
+                 (common/setup-source-error session' error)
+
+                 operation-error
+                 (assoc-in session' [:modal :edit-command :error] operation-error)
+
+                 :else                                      ;; Success!
+                 (dissoc session' :modal)))))))
+
 (defn edit-command
   "Renders the edit command modal."
   [cursor id command error]
@@ -37,13 +57,7 @@
      error (assoc :error error))
    [:form {:data-on:submit__prevent
            (h/action
-            (let [cmd (some-> (get $form-data "command") str string/trim)]
-              (swap! cursor session/check-for-changed-sources)
-              (let [[error session'] (session/edit-command! @cursor id cmd)]
-                (reset! cursor session')
-                (if error
-                  (swap! cursor assoc :modal {:type :edit-command :knot-id id :error error})
-                  (swap! cursor dissoc :modal)))))}
+             (do-edit-command cursor id (get $form-data "command")))}
     [:div.mb-4
      [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-command-input"}
       "Command:"]
