@@ -86,7 +86,7 @@
      error (assoc :error error))
    [:form {:data-on:submit__prevent
            (h/action
-            (let [cmd (some-> (get $form-data "command") str string/trim not-empty)]
+            (let [cmd (some-> (get $form-data "command") common/normalize-input)]
               (swap! cursor session/check-for-changed-sources)
               (let [[operation-error session'] (session/insert-parent! @cursor id cmd)]
                 (reset! cursor session')
