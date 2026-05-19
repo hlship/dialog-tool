@@ -300,8 +300,9 @@
         root? (= 0 id)]
     [:div.border-x-4 {:id (str "knot-" id)
                       :class border-class}
-     [:div.bg-yellow-50.w-full.whitespace-pre-wrap.p-2
-      {:class (when (or fixed-width? (= :error status)) "font-mono")}
+     [:div.bg-yellow-50.w-full.whitespace-pre-wrap.break-words.p-2
+      {:class (when (or fixed-width? 
+                        (not= :ok status)) "font-mono")}
       [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-16.bg-yellow-50.rounded-bl-lg.pl-2.pb-1
        (when locked
          [:div.icon.icon-lock {:title "Locked"}])
