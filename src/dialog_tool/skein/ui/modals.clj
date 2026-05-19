@@ -1,6 +1,7 @@
 (ns dialog-tool.skein.ui.modals
   (:require [clojure.string :as string]
             [dialog-tool.skein.session :as session]
+            [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.common :as common]
@@ -10,18 +11,22 @@
 
 (defn source-error
   [cursor]
-  (let [error (get-in @cursor [:modal :error])]
+  (let [error    (get-in @cursor [:modal :error])
+        location (source/parse-error-location error)]
     (modal/modal
       {:title   "Source Error"
        :cursor  cursor
        :buttons nil}
       [:div
-       [:div.whitespace-pre.text-sm..overflow-y-auto.max-h-96.pb-8
+       [:div.whitespace-pre.text-sm.overflow-y-auto.max-h-96
         {:data-init "el.focus()"}
         (ansi/ansi->hiccup error)]
-       "You should correct the error, then "
-       [:b "Replay All"]
-       "."
+       (when location
+         (source/render-source-snippet (:file-path location) (:line location)))
+       [:div.text-sm.mt-2
+        "You should correct the error, then "
+        [:b "Replay All"]
+        "."]
        [:div.flex.justify-end.gap-2.mt-2
         (modal/cancel-button {:cursor cursor})
         [:button.btn.btn-primary

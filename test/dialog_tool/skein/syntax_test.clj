@@ -1,7 +1,7 @@
 (ns dialog-tool.skein.syntax-test
   (:require
-    [clojure.test :refer [deftest is testing]]
-    [dialog-tool.skein.syntax :as syntax]))
+   [clojure.test :refer [deftest is testing]]
+   [dialog-tool.skein.syntax :as syntax]))
 
 (defn- span [class text]
   (str "<span class=\"" class "\">" text "</span>"))
@@ -132,6 +132,32 @@
                 (span "dg-predicate" "(") "foo" (span "dg-predicate" ")")
                 (span "dg-punctuation" "}"))
            (syntax/highlight-line "  {(foo)}")))))
+
+(deftest highlight-line-unclosed-parens
+  (testing "unclosed paren in rule head emits as plain text"
+    ;; The * is not clipped and no phantom ) is added — this was the actual bug
+    (is (= "(#knock is #in *"
+           (syntax/highlight-line "(#knock is #in *"))))
+
+  (testing "unclosed paren in body emits as plain text"
+    (is (= "  (#lamp is #heldby"
+           (syntax/highlight-line "  (#lamp is #heldby"))))
+
+  (testing "line with one ) closing inner ( leaves outer unclosed — emits as plain text"
+    ;; (foo (bar): the ) closes the inner (, leaving the outer ( open.
+    ;; The whole line is unclosed so plain text is emitted.
+    (is (= "(foo (bar)"
+           (syntax/highlight-line "(foo (bar)"))))
+
+  (testing "balanced nested parens render correctly"
+    ;; (foo (bar)) — both parens close, normal predicate highlighting applies
+    (is (= (str (span "dg-predicate" "(")
+                "foo "
+                (span "dg-predicate" "(")
+                "bar"
+                (span "dg-predicate" ")")
+                (span "dg-predicate" ")"))
+           (syntax/highlight-line "(foo (bar))")))))
 
 (deftest highlight-line-html-escaping
   (testing "angle brackets are escaped"
