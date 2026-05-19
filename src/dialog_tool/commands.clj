@@ -37,7 +37,7 @@
     (cli/exit exit)))
 
 (defcommand test-project
-  "Run the project in the Dialog debugger with test sources included."
+  "Run the project's unit tests."
   [:command "test"
    :pass-through true
    :args

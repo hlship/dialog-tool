@@ -277,8 +277,7 @@
     (let [tree (-> (make-tree)
                    (tree/add-child 0 1 "look" "Room.")
                    (tree/add-child 0 2 "inventory" "Empty.")
-                   (tree/add-child 2 3 "north" "Hallway."))
-          tree' (tree/select-knot tree 3)]
+                   (tree/add-child 2 3 "north" "Hallway."))]
       (is (= [0 2 3] (mapv :id (tree/selected-knots tree))))))
 
   (testing "does nothing when already selected"

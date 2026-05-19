@@ -4,10 +4,26 @@
   reactive UI. Used by the trace modal's source links and previews."
   (:require [babashka.fs :as fs]
             [clojure.string :as string]
+            [dev.onionpancakes.chassis.core :as chassis]
             [dialog-tool.project-file :as pf]
             [dialog-tool.skein.syntax :as syntax]
             [dialog-tool.skein.trace :as trace]
+            [dialog-tool.skein.ui.ansi :as ansi]
             [selmer.parser :as s]))
+
+(defn parse-error-location
+  "Given a raw dgdebug error string (possibly containing ANSI codes),
+   returns a map {:file-path \"...\" :line N} if the error message
+   contains a file/line reference, or nil otherwise.
+
+   Matches lines of the form:
+     Error: <filepath>, line <N>: <message>"
+  [error]
+  (when error
+    (let [plain (ansi/strip-ansi error)]
+      (when-let [[_ file-path line-str] (re-find #"Error:\s+(.+?),\s+line\s+(\d+):" plain)]
+        {:file-path (string/trim file-path)
+         :line      (parse-long line-str)}))))
 
 (defn- get-session
   "Reads the current session from hyper's app-state on the request."
@@ -38,6 +54,38 @@
              (= "" (peek raw-lines)))
       (pop (vec raw-lines))
       (vec raw-lines))))
+
+(defn render-source-snippet
+  "Renders a source snippet as hiccup, centered on the given line.
+   file-path is as it appears in the dgdebug error message — relative to the
+   JVM working directory. Returns nil if the file cannot be resolved."
+  [file-path line]
+  (let [resolved (fs/absolutize (fs/path file-path))]
+    (when (fs/exists? resolved)
+      (let [raw-lines (read-source-lines resolved)
+            dg?       (string/ends-with? file-path ".dg")
+            context   4
+            start     (max 0 (- line context 1))
+            end       (min (count raw-lines) (+ line context))
+            window    (subvec raw-lines start end)]
+        [:div.border.rounded.overflow-hidden.text-xs.font-mono
+         [:div.px-2.py-1.bg-gray-50.border-b.border-gray-200.text-gray-500.truncate
+          (str file-path ":" line)]
+         [:table.border-collapse.w-full.leading-relaxed
+          [:tbody
+           (map-indexed
+            (fn [idx text]
+              (let [n            (+ start idx 1)
+                    highlighted? (= n line)]
+                [:tr {:class (when highlighted? "bg-yellow-200")}
+                 [:td.text-right.pr-2.pl-2.select-none.border-r.border-gray-200.whitespace-nowrap
+                  {:class (if highlighted? "text-amber-800 font-bold" "text-gray-400")}
+                  n]
+                 [:td.px-2.whitespace-pre
+                  (chassis/raw (if dg?
+                                 (syntax/highlight-line text)
+                                 (syntax/html-escape text)))]]))
+            window)]]]))))
 
 (defn view-source
   "Serves a standalone HTML page displaying a Dialog source file."

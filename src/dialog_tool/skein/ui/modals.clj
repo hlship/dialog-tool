@@ -1,11 +1,56 @@
 (ns dialog-tool.skein.ui.modals
   (:require [clojure.string :as string]
             [dialog-tool.skein.session :as session]
+            [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
+            [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.modal :as modal]
             [dialog-tool.skein.ui.trace-view :as trace-view]
             [hyper.core :as h]))
+
+(defn source-error
+  [cursor]
+  (let [error    (get-in @cursor [:modal :error])
+        location (source/parse-error-location error)]
+    (modal/modal
+      {:title   "Source Error"
+       :cursor  cursor
+       :buttons nil}
+      [:div
+       [:div.whitespace-pre.text-sm.overflow-y-auto.max-h-96
+        {:data-init "el.focus()"}
+        (ansi/ansi->hiccup error)]
+       (when location
+         (source/render-source-snippet (:file-path location) (:line location)))
+       [:div.text-sm.mt-2
+        "You should correct the error, then "
+        [:b "Replay All"]
+        "."]
+       [:div.flex.justify-end.gap-2.mt-2
+        (modal/cancel-button {:cursor cursor})
+        [:button.btn.btn-primary
+         {:data-on:click "@post('/action/replay-all')"}
+         "Replay All"]]])))
+
+(defn- do-edit-command
+  [cursor id raw-command]
+  (let [command (common/normalize-input raw-command)]
+    (swap! cursor
+           (fn [session]
+             (let [[operation-error session'] (-> session
+                                                  session/check-for-changed-sources
+                                                  (session/edit-command! id command))
+                   {:keys [error]} session']
+               (cond
+                 error
+                 (common/setup-source-error session' error)
+
+                 operation-error
+                 (assoc-in session' [:modal :edit-command :error] operation-error)
+
+                 :else                                      ;; Success!
+                 (dissoc session' :modal)))))))
 
 (defn edit-command
   "Renders the edit command modal."
@@ -17,13 +62,7 @@
      error (assoc :error error))
    [:form {:data-on:submit__prevent
            (h/action
-            (let [cmd (some-> (get $form-data "command") str string/trim)]
-              (swap! cursor session/check-for-changed-sources)
-              (let [[error session'] (session/edit-command! @cursor id cmd)]
-                (reset! cursor session')
-                (if error
-                  (swap! cursor assoc :modal {:type :edit-command :knot-id id :error error})
-                  (swap! cursor dissoc :modal)))))}
+             (do-edit-command cursor id (get $form-data "command")))}
     [:div.mb-4
      [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-command-input"}
       "Command:"]
@@ -49,11 +88,12 @@
            (h/action
             (let [cmd (some-> (get $form-data "command") str string/trim not-empty)]
               (swap! cursor session/check-for-changed-sources)
-              (let [[error session'] (session/insert-parent! @cursor id cmd)]
+              (let [[operation-error session'] (session/insert-parent! @cursor id cmd)]
                 (reset! cursor session')
-                (if error
-                  (swap! cursor assoc :modal {:type :insert-parent :knot-id id :error error})
-                  (swap! cursor dissoc :modal)))))}
+                (cond
+                  (:error session')    (swap! cursor common/maybe-apply-source-error)
+                  operation-error      (swap! cursor assoc :modal {:type :insert-parent :knot-id id :error operation-error})
+                  :else                (swap! cursor dissoc :modal)))))}
     [:div.mb-4
      [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "insert-parent-input"}
       "Command:"]

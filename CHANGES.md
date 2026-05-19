@@ -1,21 +1,8 @@
 # 2.0 -- UNRELEASED 2026
 
-Rewritten in Babashka. Added the Skein for development and testing support.
+Rewritten in Clojure. 
 
-Added trace mode to the Skein: trace command execution through the Dialog debugger,
-with an interactive tree view, expand/collapse, and search (dgdebug engine only).
-
-The Skein now automatically performs a Replay All when first launched.
-
-Updated to use new dgdebug flags: `--no-header`, `--height -1`, `--width -1`, and `--numbered`.
-Game output now wraps naturally to the browser window width rather than at a fixed 80 columns.
-
-The Skein navbar is now responsive; button labels hide at narrow window widths, showing only icons.
-
-Migrated the Skein web UI from the Datastar Clojure SDK to
-[Hyper](https://github.com/dynamic-alpha/hyper), a reactive server-rendered
-framework built on Datastar. The UI is now a single render function with
-server-side actions instead of individual HTTP endpoints.
+Added the Skein for development and testing support.
 
 `dgt new` now includes `lib/dialog/test/unit.dg` for unit testing support.
 Added `:test` source category to `dialog.edn`, loaded alongside `:debug` sources.

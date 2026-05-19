@@ -11,18 +11,14 @@
 
 (defn create-loaded!
   "Creates a new session from a tree loaded from the path, and a process started with
-  the skein's seed. The process should be just started so that we can read the initial
-  response."
+  the skein's seed."
   [start-process-fn skein-path tree]
-  (let [process (start-process-fn)
-        initial-response (sk.process/read-response! process)]
-    {:skein-path skein-path
-     :undo-stack []
-     :redo-stack []
-     :process process
-     :start-process-fn start-process-fn
-     :tree (tree/update-response tree 0 initial-response)
-     :active-knot-id 0}))
+  {:skein-path       skein-path
+   :undo-stack       []
+   :redo-stack       []
+   :start-process-fn start-process-fn
+   :tree             tree
+   :active-knot-id   nil})
 
 (defn create-new!
   "Creates a new session for a new skein, using an existing process.  The process should be
@@ -48,18 +44,22 @@
 
 (defn- run-command!
   [session command]
-  (let [{:keys [tree active-knot-id process]} session
-        child-knot-id (tree/find-child-id tree active-knot-id command)
-        response (sk.process/send-command! process command)
-        session' (if child-knot-id
-                   (-> session
-                       (assoc :active-knot-id child-knot-id)
-                       (update :tree tree/update-response child-knot-id response))
-                   (let [new-knot-id (tree/next-id)]
-                     (-> session
-                         (assoc :active-knot-id new-knot-id)
-                         (update :tree tree/add-child active-knot-id new-knot-id command response))))]
-    (capture-dynamic session')))
+  ;; If there was a startup error, then don't try to execute further commands until
+  ;; that's resolved.
+  (if (:error session)
+    session
+    (let [{:keys [tree active-knot-id process]} session
+          child-knot-id (tree/find-child-id tree active-knot-id command)
+          response      (sk.process/send-command! process command)
+          session'      (if child-knot-id
+                          (-> session
+                              (assoc :active-knot-id child-knot-id)
+                              (update :tree tree/update-response child-knot-id response))
+                          (let [new-knot-id (tree/next-id)]
+                            (-> session
+                                (assoc :active-knot-id new-knot-id)
+                                (update :tree tree/add-child active-knot-id new-knot-id command response))))]
+      (capture-dynamic session'))))
 
 (defn- collect-commands
   [tree initial-knot-id]
@@ -68,17 +68,21 @@
        (map :command)))
 
 (defn- do-restart!
-  "Kills the current process and starts a new one."
+  "Kills the current process (if any) and starts a new one."
   [session]
   (let [{:keys [process start-process-fn]} session
-        _ (sk.process/kill! process)
-        process' (start-process-fn)
-        new-initial-response (sk.process/read-response! process')]
-    (-> session
-        (assoc :active-knot-id 0
-               :process process')
-        (update :tree tree/update-response 0 new-initial-response)
-        capture-dynamic)))
+        _                (sk.process/kill! process)
+        process'         (start-process-fn)
+        ;; Read the initial startup text (or the startup error)
+        initial-response (sk.process/read-response! process')
+        session'         (assoc session :process process')]
+    (if-not (sk.process/alive? process')
+      (assoc session' :error initial-response)
+      (-> session'
+          (assoc :active-knot-id 0)
+          (dissoc :error)
+          (update :tree tree/update-response 0 initial-response)
+          capture-dynamic))))
 
 (defn check-for-changed-sources
   [session]
@@ -87,16 +91,21 @@
     session))
 
 (defn do-replay-to!
-  "Replays to a knot without capturing undo. Used internally by replay-to! and for batch operations."
+  "Replays to a knot without capturing undo. Used internally by replay-to!"
   [session knot-id]
   (let [commands (collect-commands (:tree session) knot-id)
         session' (reduce run-command! (do-restart! session) commands)]
-    (assoc session' :active-knot-id knot-id)))
+    (if (:error session')
+      session'
+      (assoc session' :active-knot-id knot-id))))
 
 (defn command!
   "Sends a player command to the process as a child of the given parent knot.
   This will either update a child of the parent knot (with a possibly unblessed
   response) or will create a new child knot.
+  
+  It is possible that the process may fail at startup due to invalid code,
+  in which case the session will include an :error key.
 
   Returns the updated session."
   [session parent-knot-id command]
@@ -112,7 +121,10 @@
 (defn replay-to!
   "Restarts the game, then plays through all the commands leading up to the knot.
   This will either verify that each knot's response is unchanged, or capture
-  unblessed responses to be verified."
+  unblessed responses to be verified.
+  
+  Alternately, there may be a startup error, in which case the
+  returned session will have an :error key."
   [session knot-id]
   (do-replay-to! (capture-undo session) knot-id))
 
@@ -156,12 +168,14 @@
         [(format "Parent knot already contains a child with command '%s'"
                  new-command)
          session]
-        (let [new-id (tree/next-id)]
-          [nil (-> session
-                   capture-undo
-                   (update :tree tree/insert-parent knot-id new-id new-command)
-                   (do-replay-to! knot-id)
-                   (assoc :new-id new-id))])))))
+        (let [new-id   (tree/next-id)
+              session' (-> session
+                           capture-undo
+                           (update :tree tree/insert-parent knot-id new-id new-command)
+                           (do-replay-to! knot-id))]
+          [nil (cond-> session'
+                 (not (:error session')) (assoc :new-id new-id))]))))))
+
 
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."
@@ -294,30 +308,35 @@
    with tracing enabled. Returns [trace-response session'] where trace-response
    is the raw response containing trace lines. The tree's response for the knot
    is NOT updated (since it contains trace noise).
+
+   If there is a startup error, returns [nil session'] where session' has :error set.
    
    Only works with the dgdebug engine."
   [session knot-id]
   (let [{:keys [tree]} session
         {:keys [command parent-id]} (tree/get-knot tree knot-id)
         ;; Replay to parent (may restart process)
-        session' (do-replay-to! session parent-id)
-        process (:process session')
-        ;; Enable tracing, execute command, disable tracing
-        _ (sk.process/send-command! process "(trace on)")
-        trace-response (sk.process/send-command! process command)
-        _ (sk.process/send-command! process "(trace off)")
-        ;; Update position and capture dynamic state
-        session'' (-> session'
-                      (assoc :active-knot-id knot-id)
-                      capture-dynamic)]
-    [trace-response session'']))
+        session' (do-replay-to! session parent-id)]
+    (if (:error session')
+      [nil session']
+      (let [process (:process session')
+            ;; Enable tracing, execute command, disable tracing
+            _ (sk.process/send-command! process "(trace on)")
+            trace-response (sk.process/send-command! process command)
+            _ (sk.process/send-command! process "(trace off)")
+            ;; Update position and capture dynamic state
+            session'' (-> session'
+                          (assoc :active-knot-id knot-id)
+                          capture-dynamic)]
+        [trace-response session'']))))
 
 (defn trace-startup!
   "Traces game startup by restarting the process with the --trace flag.
    The traced startup response is captured, then the process is restarted
    normally (without --trace) to restore clean state.
    
-   Returns [trace-response session'] like trace-command!."
+   Returns [trace-response session'] like trace-command!.
+   If there is a startup error, returns [nil session'] where session' has :error set."
   [session]
   (let [{:keys [process start-process-fn]} session
         ;; Start a temporary process with --trace to capture traced startup
@@ -327,4 +346,6 @@
         ;; Kill the traced process and restart normally
         _ (sk.process/kill! traced-process)
         session' (do-restart! session)]
-    [trace-response session']))
+    (if (:error session')
+      [nil session']
+      [trace-response session'])))

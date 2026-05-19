@@ -5,6 +5,7 @@
             [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
+            [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.flash :as flash]
             [dialog-tool.skein.ui.components.new-command :as new-command]
@@ -28,9 +29,9 @@
    (e.g. [B], [BLUE]) then shows word-level diff."
   [response unblessed]
   (if unblessed
-    (let [response  (ansi/ansi->markers response)
+    (let [response (ansi/ansi->markers response)
           unblessed (ansi/ansi->markers unblessed)
-          changes   (diff/diff-text response unblessed)]
+          changes (diff/diff-text response unblessed)]
       (map (fn [{:keys [type value]}]
              (case type
                :added [:span.text-blue-700.font-bold (visible-whitespace value)]
@@ -49,33 +50,34 @@
   (future
     ;; Give hyper time to push the closing message to the browser
     (Thread/sleep 500)
-    (when-let [shutdown-fn (get-in @*app-state [:global :shutdown-fn])]
-      (shutdown-fn))))
+    ((get-in @*app-state [:global :shutdown-fn]))))
 
 ;; Pending flash message — stored outside the session cursor so it doesn't
 ;; persist across re-renders. The render function consumes and clears it.
+;; TODO: Never happy to have a global like this, there must be a better way
+;; to deal with this.
 (def ^:private *pending-flash (atom nil))
 
 (defn- flash!
   "Queues a flash message to be shown on the next render.
   Does not modify the session cursor — the render function reads and clears this."
-  [_cursor message]
+  [message]
   (reset! *pending-flash message))
 
 (defn- jump-to-status!
   [cursor status]
-  (let [session  @cursor
-        tree     (:tree session)
+  (let [session @cursor
+        tree (:tree session)
         matching (tree/knots-with-status tree status)]
     (when (seq matching)
-      (let [last-id  (get-in session [:last-jump status])
-            idx      (when last-id
-                       (let [i (.indexOf matching last-id)]
-                         (when (>= i 0) i)))
+      (let [last-id (get-in session [:last-jump status])
+            idx (when last-id
+                  (let [i (.indexOf matching last-id)]
+                    (when (>= i 0) i)))
             next-idx (if idx
                        (mod (inc idx) (count matching))
                        0)
-            next-id  (nth matching next-idx)]
+            next-id (nth matching next-idx)]
         (swap! cursor assoc-in [:last-jump status] next-id)
         (swap! cursor session/select-knot next-id)))))
 
@@ -86,59 +88,86 @@
   ([*app-state f & args]
    (apply swap! *app-state update-in [:global :session] f args)))
 
-(defn- get-session
-  [*app-state]
-  (get-in @*app-state [:global :session]))
+(defn- reset-session!
+  [*app-state session]
+  (swap! *app-state assoc-in [:global :session] session))
 
 (defn- set-progress!
   "Updates the progress atom in app-state. Only the progress modal watches this."
   [*app-state progress]
   (swap! *app-state assoc-in [:global :progress] progress))
 
+(defn- complete-session-operation
+  "Invoked after a command that operates on the process; if there was a startup error
+  after restarting the process (because of a source code error) then sets up the source error
+  modal dialog.
+  
+  If there's no error, updates the flash message."
+  [session flash-message]
+  (let [{:keys [error]} session]
+    (when-not error
+      (reset! *pending-flash flash-message))
+    (cond-> session
+      error (common/setup-source-error error))))
+
+(defn replay-to!
+  "Replays to a specific knot."
+  [req]
+  (let [{*app-state :hyper/app-state} req
+        knot-id (get-in req [:hyper/route :path-params :id])]
+    (swap-session! *app-state
+                   (fn [session]
+                     (-> session
+                         session/check-for-changed-sources
+                         (session/replay-to! knot-id)
+                         (complete-session-operation "Replayed"))))
+    {:status 200}))
+
 (defn replay-all!
   "Replays all leaf knots. Progress is tracked in a separate :progress key
   so that progress updates don't trigger full page re-renders.
   The session is accumulated locally and only committed at the end."
-  [{*app-state :hyper/app-state}]
-  (try
-    (let [session    (-> (get-session *app-state)
-                         session/capture-undo
-                         session/check-for-changed-sources)
-          leaf-knots (tree/leaf-knots (:tree session))
-          total      (count leaf-knots)]
-      ;; Store continue flag in progress so cancel can stop the loop
-      (set-progress! *app-state {:continue true})
-      (let [final-session
-                       (reduce (fn [session [idx knot]]
-                                 (if-not (:continue (get-in @*app-state [:global :progress]))
-                                   (reduced session)
-                                   (do
-                                     (set-progress! *app-state
-                                                    {:current   (inc idx)
-                                                     :total     total
-                                                     :label     (:label knot)
-                                                     :operation "Replaying All"
-                                                     :continue  true})
-                                     (session/do-replay-to! session (:id knot)))))
-                               session
-                               (map-indexed vector leaf-knots))
-            cancelled? (not (:continue (get-in @*app-state [:global :progress])))]
-        ;; Commit the final session and show flash
-        (swap-session! *app-state (constantly final-session))
-        (reset! *pending-flash (if cancelled? "Replay cancelled" "Replay complete"))))
-    (catch Throwable t
-      (println "Error during replay-all:" t)
-      (reset! *pending-flash {:message (str "Replay error: " (ex-message t))
-                              :type    :error}))
-    (finally
+  [req]
+  (let [{*app-state :hyper/app-state} req
+        ;; Ugly: this is to dismiss the source error modal dialog if the user clicks the "Replay All"
+        ;; button on it.
+        app-state (swap-session! *app-state dissoc :modal)
+        session (-> app-state
+                    :global
+                    :session
+                    session/capture-undo
+                    session/check-for-changed-sources)
+        leaf-knots (tree/leaf-knots (:tree session))
+        total (count leaf-knots)
+        cancelled? #(not (get-in @*app-state [:global :progress :continue]))]
+    ;; Store continue flag in progress so cancel can stop the loop
+    (set-progress! *app-state {:continue true})
+    (let [session' (reduce (fn [session [idx knot]]
+                             (if (or (cancelled?)
+                                     (:error session))
+                               (reduced session)
+                               (do
+                                 (set-progress! *app-state
+                                                {:current (inc idx)
+                                                 :total total
+                                                 :label (:label knot)
+                                                 :operation "Replaying All"
+                                                 :continue true})
+                                 (session/do-replay-to! session (:id knot)))))
+                           session
+                           (map-indexed vector leaf-knots))]
+      ;;  Dismiss the progress dialog
+      (reset-session! *app-state
+                      (complete-session-operation session'
+                                                  (if (cancelled?) "Replay cancelled" "Replay complete")))
       (set-progress! *app-state nil)))
   {:status 200})
 
 (defn navbar
   [cursor session *app-state]
   (let [{:keys [skein-path tree dirty?]} session
-        can-undo?     (-> session :undo-stack not-empty)
-        can-redo?     (-> session :redo-stack not-empty)
+        can-undo? (-> session :undo-stack not-empty)
+        can-redo? (-> session :redo-stack not-empty)
         {:keys [ok new error]} (tree/totals tree)
         labeled-knots (tree/labeled-knots-sorted tree)]
     [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
@@ -151,63 +180,63 @@
        [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
        [:div.text-black.bg-warning.p-2.font-semibold
         (when (pos? new)
-          {:class         "cursor-pointer"
+          {:class "cursor-pointer"
            :data-on:click (h/action (jump-to-status! cursor :new))})
         new]
        [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg
         (when (pos? error)
-          {:class         "cursor-pointer"
+          {:class "cursor-pointer"
            :data-on:click (h/action (jump-to-status! cursor :error))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
        (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                           :label    (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])}
+                           :label (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])}
                           (for [{:keys [id label]} labeled-knots]
                             (dropdown/button {:data-on:click (h/action (swap! cursor session/select-knot id))}
                                              label)))
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      "@post('/action/replay-all')"
-         :data-accel         "p"
+        {:data-on:click "@post('/action/replay-all')"
+         :data-accel "p"
          :data-preserve-attr "data-tip"}
         [:div.icon.icon-play] [:span.hidden.lg:inline "Replay All"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      (h/action
-                               (swap! cursor session/save!)
-                               (flash! cursor "Saved"))
-         :data-accel         "s"
+        {:data-on:click (h/action
+                         (swap! cursor session/save!)
+                         (flash! "Saved"))
+         :data-accel "s"
          :data-preserve-attr "data-tip"
-         :class              (when dirty? "btn-soft")}
+         :class (when dirty? "btn-soft")}
         [:div.icon.icon-save] [:span.hidden.lg:inline "Save"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      (h/action
-                               (swap! cursor session/undo)
-                               (flash! cursor "Undo"))
-         :data-accel         "z"
+        {:data-on:click (h/action
+                         (swap! cursor session/undo)
+                         (flash! "Undo"))
+         :data-accel "z"
          :data-preserve-attr "data-tip"
-         :disabled           (not can-undo?)}
+         :disabled (not can-undo?)}
         [:div.icon.icon-undo] [:span.hidden.lg:inline "Undo"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      (h/action
-                               (swap! cursor session/redo)
-                               (flash! cursor "Redo"))
-         :data-accel__shift  "z"
+        {:data-on:click (h/action
+                         (swap! cursor session/redo)
+                         (flash! "Redo"))
+         :data-accel__shift "z"
          :data-preserve-attr "data-tip"
-         :disabled           (not can-redo?)}
+         :disabled (not can-redo?)}
         [:div.icon.icon-redo] [:span.hidden.lg:inline "Redo"]]
        [:div.btn.btn-primary {:data-on:click (h/action
-                                               (if (:dirty? @cursor)
-                                                 (swap! cursor assoc :modal {:type :quit})
-                                                 (shutdown! cursor *app-state)))}
+                                              (if (:dirty? @cursor)
+                                                (swap! cursor assoc :modal {:type :quit})
+                                                (shutdown! cursor *app-state)))}
         [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
-  {:ok    "border-slate-100"
-   :new   "border-yellow-200"
+  {:ok "border-slate-100"
+   :new "border-yellow-200"
    :error "border-rose-400"})
 
 (def ^:private status->button-class
-  {:ok    nil
-   :new   "bg-warning"
+  {:ok nil
+   :new "bg-warning"
    :error "bg-error"})
 
 (defn- compare-pred
@@ -245,31 +274,31 @@
         {:keys [descendant-status]} knot]
     [:div.indicator
      (dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class descendant-status))
-                         :disabled     (< (count children) 2)
-                         :label        [:div.icon.icon-children]}
+                         :disabled (< (count children) 2)
+                         :label [:div.icon.icon-children]}
                         (map (fn [{:keys [id label command]}]
                                (let [status (tree/greatest-status (tree/knot-status tree id)
                                                                   (tree/descendant-status tree id))]
-                                 (dropdown/button {:bg-class      (status->button-class status)
+                                 (dropdown/button {:bg-class (status->button-class status)
                                                    :data-on:click (h/action (swap! cursor session/select-knot id))}
                                                   (or label command))))
                              children))
      (when (> (count children) 1)
        [:div
         {:class (classes
-                  "indicator-item indicator-top indicator-right"
-                  "rounded-full text-sm border-2 bg-base-300 border-base-100"
-                  "flex items-center justify-center"
-                  "w-8 h-8")}
+                 "indicator-item indicator-top indicator-right"
+                 "rounded-full text-sm border-2 bg-base-300 border-base-100"
+                 "flex items-center justify-center"
+                 "w-8 h-8")}
         (count children)])]))
 
 (defn- render-knot
   [cursor tree knot {:keys [debug-enabled? show-dynamic? fixed-width?]}]
   (let [{:keys [id label response unblessed status children dynamic-response locked]} knot
-        border-class   (status->border-class status)
+        border-class (status->border-class status)
         disable-bless? (= :ok status)
-        root?          (= 0 id)]
-    [:div.border-x-4 {:id    (str "knot-" id)
+        root? (= 0 id)]
+    [:div.border-x-4 {:id (str "knot-" id)
                       :class border-class}
      [:div.bg-yellow-50.w-full.whitespace-pre-wrap.p-2
       {:class (when (or fixed-width? (= :error status)) "font-mono")}
@@ -278,88 +307,85 @@
          [:div.icon.icon-lock {:title "Locked"}])
        (when label
          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
-       (dropdown/dropdown {:label        [:div.icon.icon-dots-vertical]
+       (dropdown/dropdown {:label [:div.icon.icon-dots-vertical]
                            :button-class "btn p-0"}
-                          (dropdown/button {:disabled      disable-bless?
+                          (dropdown/button {:disabled disable-bless?
                                             :data-on:click (h/action
-                                                             (swap! cursor session/bless id)
-                                                             (flash! cursor "Blessed"))}
+                                                            (swap! cursor session/bless id)
+                                                            (flash! "Blessed"))}
                                            "Bless" "Accept changes")
                           (when-not root?
-                            (dropdown/button {:disabled      disable-bless?
+                            (dropdown/button {:disabled disable-bless?
                                               :data-on:click (h/action
-                                                               (swap! cursor session/bless-to id)
-                                                               (flash! cursor "Blessed to here"))}
+                                                              (swap! cursor session/bless-to id)
+                                                              (flash! "Blessed to here"))}
                                              "Bless To Here" "Accept changes from root to here"))
-                          (dropdown/button {:data-on:click (h/action
-                                                             (swap! cursor session/check-for-changed-sources)
-                                                             (swap! cursor session/replay-to! id)
-                                                             (flash! cursor "Replayed"))}
+                          (dropdown/button {:data-on:click (str "@post('/action/replay-to/" id "')")}
                                            "Replay" "Run from start to here")
                           (dropdown/button {:data-on:click (h/action
-                                                             (swap! cursor session/prepare-new-child! id))}
+                                                            (swap! cursor session/prepare-new-child! id))}
                                            "New Child" "Add a new command after this")
                           (when-not root?
                             (list
-                              (dropdown/button {:data-on:click (h/action
-                                                                 (swap! cursor assoc :modal
-                                                                        {:type :edit-command :knot-id id}))}
-                                               "Edit Command ..." "Change the knot's command")
-                              (dropdown/button {:data-on:click (h/action
-                                                                 (swap! cursor assoc :modal
-                                                                        {:type :edit-label :knot-id id}))}
-                                               "Edit Label ..." "Change label for knot")
-                              (dropdown/button {:data-on:click (h/action
-                                                                 (swap! cursor session/toggle-lock id)
-                                                                 (let [locked? (get-in @cursor [:tree :knots id :locked])]
-                                                                   (flash! cursor (if locked? "Locked" "Unlocked"))))}
-                                               "Toggle Lock" "Lock or unlock this knot")
-                              (dropdown/button {:data-on:click (h/action
-                                                                 (swap! cursor assoc :modal
-                                                                        {:type :insert-parent :knot-id id}))}
-                                               "Insert Parent" "Insert a command before this")
-                              (dropdown/button {:data-on:click (h/action
-                                                                 (let [[error session'] (session/delete! @cursor id)]
-                                                                   (reset! cursor session')
-                                                                   (flash! cursor
-                                                                           (if error
-                                                                             {:message error :type :error}
-                                                                             "Deleted"))))}
-                                               "Delete" "Delete this knot and all children")
-                              (dropdown/button {:disabled      (not (seq children))
-                                                :data-on:click (h/action
-                                                                 (let [[error session'] (session/splice-out! @cursor id)]
-                                                                   (reset! cursor session')
-                                                                   (flash! cursor
-                                                                           (if error
-                                                                             {:message error :type :error}
-                                                                             "Spliced out"))))}
-                                               "Splice Out" "Delete this knot, reparent children up")))
-                          (dropdown/button {:disabled      (nil? dynamic-response)
+                             (dropdown/button {:data-on:click (h/action
+                                                               (swap! cursor assoc :modal
+                                                                      {:type :edit-command :knot-id id}))}
+                                              "Edit Command ..." "Change the knot's command")
+                             (dropdown/button {:data-on:click (h/action
+                                                               (swap! cursor assoc :modal
+                                                                      {:type :edit-label :knot-id id}))}
+                                              "Edit Label ..." "Change label for knot")
+                             (dropdown/button {:data-on:click (h/action
+                                                               (swap! cursor session/toggle-lock id)
+                                                               (let [locked? (get-in @cursor [:tree :knots id :locked])]
+                                                                 (flash! (if locked? "Locked" "Unlocked"))))}
+                                              "Toggle Lock" "Lock or unlock this knot")
+                             (dropdown/button {:data-on:click (h/action
+                                                               (swap! cursor assoc :modal
+                                                                      {:type :insert-parent :knot-id id}))}
+                                              "Insert Parent" "Insert a command before this")
+                             (dropdown/button {:data-on:click (h/action
+                                                               (let [[error session'] (session/delete! @cursor id)]
+                                                                 (reset! cursor session')
+                                                                 (flash! (if error
+                                                                           {:message error :type :error}
+                                                                           "Deleted"))))}
+                                              "Delete" "Delete this knot and all children")
+                             (dropdown/button {:disabled (not (seq children))
+                                               :data-on:click (h/action
+                                                               (let [[error session'] (session/splice-out! @cursor id)]
+                                                                 (reset! cursor session')
+                                                                 (flash! (if error
+                                                                           {:message error :type :error}
+                                                                           "Spliced out"))))}
+                                              "Splice Out" "Delete this knot, reparent children up")))
+                          (dropdown/button {:disabled (nil? dynamic-response)
                                             :data-on:click (h/action
-                                                             (swap! cursor assoc :modal
-                                                                    {:type :dynamic-state :knot-id id}))}
+                                                            (swap! cursor assoc :modal
+                                                                   {:type :dynamic-state :knot-id id}))}
                                            "Dynamic State ..."
                                            "Show full dynamic state")
                           (when debug-enabled?
                             (dropdown/button {:data-on:click (h/action
-                                                               (swap! cursor session/check-for-changed-sources)
-                                                               (let [command (if root?
-                                                                               "Startup"
-                                                                               (:command (tree/get-knot (:tree @cursor) id)))
-                                                                     [trace-response session']
-                                                                     (if root?
-                                                                       (session/trace-startup! @cursor)
-                                                                       (session/trace-command! @cursor id))
-                                                                     parsed  (trace/parse-trace trace-response)
-                                                                     nodes   (trace/build-tree parsed)]
-                                                                 (reset! cursor session')
-                                                                 (swap! cursor assoc
-                                                                        :trace {:nodes      nodes
-                                                                                :search     ""
-                                                                                :node-count (trace/count-nodes nodes)
-                                                                                :command    command}
-                                                                        :modal {:type :trace})))}
+                                                              (swap! cursor session/check-for-changed-sources)
+                                                              (let [command (if root?
+                                                                              "Startup"
+                                                                              (:command (tree/get-knot (:tree @cursor) id)))
+                                                                    [trace-response session']
+                                                                    (if root?
+                                                                      (session/trace-startup! @cursor)
+                                                                      (session/trace-command! @cursor id))]
+                                                                (reset! cursor session')
+                                                                (if trace-response
+                                                                  (let [parsed (trace/parse-trace trace-response)
+                                                                        nodes (trace/build-tree parsed)]
+                                                                    (swap! cursor assoc
+                                                                           :trace {:nodes nodes
+                                                                                   :search ""
+                                                                                   :node-count (trace/count-nodes nodes)
+                                                                                   :command command}
+                                                                           :modal {:type :trace}))
+                                                                  (swap! cursor common/maybe-apply-source-error))))}
                                              "Trace ..."
                                              (if root? "Trace startup" "Trace command execution"))))
        (render-children-navigation cursor tree knot)]
@@ -375,22 +401,22 @@
     [:div.fab
      [:div.btn.btn-lg.btn-circle.btn-primary
       {:tabindex "0"
-       :role     "button"}
+       :role "button"}
       [:div.icon.icon-globe]]
 
      [:div.rounded-box.bg-primary-content.flex.flex-col.items-start
       [:label.label.p-2
-       [:input.toggle {:type           "checkbox"
-                       :checked        fixed-width?
+       [:input.toggle {:type "checkbox"
+                       :checked fixed-width?
                        :data-on:change (h/action
-                                         (swap! cursor update :fixed-width? not))}]
+                                        (swap! cursor update :fixed-width? not))}]
        "Fixed-width font"]
       [:label.label.p-2
-       [:input.toggle {:type           "checkbox"
-                       :checked        show-dynamic?
-                       :disabled       (not debug-enabled?)
+       [:input.toggle {:type "checkbox"
+                       :checked show-dynamic?
+                       :disabled (not debug-enabled?)
                        :data-on:change (h/action
-                                         (swap! cursor update :show-dynamic? not))}]
+                                        (swap! cursor update :show-dynamic? not))}]
        "Show dynamic state"]]]))
 
 (defn- render-modal
@@ -425,16 +451,18 @@
           :trace
           (modals/trace-modal cursor (:trace session))
 
-          nil)))))
+          :source-error
+          (modals/source-error cursor)
 
+          nil)))))
 
 (defn skein-page
   "Main hyper page function. Renders the full skein UI from the session cursor.
   Hyper calls this whenever the cursor changes and pushes the diff via SSE."
   [req]
-  (let [cursor     (h/global-cursor :session)
+  (let [cursor (h/global-cursor :session)
         *app-state (:hyper/app-state req)
-        session    @cursor
+        session @cursor
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch?]} session]
 
     (swap! cursor dissoc :replay-on-launch?)
@@ -446,8 +474,8 @@
         [:h2.text-2xl.font-semibold.text-gray-700.mb-4 "Skein Shutdown"]
         [:p.text-gray-500 "You may close this window now."]]]
       ;; Normal page render
-      (let [flash     (first (reset-vals! *pending-flash nil))
-            knots     (tree/selected-knots tree)
+      (let [flash (first (reset-vals! *pending-flash nil))
+            knots (tree/selected-knots tree)
             leaf-knot (last knots)]
         [:div.relative.px-8
          (when flash
@@ -456,8 +484,8 @@
          [:div.container.mx-lg.mx-auto.mt-16
           (map (fn [knot]
                  (render-knot cursor tree knot {:debug-enabled? debug-enabled?
-                                                :show-dynamic?  show-dynamic?
-                                                :fixed-width?   fixed-width?}))
+                                                :show-dynamic? show-dynamic?
+                                                :fixed-width? fixed-width?}))
                knots)
           (new-command/new-command-input cursor (:id leaf-knot))]
          ;; Modal overlay

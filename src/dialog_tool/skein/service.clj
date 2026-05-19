@@ -18,11 +18,12 @@
   [["/" {:name :skein
          :title "Dialog Skein"
          :get #'ui.app/skein-page}]
-   ["/action/replay-all" {:post #'ui.app/replay-all!}]
+   ["/action/replay-all" {:post ui.app/replay-all!}]
+   ["/action/replay-to/:id" {:post ui.app/replay-to!}]
    ["/action/source/:id" {:hyper/disabled? true
-                          :get #'source/view-source}]
+                          :get             source/view-source}]
    ["/action/source-preview/:id" {:hyper/disabled? true
-                                  :get #'source/source-preview}]])
+                                  :get             source/source-preview}]])
 
 (defn- create-handler
   "Creates the Hyper Ring handler, seeding the skein session into app-state."
@@ -85,25 +86,32 @@
         session (if tree
                   (s/create-loaded! start-process skein-path tree)
                   (s/create-new! start-process skein-path engine' seed'))
+        *stop-server (atom nil)
         session' (assoc session
                         :development-mode? development-mode?
                         :debug-enabled? (= engine' :dgdebug)
-                        :replay-on-launch? (some? tree))
+                        :replay-on-launch? true)
+        shutdown-fn (fn []
+                      (h/stop! @*stop-server)
+                      (sk.process/kill! (get-in @*app [:global :session :process]))
+
+                      (println "Shut down")
+
+                      (when (and exit-when-shutdown? (not development-mode?))
+                        (System/exit 0)))
         stop-server (do
                      (reset! *app (-> (state/init-state)
-                                      (assoc-in [:global :session] session')))
+                                      (update :global
+                                              assoc
+                                              :session session'
+                                              :shutdown-fn shutdown-fn)))
                      (h/start! (create-handler *app) {:port port'}))]
-    (swap! *app assoc-in [:global :shutdown-fn]
-           (fn []
-             (stop-server)
-             (when-let [process (:process (get-in @*app [:global :session]))]
-               (sk.process/kill! process))
-             (println "Shut down")
-             (when (and exit-when-shutdown? (not development-mode?))
-               (System/exit 0))))
+    (reset! *stop-server stop-server)
     port'))
 
 (comment
+  
+  (-> @*app :global :session :modal)
 
   (stop!)
 
@@ -113,6 +121,13 @@
            :port 10140
            :exit-when-shutdown? false
            :development-mode? false})
+
+
+  (start! "../failure"
+          {:engine              :dgdebug
+           :skein-path          "../failure/default.skein"
+           :port                10140
+           :exit-when-shutdown? false})
 
   (start! "../dialog-extensions/tree"
           {:engine :dgdebug

@@ -19,8 +19,8 @@
                                  {:message flash :type :info}
                                  flash)
         error? (= type :error)
-        id (str "flash-" (random-uuid))]
-    (let [remove-script (str "document.getElementById('" id "').parentElement.remove()")]
+        id     (str "flash-" (random-uuid))
+        remove-script (str "document.getElementById('" id "').parentElement.remove()")]
       [:div {:class "fixed top-20 left-1/2 -translate-x-1/2 z-50"
              :style {:pointer-events (if error? "auto" "none")}
              :data-ignore-morph true}
@@ -37,4 +37,4 @@
           [:button {:type "button"
                     :class "ml-2 text-white/80 hover:text-white text-lg font-bold cursor-pointer"
                     :onclick remove-script}
-           "✕"])]])))
+           "✕"])]]))

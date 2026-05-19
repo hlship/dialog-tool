@@ -6,8 +6,12 @@
 (defn option-handler
   [{:keys [debug]} _dispatch-options callback]
 
-  (binding [env/*debug* (boolean debug)]
-    (callback)))
+  ;; Previously did this with binding but I think Hyper's thread pool is not
+  ;; commuting bindings to threads, so we don't see dgdebug being invoked
+  ;; even with --debug.
+  (alter-var-root #'env/*debug* (constantly debug))
+
+  (callback))
 
 (defn -main
   [& args]

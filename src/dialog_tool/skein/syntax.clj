@@ -58,11 +58,6 @@
     "now" "just" "stoppable" "log" "link"
     "collect words" "from words"})
 
-(def ^:private keyword-with-args-re
-  "Pattern for keywords that take arguments: (collect ...), (accumulate ...), etc.
-   These need the keyword portion highlighted differently from the arguments."
-  #"(?i)collect|accumulate|into|determine\s+object|matching\s+all\s+of|span|div|(?:inline\s+)?status\s+bar|link(?:\s+resource)?")
-
 (def ^:private at-random-re
   "Pattern for the various forms of 'at random': (at random), (purely at random), (then at random), etc."
   #"(?:then\s+)?(?:purely\s+)?at\s+random")
@@ -80,8 +75,8 @@
 
 (defn- tokenize-inside-parens
   "Tokenizes content inside parentheses (after the opening paren, before the closing).
-   Returns HTML string. `keyword?` indicates if the whole expression is a keyword."
-  [content kw?]
+   Returns HTML string."
+  [content]
   (let [sb (StringBuilder.)
         len (count content)
         ;; Tokenize content character by character
@@ -100,16 +95,19 @@
                   (= c \() (vswap! depth inc)
                   (= c \)) (vswap! depth dec))
                 (vswap! j inc)))
-            ;; Extract the full nested expression including parens
-            (let [nested (subs content start @j)
-                  inner (subs content (inc start) (dec @j))
-                  nested-kw? (keyword-content? inner)]
-              (if nested-kw?
-                (.append sb (wrap :keyword (html-escape nested)))
-                (do
-                  (.append sb (wrap :predicate (html-escape "(")))
-                  (.append sb (tokenize-inside-parens inner false))
-                  (.append sb (wrap :predicate (html-escape ")"))))))
+            ;; Extract the full nested expression including parens.
+            ;; If the paren was never closed (depth > 0), emit as plain text.
+            (if (zero? @depth)
+              (let [nested (subs content start @j)
+                    inner (subs content (inc start) (dec @j))
+                    nested-kw? (keyword-content? inner)]
+                (if nested-kw?
+                  (.append sb (wrap :keyword (html-escape nested)))
+                  (do
+                    (.append sb (wrap :predicate (html-escape "(")))
+                    (.append sb (tokenize-inside-parens inner))
+                    (.append sb (wrap :predicate (html-escape ")"))))))
+              (.append sb (html-escape (subs content @i))))
             (vreset! i @j))
 
           ;; Comment
@@ -226,15 +224,18 @@
                   (= c \() (vswap! depth inc)
                   (= c \)) (vswap! depth dec))
                 (vswap! j inc)))
-            (let [full-expr (subs line start @j)
-                  inner (subs line (inc start) (dec @j))
-                  kw? (keyword-content? inner)]
-              (if kw?
-                (.append sb (wrap :keyword (html-escape full-expr)))
-                (do
-                  (.append sb (wrap :predicate (html-escape "(")))
-                  (.append sb (tokenize-inside-parens inner false))
-                  (.append sb (wrap :predicate (html-escape ")"))))))
+            ;; If the paren was never closed (depth > 0), emit as plain text.
+            (if (zero? @depth)
+              (let [full-expr (subs line start @j)
+                    inner (subs line (inc start) (dec @j))
+                    kw? (keyword-content? inner)]
+                (if kw?
+                  (.append sb (wrap :keyword (html-escape full-expr)))
+                  (do
+                    (.append sb (wrap :predicate (html-escape "(")))
+                    (.append sb (tokenize-inside-parens inner))
+                    (.append sb (wrap :predicate (html-escape ")"))))))
+              (.append sb (html-escape (subs line @i))))
             (vreset! i @j))
 
           ;; Variable $...
@@ -356,11 +357,14 @@
               (= c \() (vswap! depth inc)
               (= c \)) (vswap! depth dec))
             (vswap! j inc)))
-        ;; Rule head: opening paren, inner content, closing paren
-        (let [inner (subs line (inc start) (dec @j))]
-          (.append sb (wrap :predicate (html-escape "(")))
-          (.append sb (tokenize-inside-parens inner false))
-          (.append sb (wrap :predicate (html-escape ")"))))
+        ;; Rule head: opening paren, inner content, closing paren.
+        ;; If the paren was never closed (depth > 0), fall back to body tokenizer.
+        (if (zero? @depth)
+          (let [inner (subs line (inc start) (dec @j))]
+            (.append sb (wrap :predicate (html-escape "(")))
+            (.append sb (tokenize-inside-parens inner))
+            (.append sb (wrap :predicate (html-escape ")"))))
+          (.append sb (tokenize-body (subs line @i))))
         (vreset! i @j)))
     ;; Rest of line is body
     (when (< @i len)
