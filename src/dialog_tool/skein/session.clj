@@ -95,8 +95,8 @@
   [session knot-id]
   (let [commands (collect-commands (:tree session) knot-id)
         session' (reduce run-command! (do-restart! session) commands)]
-    (if (:error session)
-      session
+    (if (:error session')
+      session'
       (assoc session' :active-knot-id knot-id))))
 
 (defn command!
