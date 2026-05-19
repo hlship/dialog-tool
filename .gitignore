@@ -13,6 +13,4 @@ generated-resources/
 # Node modules
 node_modules/
 .calva
-
-# Claude Code documentation
-.claude/
+.eca/

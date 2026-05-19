@@ -4,7 +4,7 @@
  :deps  {io.github.hlship/cli-tools                       {:mvn/version "0.16.0-beta-7"}
          org.jetbrains.pty4j/pty4j                        {:mvn/version "0.13.12"}
          dynamic-alpha/hyper                              {:git/url "https://github.com/dynamic-alpha/hyper"
-                                                           :git/sha "3ead994e36930d4b42e1ce579db819383794834a"}
+                                                           :git/sha "c84c52da62e7e2d93f6af38ae82cc236baaf2234"}
          ;; hyper depends on brotli4j, which uses Maven profiles to pull in native
          ;; libraries for the *build* machine's OS/arch only. Explicitly include
          ;; all target platforms so the uberjar works everywhere.
