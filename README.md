@@ -42,7 +42,7 @@ The zip contains two files you need:
 Extract both files into the same directory, then add that directory to your `PATH`,
 or symlink `dgt` into a directory already on your `PATH`.
 
-Java 16 or later is required, though Java 24 or better is preferred.
+Java 21 or later is required, though Java 24 or better is preferred.
 
 The following external tools must also be installed and on your `PATH`:
 
