@@ -1,5 +1,5 @@
 {:paths ["release"]
- :deps  {org.clj-commons/pretty {:mvn/version "3.8.0"}}
+ :deps {org.clj-commons/pretty {:mvn/version "3.8.0"}}
 
  :tasks
  {:requires ([clj-commons.ansi :refer [pout]]
@@ -7,48 +7,49 @@
              [babashka.fs :as fs]
              [babashka.process :as p]
              [dgt.release :as r :refer [sh]])
-  test      (let [{:keys [exit]} (p/shell {:continue true} "clojure -M:test")]
-              (System/exit exit))
-  tailwind  (p/shell "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")
-  package   (r/package "test")
-  lint      (do
+  test (let [{:keys [exit]} (p/shell {:continue true} "clojure -M:test")]
+         (System/exit exit))
+  tailwind (p/shell "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")
+  package (r/package "test")
+  lint (do
               ;; First pass: analyze dependencies to populate .clj-kondo cache
-              (p/shell {:continue true}
-                "clj-kondo --copy-configs --dependencies --lint"
-                (-> (p/shell {:out :string} "clojure -A:dev:test -Spath") :out string/trim))
+         (p/shell {:continue true}
+                  "clj-kondo --copy-configs --dependencies --lint"
+                  (-> (p/shell {:out :string} "clojure -A:dev:test -Spath") :out string/trim))
               ;; Second pass: lint project sources using cached dependency info
-              (let [{:keys [exit]} (p/shell {:continue true} "clj-kondo --lint src test dev")]
-                (System/exit exit)))
-  release   (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
-                  zip-file (r/package tag)
-                  sha (r/sha256 zip-file)
-                  create-opts (cond-> ["--verify-tag" "--generate-notes"]
-                                (string/includes? tag "alpha")
-                                (conj "--prerelease"))
-                  formula (-> zip-file fs/parent (fs/file "dialog-tool.rb"))
-                  scoop-manifest (-> zip-file fs/parent (fs/file "dialog-tool.json"))]
-              (apply sh "gh release create" tag create-opts)
-              (sh "gh release upload --clobber" tag zip-file)
-              (println)
-              (pout "Release URL: "
-                [:bold
-                 "https://github.com/hlship/dialog-tool/releases/tag/" tag])
-              (pout "  Asset URL: "
-                [:bold "https://github.com/hlship/dialog-tool/releases/download/"
-                 tag "/" (fs/file-name zip-file)])
-              (pout "     SHA256: " [:bold sha])
-              (r/render-template "templates/dialog-tool.rb"
-                formula
-                {:tag      tag
-                 :sha      sha
-                 :uber-jar (str "dialog-tool-" tag ".jar")
-                 :zip-name (fs/file-name zip-file)})
-              (println)
-              (pout "Wrote Homebrew formula to " [:bold formula])
-              (r/render-template "templates/dialog-tool.json"
-                scoop-manifest
-                {:tag      tag
-                 :sha      sha
-                 :uber-jar (str "dialog-tool-" tag ".jar")
-                 :zip-name (fs/file-name zip-file)})
-              (pout "Wrote Scoop manifest to " [:bold scoop-manifest]))}}
+         (let [{:keys [exit]} (p/shell {:continue true} "clj-kondo --lint src test dev")]
+           (System/exit exit)))
+  release (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
+                zip-file (r/package tag)
+                sha (r/sha256 zip-file)
+                create-opts (cond-> ["--verify-tag" "--generate-notes"]
+                              (or (string/includes? tag "alpha")
+                                  (string/includes? tag "beta"))
+                              (conj "--prerelease"))
+                formula (-> zip-file fs/parent (fs/file "dialog-tool.rb"))
+                scoop-manifest (-> zip-file fs/parent (fs/file "dialog-tool.json"))]
+            (apply sh "gh release create" tag create-opts)
+            (sh "gh release upload --clobber" tag zip-file)
+            (println)
+            (pout "Release URL: "
+                  [:bold
+                   "https://github.com/hlship/dialog-tool/releases/tag/" tag])
+            (pout "  Asset URL: "
+                  [:bold "https://github.com/hlship/dialog-tool/releases/download/"
+                   tag "/" (fs/file-name zip-file)])
+            (pout "     SHA256: " [:bold sha])
+            (r/render-template "templates/dialog-tool.rb"
+                               formula
+                               {:tag tag
+                                :sha sha
+                                :uber-jar (str "dialog-tool-" tag ".jar")
+                                :zip-name (fs/file-name zip-file)})
+            (println)
+            (pout "Wrote Homebrew formula to " [:bold formula])
+            (r/render-template "templates/dialog-tool.json"
+                               scoop-manifest
+                               {:tag tag
+                                :sha sha
+                                :uber-jar (str "dialog-tool-" tag ".jar")
+                                :zip-name (fs/file-name zip-file)})
+            (pout "Wrote Scoop manifest to " [:bold scoop-manifest]))}}

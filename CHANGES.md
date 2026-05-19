@@ -1,4 +1,4 @@
-# 2.0 -- UNRELEASED 2026
+# 2.0-beta-12 -- 19 May 2026
 
 Rewritten in Clojure. 
 
