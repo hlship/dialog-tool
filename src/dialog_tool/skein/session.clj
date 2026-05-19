@@ -306,30 +306,35 @@
    with tracing enabled. Returns [trace-response session'] where trace-response
    is the raw response containing trace lines. The tree's response for the knot
    is NOT updated (since it contains trace noise).
+
+   If there is a startup error, returns [nil session'] where session' has :error set.
    
    Only works with the dgdebug engine."
   [session knot-id]
   (let [{:keys [tree]} session
         {:keys [command parent-id]} (tree/get-knot tree knot-id)
         ;; Replay to parent (may restart process)
-        session' (do-replay-to! session parent-id)
-        process (:process session')
-        ;; Enable tracing, execute command, disable tracing
-        _ (sk.process/send-command! process "(trace on)")
-        trace-response (sk.process/send-command! process command)
-        _ (sk.process/send-command! process "(trace off)")
-        ;; Update position and capture dynamic state
-        session'' (-> session'
-                      (assoc :active-knot-id knot-id)
-                      capture-dynamic)]
-    [trace-response session'']))
+        session' (do-replay-to! session parent-id)]
+    (if (:error session')
+      [nil session']
+      (let [process (:process session')
+            ;; Enable tracing, execute command, disable tracing
+            _ (sk.process/send-command! process "(trace on)")
+            trace-response (sk.process/send-command! process command)
+            _ (sk.process/send-command! process "(trace off)")
+            ;; Update position and capture dynamic state
+            session'' (-> session'
+                          (assoc :active-knot-id knot-id)
+                          capture-dynamic)]
+        [trace-response session'']))))
 
 (defn trace-startup!
   "Traces game startup by restarting the process with the --trace flag.
    The traced startup response is captured, then the process is restarted
    normally (without --trace) to restore clean state.
    
-   Returns [trace-response session'] like trace-command!."
+   Returns [trace-response session'] like trace-command!.
+   If there is a startup error, returns [nil session'] where session' has :error set."
   [session]
   (let [{:keys [process start-process-fn]} session
         ;; Start a temporary process with --trace to capture traced startup
@@ -339,4 +344,6 @@
         ;; Kill the traced process and restart normally
         _ (sk.process/kill! traced-process)
         session' (do-restart! session)]
-    [trace-response session']))
+    (if (:error session')
+      [nil session']
+      [trace-response session'])))
