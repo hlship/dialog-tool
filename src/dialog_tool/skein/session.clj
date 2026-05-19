@@ -168,12 +168,14 @@
         [(format "Parent knot already contains a child with command '%s'"
                  new-command)
          session]
-        (let [new-id (tree/next-id)]
-          [nil (-> session
-                   capture-undo
-                   (update :tree tree/insert-parent knot-id new-id new-command)
-                   (do-replay-to! knot-id)
-                   (assoc :new-id new-id))])))))
+        (let [new-id   (tree/next-id)
+              session' (-> session
+                           capture-undo
+                           (update :tree tree/insert-parent knot-id new-id new-command)
+                           (do-replay-to! knot-id))]
+          [nil (cond-> session'
+                 (not (:error session')) (assoc :new-id new-id))]))))))
+
 
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."

@@ -88,11 +88,12 @@
            (h/action
             (let [cmd (some-> (get $form-data "command") str string/trim not-empty)]
               (swap! cursor session/check-for-changed-sources)
-              (let [[error session'] (session/insert-parent! @cursor id cmd)]
+              (let [[operation-error session'] (session/insert-parent! @cursor id cmd)]
                 (reset! cursor session')
-                (if error
-                  (swap! cursor assoc :modal {:type :insert-parent :knot-id id :error error})
-                  (swap! cursor dissoc :modal)))))}
+                (cond
+                  (:error session')    (swap! cursor common/maybe-apply-source-error)
+                  operation-error      (swap! cursor assoc :modal {:type :insert-parent :knot-id id :error operation-error})
+                  :else                (swap! cursor dissoc :modal)))))}
     [:div.mb-4
      [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "insert-parent-input"}
       "Command:"]
