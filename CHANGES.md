@@ -1,3 +1,18 @@
+# 2.0-beta-13 -- 20 May 2026
+
+Redesigned knot interaction: clicking a knot makes it the _active knot_, highlighted
+with a blue left border. A persistent secondary operations toolbar replaces the
+per-knot dropdown menu.
+
+New keyboard accelerators for all toolbar operations and knot navigation
+(⌘↑/↓ parent/child, ⌘⇧↑/↓ first/last knot, ⌘B bless-to-here, ⌘Y replay,
+⌘A new child, ⌘D delete, ⌘K lock).
+
+Undo/redo now correctly restores the active knot (active-knot-id is stored
+inside the tree and captured by the undo stack).
+
+Dark mode support throughout the UI via DaisyUI semantic color tokens.
+
 # 2.0-beta-12 -- 19 May 2026
 
 Rewritten in Clojure. 
