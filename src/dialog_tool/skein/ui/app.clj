@@ -91,6 +91,15 @@
   (when (nil? (get-in @cursor [:tree :selected knot-id]))
     (reset-and-focus-command-input!)))
 
+(defn- navigate-to-active-knot!
+  "After undo/redo: focuses the command input if the active knot is the leaf,
+  otherwise scrolls it into view."
+  [cursor]
+  (let [active-id (get-in @cursor [:tree :active-knot-id])]
+    (if (nil? (get-in @cursor [:tree :selected active-id]))
+      (reset-and-focus-command-input!)
+      (scroll-knot-into-view! active-id))))
+
 (defn- jump-to-status!
   [cursor status]
   (let [session @cursor
@@ -209,12 +218,16 @@
        [:div.text-black.bg-warning.p-2.font-semibold
         (when (pos? new)
                      {:class "cursor-pointer"
-                     :data-on:click (h/action (jump-to-status! cursor :new))})
-                  new]
-                 [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg
-                  (when (pos? error)
-                    {:class "cursor-pointer"
-                     :data-on:click (h/action (jump-to-status! cursor :error))})
+                                          :data-on:click (h/action
+                                                            (jump-to-status! cursor :new)
+                                                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
+                             new]
+                            [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg
+                             (when (pos? error)
+                               {:class "cursor-pointer"
+                                :data-on:click (h/action
+                                                 (jump-to-status! cursor :error)
+                                                 (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
        (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
@@ -241,7 +254,8 @@
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click (h/action
                          (swap! cursor session/undo)
-                         (flash! "Undo"))
+                         (flash! "Undo")
+                         (navigate-to-active-knot! cursor))
          :data-accel "z"
          :data-preserve-attr "data-tip"
          :disabled (not can-undo?)}
@@ -249,7 +263,8 @@
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click (h/action
                          (swap! cursor session/redo)
-                         (flash! "Redo"))
+                         (flash! "Redo")
+                         (navigate-to-active-knot! cursor))
          :data-accel__shift "z"
          :data-preserve-attr "data-tip"
          :disabled (not can-redo?)}
@@ -336,9 +351,10 @@
         [:div.icon.icon-arrow-right {:title "Selected"}])]
      [:div.border-x-4.grow
       {:class (classes border-class (if active? "bg-yellow-300" "bg-yellow-50"))
-             :data-on:click (h/action
-                             (swap! cursor session/set-active-knot id))
-             :style "cursor: pointer"}
+                   :data-on:click (h/action
+                                   (swap! cursor session/set-active-knot id)
+                                   (focus-if-leaf! cursor id))
+                   :style "cursor: pointer"}
       [:div.w-full.whitespace-pre-wrap.break-words.p-2
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
        [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-24.rounded-bl-lg.pl-2.pb-1
@@ -370,7 +386,8 @@
 
 (defn- render-operations-toolbar
   [cursor session]
-  (let [{:keys [tree active-knot-id debug-enabled?]} session
+  (let [{:keys [tree debug-enabled?]} session
+        active-knot-id (:active-knot-id tree)
         knot (tree/get-knot tree active-knot-id)
         {:keys [id status dynamic-response]} knot
         root? (= 0 id)
@@ -598,7 +615,7 @@
         [:p.text-gray-500 "You may close this window now."]]]
       ;; Normal page render
       (let [flash (first (reset-vals! *pending-flash nil))
-            active-knot-id (:active-knot-id session)
+            active-knot-id (:active-knot-id tree)
             knots (tree/selected-knots tree)
             leaf-knot (last knots)]
         [:div.relative.px-8
@@ -607,7 +624,7 @@
          ;; Single fixed header containing both toolbars — no gap possible between them
          [:div.fixed.top-0.start-0.w-full.z-30
           (navbar cursor session *app-state)
-          (render-operations-toolbar cursor (assoc session :active-knot-id active-knot-id))]
+          (render-operations-toolbar cursor session)]
          ;; mt-24 clears the combined height of both fixed toolbars
          [:div.container.mx-lg.mx-auto.mt-24
           (map (fn [knot]

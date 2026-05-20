@@ -16,16 +16,15 @@
 
 (deftest tree-creation
   (testing "creates a tree with metadata and root knot"
-    (let [tree (tree/new-tree :anything 12345)]
-      (is (= {:meta {:engine :anything
-                     :seed 12345}
-              :knots {0 {:id 0
-                         :label "START"}}
-              :children {}
-              :selected {}
-              :status {0 :new}
-              :descendant-status {}}
-             tree)))))
+        (let [tree (tree/new-tree :anything 12345)]
+          (is (= {:meta {:engine :anything :seed 12345}
+                  :knots {0 {:id 0 :label "START"}}
+                  :children {}
+                  :selected {}
+                  :active-knot-id 0
+                  :status {0 :new}
+                  :descendant-status {}}
+                 tree)))))
 
 (deftest add-child-test
   (testing "adds a child knot with unblessed response"

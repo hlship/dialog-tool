@@ -13,14 +13,12 @@
   "Creates a new session from a tree loaded from the path, and a process started with
   the skein's seed."
   [start-process-fn skein-path tree]
-  (let [leaf-knot (last (tree/selected-knots tree))]
-    {:skein-path       skein-path
-     :undo-stack       []
-     :redo-stack       []
-     :start-process-fn start-process-fn
-     :tree             tree
-     :active-knot-id   (or (:id leaf-knot) 0)
-     :process-knot-id  0}))
+  {:skein-path       skein-path
+   :undo-stack       []
+   :redo-stack       []
+   :start-process-fn start-process-fn
+   :tree             (assoc tree :active-knot-id 0)
+   :process-knot-id  0})
 
 (defn create-new!
   "Creates a new session for a new skein, using an existing process.  The process should be
@@ -120,7 +118,7 @@
                       capture-undo
                       (run-command! command))]
     ;; Make the newly added/updated child knot the active (highlighted) knot
-    (assoc session'' :active-knot-id (:process-knot-id session''))))
+    (assoc-in session'' [:tree :active-knot-id] (:process-knot-id session''))))
 
 (defn replay-to!
   "Restarts the game, then plays through all the commands leading up to the knot.
@@ -141,7 +139,7 @@
       capture-undo
       (update :tree tree/select-knot knot-id)
       (update :tree tree/deselect knot-id)
-      (assoc :active-knot-id knot-id)))
+      (assoc-in [:tree :active-knot-id] knot-id)))
 
 (defn edit-command!
   "Returns a tuple of error and new session."
@@ -207,7 +205,7 @@
   "Sets the active knot id without capturing undo. Used when the user clicks a knot
   to make it the active (operated-on) knot."
   [session knot-id]
-  (assoc session :active-knot-id knot-id))
+  (assoc-in session [:tree :active-knot-id] knot-id))
 
 (defn select-knot
   [session knot-id]
@@ -263,17 +261,18 @@
   When the active knot is deleted (or is a descendant of the deleted knot),
   the active knot is moved to the deleted knot's parent."
   [session knot-id]
-  (let [{:keys [tree active-knot-id]} session]
+  (let [tree             (:tree session)
+        active-knot-id   (:active-knot-id tree)]
     (if-not (tree/allow-deletion? tree knot-id)
       ["Cannot delete: this knot (or a descendant) is locked." session]
-      (let [parent-id            (-> (tree/get-knot tree knot-id) :parent-id)
-            deleted-ids          (set (map :id (tree/knots-from-root tree knot-id)))
-            active-knot-deleted? (contains? deleted-ids active-knot-id)
+      (let [parent-id             (-> (tree/get-knot tree knot-id) :parent-id)
+            deleted-ids           (set (map :id (tree/knots-from-root tree knot-id)))
+            active-knot-deleted?  (contains? deleted-ids active-knot-id)
             process-knot-deleted? (contains? deleted-ids (:process-knot-id session))]
         [nil (cond-> (-> session
                          capture-undo
                          (update :tree tree/delete-knot knot-id))
-               active-knot-deleted?  (assoc :active-knot-id parent-id)
+               active-knot-deleted?  (assoc-in [:tree :active-knot-id] parent-id)
                process-knot-deleted? (assoc :process-knot-id parent-id))]))))
 
 (defn q [s] (str \' s \'))
@@ -284,7 +283,8 @@
   
   Returns a tuple of error and the new session."
   [session knot-id]
-  (let [{:keys [tree active-knot-id]} session
+  (let [tree             (:tree session)
+        active-knot-id   (:active-knot-id tree)
         {:keys [parent-id children]} (tree/get-knot tree knot-id)
         parent-commands (->> (tree/find-children tree parent-id)
                              (remove #(= knot-id (:id %)))
@@ -311,7 +311,7 @@
                ;; Replay to first child if exists (process state still valid for that path)
                replay-id (do-replay-to! replay-id)
                ;; If we spliced the active knot and no children, move active to parent
-               (and active-is-spliced? (not replay-id)) (assoc :active-knot-id parent-id)
+               (and active-is-spliced? (not replay-id)) (assoc-in [:tree :active-knot-id] parent-id)
                ;; If the process was at the spliced knot and no children, reset it
                (and (= (:process-knot-id session) knot-id) (not replay-id))
                (assoc :process-knot-id parent-id))]))))
