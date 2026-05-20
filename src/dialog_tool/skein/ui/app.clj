@@ -7,7 +7,6 @@
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
-            [dialog-tool.skein.ui.components.flash :as flash]
             [dialog-tool.skein.ui.components.new-command :as new-command]
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.ui.modals :as modals]
@@ -216,14 +215,14 @@
           {:class "cursor-pointer"
            :data-on:click (h/action
                             (jump-to-status! cursor :new)
-                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
+                            (navigate-to-active-knot! cursor))})
         new]
        [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg
         (when (pos? error)
           {:class "cursor-pointer"
            :data-on:click (h/action
                             (jump-to-status! cursor :error)
-                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
+                            (navigate-to-active-knot! cursor))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
        (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
@@ -616,8 +615,16 @@
             knots (tree/selected-knots tree)
             leaf-knot (last knots)]
         [:div.relative.px-8
+         ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
+         ;; insertion. Uses a random id so each flash is a new element to the morph
+         ;; algorithm. Works in both action and cursor-change render contexts.
          (when flash
-           (flash/flash-message flash))
+           (let [{:keys [message type]} (if (string? flash)
+                                          {:message flash :type :info}
+                                          flash)]
+             [:span {:id (str "flash-trigger-" (random-uuid))
+                     :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
+                     :style "display:none"}]))
          ;; Single fixed header containing both toolbars — no gap possible between them
          [:div.fixed.top-0.start-0.w-full.z-30
           (navbar cursor session *app-state)

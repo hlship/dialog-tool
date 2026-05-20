@@ -40,12 +40,84 @@ window.sk = {
     });
   },
 
-  removeFlash(id) {
-    document.getElementById(id)?.parentElement?.remove();
+  // --- Flash messages ---
+  // Managed entirely in JS so they survive Datastar DOM morphs.
+
+  _flashEl: null,
+  _flashTimer: null,
+
+  _dismissFlash() {
+    if (this._flashTimer) {
+      clearTimeout(this._flashTimer);
+      this._flashTimer = null;
+    }
+    if (this._flashEl) {
+      this._flashEl.remove();
+      this._flashEl = null;
+    }
   },
 
+  showFlash(message, type = 'info') {
+    const isError = type === 'error';
+    this._dismissFlash();
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-50';
+    wrapper.style.pointerEvents = isError ? 'auto' : 'none';
+
+    const inner = document.createElement('div');
+    inner.className = isError
+      ? 'flex items-center gap-3 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg'
+      : 'bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500';
+    if (!isError) inner.style.opacity = '0';
+
+    const msg = document.createElement('span');
+    msg.textContent = message;
+    inner.appendChild(msg);
+
+    if (isError) {
+      inner.setAttribute('tabindex', '-1');
+      inner.addEventListener('keydown', (e) => { if (e.key === 'Escape') this._dismissFlash(); });
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ml-2 opacity-80 hover:opacity-100 text-lg font-bold cursor-pointer';
+      btn.textContent = '✕';
+      btn.addEventListener('click', () => this._dismissFlash());
+      inner.appendChild(btn);
+    }
+
+    wrapper.appendChild(inner);
+    document.body.appendChild(wrapper);
+    this._flashEl = wrapper;
+
+    if (isError) {
+      inner.focus();
+    } else {
+      requestAnimationFrame(() => {
+        inner.style.opacity = '1';
+        this._flashTimer = setTimeout(() => {
+          inner.style.opacity = '0';
+          this._flashTimer = setTimeout(() => this._dismissFlash(), 600);
+        }, 2000);
+      });
+    }
+  },
+
+  // --- DOM helpers ---
+
   scrollKnotIntoView(id) {
-    document.getElementById('knot-' + id)?.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    const el = document.getElementById('knot-' + id);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    if (rect.bottom > viewportHeight) {
+      // Knot is below the viewport: scroll down and peek at what follows.
+      window.scrollBy({ top: rect.bottom - viewportHeight + 80, behavior: 'smooth' });
+    } else if (rect.top < 0) {
+      // Knot is above the viewport: scroll up just enough to show it.
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    // else: already fully visible — no scroll needed.
   },
 
   resetAndFocusCommandInput() {

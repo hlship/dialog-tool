@@ -28,35 +28,39 @@
   "Renders a modal dialog overlay.
 
    Options:
-   - :title - Dialog title
-   - :cursor - The session cursor (for ESC dismissal)
-   - :buttons - Buttons to display at bottom of form
-   - :error - Optional error message to display at the top of the modal
+   - :title     - Dialog title
+   - :cursor    - The session cursor; enables ESC to dismiss by clearing :modal
+   - :on-escape - Explicit data-on:keydown action string (overrides :cursor ESC handling)
+   - :buttons   - Buttons to display at bottom of form
+   - :error     - Optional error message to display at the top of the modal
 
    The modal:
-   - Can be dismissed by pressing ESC
+   - Can be dismissed by pressing ESC (when :cursor or :on-escape is provided)
    - Centers content and provides standard styling"
-  [{:keys [title cursor buttons error]}
+  [{:keys [title cursor on-escape buttons error]}
    content]
-  [:div#modal-container
-   {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
-   [:div.bg-base-100.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
-    {:data-on:click__stop "return"
-     :data-on:keydown (h/action
+  (let [keydown (or on-escape
+                    (when cursor
+                      (h/action
                        (when (= $key "Escape")
-                         (swap! cursor dissoc :modal)))
-     :tabindex "-1"
-     :data-init "el.focus()"}
-    ;; Header
-    [:div.px-6.py-4.border-b.border-base-200
-     [:h3.text-lg.font-medium.text-base-content title]]
-    ;; Error message (if present)
-    (when error
-      [:div.px-6.pt-4
-       [:div.alert.alert-error.text-sm
-        [:p.text-sm error]]])
-    ;; Body
-    [:div.px-6.py-4
-     content
-     (when buttons
-       [:div.flex.justify-end.gap-2 buttons])]]])
+                         (swap! cursor dissoc :modal)))))]
+    [:div#modal-container
+     {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
+     [:div.bg-base-100.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
+      (cond-> {:data-on:click__stop "return"
+               :tabindex "-1"
+               :data-init "el.focus()"}
+        keydown (assoc :data-on:keydown keydown))
+      ;; Header
+      [:div.px-6.py-4.border-b.border-base-200
+       [:h3.text-lg.font-medium.text-base-content title]]
+      ;; Error message (if present)
+      (when error
+        [:div.px-6.pt-4
+         [:div.alert.alert-error.text-sm
+          [:p.text-sm error]]])
+      ;; Body
+      [:div.px-6.py-4
+       content
+       (when buttons
+         [:div.flex.justify-end.gap-2 buttons])]]]))
