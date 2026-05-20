@@ -91,6 +91,81 @@ html {
   -webkit-mask-image: url('/icons/lock-closed-solid.svg');
 }
 
+.icon-arrow-up {
+  mask-image: url('/icons/arrow-up-solid.svg');
+  -webkit-mask-image: url('/icons/arrow-up-solid.svg');
+}
+
+.icon-scroll-top {
+  mask-image: url('/icons/chevron-double-up-solid.svg');
+  -webkit-mask-image: url('/icons/chevron-double-up-solid.svg');
+}
+
+.icon-scroll-bottom {
+  mask-image: url('/icons/chevron-double-down-solid.svg');
+  -webkit-mask-image: url('/icons/chevron-double-down-solid.svg');
+}
+
+.icon-arrow-down {
+  mask-image: url('/icons/arrow-down-solid.svg');
+  -webkit-mask-image: url('/icons/arrow-down-solid.svg');
+}
+
+.icon-arrow-right {
+  mask-image: url('/icons/arrow-right-solid.svg');
+  -webkit-mask-image: url('/icons/arrow-right-solid.svg');
+}
+
+.icon-bless {
+  mask-image: url('/icons/check-circle-solid.svg');
+  -webkit-mask-image: url('/icons/check-circle-solid.svg');
+}
+
+.icon-bless-to {
+  mask-image: url('/icons/check-badge-solid.svg');
+  -webkit-mask-image: url('/icons/check-badge-solid.svg');
+}
+
+.icon-add {
+  mask-image: url('/icons/plus-circle-solid.svg');
+  -webkit-mask-image: url('/icons/plus-circle-solid.svg');
+}
+
+.icon-edit {
+  mask-image: url('/icons/pencil-solid.svg');
+  -webkit-mask-image: url('/icons/pencil-solid.svg');
+}
+
+.icon-label {
+  mask-image: url('/icons/tag-solid.svg');
+  -webkit-mask-image: url('/icons/tag-solid.svg');
+}
+
+.icon-insert {
+  mask-image: url('/icons/arrow-up-on-square-stack-solid.svg');
+  -webkit-mask-image: url('/icons/arrow-up-on-square-stack-solid.svg');
+}
+
+.icon-delete {
+  mask-image: url('/icons/trash-solid.svg');
+  -webkit-mask-image: url('/icons/trash-solid.svg');
+}
+
+.icon-splice {
+  mask-image: url('/icons/scissors-solid.svg');
+  -webkit-mask-image: url('/icons/scissors-solid.svg');
+}
+
+.icon-dynamic {
+  mask-image: url('/icons/cpu-chip-solid.svg');
+  -webkit-mask-image: url('/icons/cpu-chip-solid.svg');
+}
+
+.icon-trace {
+  mask-image: url('/icons/bug-ant-solid.svg');
+  -webkit-mask-image: url('/icons/bug-ant-solid.svg');
+}
+
 /* ANSI SGR styling classes for blessed output */
 .ansi-bold {
   font-weight: bold;

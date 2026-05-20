@@ -2,7 +2,8 @@
   "Component for entering a new command to add as a child node."
   (:require [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.session :as session]
-            [hyper.core :as h]))
+            [hyper.core :as h]
+            [hyper.effects :as effects]))
 
 (defn- process-new-command
   [cursor parent-knot-id command-text]
@@ -14,6 +15,16 @@
                           (session/command! parent-knot-id normalized)
                           common/maybe-apply-source-error))))))
 
+(def ^:private reset-and-focus-script
+  "Clears the command input, scrolls it into view, and focuses it."
+  (str "var el=document.getElementById('new-command-input');"
+       "if(el){"
+       "el.value='';"
+       "el.dispatchEvent(new Event('input',{bubbles:true}));"
+       "el.scrollIntoView({block:'nearest',behavior:'smooth'});"
+       "el.focus({preventScroll:true});"
+       "}"))
+
 (defn new-command-input
   "Renders an input field for entering new commands.
    When submitted (on Enter), sends the command to create a new node
@@ -24,10 +35,11 @@
      [:div.flex.items-center.gap-2
       [:span.text-gray-400 ">"]
       [:input#new-command-input
-       {:type           "text"
-        :name           "command"
-        :placeholder    "Enter command..."
-        :class          "flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-        :data-bind      (:name command-signal)
+       {:type        "text"
+        :name        "command"
+        :placeholder "Enter command..."
+        :class       "flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+        :data-bind   (:name command-signal)
         :data-on:change (h/action
-                          (process-new-command cursor parent-knot-id $value))}]]]))
+                         (process-new-command cursor parent-knot-id $value)
+                         (effects/execute-script! reset-and-focus-script))}]]]))
