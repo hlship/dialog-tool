@@ -35,6 +35,6 @@
         [:span message]
         (when error?
           [:button {:type "button"
-                    :class "ml-2 text-white/80 hover:text-white text-lg font-bold cursor-pointer"
+                    :class "ml-2 text-error-content opacity-80 hover:opacity-100 text-lg font-bold cursor-pointer"
                     :onclick remove-script}
            "✕"])]]))

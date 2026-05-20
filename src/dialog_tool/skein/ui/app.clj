@@ -36,8 +36,8 @@
           changes (diff/diff-text response unblessed)]
       (map (fn [{:keys [type value]}]
              (case type
-               :added [:span.text-blue-700.font-bold (visible-whitespace value)]
-               :removed [:span.text-red-800.font-bold.line-through (visible-whitespace value)]
+               :added [:span.text-info.font-bold (visible-whitespace value)]
+               :removed [:span.text-error.font-bold.line-through (visible-whitespace value)]
                :unchanged value))
            changes))
     ;; No unblessed, render with ANSI styling
@@ -207,27 +207,27 @@
         can-redo? (-> session :redo-stack not-empty)
         {:keys [ok new error]} (tree/totals tree)
         labeled-knots (tree/labeled-knots-sorted tree)]
-    [:nav {:class (classes "bg-white text-gray-500 border-gray-200 divide-gray-200"
+    [:nav {:class (classes "bg-base-100 text-base-content border-base-200 divide-base-200"
                            "px-2 sm:px-4 py-2.5"
                            "w-full border-b")}
      [:div.mx-auto.flex.items-center.gap-2.container
       [:div.self-center.truncate.text-xl.font-semibold.shrink.min-w-0
        skein-path]
       [:div.join.shrink-0.mx-auto
-       [:div.text-black.bg-success.p-2.font-semibold.rounded-l-lg ok]
-       [:div.text-black.bg-warning.p-2.font-semibold
+       [:div.bg-success.text-success-content.p-2.font-semibold.rounded-l-lg ok]
+       [:div.bg-warning.text-warning-content.p-2.font-semibold
         (when (pos? new)
-                     {:class "cursor-pointer"
-                                          :data-on:click (h/action
-                                                            (jump-to-status! cursor :new)
-                                                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
-                             new]
-                            [:div.text-black.bg-error.p-2.font-semibold.rounded-r-lg
-                             (when (pos? error)
-                               {:class "cursor-pointer"
-                                :data-on:click (h/action
-                                                 (jump-to-status! cursor :error)
-                                                 (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
+          {:class "cursor-pointer"
+           :data-on:click (h/action
+                            (jump-to-status! cursor :new)
+                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
+        new]
+       [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg
+        (when (pos? error)
+          {:class "cursor-pointer"
+           :data-on:click (h/action
+                            (jump-to-status! cursor :error)
+                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
        (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
@@ -276,9 +276,9 @@
         [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
-  {:ok "border-slate-100"
-   :new "border-yellow-200"
-   :error "border-rose-400"})
+  {:ok "border-base-300"
+   :new "border-warning"
+   :error "border-error"})
 
 (def ^:private status->button-class
   {:ok nil
@@ -350,7 +350,7 @@
       (when active?
         [:div.icon.icon-arrow-right {:title "Selected"}])]
      [:div.border-x-4.grow
-      {:class (classes border-class (if active? "bg-yellow-300" "bg-yellow-50"))
+      {:class (classes border-class (if active? "bg-warning opacity-30" "bg-base-100"))
                    :data-on:click (h/action
                                    (swap! cursor session/set-active-knot id)
                                    (focus-if-leaf! cursor id))
@@ -358,14 +358,14 @@
       [:div.w-full.whitespace-pre-wrap.break-words.p-2
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
        [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-24.rounded-bl-lg.pl-2.pb-1
-        {:class (if active? "bg-yellow-300" "bg-yellow-50")}
+        {:class (if active? "bg-warning opacity-30" "bg-base-100")}
         (when locked
           [:div.icon.icon-lock {:title "Locked"}])
-        (when label
-          [:span.font-bold.bg-gray-200.p-1.rounded-md label])
+               (when label
+                 [:span.font-bold.bg-base-200.p-1.rounded-md label])
         (render-children-navigation cursor tree knot)]
        (render-diff response unblessed)
-       [:hr.clear-right.text-stone-200]
+       [:hr.clear-right.text-base-300]
        (when (and debug-enabled? show-dynamic?
                   (not= 0 id))
          (render-dynamic tree knot))]]]))
@@ -396,7 +396,7 @@
         child-id (get-in tree [:selected id])
         no-child? (nil? child-id)
         leaf-knot-id (:id (last (tree/selected-knots tree)))]
-    [:div {:class (classes "bg-white text-gray-500 border-gray-200"
+    [:div {:class (classes "bg-base-100 text-base-content border-base-200"
                            "px-2 sm:px-4 py-1"
                            "w-full border-b")}
      [:div.mx-auto.container.flex.items-center.gap-1
@@ -611,8 +611,8 @@
       ;; Server is shutting down — show close message
       [:div.flex.items-center.justify-center.h-screen
        [:div.text-center
-        [:h2.text-2xl.font-semibold.text-gray-700.mb-4 "Skein Shutdown"]
-        [:p.text-gray-500 "You may close this window now."]]]
+        [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
+        [:p.text-base-content.opacity-70 "You may close this window now."]]]
       ;; Normal page render
       (let [flash (first (reset-vals! *pending-flash nil))
             active-knot-id (:active-knot-id tree)

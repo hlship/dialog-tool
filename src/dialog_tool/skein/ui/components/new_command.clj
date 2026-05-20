@@ -38,7 +38,7 @@
        {:type        "text"
         :name        "command"
         :placeholder "Enter command..."
-        :class       "flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+        :class       "flex-1 rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
         :data-bind   (:name command-signal)
         :data-on:change (h/action
                          (process-new-command cursor parent-knot-id $value)
