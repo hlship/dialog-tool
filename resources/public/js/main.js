@@ -92,6 +92,17 @@ document.addEventListener('datastar-fetch', (e) => {
 const isMac = navigator.platform.startsWith('Mac') || navigator.userAgent.includes('Mac');
 const modSymbol = isMac ? '⌘' : 'Ctrl+';
 
+// Maps special key names to display symbols for tooltips
+const keyDisplayMap = {
+  'Delete': isMac ? '⌫' : 'Del',
+  'ArrowUp': '↑',
+  'ArrowDown': '↓',
+  'ArrowLeft': '←',
+  'ArrowRight': '→',
+  'Home': isMac ? '↖' : 'Home',
+  'End': isMac ? '↘' : 'End',
+};
+
 attribute({
   name: 'accel',
   requirement: { key: 'denied', value: 'must' },
@@ -99,9 +110,12 @@ attribute({
     const accelKey = value;
     const needsShift = mods.has('shift');
 
-    // Set DaisyUI tooltip showing the shortcut, e.g. "⌘S" or "Ctrl+Shift+Z"
-    const label = modSymbol + (needsShift ? (isMac ? '⇧' : 'Shift+') : '') + accelKey.toUpperCase();
-    el.setAttribute('data-tip', label);
+    // Set DaisyUI tooltip showing the shortcut, e.g. "⌘S", "⌘⌫", or "Ctrl+Shift+Z"
+    // Appends the shortcut to any existing data-tip text (e.g. "Bless (⌘B)").
+    const keyLabel = keyDisplayMap[accelKey] ?? accelKey.toUpperCase();
+    const shortcut = modSymbol + (needsShift ? (isMac ? '⇧' : 'Shift+') : '') + keyLabel;
+    const existing = el.getAttribute('data-tip');
+    el.setAttribute('data-tip', existing ? `${existing} (${shortcut})` : shortcut);
 
     const handler = (e) => {
       if (!(e.metaKey || e.ctrlKey)) return;
@@ -171,5 +185,7 @@ window.hideSourcePreview = function() {
     popup.innerHTML = '';
   }
 };
+
+
 
 console.log('Dialog Tool UI initialized');

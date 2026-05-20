@@ -18,27 +18,27 @@
    node-id is the node's unique numeric :id used to look up the source server-side."
   [source node-id]
   (if (trace/parse-source source)
-    [:a.text-xs.text-blue-500.ml-auto.flex-shrink-0.font-mono.hover:text-blue-700.hover:underline
+    [:a.text-xs.text-info.ml-auto.flex-shrink-0.font-mono.hover:underline
      {:href (str "/action/source/" node-id)
       :target "_blank"
       :title source
       :data-on:mouseenter__debounce_400ms (str "showSourcePreview(el,'" node-id "')")
       :data-on:mouseleave "hideSourcePreview()"}
      source]
-    [:span.text-xs.text-gray-400.ml-auto.flex-shrink-0.font-mono
+    [:span.text-xs.text-base-content.opacity-50.ml-auto.flex-shrink-0.font-mono
      source]))
 
 (def ^:private type->badge-class
-  {:enter "bg-blue-100 text-blue-800"
-   :query "bg-purple-100 text-purple-800"
-   :found "bg-green-100 text-green-800"
-   :now "bg-amber-100 text-amber-800"})
+  {:enter "bg-info/20 text-info"
+   :query "bg-secondary/20 text-secondary"
+   :found "bg-success/20 text-success"
+   :now   "bg-warning/20 text-warning"})
 
 (def ^:private type->label
   {:enter "ENTER"
    :query "QUERY"
    :found "FOUND"
-   :now "NOW"})
+   :now   "NOW"})
 
 (defn- render-node
   "Renders a single trace tree node and its visible children.
@@ -49,13 +49,13 @@
         has-children? (seq children)
         scroll-to? (= id scroll-to-id)]
     [:div.ml-4 {:key id}
-     [:div.flex.items-center.gap-1.py-0.5.group.hover:bg-gray-50.rounded
+     [:div.flex.items-center.gap-1.py-0.5.group.hover:bg-base-200.rounded
       (cond-> {}
-        match? (assoc :class "bg-yellow-100")
+        match? (assoc :class "bg-warning opacity-30")
         scroll-to? (assoc :data-init "el.scrollIntoView({block:'center',behavior:'smooth'})"))
       ;; Expand/collapse toggle
       (if has-children?
-        [:button.w-5.h-5.flex.items-center.justify-center.text-gray-400.hover:text-gray-700.rounded.cursor-pointer.flex-shrink-0
+        [:button.w-5.h-5.flex.items-center.justify-center.text-base-content.opacity-40.hover:opacity-100.rounded.cursor-pointer.flex-shrink-0
          {:type "button"
           :data-on:click (h/action
                           (swap! cursor update-in [:trace :nodes] trace/toggle-expanded id))}
@@ -129,9 +129,9 @@
         :data-on:click (h/action
                         (swap! cursor update-in [:trace :nodes] trace/collapse-all))}
        "Collapse All"]
-      [:span.text-xs.text-gray-400.ml-auto
+      [:span.text-xs.text-base-content.opacity-50.ml-auto
        (str node-count " nodes")]]
      ;; Tree view (scrollable)
-     [:div.flex-1.overflow-y-auto.border.rounded.p-2.bg-white
+     [:div.flex-1.overflow-y-auto.border.border-base-200.rounded.p-2.bg-base-100
       (for [child-id (:children root)]
         (render-node display-nodes cursor child-id (:scroll-to trace-state)))])))

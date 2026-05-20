@@ -43,7 +43,11 @@
     (loop []
       ;; Only read as much as is ready, so that we don't block at a bad time. We need to read
       ;; up to the prompt (which will not have a trailing new line). Reading past the prompt will block.
-      (let [n-read (.read r buffer 0 buffer-size)]
+      (let [n-read (try
+                     (.read r buffer 0 buffer-size)
+                     (catch java.io.IOException _
+                       ;; PTY closed or bad fd after process kill — treat as EOF
+                       -1))]
         (if (neg? n-read)
           ;; Process died, pipe closed -- this can happen when there are errors in
           ;; the source code.  Provide as much as was read:

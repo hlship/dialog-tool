@@ -19,6 +19,8 @@
    :children {}
    ;; knot-id -> knot-id (selected child)
    :selected {}
+   ;; UI: the currently highlighted knot (not persisted to file)
+   :active-knot-id 0
    ;; knot-id -> status (just for knot)
    :status {0 :new}
    ;; knot-id -> status (derived from children of knot)

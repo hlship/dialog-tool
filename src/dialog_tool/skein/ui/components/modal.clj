@@ -9,7 +9,7 @@
    - :label - Button text (default: 'Cancel')
    - :cursor - The session cursor (required for dismissal)"
   [{:keys [label cursor] :or {label "Cancel"}}]
-  [:button.btn
+  [:button.btn.btn-neutral
    {:type "button"
     :data-on:click__stop (h/action (swap! cursor dissoc :modal))}
    label])
@@ -40,7 +40,7 @@
    content]
   [:div#modal-container
    {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
-   [:div.bg-white.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
+   [:div.bg-base-100.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
     {:data-on:click__stop "return"
      :data-on:keydown (h/action
                        (when (= $key "Escape")
@@ -48,12 +48,12 @@
      :tabindex "-1"
      :data-init "el.focus()"}
     ;; Header
-    [:div.px-6.py-4.border-b.border-gray-200
-     [:h3.text-lg.font-medium.text-gray-900 title]]
+    [:div.px-6.py-4.border-b.border-base-200
+     [:h3.text-lg.font-medium.text-base-content title]]
     ;; Error message (if present)
     (when error
       [:div.px-6.pt-4
-       [:div.bg-red-50.border.border-red-200.text-red-800.px-4.py-3.rounded
+       [:div.alert.alert-error.text-sm
         [:p.text-sm error]]])
     ;; Body
     [:div.px-6.py-4

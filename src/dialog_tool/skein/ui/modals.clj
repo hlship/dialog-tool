@@ -64,14 +64,14 @@
            (h/action
              (do-edit-command cursor id (get $form-data "command")))}
     [:div.mb-4
-     [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-command-input"}
+     [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "edit-command-input"}
       "Command:"]
      [:input#edit-command-input
       {:type "text"
        :name "command"
        :value (or command "")
        :data-init "el.select()"
-       :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+       :class "w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"}]]
     [:div.flex.justify-end.gap-2
      (modal/cancel-button {:cursor cursor})
      (modal/ok-button {})]]))
@@ -95,14 +95,14 @@
                   operation-error      (swap! cursor assoc :modal {:type :insert-parent :knot-id id :error operation-error})
                   :else                (swap! cursor dissoc :modal)))))}
     [:div.mb-4
-     [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "insert-parent-input"}
+     [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "insert-parent-input"}
       "Command:"]
      [:input#insert-parent-input
       {:type "text"
        :name "command"
        :value (or command "")
        :data-init "el.select()"
-       :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+       :class "w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"}]]
     [:div.flex.justify-end.gap-2
      (modal/cancel-button {:cursor cursor})
      (modal/ok-button {})]]))
@@ -131,21 +131,21 @@
                   (swap! cursor session/label id lbl locked?)
                   (swap! cursor dissoc :modal)))))}
     [:div.mb-4
-     [:label.block.text-sm.font-medium.text-gray-700.mb-2 {:for "edit-label-input"}
+     [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "edit-label-input"}
       "Label:"]
      [:input#edit-label-input
       {:type "text"
        :name "label"
        :value (or label "")
        :data-init "el.select()"
-       :class "w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"}]]
+       :class "w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"}]]
     [:div.mb-4.flex.items-center.gap-2
      [:input#edit-locked-input
       {:type "checkbox"
        :name "locked"
        :checked locked
        :class "checkbox"}]
-     [:label.text-sm.font-medium.text-gray-700 {:for "edit-locked-input"}
+     [:label.text-sm.font-medium.text-base-content {:for "edit-locked-input"}
       "Locked (prevent deletion)"]]
     [:div.flex.justify-end.gap-2
      (modal/cancel-button {:cursor cursor})
@@ -158,17 +158,17 @@
   (modal/modal
    {:title operation
     :buttons (list
-              [:button.btn
+              [:button.btn.btn-neutral
                {:type "button"
                 :data-on:click__stop (h/action
                                       (swap! *app-state assoc-in [:global :progress :continue] false))}
                "Cancel"])}
    [:div
     [:div {:class "flex justify-between mb-2"}
-     [:span {:class "text-sm font-medium text-gray-700"}
+     [:span {:class "text-sm font-medium text-base-content"}
       (str current "/" total)]
      (when label
-       [:span {:class "text-sm text-gray-600"} label])]
+       [:span.text-sm.text-base-content.opacity-70 label])]
     ;; Progress bar
     [:progress.progress.progress-primary.w-full
      {:value current :max total}]]))
@@ -193,7 +193,7 @@
     :cursor cursor
     :buttons nil}
    [:div
-    [:p.text-sm.text-gray-700.mb-4
+    [:p.text-sm.text-base-content.mb-4
      "You have unsaved changes. What would you like to do?"]
     [:div.flex.flex-col.gap-2
      [:button.btn.btn-primary
@@ -224,5 +224,5 @@
     [:div.flex.justify-end.pt-4.flex-shrink-0
      (modal/cancel-button {:cursor cursor :label "Close"})]
     ;; Hidden popup for source preview on hover (positioned by JS)
-    [:div#source-preview-popup.hidden.fixed.z-50.bg-white.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
+    [:div#source-preview-popup.hidden.fixed.z-50.bg-white.text-black.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
      {:class "max-w-[80vw]"}]]))
