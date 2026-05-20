@@ -84,6 +84,13 @@
         "el.focus({preventScroll:true});"
         "}")))
 
+(defn- focus-if-leaf!
+  "Focuses the command input if knot-id is the leaf of the selected path
+  (i.e. has no selected child)."
+  [cursor knot-id]
+  (when (nil? (get-in @cursor [:tree :selected knot-id]))
+    (reset-and-focus-command-input!)))
+
 (defn- jump-to-status!
   [cursor status]
   (let [session @cursor
@@ -215,7 +222,8 @@
                           (for [{:keys [id label]} labeled-knots]
                             (dropdown/button {:data-on:click (h/action
                                                               (swap! cursor session/select-knot id)
-                                                              (swap! cursor session/set-active-knot id))}
+                                                              (swap! cursor session/set-active-knot id)
+                                                              (focus-if-leaf! cursor id))}
                                              label)))
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click "@post('/action/replay-all')"
@@ -370,16 +378,18 @@
         parent-id (:parent-id knot)
         child-id (get-in tree [:selected id])
         no-child? (nil? child-id)
-        ]
+        leaf-knot-id (:id (last (tree/selected-knots tree)))]
     [:div {:class (classes "bg-white text-gray-500 border-gray-200"
                            "px-2 sm:px-4 py-1"
                            "w-full border-b")}
      [:div.mx-auto.container.flex.items-center.gap-1
       ;; Navigation — left-aligned
       (toolbar-btn {:data-tip "First Knot"
-                    :data-on:click (h/action
-                                    (effects/execute-script!
-                                     "window.scrollTo({top:0,behavior:'smooth'})"))}
+                    :disabled root?
+                    :data-on:click (when-not root?
+                                     (h/action
+                                      (swap! cursor session/set-active-knot 0)
+                                      (scroll-knot-into-view! 0)))}
                    "icon-scroll-top")
       (toolbar-btn {:disabled root?
                     :data-tip "Parent knot"
@@ -395,12 +405,15 @@
                     :data-on:click (when-not no-child?
                                      (h/action
                                       (swap! cursor session/set-active-knot child-id)
-                                      (scroll-knot-into-view! child-id)))}
+                                      (scroll-knot-into-view! child-id)
+                                      (focus-if-leaf! cursor child-id)))}
                    "icon-arrow-down")
       (toolbar-btn {:data-tip "Last Knot"
-                    :data-on:click (h/action
-                                    (effects/execute-script!
-                                     "window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})"))}
+                    :disabled (= id leaf-knot-id)
+                    :data-on:click (when-not (= id leaf-knot-id)
+                                     (h/action
+                                      (swap! cursor session/set-active-knot leaf-knot-id)
+                                      (focus-if-leaf! cursor leaf-knot-id)))}
                    "icon-scroll-bottom")
       ;; Spacer pushes operations to the right
       [:div.grow]
