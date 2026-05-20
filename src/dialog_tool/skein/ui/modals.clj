@@ -158,7 +158,7 @@
   (modal/modal
    {:title operation
     :buttons (list
-              [:button.btn
+              [:button.btn.btn-neutral
                {:type "button"
                 :data-on:click__stop (h/action
                                       (swap! *app-state assoc-in [:global :progress :continue] false))}
@@ -224,5 +224,5 @@
     [:div.flex.justify-end.pt-4.flex-shrink-0
      (modal/cancel-button {:cursor cursor :label "Close"})]
     ;; Hidden popup for source preview on hover (positioned by JS)
-    [:div#source-preview-popup.hidden.fixed.z-50.bg-base-100.border.border-base-200.rounded-lg.shadow-xl.overflow-hidden
+    [:div#source-preview-popup.hidden.fixed.z-50.bg-white.text-black.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
      {:class "max-w-[80vw]"}]]))

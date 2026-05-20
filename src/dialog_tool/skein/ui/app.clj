@@ -319,7 +319,7 @@
   (let [children (tree/children tree knot)
         {:keys [descendant-status]} knot]
     [:div.indicator
-     (dropdown/dropdown {:button-class (str "btn py-0 px-2 " (status->button-class descendant-status))
+     (dropdown/dropdown {:button-class (str "btn py-0 px-2 " (or (status->button-class descendant-status) "btn-neutral"))
                          :disabled (< (count children) 2)
                          :label [:div.icon.icon-children]}
                         (map (fn [{:keys [id label command]}]
@@ -333,7 +333,7 @@
        [:div
         {:class (classes
                  "indicator-item indicator-top indicator-right"
-                 "rounded-full text-sm border-2 bg-base-300 border-base-100"
+                 "rounded-full text-sm border-2 bg-gray-500 border-base-100 text-white"
                  "flex items-center justify-center"
                  "w-8 h-8")}
         (count children)])]))
@@ -349,20 +349,19 @@
      [:div.w-5.shrink-0.flex.items-start.justify-center.pt-2
       (when active?
         [:div.icon.icon-arrow-right {:title "Selected"}])]
-     [:div.border-x-4.grow
-      {:class (classes border-class (if active? "bg-warning opacity-30" "bg-base-100"))
-                   :data-on:click (h/action
-                                   (swap! cursor session/set-active-knot id)
-                                   (focus-if-leaf! cursor id))
-                   :style "cursor: pointer"}
-      [:div.w-full.whitespace-pre-wrap.break-words.p-2
+     [:div.border-x-8.grow
+      {:class (classes border-class (when active? "border-l-primary"))
+       :data-on:click (h/action
+                       (swap! cursor session/set-active-knot id)
+                       (focus-if-leaf! cursor id))
+       :style "cursor: pointer"}
+      [:div.w-full.whitespace-pre-wrap.break-words.p-2.bg-base-100
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
-       [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-24.rounded-bl-lg.pl-2.pb-1
-        {:class (if active? "bg-warning opacity-30" "bg-base-100")}
+       [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-24.rounded-bl-lg.pl-2.pb-1.bg-base-100
         (when locked
           [:div.icon.icon-lock {:title "Locked"}])
-               (when label
-                 [:span.font-bold.bg-base-200.p-1.rounded-md label])
+                               (when label
+                                 [:span.font-bold.bg-neutral.text-neutral-content.p-1.rounded-md label])
         (render-children-navigation cursor tree knot)]
        (render-diff response unblessed)
        [:hr.clear-right.text-base-300]
@@ -544,7 +543,7 @@
        :role "button"}
       [:div.icon.icon-globe]]
 
-     [:div.rounded-box.bg-primary-content.flex.flex-col.items-start
+     [:div.rounded-box.bg-base-100.border.border-base-200.flex.flex-col.items-start
       [:label.label.p-2
        [:input.toggle {:type "checkbox"
                        :checked fixed-width?

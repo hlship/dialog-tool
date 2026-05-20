@@ -9,7 +9,7 @@
    - :label - Button text (default: 'Cancel')
    - :cursor - The session cursor (required for dismissal)"
   [{:keys [label cursor] :or {label "Cancel"}}]
-  [:button.btn
+  [:button.btn.btn-neutral
    {:type "button"
     :data-on:click__stop (h/action (swap! cursor dissoc :modal))}
    label])
