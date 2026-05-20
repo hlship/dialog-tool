@@ -402,6 +402,7 @@
       ;; Navigation — left-aligned
       (toolbar-btn {:data-tip "First Knot"
                     :disabled root?
+                    :data-accel__shift "ArrowUp"
                     :data-on:click (when-not root?
                                      (h/action
                                       (swap! cursor session/set-active-knot 0)
@@ -426,6 +427,7 @@
                    "icon-arrow-down")
       (toolbar-btn {:data-tip "Last Knot"
                     :disabled (= id leaf-knot-id)
+                    :data-accel__shift "ArrowDown"
                     :data-on:click (when-not (= id leaf-knot-id)
                                      (h/action
                                       (swap! cursor session/set-active-knot leaf-knot-id)
