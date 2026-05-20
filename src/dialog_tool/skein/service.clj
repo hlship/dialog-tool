@@ -90,6 +90,7 @@
         session' (assoc session
                         :development-mode? development-mode?
                         :debug-enabled? (= engine' :dgdebug)
+                        :loading? (nil? tree)
                         :replay-on-launch? true)
         shutdown-fn (fn []
                       (h/stop! @*stop-server)

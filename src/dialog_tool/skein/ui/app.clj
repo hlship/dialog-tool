@@ -195,8 +195,12 @@
                            (map-indexed vector leaf-knots))]
       ;;  Dismiss the progress dialog
       (reset-session! *app-state
-                      (complete-session-operation session'
-                                                  (if (cancelled?) "Replay cancelled" "Replay complete")))
+                      (-> session'
+                          (complete-session-operation (cond
+                                                  (cancelled?)        "Replay cancelled"
+                                                  (:loading? session') nil
+                                                  :else               "Replay complete"))
+                          (dissoc :loading?)))
       (set-progress! *app-state nil)))
   {:status 200})
 
@@ -604,7 +608,7 @@
   (let [cursor (h/global-cursor :session)
         *app-state (:hyper/app-state req)
         session @cursor
-        {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch?]} session]
+        {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
 
     (swap! cursor dissoc :replay-on-launch?)
 
@@ -628,13 +632,19 @@
           (render-operations-toolbar cursor session)]
          ;; mt-24 clears the combined height of both fixed toolbars
          [:div.container.mx-lg.mx-auto.mt-24
-          (map (fn [knot]
-                 (render-knot cursor tree knot {:debug-enabled? debug-enabled?
-                                                :show-dynamic? show-dynamic?
-                                                :fixed-width? fixed-width?
-                                                :active-knot-id active-knot-id}))
-               knots)
-          (new-command/new-command-input cursor (:id leaf-knot))]
+          (if loading?
+            ;; New skein: process hasn't started yet — show a placeholder until
+            ;; replay-on-launch fires and replay-all! clears the :loading? flag.
+            [:div.flex.items-center.justify-center.py-16
+             [:span.loading.loading-spinner.loading-lg.text-primary]]
+            (list
+             (map (fn [knot]
+                    (render-knot cursor tree knot {:debug-enabled? debug-enabled?
+                                                   :show-dynamic? show-dynamic?
+                                                   :fixed-width? fixed-width?
+                                                   :active-knot-id active-knot-id}))
+                  knots)
+             (new-command/new-command-input cursor (:id leaf-knot))))]
          ;; Modal overlay
          (render-modal cursor session *app-state)
          ;; FAB for settings

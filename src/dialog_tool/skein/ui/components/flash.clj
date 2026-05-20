@@ -20,7 +20,7 @@
                                  flash)
         error? (= type :error)
         id     (str "flash-" (random-uuid))
-        remove-script (str "document.getElementById('" id "').parentElement.remove()")]
+        remove-script (str "document.getElementById('" id "')?.parentElement?.remove()")]
       [:div {:class "fixed top-20 left-1/2 -translate-x-1/2 z-50"
              :style {:pointer-events (if error? "auto" "none")}
              :data-ignore-morph true}
