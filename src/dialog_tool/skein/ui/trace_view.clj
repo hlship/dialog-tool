@@ -22,8 +22,8 @@
      {:href (str "/action/source/" node-id)
       :target "_blank"
       :title source
-      :data-on:mouseenter__debounce_400ms (str "showSourcePreview(el,'" node-id "')")
-      :data-on:mouseleave "hideSourcePreview()"}
+      :data-on:mouseenter__debounce_400ms (str "sk.showSourcePreview(el,'" node-id "')")
+      :data-on:mouseleave "sk.hideSourcePreview()"}
      source]
     [:span.text-xs.text-base-content.opacity-50.ml-auto.flex-shrink-0.font-mono
      source]))

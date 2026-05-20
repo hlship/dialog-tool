@@ -22,7 +22,7 @@
       {:id id
        :popover "auto"
        :class "shadow-xl/30 max-h-[30rem]"
-       :data-on:toggle "positionDropdown(el, evt)"
+       :data-on:toggle "sk.positionDropdown(el, evt)"
        :data-on:click "el.hidePopover()"}
       items]]))
 

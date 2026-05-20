@@ -69,20 +69,12 @@
 (defn- scroll-knot-into-view!
   "Emits a JS effect that smoothly scrolls the given knot into view."
   [knot-id]
-  (effects/execute-script!
-   (str "document.getElementById('knot-" knot-id "')?.scrollIntoView({block:'nearest',behavior:'smooth'})")))
+  (effects/execute-script! (str "sk.scrollKnotIntoView('" knot-id "')")))
 
 (defn- reset-and-focus-command-input!
   "Clears the command input, scrolls it into view, and focuses it."
   []
-  (effects/execute-script!
-   (str "var el=document.getElementById('new-command-input');"
-        "if(el){"
-        "el.value='';"
-        "el.dispatchEvent(new Event('input',{bubbles:true}));"
-        "el.scrollIntoView({block:'nearest',behavior:'smooth'});"
-        "el.focus({preventScroll:true});"
-        "}")))
+  (effects/execute-script! "sk.resetAndFocusCommandInput()"))
 
 (defn- focus-if-leaf!
   "Focuses the command input if knot-id is the leaf of the selected path

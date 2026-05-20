@@ -15,15 +15,7 @@
                           (session/command! parent-knot-id normalized)
                           common/maybe-apply-source-error))))))
 
-(def ^:private reset-and-focus-script
-  "Clears the command input, scrolls it into view, and focuses it."
-  (str "var el=document.getElementById('new-command-input');"
-       "if(el){"
-       "el.value='';"
-       "el.dispatchEvent(new Event('input',{bubbles:true}));"
-       "el.scrollIntoView({block:'nearest',behavior:'smooth'});"
-       "el.focus({preventScroll:true});"
-       "}"))
+
 
 (defn new-command-input
   "Renders an input field for entering new commands.
@@ -42,4 +34,4 @@
         :data-bind   (:name command-signal)
         :data-on:change (h/action
                          (process-new-command cursor parent-knot-id $value)
-                         (effects/execute-script! reset-and-focus-script))}]]]))
+                         (effects/execute-script! "sk.resetAndFocusCommandInput()"))}]]]))

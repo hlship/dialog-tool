@@ -166,14 +166,25 @@ html {
   -webkit-mask-image: url('/icons/bug-ant-solid.svg');
 }
 
-/* Tooltips: white background with black text for legibility in all themes */
-.tooltip {
-  --tt-bg: white;
+/* Tooltips: high-contrast colours that flip with the OS colour scheme */
+@media (prefers-color-scheme: light) {
+  .tooltip {
+    --tt-bg: black;
+  }
+  .tooltip[data-tip]::before,
+  .tooltip > .tooltip-content {
+    color: white;
+  }
 }
 
-.tooltip[data-tip]::before,
-.tooltip > .tooltip-content {
-  color: black;
+@media (prefers-color-scheme: dark) {
+  .tooltip {
+    --tt-bg: white;
+  }
+  .tooltip[data-tip]::before,
+  .tooltip > .tooltip-content {
+    color: black;
+  }
 }
 
 /* ANSI SGR styling classes for blessed output */
