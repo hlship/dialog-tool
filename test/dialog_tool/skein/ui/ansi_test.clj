@@ -13,6 +13,7 @@
 (def BOLD (sgr 1))
 (def ITALIC (sgr 3))
 (def UNDERLINE (sgr 4))
+(def MONO (sgr 50))
 (def RED (sgr 31))
 (def BLUE (sgr 34))
 
@@ -61,6 +62,14 @@
   (testing "CSI 1;34 m sets bold+blue in one sequence"
     (is (= [[:span {:class "ansi-bold ansi-blue"} "both"]]
            (ansi->hiccup (str ESC "[1;34m" "both"))))))
+
+(deftest hiccup-mono
+  (is (= [[:span {:class "ansi-mono"} "output"]]
+         (ansi->hiccup (str MONO "output")))))
+
+(deftest hiccup-mono-and-bold
+  (is (= [[:span {:class "ansi-bold ansi-mono"} "output"]]
+         (ansi->hiccup (str BOLD MONO "output")))))
 
 (deftest hiccup-bare-esc-bracket-m-is-reset
   (testing "ESC[m with no params is treated as reset"
@@ -114,6 +123,14 @@
   (testing "CSI 1;31 m emits both markers"
     (is (= "[B][RED]alert[/RED][/B]"
            (ansi->markers (str ESC "[1;31m" "alert" RESET))))))
+
+(deftest markers-mono
+  (is (= "[MONO]output[/MONO]"
+         (ansi->markers (str MONO "output" RESET)))))
+
+(deftest markers-mono-unclosed
+  (is (= "[MONO]output[/MONO]"
+         (ansi->markers (str MONO "output")))))
 
 (deftest markers-unrecognized-sgr-code
   (testing "unrecognized SGR codes are represented as [?] / [/?]"

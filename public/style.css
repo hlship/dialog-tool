@@ -232,6 +232,10 @@ html {
   color: #aaaaaa;
 }
 
+.ansi-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 /* Dialog source syntax highlighting classes */
 .dg-comment {
   color: #6b7280;
