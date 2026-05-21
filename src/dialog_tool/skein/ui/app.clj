@@ -1,6 +1,7 @@
 (ns dialog-tool.skein.ui.app
   (:require [clojure.string :as string]
             [dialog-tool.skein.dynamic :as dynamic]
+            [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.tree :as tree]
@@ -194,6 +195,75 @@
                           (dissoc :loading?)))
       (set-progress! *app-state nil)))
   {:status 200})
+
+(defn- dismiss-search!
+  "Clears the search results from the session and resets the search input."
+  [cursor]
+  (swap! cursor dissoc :search)
+  (effects/execute-script! "document.getElementById('search-input').value = ''"))
+
+(def ^:private result-key-handler
+  "Client-side JS for arrow-key navigation between search result buttons.
+  ArrowDown/Up move focus between results (or back to the input);
+  Escape returns focus to the search input."
+  (str "if(evt.key==='ArrowDown'){evt.preventDefault();"
+       "el.closest('li').nextElementSibling?.querySelector('button')?.focus()}"
+       "else if(evt.key==='ArrowUp'){evt.preventDefault();"
+       "const prev=el.closest('li').previousElementSibling;"
+       "if(prev){prev.querySelector('button').focus()}"
+       "else{document.getElementById('search-input').focus()}}"
+       "else if(evt.key==='Escape'){"
+       "document.getElementById('search-input').focus()}"))
+
+(defn- render-search
+  "Renders the knot search input and results dropdown in the operations toolbar."
+  [cursor session]
+  (let [search-signal (h/local-signal :search-query "")]
+    [:div.relative
+     [:input#search-input
+      {:type "text"
+       :placeholder "Search knots…"
+       :autocomplete "off"
+       :class "input input-sm input-bordered w-48"
+       :data-bind (:name search-signal)
+       :data-on:input
+       (h/action
+         (let [q (string/trim (str $value))]
+           (if (string/blank? q)
+             (swap! cursor dissoc :search)
+             (swap! cursor assoc :search
+                    {:query q
+                     :results (search/search-knots (:tree @cursor) q 50)}))))
+       :data-on:keydown
+       (h/action
+         (case $key
+           "Escape" (dismiss-search! cursor)
+           "ArrowDown" (effects/execute-script!
+                         "document.querySelector('#search-results button')?.focus()")
+           nil))}]
+     (when-let [{:keys [results query]} (:search session)]
+       (when (seq results)
+         [:ul#search-results.absolute.z-50.menu.flex-col.bg-base-100.rounded-box.shadow-xl.p-2.overflow-y-auto.mt-1.flex-nowrap
+          {:class "max-h-[30rem] w-[36rem]"
+           :style "top: 100%; left: 0;"}
+          (for [{:keys [knot-id command snippet label]} results]
+            [:li
+             [:button.w-full.text-left
+              {:type "button"
+               :data-on:keydown result-key-handler
+               :data-on:click
+               (h/action
+                 (dismiss-search! cursor)
+                 (swap! cursor session/select-knot knot-id)
+                 (swap! cursor session/set-active-knot knot-id)
+                 (scroll-knot-into-view! knot-id))}
+              [:div.flex.flex-col.items-start.gap-0.5
+               [:span.font-bold.text-sm (str "> " command)]
+               (when-not (string/blank? label)
+                 [:span.badge.badge-sm.badge-neutral label])
+               (when-not (string/blank? snippet)
+                 [:div.text-xs.opacity-70.whitespace-pre-line.line-clamp-5
+                  (search/highlight-snippet snippet query)])]]])]))]))
 
 (defn navbar
   [cursor session *app-state]
@@ -428,8 +498,9 @@
                                       (swap! cursor session/set-active-knot leaf-knot-id)
                                       (focus-if-leaf! cursor leaf-knot-id)))}
                    "icon-scroll-bottom")
-      ;; Spacer pushes operations to the right
-      [:div.grow]
+      ;; Search — fills the space between navigation and operations
+      [:div.grow.flex.justify-center
+       (render-search cursor session)]
       ;; Operations — right-aligned
       (toolbar-btn {:disabled ok?
                     :data-tip "Bless"

@@ -4,6 +4,7 @@
   (:require [babashka.fs :as fs]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
+            [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.ui.app :as ui.app]
@@ -95,6 +96,7 @@
         shutdown-fn (fn []
                       (h/stop! @*stop-server)
                       (sk.process/kill! (get-in @*app [:global :session :process]))
+                      (search/close!)
 
                       (println "Shut down")
 
