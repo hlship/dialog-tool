@@ -53,14 +53,15 @@
 
 (defn- apply-sgr
   "Applies SGR codes to the current effects map.
-   Effects map: {:bold bool, :italic bool, :underline bool, :color \"name\" or nil}"
+   Effects map: {:bold bool, :italic bool, :underline bool, :mono bool, :color \"name\" or nil}"
   [effects codes]
   (reduce (fn [eff code]
             (cond
-              (= code 0) {}
-              (= code 1) (assoc eff :bold true)
-              (= code 3) (assoc eff :italic true)
-              (= code 4) (assoc eff :underline true)
+              (= code 0)  {}
+              (= code 1)  (assoc eff :bold true)
+              (= code 3)  (assoc eff :italic true)
+              (= code 4)  (assoc eff :underline true)
+              (= code 50) (assoc eff :mono true)
               (color-codes code) (assoc eff :color (color-names code))
               :else eff))
           effects
@@ -68,12 +69,13 @@
 
 (defn- effects->css-classes
   "Converts an effects map to a CSS class string."
-  [{:keys [bold italic underline color]}]
+  [{:keys [bold italic underline mono color]}]
   (let [classes (cond-> []
-                  bold (conj "ansi-bold")
-                  italic (conj "ansi-italic")
+                  bold      (conj "ansi-bold")
+                  italic    (conj "ansi-italic")
                   underline (conj "ansi-underline")
-                  color (conj (str "ansi-" color)))]
+                  mono      (conj "ansi-mono")
+                  color     (conj (str "ansi-" color)))]
     (when (seq classes)
       (string/join " " classes))))
 
@@ -107,24 +109,26 @@
   "Returns the opening pseudo-marker for an SGR code, or nil for reset (0)."
   [code]
   (cond
-    (= code 0) nil
-    (= code 1) "[B]"
-    (= code 3) "[I]"
-    (= code 4) "[U]"
+    (= code 0)  nil
+    (= code 1)  "[B]"
+    (= code 3)  "[I]"
+    (= code 4)  "[U]"
+    (= code 50) "[MONO]"
     (color-codes code) (str "[" (string/upper-case (color-names code)) "]")
     :else "[?]"))
 
 (defn- closing-markers
   "Returns closing pseudo-markers for all active effects (in reverse order).
-   Effects map: {:bold bool, :italic bool, :underline bool, :color \"name\", :unknown int}"
-  [{:keys [bold italic underline color unknown]}]
-  ;; Close in reverse order: unknown, color, underline, italic, bold
+   Effects map: {:bold bool, :italic bool, :underline bool, :mono bool, :color \"name\", :unknown int}"
+  [{:keys [bold italic underline mono color unknown]}]
+  ;; Close in reverse order: unknown, color, mono, underline, italic, bold
   (cond-> []
     (pos-int? unknown) (into (repeat unknown "[/?]"))
-    color (conj (str "[/" (string/upper-case color) "]"))
+    color     (conj (str "[/" (string/upper-case color) "]"))
+    mono      (conj "[/MONO]")
     underline (conj "[/U]")
-    italic (conj "[/I]")
-    bold (conj "[/B]")))
+    italic    (conj "[/I]")
+    bold      (conj "[/B]")))
 
 (defn ansi->markers
   "Converts text with ANSI SGR escape codes to plain text with visible pseudo-markers.
@@ -153,9 +157,10 @@
                                                  (when-let [m (opening-marker code)]
                                                    (.append sb m))
                                                  (cond
-                                                   (= code 1) (assoc eff :bold true)
-                                                   (= code 3) (assoc eff :italic true)
-                                                   (= code 4) (assoc eff :underline true)
+                                                   (= code 1)  (assoc eff :bold true)
+                                                   (= code 3)  (assoc eff :italic true)
+                                                   (= code 4)  (assoc eff :underline true)
+                                                   (= code 50) (assoc eff :mono true)
                                                    (color-codes code) (assoc eff :color (color-names code))
                                                    :else (update eff :unknown (fnil inc 0))))
                                                effects

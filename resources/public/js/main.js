@@ -3,39 +3,188 @@
 import { attribute } from './datastar.js';
 import { computePosition, flip, shift, autoUpdate } from './floating-ui-dom.js';
 
-window.positionDropdown = function(menu, evt) {
-  // Clean up any previous autoUpdate listener
-  if (menu._floatingCleanup) {
-    menu._floatingCleanup();
-    menu._floatingCleanup = null;
-  }
+// All functions called from server-rendered Datastar attribute strings live here.
+window.sk = {
 
-  if (evt.newState !== 'open') {
-    // Remove positioned so next open starts hidden (prevents flash)
-    menu.classList.remove('positioned');
-    return;
-  }
+  positionDropdown(menu, evt) {
+    // Clean up any previous autoUpdate listener
+    if (menu._floatingCleanup) {
+      menu._floatingCleanup();
+      menu._floatingCleanup = null;
+    }
 
-  const btn = menu.previousElementSibling;
+    if (evt.newState !== 'open') {
+      // Remove positioned so next open starts hidden (prevents flash)
+      menu.classList.remove('positioned');
+      return;
+    }
 
-  // autoUpdate calls our callback immediately and again on scroll/resize,
-  // keeping the menu anchored to the button.
-  menu._floatingCleanup = autoUpdate(btn, menu, () => {
-    computePosition(btn, menu, {
-      placement: 'left-start',
-      strategy: 'fixed',
-      middleware: [flip(), shift({padding: 5})]
-    }).then(({x, y}) => {
-      Object.assign(menu.style, {
-        position: 'fixed',
-        margin: '0',
-        left: x + 'px',
-        top: y + 'px'
+    const btn = menu.previousElementSibling;
+
+    // autoUpdate calls our callback immediately and again on scroll/resize,
+    // keeping the menu anchored to the button.
+    menu._floatingCleanup = autoUpdate(btn, menu, () => {
+      computePosition(btn, menu, {
+        placement: 'left-start',
+        strategy: 'fixed',
+        middleware: [flip(), shift({padding: 5})]
+      }).then(({x, y}) => {
+        Object.assign(menu.style, {
+          position: 'fixed',
+          margin: '0',
+          left: x + 'px',
+          top: y + 'px'
+        });
+        menu.classList.add('positioned');
       });
-      menu.classList.add('positioned');
     });
-  });
-}
+  },
+
+  // --- Flash messages ---
+  // Managed entirely in JS so they survive Datastar DOM morphs.
+
+  _flashEl: null,
+  _flashTimer: null,
+
+  _dismissFlash() {
+    if (this._flashTimer) {
+      clearTimeout(this._flashTimer);
+      this._flashTimer = null;
+    }
+    if (this._flashEl) {
+      this._flashEl.remove();
+      this._flashEl = null;
+    }
+  },
+
+  showFlash(message, type = 'info') {
+    const isError = type === 'error';
+    this._dismissFlash();
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-50';
+    wrapper.style.pointerEvents = isError ? 'auto' : 'none';
+
+    const inner = document.createElement('div');
+    inner.className = isError
+      ? 'flex items-center gap-3 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg'
+      : 'bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500';
+    if (!isError) inner.style.opacity = '0';
+
+    const msg = document.createElement('span');
+    msg.textContent = message;
+    inner.appendChild(msg);
+
+    if (isError) {
+      inner.setAttribute('tabindex', '-1');
+      inner.addEventListener('keydown', (e) => { if (e.key === 'Escape') this._dismissFlash(); });
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ml-2 opacity-80 hover:opacity-100 text-lg font-bold cursor-pointer';
+      btn.textContent = '✕';
+      btn.addEventListener('click', () => this._dismissFlash());
+      inner.appendChild(btn);
+    }
+
+    wrapper.appendChild(inner);
+    document.body.appendChild(wrapper);
+    this._flashEl = wrapper;
+
+    if (isError) {
+      inner.focus();
+    } else {
+      requestAnimationFrame(() => {
+        inner.style.opacity = '1';
+        this._flashTimer = setTimeout(() => {
+          inner.style.opacity = '0';
+          this._flashTimer = setTimeout(() => this._dismissFlash(), 600);
+        }, 2000);
+      });
+    }
+  },
+
+  // --- DOM helpers ---
+
+  scrollKnotIntoView(id) {
+    const el = document.getElementById('knot-' + id);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    if (rect.bottom > viewportHeight) {
+      // Knot is below the viewport: scroll down and peek at what follows.
+      window.scrollBy({ top: rect.bottom - viewportHeight + 80, behavior: 'smooth' });
+    } else if (rect.top < 0) {
+      // Knot is above the viewport: scroll up just enough to show it.
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    // else: already fully visible — no scroll needed.
+  },
+
+  resetAndFocusCommandInput() {
+    const el = document.getElementById('new-command-input');
+    if (el) {
+      el.value = '';
+      el.dispatchEvent(new Event('input', {bubbles: true}));
+      el.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+      el.focus({preventScroll: true});
+    }
+  },
+
+  /**
+   * Source preview popup on hover.
+   *
+   * A static #source-preview-popup element lives in index.html (initially hidden).
+   * The delay before showing is handled by Datastar's __debounce modifier on the
+   * data-on:mouseenter attribute. This JS just fetches the preview content,
+   * injects it, and positions the popup via Floating UI.
+   */
+  _previewCleanup: null,
+  _previewController: null,
+
+  async showSourcePreview(el, nodePath) {
+    this.hideSourcePreview();
+    const popup = document.getElementById('source-preview-popup');
+    if (!popup) return;
+    try {
+      this._previewController = new AbortController();
+      const resp = await fetch('/action/source-preview/' + nodePath, {
+        signal: this._previewController.signal
+      });
+      this._previewController = null;
+      if (!resp.ok) return;
+      popup.innerHTML = await resp.text();
+      popup.classList.remove('hidden');
+      this._previewCleanup = autoUpdate(el, popup, () => {
+        computePosition(el, popup, {
+          placement: 'top',
+          strategy: 'fixed',
+          middleware: [flip(), shift({ padding: 8 })]
+        }).then(({ x, y }) => {
+          Object.assign(popup.style, { left: x + 'px', top: y + 'px' });
+        });
+      });
+    } catch (e) {
+      // Aborted or network error — silently ignore
+    }
+  },
+
+  hideSourcePreview() {
+    if (this._previewController) {
+      this._previewController.abort();
+      this._previewController = null;
+    }
+    if (this._previewCleanup) {
+      this._previewCleanup();
+      this._previewCleanup = null;
+    }
+    const popup = document.getElementById('source-preview-popup');
+    if (popup) {
+      popup.classList.add('hidden');
+      popup.innerHTML = '';
+    }
+  },
+
+};
 
 /**
  * Shows a network error modal when the server is unreachable.
@@ -131,61 +280,5 @@ attribute({
     return () => window.removeEventListener('keydown', handler, true);
   }
 });
-
-/**
- * Source preview popup on hover.
- *
- * A static #source-preview-popup element lives in index.html (initially hidden).
- * The delay before showing is handled by Datastar's __debounce modifier on the
- * data-on:mouseenter attribute. This JS just fetches the preview content,
- * injects it, and positions the popup via Floating UI.
- */
-let previewCleanup = null;
-let previewController = null;
-
-window.showSourcePreview = async function(el, nodePath) {
-  hideSourcePreview();
-  const popup = document.getElementById('source-preview-popup');
-  if (!popup) return;
-  try {
-    previewController = new AbortController();
-    const resp = await fetch('/action/source-preview/' + nodePath, {
-      signal: previewController.signal
-    });
-    previewController = null;
-    if (!resp.ok) return;
-    popup.innerHTML = await resp.text();
-    popup.classList.remove('hidden');
-    previewCleanup = autoUpdate(el, popup, () => {
-      computePosition(el, popup, {
-        placement: 'top',
-        strategy: 'fixed',
-        middleware: [flip(), shift({ padding: 8 })]
-      }).then(({ x, y }) => {
-        Object.assign(popup.style, { left: x + 'px', top: y + 'px' });
-      });
-    });
-  } catch (e) {
-    // Aborted or network error — silently ignore
-  }
-};
-
-window.hideSourcePreview = function() {
-  if (previewController) {
-    previewController.abort();
-    previewController = null;
-  }
-  if (previewCleanup) {
-    previewCleanup();
-    previewCleanup = null;
-  }
-  const popup = document.getElementById('source-preview-popup');
-  if (popup) {
-    popup.classList.add('hidden');
-    popup.innerHTML = '';
-  }
-};
-
-
 
 console.log('Dialog Tool UI initialized');

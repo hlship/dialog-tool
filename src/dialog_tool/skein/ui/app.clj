@@ -7,7 +7,6 @@
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
-            [dialog-tool.skein.ui.components.flash :as flash]
             [dialog-tool.skein.ui.components.new-command :as new-command]
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.ui.modals :as modals]
@@ -69,20 +68,12 @@
 (defn- scroll-knot-into-view!
   "Emits a JS effect that smoothly scrolls the given knot into view."
   [knot-id]
-  (effects/execute-script!
-   (str "document.getElementById('knot-" knot-id "')?.scrollIntoView({block:'nearest',behavior:'smooth'})")))
+  (effects/execute-script! (str "sk.scrollKnotIntoView('" knot-id "')")))
 
 (defn- reset-and-focus-command-input!
   "Clears the command input, scrolls it into view, and focuses it."
   []
-  (effects/execute-script!
-   (str "var el=document.getElementById('new-command-input');"
-        "if(el){"
-        "el.value='';"
-        "el.dispatchEvent(new Event('input',{bubbles:true}));"
-        "el.scrollIntoView({block:'nearest',behavior:'smooth'});"
-        "el.focus({preventScroll:true});"
-        "}")))
+  (effects/execute-script! "sk.resetAndFocusCommandInput()"))
 
 (defn- focus-if-leaf!
   "Focuses the command input if knot-id is the leaf of the selected path
@@ -195,8 +186,12 @@
                            (map-indexed vector leaf-knots))]
       ;;  Dismiss the progress dialog
       (reset-session! *app-state
-                      (complete-session-operation session'
-                                                  (if (cancelled?) "Replay cancelled" "Replay complete")))
+                      (-> session'
+                          (complete-session-operation (cond
+                                                  (cancelled?)        "Replay cancelled"
+                                                  (:loading? session') nil
+                                                  :else               "Replay complete"))
+                          (dissoc :loading?)))
       (set-progress! *app-state nil)))
   {:status 200})
 
@@ -220,14 +215,14 @@
           {:class "cursor-pointer"
            :data-on:click (h/action
                             (jump-to-status! cursor :new)
-                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
+                            (navigate-to-active-knot! cursor))})
         new]
        [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg
         (when (pos? error)
           {:class "cursor-pointer"
            :data-on:click (h/action
                             (jump-to-status! cursor :error)
-                            (focus-if-leaf! cursor (get-in @cursor [:tree :active-knot-id])))})
+                            (navigate-to-active-knot! cursor))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
        (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
@@ -604,7 +599,7 @@
   (let [cursor (h/global-cursor :session)
         *app-state (:hyper/app-state req)
         session @cursor
-        {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch?]} session]
+        {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
 
     (swap! cursor dissoc :replay-on-launch?)
 
@@ -620,21 +615,35 @@
             knots (tree/selected-knots tree)
             leaf-knot (last knots)]
         [:div.relative.px-8
+         ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
+         ;; insertion. Uses a random id so each flash is a new element to the morph
+         ;; algorithm. Works in both action and cursor-change render contexts.
          (when flash
-           (flash/flash-message flash))
+           (let [{:keys [message type]} (if (string? flash)
+                                          {:message flash :type :info}
+                                          flash)]
+             [:span {:id (str "flash-trigger-" (random-uuid))
+                     :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
+                     :style "display:none"}]))
          ;; Single fixed header containing both toolbars — no gap possible between them
          [:div.fixed.top-0.start-0.w-full.z-30
           (navbar cursor session *app-state)
           (render-operations-toolbar cursor session)]
          ;; mt-24 clears the combined height of both fixed toolbars
          [:div.container.mx-lg.mx-auto.mt-24
-          (map (fn [knot]
-                 (render-knot cursor tree knot {:debug-enabled? debug-enabled?
-                                                :show-dynamic? show-dynamic?
-                                                :fixed-width? fixed-width?
-                                                :active-knot-id active-knot-id}))
-               knots)
-          (new-command/new-command-input cursor (:id leaf-knot))]
+          (if loading?
+            ;; New skein: process hasn't started yet — show a placeholder until
+            ;; replay-on-launch fires and replay-all! clears the :loading? flag.
+            [:div.flex.items-center.justify-center.py-16
+             [:span.loading.loading-spinner.loading-lg.text-primary]]
+            (list
+             (map (fn [knot]
+                    (render-knot cursor tree knot {:debug-enabled? debug-enabled?
+                                                   :show-dynamic? show-dynamic?
+                                                   :fixed-width? fixed-width?
+                                                   :active-knot-id active-knot-id}))
+                  knots)
+             (new-command/new-command-input cursor (:id leaf-knot))))]
          ;; Modal overlay
          (render-modal cursor session *app-state)
          ;; FAB for settings

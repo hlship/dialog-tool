@@ -157,8 +157,11 @@
   [*app-state {:keys [current total label operation]}]
   (modal/modal
    {:title operation
+    :on-escape (h/action
+                (when (= $key "Escape")
+                  (swap! *app-state assoc-in [:global :progress :continue] false)))
     :buttons (list
-              [:button.btn.btn-neutral
+              [:button.btn.btn-primary
                {:type "button"
                 :data-on:click__stop (h/action
                                       (swap! *app-state assoc-in [:global :progress :continue] false))}
