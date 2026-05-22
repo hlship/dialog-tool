@@ -68,31 +68,65 @@
       index
       (build-index! tree))))
 
+(defn- find-term-pos
+  "Returns the character index of the earliest occurrence of any query term
+  in lower-text, or nil if none is found."
+  [^String lower-text terms]
+  (when-let [positions (seq (keep #(string/index-of lower-text %) terms))]
+    (apply min positions)))
+
+(defn- snippet-start
+  "Walks backward from pos in text to find the snippet start index.
+  Includes at most max-lead-lines complete lines and max-lead-chars
+  characters of context before the match.
+
+  Newline counting: each \\n that is part of the lead is passed through;
+  when we land ON a \\n that would exceed the budget, we stop and return
+  the index after it (i.e. the start of the next line)."
+  [^String text ^long pos ^long max-lead-lines ^long max-lead-chars]
+  (let [min-start (max 0 (- pos max-lead-chars))]
+    (loop [i (dec pos) newlines 0]
+      (cond
+        (<= i min-start) min-start
+        :else
+        (let [ch (.charAt text i)]
+          (cond
+            (not= ch \newline)           (recur (dec i) newlines)
+            (>= newlines max-lead-lines) (inc i)
+            :else                        (recur (dec i) (inc newlines))))))))
+
 (defn- extract-snippet
-  "Extracts a text snippet around the first occurrence of any query term
-  in the response text.  Returns at most `max-len` characters centered
-  on the match, with ellipsis when truncated."
-  [^String text query-str max-len]
+  "Extracts a text snippet from response text anchored at the first
+  occurrence of any query term.  At most 2 newlines (or 100 characters)
+  of leading context precede the match so it is always visible near the
+  top of the preview.  Returns at most max-len characters total."
+  [^String text query-str ^long max-len]
   (if (string/blank? text)
     ""
     (let [terms (string/split (string/lower-case query-str) #"\s+")
           lower-text (string/lower-case text)
-          pos (reduce (fn [best term]
-                        (let [i (string/index-of lower-text term)]
-                          (if (and i (or (nil? best) (< ^long i ^long best)))
-                            i
-                            best)))
-                      nil
-                      terms)]
+          pos (find-term-pos lower-text terms)]
       (if (nil? pos)
         (subs text 0 (min (count text) max-len))
-        (let [half (quot max-len 2)
-              start (max 0 (- ^long pos half))
-              end (min (count text) (+ start max-len))
-              start (max 0 (- end max-len))]
+        (let [start (snippet-start text pos 2 100)
+              end   (min (count text) (+ start max-len))]
           (str (when (pos? start) "…")
                (subs text start end)
                (when (< end (count text)) "…")))))))
+
+(defn- strip-command-echo
+  "If the first line of response is an echo of command (with or without a
+  leading \"> \"), drops it so the unified snippet does not repeat the
+  command line that is always prepended separately."
+  [^String response ^String command]
+  (let [nl         (string/index-of response "\n")
+        first-line (-> (if nl (subs response 0 nl) response)
+                       (string/replace-first #"^>\s*" "")
+                       string/trim
+                       string/lower-case)]
+    (if (= first-line (-> command string/trim string/lower-case))
+      (if nl (subs response (inc nl)) "")
+      response)))
 
 (defn highlight-snippet
   "Returns hiccup markup for the snippet with matching query terms
@@ -115,9 +149,9 @@
                          (subs snippet pos match-start))
                 matched (subs snippet match-start match-end)]
             (recur match-end
-                   (cond-> result
-                     before (conj before)
-                     true (conj [:mark.bg-warning.text-warning-content.rounded.px-0.5 matched]))))
+                   (-> result
+                       (cond-> before (conj before))
+                       (conj [:mark.bg-warning.text-warning-content.rounded.px-0.5 matched]))))
           (let [trailing (when (< pos (count snippet))
                            (subs snippet pos))]
             (cond-> result
@@ -150,13 +184,21 @@
             query (.parse parser query-str')
             hits (.-scoreDocs (.search searcher query (int max-results)))]
         (mapv (fn [score-doc]
-                (let [doc (.doc searcher (.-doc score-doc))
-                      response (.get doc "response")]
+                (let [doc      (.doc searcher (.-doc score-doc))
+                      command  (.get doc "command")
+                      label    (.get doc "label")
+                      response (.get doc "response")
+                      excerpt  (extract-snippet (strip-command-echo response command) query-str 300)
+                      snippet  (str "> " command
+                                    (when-not (string/blank? label)
+                                      (str "\n" label))
+                                    (when-not (string/blank? excerpt)
+                                      (str "\n" excerpt)))]
                   {:knot-id (parse-long (.get doc "id"))
-                   :command (.get doc "command")
-                   :snippet (extract-snippet response query-str 400)
-                   :label (.get doc "label")
-                   :score (.-score score-doc)}))
+                   :command command
+                   :label   label
+                   :snippet snippet
+                   :score   (.-score score-doc)}))
               hits))
       (catch Exception _
         ;; Malformed query or other Lucene error; treat as no results

@@ -262,13 +262,8 @@
                  (swap! cursor session/select-knot knot-id)
                  (swap! cursor session/set-active-knot knot-id)
                  (scroll-knot-into-view! knot-id))}
-              [:div.flex.flex-col.items-start.gap-0.5
-               [:span.font-bold.text-sm (str "> " command)]
-               (when-not (string/blank? label)
-                 [:span.badge.badge-sm.badge-neutral label])
-               (when-not (string/blank? snippet)
-                 [:div.text-xs.opacity-70.whitespace-pre-line.line-clamp-5
-                  (search/highlight-snippet snippet query)])]]])]))]))
+              [:div.text-xs.whitespace-pre-line.line-clamp-7
+               (search/highlight-snippet snippet query)]]])]))]))
 
 (defn navbar
   [cursor session *app-state]
