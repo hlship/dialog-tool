@@ -168,6 +168,29 @@ window.sk = {
     }
   },
 
+  /**
+   * Keyboard navigation for search result buttons.
+   * ArrowDown/Up move focus between result buttons (or back to the search input
+   * when Up is pressed on the first result). Escape returns focus to the input.
+   * Called from data-on:keydown on each result button.
+   */
+  navigateSearchResults(evt, el) {
+    if (evt.key === 'ArrowDown') {
+      evt.preventDefault();
+      el.closest('li').nextElementSibling?.querySelector('button')?.focus();
+    } else if (evt.key === 'ArrowUp') {
+      evt.preventDefault();
+      const prev = el.closest('li').previousElementSibling;
+      if (prev) {
+        prev.querySelector('button').focus();
+      } else {
+        document.getElementById('search-input').focus();
+      }
+    } else if (evt.key === 'Escape') {
+      document.getElementById('search-input').focus();
+    }
+  },
+
   hideSourcePreview() {
     if (this._previewController) {
       this._previewController.abort();

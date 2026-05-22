@@ -202,19 +202,6 @@
   (swap! cursor dissoc :search)
   (effects/execute-script! "document.getElementById('search-input').value = ''"))
 
-(def ^:private result-key-handler
-  "Client-side JS for arrow-key navigation between search result buttons.
-  ArrowDown/Up move focus between results (or back to the input);
-  Escape returns focus to the search input."
-  (str "if(evt.key==='ArrowDown'){evt.preventDefault();"
-       "el.closest('li').nextElementSibling?.querySelector('button')?.focus()}"
-       "else if(evt.key==='ArrowUp'){evt.preventDefault();"
-       "const prev=el.closest('li').previousElementSibling;"
-       "if(prev){prev.querySelector('button').focus()}"
-       "else{document.getElementById('search-input').focus()}}"
-       "else if(evt.key==='Escape'){"
-       "document.getElementById('search-input').focus()}"))
-
 (defn- render-search
   "Renders the knot search input and results dropdown in the operations toolbar."
   [cursor session]
@@ -255,7 +242,7 @@
             [:li
              [:button.w-full.text-left
               {:type "button"
-               :data-on:keydown result-key-handler
+               :data-on:keydown "sk.navigateSearchResults(evt, el)"
                :data-on:click
                (h/action
                  (dismiss-search! cursor)
