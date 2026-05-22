@@ -1,3 +1,5 @@
+# 2.0-beta-15 -- UNRELEASED
+
 # 2.0-beta-14 -- 22 May 2026
 
 Full-text knot search (⌘F): searches command text and responses across all
