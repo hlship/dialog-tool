@@ -166,6 +166,11 @@ html {
   -webkit-mask-image: url('/icons/bug-ant-solid.svg');
 }
 
+.icon-search {
+  mask-image: url('/icons/magnifying-glass-solid.svg');
+  -webkit-mask-image: url('/icons/magnifying-glass-solid.svg');
+}
+
 /* Tooltips: high-contrast colours that flip with the OS colour scheme */
 @media (prefers-color-scheme: light) {
   .tooltip {

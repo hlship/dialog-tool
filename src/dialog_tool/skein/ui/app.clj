@@ -219,28 +219,33 @@
   "Renders the knot search input and results dropdown in the operations toolbar."
   [cursor session]
   (let [search-signal (h/local-signal :search-query "")]
-    [:div.relative
-     [:input#search-input
-      {:type "text"
-       :placeholder "Search knots…"
-       :autocomplete "off"
-       :class "input input-sm input-bordered w-48"
-       :data-bind (:name search-signal)
-       :data-on:input
-       (h/action
-         (let [q (string/trim (str $value))]
-           (if (string/blank? q)
-             (swap! cursor dissoc :search)
-             (swap! cursor assoc :search
-                    {:query q
-                     :results (search/search-knots (:tree @cursor) q 50)}))))
-       :data-on:keydown
-       (h/action
-         (case $key
-           "Escape" (dismiss-search! cursor)
-           "ArrowDown" (effects/execute-script!
-                         "document.querySelector('#search-results button')?.focus()")
-           nil))}]
+    [:div.relative.grow
+     [:label.input.input-sm.input-bordered.flex.items-center.gap-2.w-full.tooltip.tooltip-bottom
+      {:data-accel "f"
+       :data-tip "Search"
+       :data-preserve-attr "data-tip"}
+      [:div.icon.w-4.h-4.icon-search]
+      [:input#search-input
+       {:type "text"
+        :placeholder "Search knots…"
+        :autocomplete "off"
+        :class "grow"
+        :data-bind (:name search-signal)
+        :data-on:input
+        (h/action
+          (let [q (string/trim (str $value))]
+            (if (string/blank? q)
+              (swap! cursor dissoc :search)
+              (swap! cursor assoc :search
+                     {:query q
+                      :results (search/search-knots (:tree @cursor) q 50)}))))
+        :data-on:keydown
+        (h/action
+          (case $key
+            "Escape" (dismiss-search! cursor)
+            "ArrowDown" (effects/execute-script!
+                          "document.querySelector('#search-results button')?.focus()")
+            nil))}]]
      (when-let [{:keys [results query]} (:search session)]
        (when (seq results)
          [:ul#search-results.absolute.z-50.menu.flex-col.bg-base-100.rounded-box.shadow-xl.p-2.overflow-y-auto.mt-1.flex-nowrap
@@ -499,7 +504,7 @@
                                       (focus-if-leaf! cursor leaf-knot-id)))}
                    "icon-scroll-bottom")
       ;; Search — fills the space between navigation and operations
-      [:div.grow.flex.justify-center
+      [:div.grow.flex.px-2
        (render-search cursor session)]
       ;; Operations — right-aligned
       (toolbar-btn {:disabled ok?
