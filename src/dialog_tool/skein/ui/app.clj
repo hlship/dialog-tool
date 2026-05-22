@@ -257,6 +257,7 @@
   (let [{:keys [skein-path tree dirty?]} session
         can-undo? (-> session :undo-stack not-empty)
         can-redo? (-> session :redo-stack not-empty)
+        can-reload? (session/can-reload? session)
         {:keys [ok new error]} (tree/totals tree)
         labeled-knots (tree/labeled-knots-sorted tree)]
     [:nav {:class (classes "bg-base-100 text-base-content border-base-200 divide-base-200"
@@ -321,6 +322,15 @@
          :data-preserve-attr "data-tip"
          :disabled (not can-redo?)}
         [:div.icon.icon-redo] [:span.hidden.lg:inline "Redo"]]
+       [:div.btn.btn-primary.tooltip.tooltip-bottom
+        {:data-on:click (h/action
+                          (swap! cursor session/reload!)
+                          (flash! "Reloaded")
+                          (navigate-to-active-knot! cursor))
+         :data-preserve-attr "data-tip"
+         :data-tip "Reload"
+         :disabled (not can-reload?)}
+        [:div.icon.icon-reload] [:span.hidden.lg:inline "Reload"]]
        [:div.btn.btn-primary {:data-on:click (h/action
                                               (if (:dirty? @cursor)
                                                 (swap! cursor assoc :modal {:type :quit})

@@ -220,6 +220,21 @@
     (sk.file/save-tree tree skein-path)
     (assoc session :dirty? false)))
 
+(defn can-reload?
+  "Returns true when the skein file exists on disk (i.e. has been saved at least once).
+   New skeins have no file yet, so reload is disabled until after the first save."
+  [session]
+  (sk.file/exists? (:skein-path session)))
+
+(defn reload!
+  "Re-reads the skein file from disk, replacing the current tree.
+   Captures undo so the reload can be undone."
+  [session]
+  (-> session
+      capture-undo
+      (assoc :tree (sk.file/load-tree (:skein-path session))
+             :dirty? false)))
+
 (defn undo
   "Undoes the state of the tree one step; the current tree is pushed onto the
   redo stack."

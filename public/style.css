@@ -86,6 +86,11 @@ html {
   -webkit-mask-image: url('/icons/x-circle-solid.svg');
 }
 
+.icon-reload {
+  mask-image: url('/icons/arrow-path-solid.svg');
+  -webkit-mask-image: url('/icons/arrow-path-solid.svg');
+}
+
 .icon-lock {
   mask-image: url('/icons/lock-closed-solid.svg');
   -webkit-mask-image: url('/icons/lock-closed-solid.svg');
