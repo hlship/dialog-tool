@@ -219,8 +219,8 @@
   "Renders the knot search input and results dropdown in the operations toolbar."
   [cursor session]
   (let [search-signal (h/local-signal :search-query "")]
-    [:div.relative.grow
-     [:label.input.input-sm.input-bordered.flex.items-center.gap-2.w-full.tooltip.tooltip-bottom
+    [:div.relative.grow.focus-within:z-20
+     [:label.input.input-sm.input-bordered.flex.items-center.gap-2.w-full.tooltip.tooltip-bottom.search-expand-label
       {:data-accel "f"
        :data-tip "Search"
        :data-preserve-attr "data-tip"}
@@ -280,7 +280,7 @@
     [:nav {:class (classes "bg-base-100 text-base-content border-base-200 divide-base-200"
                            "px-2 sm:px-4 py-2.5"
                            "w-full border-b")}
-     [:div.mx-auto.flex.items-center.gap-2.container
+     [:div.w-full.flex.items-center.gap-2
       [:div.self-center.truncate.text-xl.font-semibold.shrink.min-w-0
        skein-path]
       [:div.join.shrink-0.mx-auto
@@ -427,7 +427,7 @@
        :style "cursor: pointer"}
       [:div.w-full.whitespace-pre-wrap.break-words.p-2.bg-base-100
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
-       [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-24.rounded-bl-lg.pl-2.pb-1.bg-base-100
+       [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-28.rounded-bl-lg.pl-2.pb-1.bg-base-100
         (when locked
           [:div.icon.icon-lock {:title "Locked"}])
                                (when label
@@ -468,7 +468,7 @@
     [:div {:class (classes "bg-base-100 text-base-content border-base-200"
                            "px-2 sm:px-4 py-1"
                            "w-full border-b")}
-     [:div.mx-auto.container.flex.items-center.gap-1
+     [:div.w-full.flex.items-center.gap-1
       ;; Navigation — left-aligned
       (toolbar-btn {:data-tip "First Knot"
                     :disabled root?
@@ -690,7 +690,7 @@
             active-knot-id (:active-knot-id tree)
             knots (tree/selected-knots tree)
             leaf-knot (last knots)]
-        [:div.relative.px-8
+        [:div.relative
          ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
          ;; insertion. Uses a random id so each flash is a new element to the morph
          ;; algorithm. Works in both action and cursor-change render contexts.
@@ -705,8 +705,8 @@
          [:div.fixed.top-0.start-0.w-full.z-30
           (navbar cursor session *app-state)
           (render-operations-toolbar cursor session)]
-         ;; mt-24 clears the combined height of both fixed toolbars
-         [:div.container.mx-lg.mx-auto.mt-24
+         ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
+         [:div.w-full.mt-28.px-2
           (if loading?
             ;; New skein: process hasn't started yet — show a placeholder until
             ;; replay-on-launch fires and replay-all! clears the :loading? flag.

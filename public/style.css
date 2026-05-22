@@ -171,6 +171,15 @@ html {
   -webkit-mask-image: url('/icons/magnifying-glass-solid.svg');
 }
 
+/* Search field: expand to overlay right toolbar buttons when focused */
+.search-expand-label {
+  transition: min-width 150ms ease;
+}
+
+.search-expand-label:focus-within {
+  min-width: 32rem;
+}
+
 /* Tooltips: high-contrast colours that flip with the OS colour scheme */
 @media (prefers-color-scheme: light) {
   .tooltip {
