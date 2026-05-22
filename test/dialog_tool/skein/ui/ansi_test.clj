@@ -17,6 +17,8 @@
 (def TT (sgr 50))
 (def RED (sgr 31))
 (def BLUE (sgr 34))
+(def DEFAULT-FG (sgr 39))
+(def RGB-UNKNOWN (sgr 38 2 0xaa 0xbb 0xcc))                         ; unknown color, uses COLOR# tag
 
 ;; --- ansi->hiccup ---
 
@@ -55,9 +57,9 @@
          (ansi->hiccup (str "before " RED "red" RESET " after")))))
 
 (deftest hiccup-color-change
-  (testing "changing color replaces previous color"
+  (testing "changing color after reset starts fresh"
     (is (= [[:span {:class "ansi-red"} "red"] [:span {:class "ansi-blue"} "blue"]]
-           (ansi->hiccup (str RED "red" BLUE "blue"))))))
+           (ansi->hiccup (str RED "red" RESET BLUE "blue"))))))
 
 (deftest hiccup-combined-sgr-params
   (testing "CSI 1;34 m sets bold+blue in one sequence"
@@ -76,6 +78,16 @@
   (testing "ESC[m with no params is treated as reset"
     (is (= [[:span {:class "ansi-bold"} "bold"] " normal"]
            (ansi->hiccup (str BOLD "bold" ESC "[m" " normal"))))))
+
+(deftest hiccup-rgb-unknown-color
+  (testing "38;2;R;G;B with unknown color uses inline style"
+    (is (= [[:span {:style "color:#aabbcc"} "pink"]]
+           (ansi->hiccup (str RGB-UNKNOWN "pink"))))))
+
+(deftest hiccup-rgb-default-fg-closes-color
+  (testing "SGR 39 removes the color from the stack"
+    (is (= [[:span {:style "color:#aabbcc"} "pink"] " normal"]
+           (ansi->hiccup (str RGB-UNKNOWN "pink" DEFAULT-FG " normal"))))))
 
 ;; --- ansi->markers ---
 
@@ -134,10 +146,25 @@
          (ansi->markers (str TT "output")))))
 
 (deftest markers-unrecognized-sgr-code
-  (testing "unrecognized SGR codes are represented as [?] / [/?]"
+  (testing "unrecognized SGR codes use the numeric code as the tag"
     ;; SGR 6 is "rapid blink", not something we support
-    (is (= "[?]hello[/?]"
+    (is (= "[6]hello[/6]"
            (ansi->markers (str (sgr 6) "hello" RESET))))))
+
+(deftest markers-rgb-unknown-color
+  (testing "38;2;R;G;B with unknown color uses COLOR#RRGGBB tag"
+    (is (= "[#AABBCC]pink[/#AABBCC]"
+           (ansi->markers (str RGB-UNKNOWN "pink" RESET))))))
+
+(deftest markers-default-fg-closes-color
+  (testing "SGR 39 closes the most recent color entry"
+    (is (= "[RED]bold-red[/RED] plain"
+           (ansi->markers (str RED "bold-red" DEFAULT-FG " plain"))))))
+
+(deftest markers-default-fg-with-bold-underneath
+  (testing "SGR 39 closes only the color, leaving bold active"
+    (is (= "[B][RED]bold-red[/RED]still-bold[/B]"
+           (ansi->markers (str BOLD RED "bold-red" DEFAULT-FG "still-bold" RESET))))))
 
 ;; --- strip-ansi ---
 
