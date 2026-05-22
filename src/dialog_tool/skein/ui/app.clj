@@ -305,7 +305,7 @@
                                              label)))
        [:div.btn.btn-primary.tooltip.tooltip-bottom
         {:data-on:click "@post('/action/replay-all')"
-         :data-accel__shift "y"
+         :data-accel__alt__shift "r"
          :data-preserve-attr "data-tip"}
         [:div.icon.icon-play] [:span.hidden.lg:inline "Replay All"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
@@ -439,13 +439,15 @@
 (defn- toolbar-btn
   "Renders a single operations-toolbar button.
   When a :data-tip is supplied the accel plugin will append the shortcut to it;
-  when absent the accel plugin writes the shortcut as the full tooltip."
+  when absent the accel plugin writes the shortcut as the full tooltip.
+  Accepts an optional :tooltip-dir key (default \"bottom\") to control placement."
   [attrs icon]
   (let [has-tip? (contains? attrs :data-tip)
-        attrs' (cond-> (into {} (remove (comp nil? val) attrs))
+        tooltip-dir (get attrs :tooltip-dir "bottom")
+        attrs' (cond-> (into {} (remove (comp nil? val) (dissoc attrs :tooltip-dir)))
                  has-tip? (assoc :data-preserve-attr "data-tip"))]
-    [:div.btn.btn-xs.btn-primary.tooltip.tooltip-bottom
-     attrs'
+    [:div (assoc attrs' :class (classes "btn btn-xs btn-primary tooltip" (str "tooltip-" tooltip-dir)))
+
      [:div.icon.w-4.h-4 {:class icon}]]))
 
 (defn- render-operations-toolbar
@@ -467,7 +469,7 @@
       ;; Navigation — left-aligned
       (toolbar-btn {:data-tip "First Knot"
                     :disabled root?
-                    :data-accel__shift "ArrowUp"
+                    :data-accel__alt__shift "ArrowUp"
                     :data-on:click (when-not root?
                                      (h/action
                                       (swap! cursor session/set-active-knot 0)
@@ -475,7 +477,7 @@
                    "icon-scroll-top")
       (toolbar-btn {:disabled root?
                     :data-tip "Parent knot"
-                    :data-accel "ArrowUp"
+                    :data-accel__alt "ArrowUp"
                     :data-on:click (when-not root?
                                      (h/action
                                       (swap! cursor session/set-active-knot parent-id)
@@ -483,7 +485,7 @@
                    "icon-arrow-up")
       (toolbar-btn {:disabled no-child?
                     :data-tip "Child knot"
-                    :data-accel "ArrowDown"
+                    :data-accel__alt "ArrowDown"
                     :data-on:click (when-not no-child?
                                      (h/action
                                       (swap! cursor session/set-active-knot child-id)
@@ -492,7 +494,7 @@
                    "icon-arrow-down")
       (toolbar-btn {:data-tip "Last Knot"
                     :disabled (= id leaf-knot-id)
-                    :data-accel__shift "ArrowDown"
+                    :data-accel__alt__shift "ArrowDown"
                     :data-on:click (when-not (= id leaf-knot-id)
                                      (h/action
                                       (swap! cursor session/set-active-knot leaf-knot-id)
@@ -511,18 +513,18 @@
                    "icon-bless")
       (toolbar-btn {:disabled (or ok? root?)
                     :data-tip "Bless To Here"
-                    :data-accel "b"
+                    :data-accel__alt "b"
                     :data-on:click (when-not (or ok? root?)
                                      (h/action
                                       (swap! cursor session/bless-to id)
                                       (flash! "Blessed to here")))}
                    "icon-bless-to")
       (toolbar-btn {:data-tip "Replay"
-                    :data-accel "y"
+                    :data-accel__alt "r"
                     :data-on:click (str "@post('/action/replay-to/" id "')")}
                    "icon-play")
       (toolbar-btn {:data-tip "New Child"
-                    :data-accel "a"
+                    :data-accel__alt "a"
                     :data-on:click (h/action
                                     (swap! cursor session/prepare-new-child! id)
                                     (reset-and-focus-command-input!))}
@@ -530,19 +532,21 @@
       ;; Modal-opening actions (focus goes to modal)
       (toolbar-btn {:disabled root?
                     :data-tip "Edit Command…"
+                    :data-accel__alt "e"
                     :data-on:click (when-not root?
                                      (h/action
                                       (swap! cursor assoc :modal {:type :edit-command :knot-id id})))}
                    "icon-edit")
       (toolbar-btn {:disabled root?
                     :data-tip "Edit Label…"
+                    :data-accel__alt "l"
                     :data-on:click (when-not root?
                                      (h/action
                                       (swap! cursor assoc :modal {:type :edit-label :knot-id id})))}
                    "icon-label")
       (toolbar-btn {:disabled root?
                     :data-tip "Toggle Lock"
-                    :data-accel "k"
+                    :data-accel__alt "k"
                     :data-on:click (when-not root?
                                      (h/action
                                       (swap! cursor session/toggle-lock id)
@@ -557,7 +561,7 @@
                    "icon-insert")
       (toolbar-btn {:disabled root?
                     :data-tip "Delete"
-                    :data-accel "d"
+                    :data-accel__alt "d"
                     :data-on:click (when-not root?
                                      (h/action
                                       (let [[error session'] (session/delete! @cursor id)]
@@ -577,10 +581,13 @@
         (list
          (toolbar-btn {:disabled (nil? dynamic-response)
                        :data-tip "Dynamic State…"
+                       :data-accel__alt "s"
                        :data-on:click (h/action
                                        (swap! cursor assoc :modal {:type :dynamic-state :knot-id id}))}
                       "icon-dynamic")
          (toolbar-btn {:data-tip (if root? "Trace Startup…" "Trace…")
+                       :data-accel__alt "t"
+                       :tooltip-dir "left"
                        :data-on:click (h/action
                                        (swap! cursor session/check-for-changed-sources)
                                        (let [command (if root? "Startup"
