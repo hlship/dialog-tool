@@ -4,6 +4,7 @@
   (:require [babashka.fs :as fs]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
+            [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.ui.app :as ui.app]
@@ -95,6 +96,7 @@
         shutdown-fn (fn []
                       (h/stop! @*stop-server)
                       (sk.process/kill! (get-in @*app [:global :session :process]))
+                      (search/close!)
 
                       (println "Shut down")
 
@@ -109,51 +111,3 @@
                      (h/start! (create-handler *app) {:port port'}))]
     (reset! *stop-server stop-server)
     port'))
-
-(comment
-  
-  (-> @*app :global :session :modal)
-
-  (stop!)
-
-  (start! "../sanddancer-dialog"
-          {:engine :dgdebug
-           :skein-path "../sanddancer-dialog/default.skein"
-           :port 10140
-           :exit-when-shutdown? false
-           :development-mode? false})
-
-
-  (start! "../failure"
-          {:engine              :dgdebug
-           :skein-path          "../failure/default.skein"
-           :port                10140
-           :exit-when-shutdown? false})
-
-  (start! "../dialog-extensions/tree"
-          {:engine :dgdebug
-           :skein-path "../dialog-extensions/tree/default.skein"
-           :port 10140
-           :exit-when-shutdown? false
-           :development-mode? true})
-
-  (start! "../sanddancer-dialog"
-          {:engine :dgdebug
-           :skein-path "/tmp/sd.skein"
-           :exit-when-shutdown? false})
-
-  (start! "../dialog-extensions/who"
-          {:development-mode? true
-           :skein-path "../dialog-extensions/who/default.skein"
-           :exit-when-shutdown? false})
-
-  (start! "../dialog-extensions/who"
-          {:skein-path "../dialog-extensions/who/frotz.skein"
-           :port 10140
-           :seed 10101
-           :development-mode? true
-           :exit-when-shutdown? false
-           :engine :frotz})
-
-;;
-  )

@@ -166,6 +166,34 @@ html {
   -webkit-mask-image: url('/icons/bug-ant-solid.svg');
 }
 
+.icon-search {
+  mask-image: url('/icons/magnifying-glass-solid.svg');
+  -webkit-mask-image: url('/icons/magnifying-glass-solid.svg');
+}
+
+/* Search field: expand to overlay right toolbar buttons when focused */
+.search-expand-label {
+  transition: min-width 150ms ease;
+}
+
+.search-expand-label:focus-within {
+  min-width: 32rem;
+}
+
+/* Tooltip direction overrides.
+   DaisyUI 5 places .tooltip and .tooltip-left in the same @layer at equal
+   specificity, so processing order determines the winner — unreliably.
+   Styles outside any @layer always beat @layer styles, so these win cleanly. */
+.tooltip.tooltip-left[data-tip]::before,
+.tooltip.tooltip-left > .tooltip-content {
+  inset: 50% var(--tt-off) auto auto;
+  transform: translateX(calc(var(--tt-pos, .25rem) - .25rem)) translateY(-50%);
+}
+.tooltip.tooltip-left::after {
+  inset: 50% calc(var(--tt-tail) + 1px) auto auto;
+  transform: translateX(var(--tt-pos, .25rem)) translateY(-50%) rotate(-90deg);
+}
+
 /* Tooltips: high-contrast colours that flip with the OS colour scheme */
 @media (prefers-color-scheme: light) {
   .tooltip {

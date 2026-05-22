@@ -168,6 +168,29 @@ window.sk = {
     }
   },
 
+  /**
+   * Keyboard navigation for search result buttons.
+   * ArrowDown/Up move focus between result buttons (or back to the search input
+   * when Up is pressed on the first result). Escape returns focus to the input.
+   * Called from data-on:keydown on each result button.
+   */
+  navigateSearchResults(evt, el) {
+    if (evt.key === 'ArrowDown') {
+      evt.preventDefault();
+      el.closest('li').nextElementSibling?.querySelector('button')?.focus();
+    } else if (evt.key === 'ArrowUp') {
+      evt.preventDefault();
+      const prev = el.closest('li').previousElementSibling;
+      if (prev) {
+        prev.querySelector('button').focus();
+      } else {
+        document.getElementById('search-input').focus();
+      }
+    } else if (evt.key === 'Escape') {
+      document.getElementById('search-input').focus();
+    }
+  },
+
   hideSourcePreview() {
     if (this._previewController) {
       this._previewController.abort();
@@ -227,19 +250,27 @@ document.addEventListener('datastar-fetch', (e) => {
 /**
  * Datastar plugin: data-accel
  *
- * Declares a keyboard accelerator (Cmd on Mac, Ctrl on Windows/Linux) that
- * triggers a click on the element. The key character comes from the attribute
- * key, and the __shift modifier requires Shift to be held.
+ * Declares a keyboard accelerator that triggers a click on the element.
+ * Two modifier modes:
  *
- * Suppressed when a modal is open or the element has the disabled attribute.
+ *   Cmd/Ctrl mode (default): requires Cmd (Mac) or Ctrl (Win/Linux).
+ *     Use for global operations like Save, Undo, Search.
+ *
+ *   Alt mode (__alt): requires Alt/Option key, no Cmd/Ctrl.
+ *     NOT suppressed by text-input focus, so these work from anywhere.
+ *     Use for toolbar actions that must be reachable while typing.
+ *
+ * Both modes are suppressed when a modal is open or the element is disabled.
  *
  * Usage in Hiccup:
- *   :data-accel "s"           ;; Cmd/Ctrl+S triggers el.click()
- *   :data-accel "z"           ;; Cmd/Ctrl+Z
- *   :data-accel__shift "z"    ;; Cmd/Ctrl+Shift+Z
+ *   :data-accel "s"                ;; Cmd/Ctrl+S
+ *   :data-accel__shift "z"         ;; Cmd/Ctrl+Shift+Z
+ *   :data-accel__alt "r"           ;; Alt+R  (works from text fields)
+ *   :data-accel__alt__shift "r"    ;; Alt+Shift+R
  */
 const isMac = navigator.platform.startsWith('Mac') || navigator.userAgent.includes('Mac');
 const modSymbol = isMac ? '⌘' : 'Ctrl+';
+const altSymbol = isMac ? '⌥' : 'Alt+';
 
 // Maps special key names to display symbols for tooltips
 const keyDisplayMap = {
@@ -258,17 +289,32 @@ attribute({
   apply({ el, value, mods }) {
     const accelKey = value;
     const needsShift = mods.has('shift');
+    const isAlt = mods.has('alt');
 
-    // Set DaisyUI tooltip showing the shortcut, e.g. "⌘S", "⌘⌫", or "Ctrl+Shift+Z"
-    // Appends the shortcut to any existing data-tip text (e.g. "Bless (⌘B)").
+    // Build tooltip shortcut label and append to any existing data-tip.
     const keyLabel = keyDisplayMap[accelKey] ?? accelKey.toUpperCase();
-    const shortcut = modSymbol + (needsShift ? (isMac ? '⇧' : 'Shift+') : '') + keyLabel;
+    const shiftPart = needsShift ? (isMac ? '⇧' : 'Shift+') : '';
+    const shortcut = (isAlt ? altSymbol : modSymbol) + shiftPart + keyLabel;
     const existing = el.getAttribute('data-tip');
     el.setAttribute('data-tip', existing ? `${existing} (${shortcut})` : shortcut);
 
+    // On Mac, Option+letter produces a special character (e.g. Option+R → '®'),
+    // so e.key is unreliable in Alt mode for letter keys. Use e.code instead
+    // ('KeyR', 'KeyA', …). Arrow keys and other special keys are identical in
+    // both e.key and e.code, so no special-casing is needed for them.
+    const isSingleLetter = /^[a-z]$/i.test(accelKey);
+    const expectedCode = (isAlt && isSingleLetter) ? 'Key' + accelKey.toUpperCase() : null;
+
     const handler = (e) => {
-      if (!(e.metaKey || e.ctrlKey)) return;
-      if (e.key !== accelKey) return;
+      if (isAlt) {
+        // Alt mode: require Alt, no Cmd/Ctrl. Works even when a text field has focus.
+        if (!e.altKey || e.metaKey || e.ctrlKey) return;
+      } else {
+        // Cmd/Ctrl mode: require Cmd or Ctrl.
+        if (!(e.metaKey || e.ctrlKey)) return;
+      }
+      const keyMatch = expectedCode ? (e.code === expectedCode) : (e.key === accelKey);
+      if (!keyMatch) return;
       if (!!e.shiftKey !== needsShift) return;
       if (el.hasAttribute('disabled')) return;
       if (document.querySelector('#modal-container > *')) return;
