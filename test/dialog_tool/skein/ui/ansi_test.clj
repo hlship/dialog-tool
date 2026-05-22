@@ -11,9 +11,10 @@
 
 (def RESET (sgr 0))
 (def BOLD (sgr 1))
-(def ITALIC (sgr 3))
-(def UNDERLINE (sgr 4))
-(def MONO (sgr 50))
+;; TODO: Should be engine aware (unless dfrotz does the same thing)
+(def UNDERLINE (sgr 4))                                     ; ANSI underline is dgdebug's way of showing italic
+(def REVERSE (sgr 7))                                       ; ANSI reverse is dgdebug's way of showing underline
+(def TT (sgr 50))
 (def RED (sgr 31))
 (def BLUE (sgr 34))
 
@@ -31,11 +32,11 @@
 
 (deftest hiccup-italic
   (is (= [[:span {:class "ansi-italic"} "hello"]]
-         (ansi->hiccup (str ITALIC "hello")))))
+         (ansi->hiccup (str UNDERLINE "hello")))))
 
 (deftest hiccup-underline
   (is (= [[:span {:class "ansi-underline"} "hello"]]
-         (ansi->hiccup (str UNDERLINE "hello")))))
+         (ansi->hiccup (str REVERSE "hello")))))
 
 (deftest hiccup-color
   (is (= [[:span {:class "ansi-red"} "error"]]
@@ -63,13 +64,13 @@
     (is (= [[:span {:class "ansi-bold ansi-blue"} "both"]]
            (ansi->hiccup (str ESC "[1;34m" "both"))))))
 
-(deftest hiccup-mono
-  (is (= [[:span {:class "ansi-mono"} "output"]]
-         (ansi->hiccup (str MONO "output")))))
+(deftest hiccup-fixed
+  (is (= [[:span {:class "ansi-fixed"} "output"]]
+         (ansi->hiccup (str TT "output")))))
 
-(deftest hiccup-mono-and-bold
-  (is (= [[:span {:class "ansi-bold ansi-mono"} "output"]]
-         (ansi->hiccup (str BOLD MONO "output")))))
+(deftest hiccup-fixed-and-bold
+  (is (= [[:span {:class "ansi-bold ansi-fixed"} "output"]]
+         (ansi->hiccup (str BOLD TT "output")))))
 
 (deftest hiccup-bare-esc-bracket-m-is-reset
   (testing "ESC[m with no params is treated as reset"
@@ -90,11 +91,11 @@
 
 (deftest markers-italic
   (is (= "[I]hello[/I]"
-         (ansi->markers (str ITALIC "hello" RESET)))))
+         (ansi->markers (str UNDERLINE "hello" RESET)))))
 
 (deftest markers-underline
   (is (= "[U]hello[/U]"
-         (ansi->markers (str UNDERLINE "hello" RESET)))))
+         (ansi->markers (str REVERSE "hello" RESET)))))
 
 (deftest markers-color
   (is (= "[RED]error[/RED]"
@@ -124,13 +125,13 @@
     (is (= "[B][RED]alert[/RED][/B]"
            (ansi->markers (str ESC "[1;31m" "alert" RESET))))))
 
-(deftest markers-mono
-  (is (= "[MONO]output[/MONO]"
-         (ansi->markers (str MONO "output" RESET)))))
+(deftest markers-fixed
+  (is (= "[TT]output[/TT]"
+         (ansi->markers (str TT "output" RESET)))))
 
-(deftest markers-mono-unclosed
-  (is (= "[MONO]output[/MONO]"
-         (ansi->markers (str MONO "output")))))
+(deftest markers-fixed-unclosed
+  (is (= "[TT]output[/TT]"
+         (ansi->markers (str TT "output")))))
 
 (deftest markers-unrecognized-sgr-code
   (testing "unrecognized SGR codes are represented as [?] / [/?]"
@@ -142,4 +143,4 @@
 
 (deftest strip-ansi-removes-sgr
   (is (= "hello world"
-         (strip-ansi (str BOLD "hello" RESET " " UNDERLINE "world" RESET)))))
+         (strip-ansi (str BOLD "hello" RESET " " REVERSE "world" RESET)))))

@@ -119,9 +119,9 @@
 
 (defn- closing-markers
   "Returns closing pseudo-markers for all active effects (in reverse order).
-   Effects map: {:bold bool, :italic bool, :underline bool, :mono bool, :color \"name\", :unknown int}"
-  [{:keys [bold italic underline mono color unknown]}]
-  ;; Close in reverse order: unknown, color, mono, underline, italic, bold
+   Effects map: {:bold bool, :italic bool, :underline bool, :fixed bool, :color \"name\", :unknown int}"
+  [{:keys [bold italic underline fixed color unknown]}]
+  ;; Close in reverse order: unknown, color, fixed, underline, italic, bold
   (cond-> []
     (pos-int? unknown) (into (repeat unknown "[/?]"))
     color     (conj (str "[/" (string/upper-case color) "]"))
