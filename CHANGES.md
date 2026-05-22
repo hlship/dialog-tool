@@ -1,3 +1,21 @@
+# 2.0-beta-14 -- 22 May 2026
+
+Full-text knot search (⌘F): searches command text and responses across all
+knots with highlighted snippets.
+
+Overhauled keyboard accelerators: updated and expanded shortcuts for toolbar
+operations and knot navigation.
+
+Improved ANSI SGR handling for dgdebug output: SGR 50 (monospace), updated
+color mappings, and correct conversion to both styled HTML and pseudo-markers.
+Stack-based effect tracking with support for 24-bit RGB colors (SGR 38;2;R;G;B)
+and SGR 39 (default foreground).
+
+Adds a Reload Skein toolbar action that re-reads the skein file from disk.
+Reload is undoable and disabled for new skeins until after the first save.
+
+Shows a loading spinner during the initial replay-all on skein launch.
+
 # 2.0-beta-13 -- 20 May 2026
 
 Redesigned knot interaction: clicking a knot makes it the _active knot_, highlighted
