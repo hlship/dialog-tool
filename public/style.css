@@ -228,6 +228,10 @@ html {
   text-decoration: underline;
 }
 
+.ansi-fixed {
+  font-family: monospace, monospace;
+}
+
 .ansi-black {
   color: #1a1a1a;
 }
