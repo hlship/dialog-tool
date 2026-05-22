@@ -162,6 +162,11 @@
                                      m line)
                              e))))))
 
+(defn exists?
+  "Returns true if the skein file at path exists on disk."
+  [path]
+  (fs/exists? path))
+
 (defn load-tree
   [path]
   (when-not (fs/exists? path)
