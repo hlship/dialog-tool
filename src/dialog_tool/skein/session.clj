@@ -87,7 +87,7 @@
 (defn check-for-changed-sources
   [session]
   (if (-> session :process sk.process/sources-changed?)
-    (assoc session :active-knot-id nil)
+    (assoc session :process-knot-id nil)
     session))
 
 (defn do-replay-to!
