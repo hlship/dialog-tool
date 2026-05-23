@@ -77,7 +77,8 @@
                     (.setCommand ^String/1 (into-array String cmd))
                     (.setInitialRows Integer/MAX_VALUE)
                     .start)
-        output-ch (chan)]
+        output-ch (chan)
+        input-reader (.inputReader process)]
     (env/debug-command cmd)
     {:process process
      :project project
@@ -85,8 +86,9 @@
      :cmd cmd
      :opts opts
      :stdin-writer (-> process .outputWriter PrintWriter.)
+     :input-reader input-reader
      :output-ch output-ch
-     :thread (start-thread (.inputReader process) output-ch (or post-process identity))}))
+     :thread (start-thread input-reader output-ch (or post-process identity))}))
 
 (defn- trim-returns
   [s]
@@ -199,9 +201,20 @@
 (defn kill!
   "Kills the OS process and returns nil."
   [process]
-  (let [{:keys [^Process process]} process]
+  (let [{:keys [^Process process
+                ^PrintWriter stdin-writer
+                ^BufferedReader input-reader
+                output-ch]} process]
     (when process
-      (.destroy process)))
+      (.destroy process)
+      ;; Close I/O wrappers so the reader thread sees EOF/IOException and exits.
+      (when stdin-writer
+        (try (.close stdin-writer) (catch Exception _)))
+      (when input-reader
+        (try (.close input-reader) (catch Exception _)))
+      ;; Unblock any thread waiting on the channel.
+      (when output-ch
+        (close! output-ch))))
   nil)
 
 (defn sources-changed?
