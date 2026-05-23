@@ -1,6 +1,7 @@
 (ns dialog-tool.skein.ui.components.new-command
   "Component for entering a new command to add as a child node."
-  (:require [dialog-tool.skein.ui.common :as common]
+  (:require [dialog-tool.env :as env]
+            [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.session :as session]
             [hyper.core :as h]
             [hyper.effects :as effects]))
@@ -9,6 +10,7 @@
   [cursor parent-knot-id command-text]
   (let [normalized (some-> command-text common/normalize-input)]
     (when normalized
+      (env/log-action "command" " knot=" parent-knot-id " " (pr-str normalized))
       (swap! cursor (fn [session]
                       (-> session
                           session/check-for-changed-sources

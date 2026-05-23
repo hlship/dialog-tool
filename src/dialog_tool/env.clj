@@ -11,6 +11,11 @@
     (-> url slurp string/trim)
     "DEV"))
 
+(defn log-action
+  "Logs a user action to stderr. Remaining args are concatenated as string parts."
+  [action & parts]
+  (perr (apply str "action: " action parts)))
+
 (defn debug-command
   [command]
   (when *debug*
