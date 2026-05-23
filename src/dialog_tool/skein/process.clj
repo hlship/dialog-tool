@@ -13,9 +13,9 @@
             [clojure.string :as string]
             [dialog-tool.env :as env]
             [dialog-tool.project-file :as pf])
-  (:import (com.pty4j PtyProcessBuilder)
-           (java.io BufferedReader PrintWriter)
-           (java.util List)))
+  (:import (com.pty4j.util PtyUtil)
+           (java.io BufferedReader InputStreamReader OutputStreamWriter PrintWriter)
+           (java.util ArrayList List)))
 (defn alive?
   "Given a process map, returns true if the underlying OS Process is still alive."
   [process]
@@ -66,6 +66,53 @@
       (.setDaemon true)
       .start)))
 
+(defn- open-pty-process!
+  "Creates a PTY pair and spawns cmd via pty4j's native spawn-helper binary,
+  bypassing exec_pty (which crashes with SIGBUS on Apple Silicon).
+
+  The spawn helper opens the slave PTY device, redirects stdin/stdout/stderr to
+  it, then exec's the actual command — so the child sees a real TTY and outputs
+  ANSI escape codes normally. Because exec() replaces the helper's process image,
+  the resulting Process handle points directly at the command (correct for
+  alive? and destroyForcibly).
+
+  Equivalent to what pty4j's ProcessBuilderUnixLauncher does on Mac Intel,
+  extended to all Unix platforms."
+  [cmd]
+  (let [pty-class  (Class/forName "com.pty4j.unix.Pty")
+        pty-ctor   (.getConstructor pty-class (into-array Class []))
+        pty        (try
+                     (.newInstance pty-ctor (into-array Object []))
+                     (catch java.lang.reflect.InvocationTargetException e
+                       (throw (or (.getCause e) e))))
+        slave-name (.getSlaveName pty)
+        master-fd  (.getMasterFD pty)]
+    (when (or (< master-fd 0) (= slave-name "/dev/ptmx"))
+      (try (.close pty) (catch Exception _))
+      (throw (java.io.IOException.
+              (str "PTY creation failed (posix_openpt returned error); "
+                   "a system reboot may be required to recover the PTY subsystem. "
+                   "master-fd=" master-fd))))
+    (let [helper     (PtyUtil/resolveNativeFile "pty4j-unix-spawn-helper")
+          helper-cmd (into [(str helper)
+                            "."         ; working directory (inherit cwd)
+                            "0"         ; console mode = false
+                            slave-name
+                            (str master-fd)
+                            ""          ; no error-pty slave name
+                            "-1"]       ; no error-pty master fd
+                           cmd)
+          devnull    (java.io.File. "/dev/null")
+          process    (-> (ProcessBuilder. ^List (ArrayList. ^List helper-cmd))
+                         (.redirectInput devnull)
+                         (.redirectOutput devnull)
+                         (.redirectErrorStream true)
+                         .start)]
+      {:process      process
+       :pty          pty
+       :stdin-writer (-> pty .getOutputStream OutputStreamWriter. PrintWriter.)
+       :input-reader (-> pty .getInputStream InputStreamReader. BufferedReader.)})))
+
 (defn- start!
   [project ^List cmd opts]
   (let [{:keys [pre-flight post-process]} opts
@@ -73,19 +120,16 @@
         ;; so it must be before starting the process.
         _ (when pre-flight
             (pre-flight))
-        process (-> (PtyProcessBuilder.)
-                    (.setCommand ^String/1 (into-array String cmd))
-                    (.setInitialRows Integer/MAX_VALUE)
-                    .start)
-        output-ch (chan)
-        input-reader (.inputReader process)]
+        {:keys [^Process process pty stdin-writer input-reader]} (open-pty-process! cmd)
+        output-ch (chan)]
     (env/debug-command cmd)
     {:process process
+     :pty pty
      :project project
      :hash (pf/project-hash project)
      :cmd cmd
      :opts opts
-     :stdin-writer (-> process .outputWriter PrintWriter.)
+     :stdin-writer stdin-writer
      :input-reader input-reader
      :output-ch output-ch
      :thread (start-thread input-reader output-ch (or post-process identity))}))
@@ -201,20 +245,16 @@
 (defn kill!
   "Kills the OS process and returns nil."
   [process]
-  (let [{:keys [^Process process
-                ^PrintWriter stdin-writer
-                ^BufferedReader input-reader
-                output-ch]} process]
+  (let [{:keys [^Process process pty output-ch]} process]
     (when process
-      (.destroy process)
-      ;; Close I/O wrappers so the reader thread sees EOF/IOException and exits.
-      (when stdin-writer
-        (try (.close stdin-writer) (catch Exception _)))
-      (when input-reader
-        (try (.close input-reader) (catch Exception _)))
-      ;; Unblock any thread waiting on the channel.
-      (when output-ch
-        (close! output-ch))))
+      (.destroyForcibly process))
+    ;; Explicitly close the Pty so the reader thread sees EOF and the master fd
+    ;; is released promptly. Safe to do immediately because we spawn via
+    ;; ProcessBuilder (no exec_pty), so fd reuse is not a concern.
+    (when pty
+      (try (.close pty) (catch Exception _)))
+    (when output-ch
+      (close! output-ch)))
   nil)
 
 (defn sources-changed?
