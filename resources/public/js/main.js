@@ -291,12 +291,24 @@ attribute({
     const needsShift = mods.has('shift');
     const isAlt = mods.has('alt');
 
-    // Build tooltip shortcut label and append to any existing data-tip.
+    // Build tooltip shortcut label.
+    // When data-tip-base is present the server owns the base label; we append the
+    // shortcut and store the result in data-tip (which is preserved across morphs).
+    // A MutationObserver rebuilds data-tip whenever data-tip-base changes so the
+    // label stays current after server-side updates (e.g. "Trace Startup…" → "Trace…").
     const keyLabel = keyDisplayMap[accelKey] ?? accelKey.toUpperCase();
     const shiftPart = needsShift ? (isMac ? '⇧' : 'Shift+') : '';
     const shortcut = (isAlt ? altSymbol : modSymbol) + shiftPart + keyLabel;
-    const existing = el.getAttribute('data-tip');
-    el.setAttribute('data-tip', existing ? `${existing} (${shortcut})` : shortcut);
+    const suffix = ` (${shortcut})`;
+
+    const buildTip = () => {
+      const base = el.getAttribute('data-tip-base') ?? el.getAttribute('data-tip') ?? '';
+      el.setAttribute('data-tip', base ? `${base}${suffix}` : shortcut);
+    };
+    buildTip();
+
+    const observer = new MutationObserver(buildTip);
+    observer.observe(el, { attributes: true, attributeFilter: ['data-tip-base'] });
 
     // On Mac, Option+letter produces a special character (e.g. Option+R → '®'),
     // so e.key is unreliable in Alt mode for letter keys. Use e.code instead
@@ -323,7 +335,10 @@ attribute({
     };
 
     window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
+    return () => {
+      window.removeEventListener('keydown', handler, true);
+      observer.disconnect();
+    };
   }
 });
 
