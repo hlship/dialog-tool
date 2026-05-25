@@ -1,7 +1,6 @@
 (ns dialog-tool.skein.ui.js
   (:require [hyper.effects :as effects]))
 
-
 (defn scroll-knot-into-view!
   "Emits a JS effect that smoothly scrolls the given knot into view."
   [knot-id]

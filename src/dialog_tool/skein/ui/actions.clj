@@ -5,11 +5,22 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.js :as js]
+            [dialog-tool.skein.ui.modals :as modals]
             [hyper.core :as h]))
+
+;; TODO: These may belong elsewhere
+
+(defn session-cursor
+  []
+  (h/global-cursor :session))
+
+(defn modal-cursor
+  []
+  (h/global-cursor :modal))
 
 (defn init-modal
   [type & kvs]
-  (reset! (h/global-cursor :modal)
+  (reset! (modal-cursor)
           (apply hash-map :type type kvs)))
 
 ;; Pending flash message — stored outside the session cursor so it doesn't
@@ -41,8 +52,8 @@
   "Replays all leaf knots. 
   The session is accumulated locally and only committed at the end."
   []
-  (let [*session   (h/global-cursor :session)
-        *modal     (h/global-cursor :modal)
+  (let [*session   (session-cursor)
+        *modal     (modal-cursor)
         session    (-> @*session
                        session/capture-undo
                        session/check-for-changed-sources)
@@ -51,9 +62,9 @@
         cancelled? #(not (:continue @*modal))]
     ;; Store continue flag in progress so cancel can stop the loop
     (env/log-action "replay-all")
-    (reset! *modal {:type      :progress
-                    :operation "Replaying All"
-                    :continue  true})
+    (init-modal :progress
+                :operation "Replaying All"
+                :continue true)
     (let [session'      (reduce (fn [session [idx knot]]
                                   (if (or (cancelled?)
                                           (:error session))
@@ -68,7 +79,7 @@
                                 (map-indexed vector leaf-knots))
           was-canceled? (cancelled?)]
       ;; Clear the progress modal
-      (reset! *modal nil)
+      (modals/dismiss-modal *modal)
       (reset! *session
               (-> session'
                   ;; This will open the source error modal if necessary
@@ -94,8 +105,7 @@
 
 (defn trace
   []
-  (let [*session (h/global-cursor :session)
-        *modal   (h/global-cursor :modal)]
+  (let [*session (h/global-cursor :session)]
     (swap! *session session/check-for-changed-sources)
     ;; Read active-knot-id from the live cursor here rather than
     ;; relying on the render-time captures of `root?` and `id`,
@@ -129,54 +139,53 @@
               _      (env/log-action "trace-build-start" " lines=" (count parsed))
               nodes  (trace/build-tree parsed)
               _      (env/log-action "trace-swap-start" " nodes=" (trace/count-nodes nodes))]
-          (init-modal
-            :trace
-            :trace-state {:nodes      nodes
-                          :search     ""
-                          :node-count (trace/count-nodes nodes)
-                          :command    command}))
+          (init-modal :trace
+                      :trace-state {:nodes      nodes
+                                    :search     ""
+                                    :node-count (trace/count-nodes nodes)
+                                    :command    command}))
         (swap! *session common/maybe-apply-source-error)))))
 
 (defn dynamic-state
   "Presents the raw dynamic response from the @dynamic command with minimal formatting."
   []
   (let [*session (h/global-cursor :session)
-        session @*session
+        session  @*session
         id       (get-in session [:tree :active-knot-id])
-       {:keys [dynamic-response]} (session/get-knot session id)]
+        {:keys [dynamic-response]} (session/get-knot session id)]
     (env/log-action "dynamic-state" id)
-    (init-modal :dynamic-state :dynamic-response   dynamic-response)))
+    (init-modal :dynamic-state :dynamic-response dynamic-response)))
 
 (defn edit-command
-  [*session id]
+  [id]
   (env/log-action "edit-command" id)
-  (let [{:keys [command]} (session/get-knot @*session id)]
+  (let [{:keys [command]} (session/get-knot @(session-cursor) id)]
     (init-modal :edit-command
                 :id id
                 :command command)))
 
 (defn bless
-  [*session id]
+  [id]
   (env/log-action "bless" id)
-  (swap! *session session/bless id)
+  (swap! (session-cursor) session/bless id)
   (flash! "Blessed"))
 
 (defn bless-to-here
-  [*session id]
+  [id]
   (env/log-action "bless-to" id)
-  (swap! *session session/bless-to id)
+  (swap! (session-cursor) session/bless-to id)
   (flash! "Blessed to here"))
 
 (defn new-child
-  [*session id]
+  [id]
   (env/log-action "new-child" id)
-  (swap! *session session/prepare-new-child! id)
+  (swap! (session-cursor) session/prepare-new-child! id)
   (js/reset-and-focus-command-input!))
 
 (defn edit-label
-  [*session id]
+  [id]
   (env/log-action "edit-label" id)
-  (let [{:keys [locked? label]} (session/get-knot @*session id)]
+  (let [{:keys [locked? label]} (session/get-knot @(session-cursor) id)]
     (init-modal :edit-label
                 :id id
                 :label label
@@ -187,10 +196,11 @@
                           true))))
 
 (defn toggle-lock
-  [*session id]
+  [id]
   (env/log-action "toggle-lock" id)
-  (swap! *session session/toggle-lock id)
-  (let [locked? (get-in @*session [:tree :knots id :locked])]
+  (let [*session (session-cursor)
+        locked?  (get-in @*session [:tree :knots id :locked])]
+    (swap! *session session/toggle-lock id)
     (flash! (if locked? "Locked" "Unlocked"))))
 
 (defn insert-parent
@@ -199,19 +209,73 @@
   (init-modal :insert-parent :id id))
 
 (defn delete-knot
-  [*session id]
+  [id]
   (env/log-action "delete" id)
-  (let [[error session'] (session/delete! @*session id)]
+  (let [*session (session-cursor)
+        [error session'] (session/delete! @*session id)]
     (reset! *session session')
     (flash! (if error {:message error
                        :type    :error}
                       "Deleted"))))
 
 (defn split-out
-  [*session id]
+  [id]
   (env/log-action "splice-out" id)
-  (let [[error session'] (session/splice-out! @*session id)]
+  (let [*session (session-cursor)
+        [error session'] (session/splice-out! @*session id)]
     (reset! *session session')
     (flash! (if error {:message error
                        :type    :error}
                       "Spliced Out"))))
+
+(defn activate-knot
+  [id]
+  (env/log-action "activate-knot" id)
+  (let [*session (session-cursor)]
+    (swap! *session session/set-active-knot id)
+    (js/scroll-knot-into-view! id)
+    (js/focus-if-leaf! *session id)))
+
+(defn seek-status
+  [status]
+  (env/log-action (str "seek-" (name status)))
+  (let [*session (session-cursor)
+        session  @*session
+        tree     (:tree session)
+        matching (tree/knots-with-status tree status)]
+    (when (seq matching)
+      (let [last-id  (get-in session [:last-jump status])
+            idx      (when last-id
+                       (let [i (.indexOf matching last-id)]
+                         (when (>= i 0) i)))
+            next-idx (if idx
+                       (mod (inc idx) (count matching))
+                       0)
+            next-id  (nth matching next-idx)]
+        (swap! *session #(-> %
+                             (assoc-in [:last-jump status] next-id)
+                             (session/select-knot next-id)
+                             (session/set-active-knot next-id)))))))
+
+(defn jump-to-label
+  [id]
+  (env/log-action "jump-to-label" id)
+  (swap! (session-cursor)
+         #(-> %
+              (session/select-knot id)
+              (session/set-active-knot id)
+              (js/focus-if-leaf! id))))
+
+(defn quit
+  [*app-state]
+  (env/log-action "quit")
+  (let [*session (session-cursor)]
+    (if (:dirty? @*session)
+      (swap! *session assoc :modal {:type :quit})
+      (do
+        ;; Set closing state so the page renders the close message
+        (swap! *session assoc :closing? true)
+        (future
+          ;; Give hyper time to push the closing message to the browser
+          (Thread/sleep 500)
+          ((get-in @*app-state [:global :shutdown-fn])))))))

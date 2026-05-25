@@ -28,7 +28,7 @@
    - :label - Button text (default: 'OK')
    - :submit - optional callback invoked when clicked"
   [{:keys [label submit] :or {label "OK"}}]
- [:button.btn.btn-primary
+  [:button.btn.btn-primary
    (cond-> {:type "submit"}
      submit (assoc :data-on:click__stop
                    (h/action {:as "modal:ok-submit"}

@@ -53,6 +53,7 @@ Developing the UI requires an additional window.
 - Something is wonky with text search
 - Do we really need lucene?
 - Revisit storing active-knot-id inside tree, inside undo/redo stack
+- search in trace modal looks broken
 
 ## Hyper
 

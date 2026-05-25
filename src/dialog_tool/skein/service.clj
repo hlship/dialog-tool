@@ -8,6 +8,7 @@
             [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.source-handlers :as source]
+            [dialog-tool.skein.ui.actions :as actions]
             [dialog-tool.skein.ui.app :as ui.app]
             [hyper.context :as context]
             [hyper.core :as h]
@@ -18,13 +19,12 @@
 ;; Handlers access it via (h/global-cursor :session).
 
 ;; TODO: Revisit this; does not appear to be available during action requests.
-#_
-(defn log-action-wrapper
-  [handler]
-  (fn [req]
-    (when-let [action-name context/*action-name*]
-      (perr "request action: " action-name))
-    (handler req)))
+#_(defn log-action-wrapper
+    [handler]
+    (fn [req]
+      (when-let [action-name context/*action-name*]
+        (perr "request action: " action-name))
+      (handler req)))
 
 (def ^:private routes
   [["/" {:name  :skein
@@ -99,10 +99,13 @@
                         (s/create-new! start-process skein-path engine' seed'))
         *stop-server  (atom nil)
         session'      (assoc session
+                             ;; This is used to break a cyclic dependencies between
+                             ;; the modals and actions namespaces
+                             :replay-all actions/replay-all
                              :development-mode? development-mode?
                              :debug-enabled? (= engine' :dgdebug)
                              :loading? (nil? tree)
-                             :replay-on-launch? true)
+                                       :replay-on-launch? true)
         shutdown-fn   (fn []
                         (h/stop! @*stop-server)
                         (sk.process/kill! (get-in @*app [:global :session :process]))

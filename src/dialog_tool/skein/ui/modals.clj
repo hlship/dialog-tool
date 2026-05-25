@@ -4,7 +4,6 @@
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.tree :as tree]
-            [dialog-tool.skein.ui.actions :as actions]
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.modal :as modal]
@@ -16,8 +15,10 @@
   (reset! *modal nil))
 
 (defn source-error
-  [*session]
-  (let [*modal   (h/global-cursor :modal)
+  []
+  (let [*session (h/global-cursor :session)
+        {:keys [replay-all]} @*session
+        *modal   (h/global-cursor :modal)
         {:keys [error]} @*modal
         location (source/parse-error-location error)]
     (modal/modal
@@ -35,10 +36,9 @@
        [:div.flex.justify-end.gap-2.mt-2
         (modal/cancel-button {:cursor *session})
         [:button.btn.btn-primary
-         {:data-on:click (h/action {:as "source-error-replay-all"}
-                                   (actions/replay-all))}
+         {:data-on:click (h/action {:as "source-error:replay-all"}
+                                   (replay-all))}
          "Replay All"]]])))
-
 
 (defn- handle-operation-error
   [[operation-error session]]
@@ -127,8 +127,9 @@
 
 (defn edit-label
   "Renders the edit label modal."
-  [*session]
-  (let [*modal (h/global-cursor :modal)
+  []
+  (let [*session (h/global-cursor :session)
+        *modal   (h/global-cursor :modal)
         {:keys [id label locked error]} @*modal]
     (modal/modal
       (cond-> {:title   "Edit Label"
@@ -213,11 +214,12 @@
 (defn quit-modal
   "Renders a quit confirmation modal."
   ;; TODO: Make use of :hyper/env 
-  [*session *app-state]
-  (let [*modal (h/global-cursor :modal)
+  [*app-state]
+  (let [*session (h/global-cursor :session)
+        *modal   (h/global-cursor :modal)
         {:keys [shutdown-fn]} @*app-state]
     (modal/modal
-      {:title   "Unsaved Changes"}
+      {:title "Unsaved Changes"}
       [:div
        [:p.text-sm.text-base-content.mb-4
         "You have unsaved changes. What would you like to do?"]
@@ -237,11 +239,12 @@
 
 (defn trace-modal
   "Renders a modal displaying the trace tree for a command."
-  [*session]
-  (let [*modal (h/global-cursor :modal)
+  []
+  (let [*session (h/global-cursor :session)
+        *modal   (h/global-cursor :modal)
         {:keys [trace-state]} @*modal]
     (modal/modal
-      {:title   (str "Trace: " (:command trace-state))}
+      {:title (str "Trace: " (:command trace-state))}
       [:div.flex.flex-col {:class "w-[85vw] h-[80vh]"}
        [:div.flex-1.min-h-0.flex.flex-col
         (trace-view/render-trace-tree *session trace-state)]
@@ -253,7 +256,7 @@
 
 (defn render-modal
   "Renders the appropriate modal based on the global :modal cursor."
-  [*session *app-state]
+  [*app-state]
   (let [*modal (h/global-cursor :modal)
         {:keys [type]} @*modal]
     ;; h/reactive seems to do a wierd thing if the body returns nil
@@ -267,7 +270,7 @@
           (edit-command)
 
           :edit-label
-          (edit-label *session)
+          (edit-label)
 
           :insert-parent
           (insert-parent)
@@ -276,10 +279,10 @@
           (dynamic-state)
 
           :quit
-          (quit-modal *session *app-state)
+          (quit-modal *app-state)
 
           :trace
-          (trace-modal *session)
+          (trace-modal)
 
           :source-error
-          (source-error *session))))))
+          (source-error))))))
