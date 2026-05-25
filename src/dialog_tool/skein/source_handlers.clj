@@ -25,22 +25,23 @@
         {:file-path (string/trim file-path)
          :line      (parse-long line-str)}))))
 
-(defn- get-session
+(defn- request->globals
   "Reads the current session from hyper's app-state on the request."
   [req]
   (when-let [*app-state (:hyper/app-state req)]
-    (get-in @*app-state [:global :session])))
+    (get @*app-state :global)))
 
 (defn- resolve-trace-source
   "Given the session and a node ID string, resolves the trace node's source
    to a [file-path line resolved-path] triple, or nil."
-  [session node-id-str]
-  (let [nodes (get-in session [:trace :nodes])
+  [globals node-id-str]
+  (let [{:keys [nodes]} (:modal globals)
         node-id (parse-long node-id-str)
-        node (when (and nodes node-id) (trace/get-node nodes node-id))
+        node    (when (and nodes node-id)
+                  (trace/get-node nodes node-id))
         [file-path line] (when node (trace/parse-source (:source node)))]
     (when file-path
-      (let [project (-> session :process :project)
+      (let [project  (get-in globals [:session :process :project])
             root-dir (pf/root-dir project)
             resolved (fs/path root-dir file-path)]
         (when (fs/exists? resolved)
@@ -48,7 +49,7 @@
 
 (defn- read-source-lines
   [resolved-path]
-  (let [content (slurp (str resolved-path))
+  (let [content   (slurp (str resolved-path))
         raw-lines (string/split content #"\n" -1)]
     (if (and (> (count raw-lines) 1)
              (= "" (peek raw-lines)))
@@ -74,72 +75,74 @@
          [:table.border-collapse.w-full.leading-relaxed
           [:tbody
            (map-indexed
-            (fn [idx text]
-              (let [n            (+ start idx 1)
-                    highlighted? (= n line)]
-                [:tr {:class (when highlighted? "bg-yellow-200")}
-                 [:td.text-right.pr-2.pl-2.select-none.border-r.border-gray-200.whitespace-nowrap
-                  {:class (if highlighted? "text-amber-800 font-bold" "text-gray-400")}
-                  n]
-                 [:td.px-2.whitespace-pre
-                  (chassis/raw (if dg?
-                                 (syntax/highlight-line text)
-                                 (syntax/html-escape text)))]]))
-            window)]]]))))
+             (fn [idx text]
+               (let [n            (+ start idx 1)
+                     highlighted? (= n line)]
+                 [:tr {:class (when highlighted? "bg-yellow-200")}
+                  [:td.text-right.pr-2.pl-2.select-none.border-r.border-gray-200.whitespace-nowrap
+                   {:class (if highlighted? "text-amber-800 font-bold" "text-gray-400")}
+                   n]
+                  [:td.px-2.whitespace-pre
+                   (chassis/raw (if dg?
+                                  (syntax/highlight-line text)
+                                  (syntax/html-escape text)))]]))
+             window)]]]))))
 
 (defn view-source
   "Serves a standalone HTML page displaying a Dialog source file."
   [req]
-  (let [node-id (-> req :path-params :id)]
-    (if-let [[file-path line resolved] (resolve-trace-source (get-session req) node-id)]
+  (let [node-id (-> req :path-params :id)
+        globals  (request->globals req)]
+    (if-let [[file-path line resolved] (resolve-trace-source globals node-id)]
       (let [raw-lines (read-source-lines resolved)
-            dg? (string/ends-with? file-path ".dg")
-            lines (map-indexed
-                   (fn [idx text]
-                     (let [n (inc idx)]
-                       {:number n
-                        :text (if dg?
-                                (syntax/highlight-line text)
-                                (syntax/html-escape text))
-                        :highlighted (= n line)}))
-                   raw-lines)]
-        {:status 200
+            dg?       (string/ends-with? file-path ".dg")
+            lines     (map-indexed
+                        (fn [idx text]
+                          (let [n (inc idx)]
+                            {:number      n
+                             :text        (if dg?
+                                            (syntax/highlight-line text)
+                                            (syntax/html-escape text))
+                             :highlighted (= n line)}))
+                        raw-lines)]
+        {:status  200
          :headers {"Content-Type" "text/html"}
-         :body (s/render-file "skein/source.html"
-                              {:file-path file-path
-                               :line line
-                               :line-count (count raw-lines)
-                               :lines lines})})
-      {:status 404
+         :body    (s/render-file "skein/source.html"
+                                 {:file-path  file-path
+                                  :line       line
+                                  :line-count (count raw-lines)
+                                  :lines      lines})})
+      {:status  404
        :headers {"Content-Type" "text/plain"}
-       :body "Source not found"})))
+       :body    "Source not found"})))
 
 (defn source-preview
   "Returns an HTML fragment for hover preview of source code."
   [req]
-  (let [node-id (-> req :path-params :id)]
-    (if-let [[file-path line resolved] (resolve-trace-source (get-session req) node-id)]
+  (let [node-id (-> req :path-params :id)
+        globals  (request->globals req)]
+    (if-let [[file-path line resolved] (resolve-trace-source globals node-id)]
       (let [raw-lines (read-source-lines resolved)
-            dg? (string/ends-with? file-path ".dg")
-            context 4
-            start (max 0 (- line context 1))
-            end (min (count raw-lines) (+ line context))
-            window (subvec raw-lines start end)
-            lines (map-indexed
-                   (fn [idx text]
-                     (let [n (+ start idx 1)]
-                       {:number n
-                        :text (if dg?
-                                (syntax/highlight-line text)
-                                (syntax/html-escape text))
-                        :highlighted (= n line)}))
-                   window)]
-        {:status 200
+            dg?       (string/ends-with? file-path ".dg")
+            context   4
+            start     (max 0 (- line context 1))
+            end       (min (count raw-lines) (+ line context))
+            window    (subvec raw-lines start end)
+            lines     (map-indexed
+                        (fn [idx text]
+                          (let [n (+ start idx 1)]
+                            {:number      n
+                             :text        (if dg?
+                                            (syntax/highlight-line text)
+                                            (syntax/html-escape text))
+                             :highlighted (= n line)}))
+                        window)]
+        {:status  200
          :headers {"Content-Type" "text/html"}
-         :body (s/render-file "skein/source-preview.html"
-                              {:file-path file-path
-                               :line line
-                               :lines lines})})
-      {:status 404
+         :body    (s/render-file "skein/source-preview.html"
+                                 {:file-path file-path
+                                  :line      line
+                                  :lines     lines})})
+      {:status  404
        :headers {"Content-Type" "text/plain"}
-       :body "Source not found"})))
+       :body    "Source not found"})))

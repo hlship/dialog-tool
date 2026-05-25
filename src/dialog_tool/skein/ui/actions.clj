@@ -130,10 +130,10 @@
               nodes  (trace/build-tree parsed)
               _      (env/log-action "trace-swap-start" " nodes=" (trace/count-nodes nodes))]
           (init-modal :trace
-                      :trace-state {:nodes      nodes
-                                    :search     ""
-                                    :node-count (trace/count-nodes nodes)
-                                    :command    command}))
+                      :nodes nodes
+                      :search ""
+                      :node-count (trace/count-nodes nodes)
+                      :command command))
         (swap! *session common/maybe-apply-source-error)))))
 
 (defn dynamic-state

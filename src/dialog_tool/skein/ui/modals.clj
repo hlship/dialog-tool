@@ -240,16 +240,15 @@
 (defn trace-modal
   "Renders a modal displaying the trace tree for a command."
   []
-  (let [*session (session-cursor)
-        *modal   (modal-cursor)
-        {:keys [trace-state]} @*modal]
+  (let [*modal (modal-cursor)
+        {:keys [command]} @*modal]
     (modal/modal
-      {:title (str "Trace: " (:command trace-state))}
+      {:title (str "Trace: " command)}
       [:div.flex.flex-col {:class "w-[85vw] h-[80vh]"}
        [:div.flex-1.min-h-0.flex.flex-col
-        (trace-view/render-trace-tree *session trace-state)]
+        (trace-view/render-trace-tree *modal)]
        [:div.flex.justify-end.pt-4.flex-shrink-0
-        (modal/ok-button {:label "Close"
+        (modal/ok-button {:label  "Close"
                           :submit dismiss-modal})]
        ;; Hidden popup for source preview on hover (positioned by JS)
        [:div#source-preview-popup.hidden.fixed.z-50.bg-white.text-black.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden

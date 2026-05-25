@@ -47,8 +47,6 @@ Developing the UI requires an additional window.
 - Something is wonky with text search
 - Do we really need lucene?
 - Revisit storing active-knot-id inside tree, inside undo/redo stack
-- search in trace modal looks broken
-- source popups and links to full source also broken
 - not displaying accels on operations toolbar items
 
 ## Hyper
