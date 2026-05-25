@@ -19,6 +19,7 @@
   (-> @*app :global :session :tree :knots (get 1728874698428))
   (-> @*app :tab keys)
   (-> @*app :global :modal)
+  (-> @*app :global :shutdown-fn)
 
   (swap! *app assoc-in [:global :modal] nil)
 

@@ -33,9 +33,9 @@
    (e.g. [B], [BLUE]) then shows word-level diff."
   [response unblessed]
   (if unblessed
-    (let [response (ansi/ansi->markers response)
+    (let [response  (ansi/ansi->markers response)
           unblessed (ansi/ansi->markers unblessed)
-          changes (diff/diff-text response unblessed)]
+          changes   (diff/diff-text response unblessed)]
       (map (fn [{:keys [type value]}]
              (case type
                :added [:span.text-info.font-bold (visible-whitespace value)]
@@ -49,17 +49,17 @@
   "Renders the knot search input and results dropdown in the operations toolbar."
   []
   (let [search-signal (h/local-signal :search-query "")
-        *search (common/search-cursor)]
+        *search       (common/search-cursor)]
     [:div.relative.grow.focus-within:z-20
      [:label.input.input-sm.input-bordered.flex.items-center.gap-2.w-full.tooltip.tooltip-bottom.search-expand-label
       {:data-accel "f"
        :data-label "Search"}
       [:div.icon.w-4.h-4.icon-search]
       [:input#search-input.grow
-       {:type "text"
-        :placeholder "Search knots…"
+       {:type         "text"
+        :placeholder  "Search knots…"
         :autocomplete "off"
-        :data-bind (:name search-signal)
+        :data-bind    (:name search-signal)
         :data-on:input
         (h/action {:as "knot-search-update"}
                   (actions/search $value))
@@ -68,7 +68,7 @@
                   (case $key
                     "Escape" (actions/dismiss-search)
                     "ArrowDown" (effects/execute-script!
-                                 "document.querySelector('#search-results button')?.focus()")
+                                  "document.querySelector('#search-results button')?.focus()")
                     nil))}]]
      (when-let [{:keys [results query]} @*search]
        (when (seq results)
@@ -78,7 +78,7 @@
           (for [{:keys [knot-id snippet]} results]
             [:li
              [:button.w-full.text-left
-              {:type "button"
+              {:type            "button"
                :data-on:keydown "sk.navigateSearchResults(evt, el)"
                :data-on:click
                (h/action {:as "search-knot-selected"}
@@ -93,7 +93,7 @@
   to build the tooltip-content child span (label + shortcut)."
   [attrs icon label]
   (let [extra-class (:class attrs)
-        attrs' (into {} (remove (comp nil? val) (dissoc attrs :class)))]
+        attrs'      (into {} (remove (comp nil? val) (dissoc attrs :class)))]
     [:div (assoc attrs'
                  :class (classes "btn btn-primary tooltip tooltip-bottom" extra-class)
                  :data-label label
@@ -102,12 +102,12 @@
      [:span.hidden.lg:inline label]]))
 
 (defn navbar
-  [*session *app-state]
-  (let [session @*session
+  [*session]
+  (let [session       @*session
         {:keys [skein-path tree dirty?]} session
-        can-undo? (-> session :undo-stack not-empty)
-        can-redo? (-> session :redo-stack not-empty)
-        can-reload? (session/can-reload? session)
+        can-undo?     (-> session :undo-stack not-empty)
+        can-redo?     (-> session :redo-stack not-empty)
+        can-reload?   (session/can-reload? session)
         {:keys [ok new error]} (tree/totals tree)
         labeled-knots (tree/labeled-knots-sorted tree)]
     [:nav {:class (classes "bg-base-100 text-base-content border-base-200 divide-base-200"
@@ -120,69 +120,69 @@
        [:div.bg-success.text-success-content.p-2.font-semibold.rounded-l-lg ok]
        [:div.bg-warning.text-warning-content.p-2.font-semibold
         (when (pos? new)
-          {:class "cursor-pointer"
+          {:class         "cursor-pointer"
            :data-on:click (h/action {:as "seek-new"}
                                     (actions/seek-status :new))})
         new]
        [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg
         (when (pos? error)
-          {:class "cursor-pointer"
+          {:class         "cursor-pointer"
            :data-on:click (h/action {:as "seek-error"}
                                     (actions/seek-status :error))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
        (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                           :label (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])}
+                           :label    (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])}
                           (for [{:keys [id label]} labeled-knots]
                             (dropdown/button {:data-on:click (h/action {:as "jump-to-label"}
                                                                        (actions/jump-to-label id))}
                                              label)))
-       (navbar-btn {:data-on:click (h/action {:as "replay-all"}
-                                             (actions/replay-all))
+       (navbar-btn {:data-on:click          (h/action {:as "replay-all"}
+                                                      (actions/replay-all))
                     :data-accel__alt__shift "r"}
                    "icon-play" "Replay All")
        (navbar-btn {:data-on:click (h/action {:as "save"}
                                              (env/log-action "save")
                                              (swap! *session session/save!)
                                              (actions/flash! "Saved"))
-                    :data-accel "s"
-                    :class (when dirty? "btn-soft")}
+                    :data-accel    "s"
+                    :class         (when dirty? "btn-soft")}
                    "icon-save" "Save")
        (navbar-btn {:data-on:click (h/action {:as "undo"}
                                              (env/log-action "undo")
                                              (swap! *session session/undo)
                                              (actions/flash! "Undo")
                                              (js/navigate-to-active-knot! *session))
-                    :data-accel "z"
-                    :disabled (not can-undo?)}
+                    :data-accel    "z"
+                    :disabled      (not can-undo?)}
                    "icon-undo" "Undo")
-       (navbar-btn {:data-on:click (h/action {:as "redo"}
-                                             (env/log-action "redo")
-                                             (swap! *session session/redo)
-                                             (actions/flash! "Redo")
-                                             (js/navigate-to-active-knot! *session))
+       (navbar-btn {:data-on:click     (h/action {:as "redo"}
+                                                 (env/log-action "redo")
+                                                 (swap! *session session/redo)
+                                                 (actions/flash! "Redo")
+                                                 (js/navigate-to-active-knot! *session))
                     :data-accel__shift "z"
-                    :disabled (not can-redo?)}
+                    :disabled          (not can-redo?)}
                    "icon-redo" "Redo")
        (navbar-btn {:data-on:click (h/action {:as "reload"}
                                              (swap! *session session/reload!)
                                              (actions/flash! "Reloaded")
                                              (js/navigate-to-active-knot! *session))
-                    :data-tip "Reload"
-                    :disabled (not can-reload?)}
+                    :data-tip      "Reload"
+                    :disabled      (not can-reload?)}
                    "icon-reload" "Reload")
        [:div.btn.btn-primary {:data-on:click (h/action {:as "quit"}
-                                                       (actions/quit *app-state))}
+                                                       (actions/quit))}
         [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
-  {:ok "border-base-300"
-   :new "border-warning"
+  {:ok    "border-base-300"
+   :new   "border-warning"
    :error "border-error"})
 
 (def ^:private status->button-class
-  {:ok nil
-   :new "bg-warning"
+  {:ok    nil
+   :new   "bg-warning"
    :error "bg-error"})
 
 (defn- compare-pred
@@ -219,12 +219,12 @@
         {:keys [descendant-status]} knot]
     [:div.indicator
      (dropdown/dropdown {:button-class (str "btn py-0 px-2 " (or (status->button-class descendant-status) "btn-neutral"))
-                         :disabled (< (count children) 2)
-                         :label [:div.icon.icon-children]}
+                         :disabled     (< (count children) 2)
+                         :label        [:div.icon.icon-children]}
                         (map (fn [{:keys [id label command]}]
                                (let [status (tree/greatest-status (tree/knot-status tree id)
                                                                   (tree/descendant-status tree id))]
-                                 (dropdown/button {:bg-class (status->button-class status)
+                                 (dropdown/button {:bg-class      (status->button-class status)
                                                    :data-on:click (h/action {:as "select-child"}
                                                                             (swap! cursor session/select-knot id))}
                                                   (or label command))))
@@ -232,10 +232,10 @@
      (when (> (count children) 1)
        [:div
         {:class (classes
-                 "indicator-item indicator-top indicator-right"
-                 "rounded-full text-sm border-2 bg-gray-500 border-base-100 text-white"
-                 "flex items-center justify-center"
-                 "w-8 h-8")}
+                  "indicator-item indicator-top indicator-right"
+                  "rounded-full text-sm border-2 bg-gray-500 border-base-100 text-white"
+                  "flex items-center justify-center"
+                  "w-8 h-8")}
         (count children)])]))
 
 (defn- render-knot
@@ -249,9 +249,9 @@
       (when active?
         [:div.icon.icon-arrow-right {:title "Selected"}])]
      [:div.border-x-8.grow.cursor-pointer
-      {:class (if active?
-                "border-l-primary"
-                (status->border-class status))
+      {:class         (if active?
+                        "border-l-primary"
+                        (status->border-class status))
        :data-on:click (h/action {:as "set-active-knot"}
                                 (swap! *session session/set-active-knot-id id)
                                 (js/focus-if-leaf! *session id))}
@@ -264,7 +264,7 @@
           [:span.font-bold.bg-neutral.text-neutral-content.p-1.rounded-md label])
         (render-children-navigation *session tree knot)]
        (render-diff response unblessed)
-       (when (and debug-enabled? ;; Running dgdebug? 
+       (when (and debug-enabled?                            ;; Running dgdebug? 
                   show-dynamic?
                   ;; Don't render dynamic for root knot, as that ends up being a a dump of every
                   ;; object's flags and variables.  We may do something about that in the future
@@ -280,7 +280,7 @@
   Accepts an optional :tooltip-dir key (default \"bottom\") to control placement."
   [attrs icon]
   (let [tooltip-dir (get attrs :tooltip-dir "bottom")
-        attrs' (into {} (remove (comp nil? val) (dissoc attrs :tooltip-dir)))]
+        attrs'      (into {} (remove (comp nil? val) (dissoc attrs :tooltip-dir)))]
     [:div (assoc attrs'
                  :class (classes "btn btn-xs btn-primary tooltip" (str "tooltip-" tooltip-dir))
                  :data-preserve-attr "data-tip")
@@ -288,116 +288,116 @@
 
 (defn- render-operations-toolbar
   [*session]
-  (let [session @*session
+  (let [session        @*session
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
-        knot (session/get-knot session active-knot-id)
+        knot           (session/get-knot session active-knot-id)
         {:keys [id status dynamic-response parent-id]} knot
-        root? (= 0 id)
-        ok? (= :ok status)
-        child-id (get-in tree [:selected id])
-        no-child? (nil? child-id)
-        leaf-knot-id (-> tree
-                         tree/selected-knots
-                         last
-                         :id)]
+        root?          (= 0 id)
+        ok?            (= :ok status)
+        child-id       (get-in tree [:selected id])
+        no-child?      (nil? child-id)
+        leaf-knot-id   (-> tree
+                           tree/selected-knots
+                           last
+                           :id)]
     [:div {:class (classes "bg-base-100 text-base-content border-base-200"
                            "px-2 sm:px-4 py-1"
                            "w-full border-b")}
      [:div.w-full.flex.items-center.gap-1
       ;; Navigation — left-aligned
-      (toolbar-btn {:data-label "First Knot"
-                    :disabled root?
-                    :tooltip-dir "right"
+      (toolbar-btn {:data-label             "First Knot"
+                    :disabled               root?
+                    :tooltip-dir            "right"
                     :data-accel__alt__shift "ArrowUp"
-                    :data-on:click (when-not root?
-                                     (h/action {:as "activate-first-knot"}
-                                               (actions/activate-knot 0)))}
+                    :data-on:click          (when-not root?
+                                              (h/action {:as "activate-first-knot"}
+                                                        (actions/activate-knot 0)))}
                    "icon-scroll-top")
-      (toolbar-btn {:disabled root?
-                    :data-label "Parent knot"
+      (toolbar-btn {:disabled        root?
+                    :data-label      "Parent knot"
                     :data-accel__alt "ArrowUp"
-                    :data-on:click (when-not root?
-                                     (h/action {:as "activate-parent"}
-                                               (actions/activate-knot parent-id)))}
+                    :data-on:click   (when-not root?
+                                       (h/action {:as "activate-parent"}
+                                                 (actions/activate-knot parent-id)))}
                    "icon-arrow-up")
-      (toolbar-btn {:disabled no-child?
-                    :data-label "Child knot"
+      (toolbar-btn {:disabled        no-child?
+                    :data-label      "Child knot"
                     :data-accel__alt "ArrowDown"
-                    :data-on:click (when-not no-child?
-                                     (h/action {:as "activate-child"}
-                                               (actions/activate-knot child-id)))}
+                    :data-on:click   (when-not no-child?
+                                       (h/action {:as "activate-child"}
+                                                 (actions/activate-knot child-id)))}
                    "icon-arrow-down")
-      (toolbar-btn {:data-label "Last Knot"
-                    :disabled (= id leaf-knot-id)
+      (toolbar-btn {:data-label             "Last Knot"
+                    :disabled               (= id leaf-knot-id)
                     :data-accel__alt__shift "ArrowDown"
-                    :data-on:click (when-not (= id leaf-knot-id)
-                                     (h/action {:as "activate-last"}
-                                               (actions/activate-knot leaf-knot-id)))}
+                    :data-on:click          (when-not (= id leaf-knot-id)
+                                              (h/action {:as "activate-last"}
+                                                        (actions/activate-knot leaf-knot-id)))}
                    "icon-scroll-bottom")
       ;; Search — fills the space between navigation and operations
       [:div.grow.flex.px-2
        (render-search)]
       ;; Operations — right-aligned
-      (toolbar-btn {:disabled ok?
-                    :data-tip "Bless"
+      (toolbar-btn {:disabled      ok?
+                    :data-tip      "Bless"
                     :data-on:click (h/action {:as "bless"}
                                              (actions/bless id))}
                    "icon-bless")
-      (toolbar-btn {:disabled (or ok? root?)
-                    :data-label "Bless To Here"
+      (toolbar-btn {:disabled        (or ok? root?)
+                    :data-label      "Bless To Here"
                     :data-accel__alt "b"
-                    :data-on:click (when-not (or ok? root?)
-                                     (h/action {:as "bless-to-here"}
-                                               (actions/bless-to-here id)))}
+                    :data-on:click   (when-not (or ok? root?)
+                                       (h/action {:as "bless-to-here"}
+                                                 (actions/bless-to-here id)))}
                    "icon-bless-to")
-      (toolbar-btn {:data-label "Replay"
+      (toolbar-btn {:data-label      "Replay"
                     :data-accel__alt "r"
-                    :data-on:click (h/action {:as "replay-to"}
-                                             (actions/replay-to id))}
+                    :data-on:click   (h/action {:as "replay-to"}
+                                               (actions/replay-to id))}
                    "icon-play")
-      (toolbar-btn {:data-label "New Child"
+      (toolbar-btn {:data-label      "New Child"
                     :data-accel__alt "a"
-                    :data-on:click (h/action {:as "new-child"}
-                                             (actions/new-child id))}
+                    :data-on:click   (h/action {:as "new-child"}
+                                               (actions/new-child id))}
                    "icon-add")
       ;; Modal-opening actions (focus goes to modal)
-      (toolbar-btn {:disabled root?
-                    :data-label "Edit Command…"
+      (toolbar-btn {:disabled        root?
+                    :data-label      "Edit Command…"
                     :data-accel__alt "e"
-                    :data-on:click (when-not root?
-                                     (h/action {:as "edit-command"}
-                                               (actions/edit-command id)))}
+                    :data-on:click   (when-not root?
+                                       (h/action {:as "edit-command"}
+                                                 (actions/edit-command id)))}
                    "icon-edit")
-      (toolbar-btn {:disabled root?
-                    :data-label "Edit Label…"
+      (toolbar-btn {:disabled        root?
+                    :data-label      "Edit Label…"
                     :data-accel__alt "l"
-                    :data-on:click (when-not root?
-                                     (h/action {:as "edit-label"}
-                                               (actions/edit-label id)))}
+                    :data-on:click   (when-not root?
+                                       (h/action {:as "edit-label"}
+                                                 (actions/edit-label id)))}
                    "icon-label")
-      (toolbar-btn {:disabled root?
-                    :data-label "Toggle Lock"
+      (toolbar-btn {:disabled        root?
+                    :data-label      "Toggle Lock"
                     :data-accel__alt "k"
-                    :data-on:click (when-not root?
-                                     (h/action {:as "toggle-lock"}
-                                               (actions/toggle-lock id)))}
+                    :data-on:click   (when-not root?
+                                       (h/action {:as "toggle-lock"}
+                                                 (actions/toggle-lock id)))}
                    "icon-lock")
-      (toolbar-btn {:disabled root?
-                    :data-tip "Insert Parent…"
+      (toolbar-btn {:disabled      root?
+                    :data-tip      "Insert Parent…"
                     :data-on:click (when-not root?
                                      (h/action {:as "insert-parent"}
                                                (actions/insert-parent id)))}
                    "icon-insert")
-      (toolbar-btn {:disabled root?
-                    :data-label "Delete"
+      (toolbar-btn {:disabled        root?
+                    :data-label      "Delete"
                     :data-accel__alt "d"
-                    :data-on:click (when-not root?
-                                     (h/action {:as "delete"}
-                                               (actions/delete-knot id)))}
+                    :data-on:click   (when-not root?
+                                       (h/action {:as "delete"}
+                                                 (actions/delete-knot id)))}
                    "icon-delete")
-      (toolbar-btn {:disabled (or root? (nil? (:children knot)))
-                    :data-tip "Splice Out"
+      (toolbar-btn {:disabled      (or root? (nil? (:children knot)))
+                    :data-tip      "Splice Out"
                     :data-on:click (when-not (or root? (nil? (:children knot)))
                                      (h/action {:as "splice-out"}
                                                (actions/split-out id)))}
@@ -405,18 +405,18 @@
       ;; Debug-only operations (hidden when not debug-enabled?)
       (when debug-enabled?
         (list
-         (toolbar-btn {:disabled (nil? dynamic-response)
-                       :data-label "Dynamic State…"
-                       :data-accel__alt "s"
-                       :data-on:click (h/action {:as "dynamic-state"}
-                                                (actions/dynamic-state))}
-                      "icon-dynamic")
-         (toolbar-btn {:data-label (if root? "Trace Startup…" "Trace…")
-                       :data-accel__alt "t"
-                       :tooltip-dir "left"
-                       :data-on:click (h/action {:as "trace"}
-                                                (actions/trace))}
-                      "icon-trace")))]]))
+          (toolbar-btn {:disabled        (nil? dynamic-response)
+                        :data-label      "Dynamic State…"
+                        :data-accel__alt "s"
+                        :data-on:click   (h/action {:as "dynamic-state"}
+                                                   (actions/dynamic-state))}
+                       "icon-dynamic")
+          (toolbar-btn {:data-label      (if root? "Trace Startup…" "Trace…")
+                        :data-accel__alt "t"
+                        :tooltip-dir     "left"
+                        :data-on:click   (h/action {:as "trace"}
+                                                   (actions/trace))}
+                       "icon-trace")))]]))
 
 (defn- render-fab
   [*session]
@@ -424,20 +424,20 @@
     [:div.fab
      [:div.btn.btn-lg.btn-circle.btn-primary
       {:tabindex "0"
-       :role "button"}
+       :role     "button"}
       [:div.icon.icon-globe]]
 
      [:div.rounded-box.bg-base-100.border.border-base-200.flex.flex-col.items-start
       [:label.label.p-2
-       [:input.toggle {:type "checkbox"
-                       :checked fixed-width?
+       [:input.toggle {:type           "checkbox"
+                       :checked        fixed-width?
                        :data-on:change (h/action {:as "toggle-fixed-width"}
                                                  (swap! *session update :fixed-width? not))}]
        "Fixed-width font"]
       [:label.label.p-2
-       [:input.toggle {:type "checkbox"
-                       :checked show-dynamic?
-                       :disabled (not debug-enabled?)
+       [:input.toggle {:type           "checkbox"
+                       :checked        show-dynamic?
+                       :disabled       (not debug-enabled?)
                        :data-on:change (h/action {:as "toggle-show-dynamic"}
                                                  (swap! *session update :show-dynamic? not))}]
        "Show dynamic state"]]]))
@@ -446,9 +446,9 @@
   "Main hyper page function. Renders the full skein UI from the session cursor.
   Hyper calls this whenever the :session cursor changes and pushes the diff via SSE."
   [req]
-  (let [*session (session-cursor)
+  (let [*session   (session-cursor)
         *app-state (:hyper/app-state req)
-        session @*session
+        session    @*session
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
 
     ;; This is done early to avoid a possible (?) race condition when the SSE stream
@@ -463,10 +463,10 @@
         [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
         [:p.text-base-content.opacity-70 "You may close this window now."]]]
       ;; Normal page render
-      (let [flash (first (reset-vals! actions/*pending-flash nil))
+      (let [flash          (first (reset-vals! actions/*pending-flash nil))
             active-knot-id (:active-knot-id tree)
-            knots (tree/selected-knots tree)
-            leaf-knot (last knots)]
+            knots          (tree/selected-knots tree)
+            leaf-knot      (last knots)]
         [:div.relative
          ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
          ;; insertion. Uses a random id so each flash is a new element to the morph
@@ -478,12 +478,12 @@
              ;; TODO: I don't think we need the rendered elements, the atom, or anything
              ;; beyond sk.showFlash().  Or maybe a placeholder with
              ;; data-ignore (or data-ignore-morph).
-             [:span {:id (str "flash-trigger-" (random-uuid))
+             [:span {:id        (str "flash-trigger-" (random-uuid))
                      :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
-                     :style "display:none"}]))
+                     :style     "display:none"}]))
          ;; Single fixed header containing both toolbars — no gap possible between them
          [:div.fixed.top-0.start-0.w-full.z-30
-          (navbar *session *app-state)
+          (navbar *session)
           (render-operations-toolbar *session)]
          ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
          [:div.w-full.mt-28.px-2
@@ -496,15 +496,15 @@
             ;; each selected child until we hit a leaf, followed by
             ;; a command input field.
             (list
-             (map (fn [knot]
-                    (render-knot *session tree knot {:debug-enabled? debug-enabled?
-                                                     :show-dynamic? show-dynamic?
-                                                     :fixed-width? fixed-width?
-                                                     :active-knot-id active-knot-id}))
-                  knots)
-             (new-command/new-command-input *session (:id leaf-knot))))]
+              (map (fn [knot]
+                     (render-knot *session tree knot {:debug-enabled? debug-enabled?
+                                                      :show-dynamic?  show-dynamic?
+                                                      :fixed-width?   fixed-width?
+                                                      :active-knot-id active-knot-id}))
+                   knots)
+              (new-command/new-command-input *session (:id leaf-knot))))]
          ;; Modal overlay
-         (modals/render-modal *app-state)
+         (modals/render-modal)
          ;; FAB for settings
          (render-fab *session)
          ;; On initial render, may want to trigger replay-all.

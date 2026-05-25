@@ -260,18 +260,12 @@
   (js/scroll-knot-into-view! id))
 
 (defn quit
-  [*app-state]
+  []
   (env/log-action "quit")
-  (let [*session (session-cursor)]
+  (let [*session    (session-cursor)]
     (if (:dirty? @*session)
-      (swap! *session assoc :modal {:type :quit})
-      (do
-        ;; Set closing state so the page renders the close message
-        (swap! *session assoc :closing? true)
-        (future
-          ;; Give hyper time to push the closing message to the browser
-          (Thread/sleep 500)
-          ((get-in @*app-state [:global :shutdown-fn])))))))
+      (init-modal :quit)
+      (common/quit))))
 
 (defn search
   [q]
@@ -283,7 +277,7 @@
       (reset! *search nil)
       (swap! *search assoc
              :query q'
-             :results  (search/search-knots @*tree-cursor q' 50)))))
+             :results (search/search-knots @*tree-cursor q' 50)))))
 
 (defn dismiss-search
   "Clears the search results from the session and resets the search input."

@@ -30,3 +30,10 @@
   (if-let [error (:error session)]
     (setup-source-error session error)
     session))
+
+(defn quit
+  []
+  (let [*session (session-cursor)]
+    (swap! *session assoc :closing? true))
+  (when-let [shutdown-fn @(h/global-cursor :shutdown-fn)]
+    (shutdown-fn)))

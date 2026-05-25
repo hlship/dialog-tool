@@ -97,7 +97,6 @@
         session       (if tree
                         (s/create-loaded! start-process skein-path tree)
                         (s/create-new! start-process skein-path engine' seed'))
-        *stop-server  (atom nil)
         session'      (assoc session
                              ;; This is used to break a cyclic dependencies between
                              ;; the modals and actions namespaces
@@ -106,21 +105,22 @@
                              :debug-enabled? (= engine' :dgdebug)
                              :loading? (nil? tree)
                                        :replay-on-launch? true)
-        shutdown-fn   (fn []
-                        (h/stop! @*stop-server)
-                        (sk.process/kill! (get-in @*app [:global :session :process]))
-                        (search/close!)
-
-                        (println "Shut down")
-
-                        (when (and exit-when-shutdown? (not development-mode?))
-                          (System/exit 0)))
         stop-server   (do
                         (reset! *app (-> (state/init-state)
-                                         (update :global
-                                                 assoc
-                                                 :session session'
-                                                 :shutdown-fn shutdown-fn)))
-                        (h/start! (create-handler *app) {:port port'}))]
-    (reset! *stop-server stop-server)
+                                         (assoc-in [:global :session] session')))
+                        (h/start! (create-handler *app) {:port port'}))
+        shutdown-fn   (fn []
+                        ;; Give hyper a little time to get last updates to browser.
+                        (do
+                          (Thread/sleep 500)
+                          (h/stop! stop-server)
+                          (sk.process/kill! (get-in @*app [:global :session :process]))
+                          (search/close!)
+
+                          (println "Shut down")
+
+                          (when (and exit-when-shutdown? (not development-mode?))
+                            (System/exit 0))))]
+    ;; This is not what cursors are really intended for, but it works for this case.
+    (swap! *app assoc-in [:global :shutdown-fn] shutdown-fn)
     port'))

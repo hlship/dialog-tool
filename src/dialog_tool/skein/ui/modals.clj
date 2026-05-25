@@ -211,31 +211,39 @@
        {:data-init "el.focus()"}
        (ansi/ansi->hiccup trimmed)])))
 
+(defn- save-and-quit
+  []
+  (let [*session (session-cursor)]
+    (env/log-action "quit:save-and-quit")
+    (swap! *session session/save!)
+    (common/quit)))
+
+(defn- confirm-quit
+  []
+  (env/log-action "quit:quit")
+  (common/quit))
+
 (defn quit-modal
   "Renders a quit confirmation modal."
   ;; TODO: Make use of :hyper/env 
-  [*app-state]
-  (let [*session (session-cursor)
-        *modal   (modal-cursor)
-        {:keys [shutdown-fn]} @*app-state]
-    (modal/modal
-      {:title "Unsaved Changes"}
-      [:div
-       [:p.text-sm.text-base-content.mb-4
-        "You have unsaved changes. What would you like to do?"]
-       [:div.flex.flex-col.gap-2
-        [:button.btn.btn-primary
-         {:type          "button"
-          :data-on:click (h/action
-                           (swap! *session session/save!)
-                           (shutdown-fn))}
-         "Save and Quit"]
-        [:button.btn.btn-warning
-         {:type          "button"
-          :data-on:click (h/action
-                           (shutdown-fn))}
-         "Quit Without Saving"]
-        (modal/cancel-button)]])))
+  []
+  (modal/modal
+    {:title "Unsaved Changes"}
+    [:div
+     [:p.text-sm.text-base-content.mb-4
+      "You have unsaved changes. What would you like to do?"]
+     [:div.flex.flex-col.gap-2
+      [:button.btn.btn-primary
+       {:type          "button"
+        :data-on:click (h/action
+                         (save-and-quit))}
+       "Save and Quit"]
+      [:button.btn.btn-warning
+       {:type          "button"
+        :data-on:click (h/action
+                         (confirm-quit))}
+       "Quit Without Saving"]
+      (modal/cancel-button)]]))
 
 (defn trace-modal
   "Renders a modal displaying the trace tree for a command."
@@ -256,7 +264,7 @@
 
 (defn render-modal
   "Renders the appropriate modal based on the global :modal cursor."
-  [*app-state]
+  []
   (let [*modal (modal-cursor)
         {:keys [type]} @*modal]
     ;; h/reactive seems to do a wierd thing if the body returns nil
@@ -279,7 +287,7 @@
           (dynamic-state)
 
           :quit
-          (quit-modal *app-state)
+          (quit-modal)
 
           :trace
           (trace-modal)
