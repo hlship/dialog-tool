@@ -2,12 +2,14 @@
   "Wraps the Skein session in an HTTP service using Hyper for reactive
   server-rendered UI over Datastar/SSE."
   (:require [babashka.fs :as fs]
+            [clj-commons.ansi :refer [perr]]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as s]
             [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.ui.app :as ui.app]
+            [hyper.context :as context]
             [hyper.core :as h]
             [hyper.state :as state])
   (:import (java.net ServerSocket)))
@@ -15,12 +17,19 @@
 ;; The Skein session is stored in hyper's app-state atom under the :session key.
 ;; Handlers access it via (h/global-cursor :session).
 
+;; TODO: Revisit this; does not appear to be available during action requests.
+#_
+(defn log-action-wrapper
+  [handler]
+  (fn [req]
+    (when-let [action-name context/*action-name*]
+      (perr "request action: " action-name))
+    (handler req)))
+
 (def ^:private routes
-  [["/" {:name :skein
+  [["/" {:name  :skein
          :title "Dialog Skein"
-         :get #'ui.app/skein-page}]
-   ["/action/replay-all" {:post ui.app/replay-all!}]
-   ["/action/replay-to/:id" {:post ui.app/replay-to!}]
+         :get   #'ui.app/skein-page}]
    ["/action/source/:id" {:hyper/disabled? true
                           :get             source/view-source}]
    ["/action/source-preview/:id" {:hyper/disabled? true
@@ -30,13 +39,14 @@
   "Creates the Hyper Ring handler, seeding the skein session into app-state."
   [*app-state]
   (h/create-handler
-   #'routes
-   :app-state *app-state
-   :static-resources "public"
-   :datastar-script [:script {:type "module"
-                              :src "/js/main.js"}]
-   :head [[:link {:rel "icon" :type "image/x-icon" :href "/favicon.ico"}]
-          [:link {:rel "stylesheet" :href "/style.css"}]]))
+    #'routes
+    :app-state *app-state
+    ;; :render-middleware [log-action-wrapper]
+    :static-resources "public"
+    :datastar-script [:script {:type "module"
+                               :src  "/js/main.js"}]
+    :head [[:link {:rel "icon" :type "image/x-icon" :href "/favicon.ico"}]
+           [:link {:rel "stylesheet" :href "/style.css"}]]))
 
 ;; The hyper app-state atom. Passed directly to create-handler.
 ;; The shutdown fn is stored at [:global :shutdown-fn].
@@ -73,41 +83,41 @@
   Returns the port opened."
   [root-dir opts]
   (let [{:keys [skein-path port seed engine development-mode? exit-when-shutdown?]
-         :or {exit-when-shutdown? true}} opts
-        port' (or port (free-port))
-        tree (when (fs/exists? skein-path)
-               (sk.file/load-tree skein-path))
-        seed' (or (get-in tree [:meta :seed])
-                  seed
-                  (rand-int 100000))
-        engine' (or (get-in tree [:meta :engine])
-                    engine
-                    :dgdebug)
+         :or   {exit-when-shutdown? true}} opts
+        port'         (or port (free-port))
+        tree          (when (fs/exists? skein-path)
+                        (sk.file/load-tree skein-path))
+        seed'         (or (get-in tree [:meta :seed])
+                          seed
+                          (rand-int 100000))
+        engine'       (or (get-in tree [:meta :engine])
+                          engine
+                          :dgdebug)
         start-process (fn [& [opts]] (sk.process/start-process! root-dir engine' seed' opts))
-        session (if tree
-                  (s/create-loaded! start-process skein-path tree)
-                  (s/create-new! start-process skein-path engine' seed'))
-        *stop-server (atom nil)
-        session' (assoc session
-                        :development-mode? development-mode?
-                        :debug-enabled? (= engine' :dgdebug)
-                        :loading? (nil? tree)
-                        :replay-on-launch? true)
-        shutdown-fn (fn []
-                      (h/stop! @*stop-server)
-                      (sk.process/kill! (get-in @*app [:global :session :process]))
-                      (search/close!)
+        session       (if tree
+                        (s/create-loaded! start-process skein-path tree)
+                        (s/create-new! start-process skein-path engine' seed'))
+        *stop-server  (atom nil)
+        session'      (assoc session
+                             :development-mode? development-mode?
+                             :debug-enabled? (= engine' :dgdebug)
+                             :loading? (nil? tree)
+                             :replay-on-launch? true)
+        shutdown-fn   (fn []
+                        (h/stop! @*stop-server)
+                        (sk.process/kill! (get-in @*app [:global :session :process]))
+                        (search/close!)
 
-                      (println "Shut down")
+                        (println "Shut down")
 
-                      (when (and exit-when-shutdown? (not development-mode?))
-                        (System/exit 0)))
-        stop-server (do
-                     (reset! *app (-> (state/init-state)
-                                      (update :global
-                                              assoc
-                                              :session session'
-                                              :shutdown-fn shutdown-fn)))
-                     (h/start! (create-handler *app) {:port port'}))]
+                        (when (and exit-when-shutdown? (not development-mode?))
+                          (System/exit 0)))
+        stop-server   (do
+                        (reset! *app (-> (state/init-state)
+                                         (update :global
+                                                 assoc
+                                                 :session session'
+                                                 :shutdown-fn shutdown-fn)))
+                        (h/start! (create-handler *app) {:port port'}))]
     (reset! *stop-server stop-server)
     port'))
