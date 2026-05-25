@@ -11,7 +11,8 @@
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.ui.modals :as modals]
             [dialog-tool.skein.ui.utils :refer [classes]]
-            [dialog-tool.skein.ui.actions :as actions]
+            [dialog-tool.skein.ui.actions :as actions ]
+            [dialog-tool.skein.ui.common :refer [session-cursor]]
             [dialog-tool.skein.ui.js :as js]
             [hyper.core :as h]
             [hyper.effects :as effects]))
@@ -456,7 +457,7 @@
   "Main hyper page function. Renders the full skein UI from the session cursor.
   Hyper calls this whenever the :session cursor changes and pushes the diff via SSE."
   [req]
-  (let [*session   (h/global-cursor :session)
+  (let [*session   (session-cursor)
         *app-state (:hyper/app-state req)
         session    @*session
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]

@@ -5,20 +5,20 @@
             [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
-            [dialog-tool.skein.ui.common :as common]
+            [dialog-tool.skein.ui.common :as common :refer [session-cursor modal-cursor]]
             [dialog-tool.skein.ui.components.modal :as modal]
             [dialog-tool.skein.ui.trace-view :as trace-view]
             [hyper.core :as h]))
 
 (defn dismiss-modal
-  [*modal]
-  (reset! *modal nil))
+  []
+  (reset! (modal-cursor) nil))
 
 (defn source-error
   []
-  (let [*session (h/global-cursor :session)
+  (let [*session (session-cursor)
         {:keys [replay-all]} @*session
-        *modal   (h/global-cursor :modal)
+        *modal   (modal-cursor)
         {:keys [error]} @*modal
         location (source/parse-error-location error)]
     (modal/modal
@@ -34,7 +34,7 @@
         [:b "Replay All"]
         "."]
        [:div.flex.justify-end.gap-2.mt-2
-        (modal/cancel-button {:cursor *session})
+        (modal/cancel-button)
         [:button.btn.btn-primary
          {:data-on:click (h/action {:as "source-error:replay-all"}
                                    (replay-all))}
@@ -42,8 +42,8 @@
 
 (defn- handle-operation-error
   [[operation-error session]]
-  (let [*session (h/global-cursor :session)
-        *modal   (h/global-cursor :modal)
+  (let [*session (session-cursor)
+        *modal   (modal-cursor)
         {:keys [error]} session]
     (cond
       error
@@ -55,12 +55,12 @@
       :else                                                 ;; Success!
       (do
         (reset! *session session)
-        (dismiss-modal *modal)))))
+        (dismiss-modal)))))
 
 (defn- do-edit-command
   [id raw-command]
   (env/log-action "edit-command:submit" id)
-  (let [*session (h/global-cursor :session)
+  (let [*session (session-cursor)
         command  (common/normalize-input raw-command)]
     (-> @*session
         session/check-for-changed-sources
@@ -70,7 +70,7 @@
 (defn edit-command
   "Renders the edit command modal."
   []
-  (let [*modal (h/global-cursor :modal)
+  (let [*modal (modal-cursor)
         {:keys [id command error]} @*modal]
     (modal/modal
       (cond-> {:title "Edit Command"}
@@ -88,13 +88,13 @@
           :data-init "el.select()"
           :class     "w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"}]]
        [:div.flex.justify-end.gap-2
-        (modal/cancel-button nil)
-        (modal/ok-button {})]])))
+        (modal/cancel-button)
+        (modal/ok-button)]])))
 
 (defn- do-insert-parent
   [id raw-command]
   (env/log-action "insert-parent:submit" id)
-  (let [*session (h/global-cursor :session)
+  (let [*session (session-cursor)
         command  (common/normalize-input raw-command)]
     (-> @*session
         session/check-for-changed-sources
@@ -104,7 +104,7 @@
 (defn insert-parent
   "Renders the insert parent modal."
   []
-  (let [*modal (h/global-cursor :modal)
+  (let [*modal (modal-cursor)
         {:keys [id command error]} @*modal]
     (modal/modal
       (cond-> {:title "Insert Parent"}
@@ -122,14 +122,14 @@
           :data-init "el.select()"
           :class     "w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"}]]
        [:div.flex.justify-end.gap-2
-        (modal/cancel-button nil)
-        (modal/ok-button {})]])))
+        (modal/cancel-button)
+        (modal/ok-button)]])))
 
 (defn edit-label
   "Renders the edit label modal."
   []
-  (let [*session (h/global-cursor :session)
-        *modal   (h/global-cursor :modal)
+  (let [*session (session-cursor)
+        *modal   (modal-cursor)
         {:keys [id label locked error]} @*modal]
     (modal/modal
       (cond-> {:title   "Edit Label"
@@ -148,7 +148,7 @@
                                    (str "Label \"" lbl "\" is already used by another knot."))
                             (do
                               (swap! *session session/label id lbl locked?)
-                              (dismiss-modal *modal)))))}
+                              (dismiss-modal)))))}
        [:div.mb-4
         [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "edit-label-input"}
          "Label:"]
@@ -167,14 +167,14 @@
         [:label.text-sm.font-medium.text-base-content {:for "edit-locked-input"}
          "Locked (prevent deletion)"]]
        [:div.flex.justify-end.gap-2
-        (modal/cancel-button {:cursor *session})
-        (modal/ok-button {})]])))
+        (modal/cancel-button)
+        (modal/ok-button)]])))
 
 (defn progress
   "Renders a progress modal for tracking operation progress.
   app-state* is the hyper app-state atom (progress is stored at [:global :progress])."
   []
-  (let [*modal (h/global-cursor :modal)
+  (let [*modal (modal-cursor)
         {:keys [current total label operation]} @*modal
         cancel #(swap! *modal assoc :continue false)]
     (when current
@@ -200,13 +200,13 @@
 (defn dynamic-state
   "Renders a modal dialog displaying the dynamic response."
   []
-  (let [*modal (h/global-cursor :modal)
+  (let [*modal (modal-cursor)
         {:keys [dynamic-response]} @*modal
         [_ trimmed] (string/split dynamic-response #"\n" 2)]
     (modal/modal
       {:title   "Dynamic State"
-       :buttons (list (modal/ok-button {:label  "OK"
-                                        :submit #(dismiss-modal *modal)}))}
+       :buttons (list (modal/ok-button {:label  "Close"
+                                        :submit dismiss-modal}))}
       [:div.whitespace-pre.text-sm.font-mono.overflow-y-auto.max-h-96
        {:data-init "el.focus()"}
        (ansi/ansi->hiccup trimmed)])))
@@ -215,8 +215,8 @@
   "Renders a quit confirmation modal."
   ;; TODO: Make use of :hyper/env 
   [*app-state]
-  (let [*session (h/global-cursor :session)
-        *modal   (h/global-cursor :modal)
+  (let [*session (session-cursor)
+        *modal   (modal-cursor)
         {:keys [shutdown-fn]} @*app-state]
     (modal/modal
       {:title "Unsaved Changes"}
@@ -235,13 +235,13 @@
           :data-on:click (h/action
                            (shutdown-fn))}
          "Quit Without Saving"]
-        (modal/cancel-button {:cancel #(dismiss-modal *modal)})]])))
+        (modal/cancel-button)]])))
 
 (defn trace-modal
   "Renders a modal displaying the trace tree for a command."
   []
-  (let [*session (h/global-cursor :session)
-        *modal   (h/global-cursor :modal)
+  (let [*session (session-cursor)
+        *modal   (modal-cursor)
         {:keys [trace-state]} @*modal]
     (modal/modal
       {:title (str "Trace: " (:command trace-state))}
@@ -249,7 +249,8 @@
        [:div.flex-1.min-h-0.flex.flex-col
         (trace-view/render-trace-tree *session trace-state)]
        [:div.flex.justify-end.pt-4.flex-shrink-0
-        (modal/cancel-button {:label "Close"})]
+        (modal/ok-button {:label "Close"
+                          :submit dismiss-modal})]
        ;; Hidden popup for source preview on hover (positioned by JS)
        [:div#source-preview-popup.hidden.fixed.z-50.bg-white.text-black.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
         {:class "max-w-[80vw]"}]])))
@@ -257,7 +258,7 @@
 (defn render-modal
   "Renders the appropriate modal based on the global :modal cursor."
   [*app-state]
-  (let [*modal (h/global-cursor :modal)
+  (let [*modal (modal-cursor)
         {:keys [type]} @*modal]
     ;; h/reactive seems to do a wierd thing if the body returns nil
     (when type

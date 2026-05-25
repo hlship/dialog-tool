@@ -13,11 +13,11 @@
 
 (defn focus-if-leaf!
   "Focuses the command input if knot-id is the leaf of the selected path
-  (i.e. has no selected child).  Returns the session cursor."
-  [*session knot-id]
-  (when (nil? (get-in @*session [:tree :selected knot-id]))
+  (i.e. has no selected child).  Returns the session."
+  [session knot-id]
+  (when (nil? (get-in session [:tree :selected knot-id]))
     (reset-and-focus-command-input!))
-  *session)
+  session)
 
 (defn navigate-to-active-knot!
   "After undo/redo: focuses the command input if the active knot is the leaf,

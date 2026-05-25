@@ -1,10 +1,11 @@
 (ns dialog-tool.skein.ui.components.modal
   "Modal dialog component with backdrop and ESC key handling."
-  (:require [hyper.core :as h]))
+  (:require [hyper.core :as h]
+            [dialog-tool.skein.ui.common :as common]))
 
 (defn- default-cancel
   []
-  (reset! (h/global-cursor :modal) nil))
+  (reset! (common/modal-cursor) nil))
 
 (defn cancel-button
   "Renders a Cancel button that dismisses the modal.
@@ -12,14 +13,16 @@
    Options:
    - :label - Button text (default: 'Cancel')
    - :cancel - Function called when clicked, defaults to dismissing the modal"
-  [{:keys [label cancel]
-    :or   {label  "Cancel"
-           cancel default-cancel}}]
-  [:button.btn.btn-neutral
-   {:type                "button"
-    :data-on:click__stop (h/action {:as "cancel-modal"}
-                                   (cancel))}
-   label])
+  ([]
+   (cancel-button nil))
+  ([{:keys [label cancel]
+     :or   {label  "Cancel"
+            cancel default-cancel}}]
+   [:button.btn.btn-neutral
+    {:type                "button"
+     :data-on:click__stop (h/action {:as "modal:cancel"}
+                                    (cancel))}
+    label]))
 
 (defn ok-button
   "Renders an OK/submit button for modal forms.
@@ -27,13 +30,15 @@
    Options:
    - :label - Button text (default: 'OK')
    - :submit - optional callback invoked when clicked"
-  [{:keys [label submit] :or {label "OK"}}]
-  [:button.btn.btn-primary
-   (cond-> {:type "submit"}
-     submit (assoc :data-on:click__stop
-                   (h/action {:as "modal:ok-submit"}
-                             (submit))))
-   label])
+  ([]
+   (ok-button nil))
+  ([{:keys [label submit] :or {label "OK"}}]
+   [:button.btn.btn-primary
+    (cond-> {:type "submit"}
+      submit (assoc :data-on:click__stop
+                    (h/action {:as "modal:ok"}
+                              (submit))))
+    label]))
 
 (defn modal
   "Renders a modal dialog overlay.

@@ -3,20 +3,10 @@
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.tree :as tree]
-            [dialog-tool.skein.ui.common :as common]
+            [dialog-tool.skein.ui.common :as common :refer [session-cursor modal-cursor]]
             [dialog-tool.skein.ui.js :as js]
             [dialog-tool.skein.ui.modals :as modals]
             [hyper.core :as h]))
-
-;; TODO: These may belong elsewhere
-
-(defn session-cursor
-  []
-  (h/global-cursor :session))
-
-(defn modal-cursor
-  []
-  (h/global-cursor :modal))
 
 (defn init-modal
   [type & kvs]
@@ -79,7 +69,7 @@
                                 (map-indexed vector leaf-knots))
           was-canceled? (cancelled?)]
       ;; Clear the progress modal
-      (modals/dismiss-modal *modal)
+      (modals/dismiss-modal)
       (reset! *session
               (-> session'
                   ;; This will open the source error modal if necessary
@@ -95,7 +85,7 @@
 (defn replay-to
   "Replays to a specific knot."
   [knot-id]
-  (let [*session (h/global-cursor :session)]
+  (let [*session (session-cursor)]
     (env/log-action "replay-to" knot-id)
     (swap! *session
            #(-> %
@@ -105,7 +95,7 @@
 
 (defn trace
   []
-  (let [*session (h/global-cursor :session)]
+  (let [*session (session-cursor)]
     (swap! *session session/check-for-changed-sources)
     ;; Read active-knot-id from the live cursor here rather than
     ;; relying on the render-time captures of `root?` and `id`,
@@ -149,7 +139,7 @@
 (defn dynamic-state
   "Presents the raw dynamic response from the @dynamic command with minimal formatting."
   []
-  (let [*session (h/global-cursor :session)
+  (let [*session (session-cursor)
         session  @*session
         id       (get-in session [:tree :active-knot-id])
         {:keys [dynamic-response]} (session/get-knot session id)]
@@ -231,10 +221,11 @@
 (defn activate-knot
   [id]
   (env/log-action "activate-knot" id)
-  (let [*session (session-cursor)]
-    (swap! *session session/set-active-knot id)
-    (js/scroll-knot-into-view! id)
-    (js/focus-if-leaf! *session id)))
+  (let [*session (session-cursor)
+        session' (swap! *session #(-> %
+                                      (session/set-active-knot id)
+                                      (js/focus-if-leaf! id)))]
+    (js/scroll-knot-into-view! id)))
 
 (defn seek-status
   [status]
@@ -263,8 +254,8 @@
   (swap! (session-cursor)
          #(-> %
               (session/select-knot id)
-              (session/set-active-knot id)
-              (js/focus-if-leaf! id))))
+              (session/set-active-knot id)))
+  (js/scroll-knot-into-view! id))
 
 (defn quit
   [*app-state]

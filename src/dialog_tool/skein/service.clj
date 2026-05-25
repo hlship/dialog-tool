@@ -16,7 +16,7 @@
   (:import (java.net ServerSocket)))
 
 ;; The Skein session is stored in hyper's app-state atom under the :session key.
-;; Handlers access it via (h/global-cursor :session).
+;; Handlers access it via (session-cursor).
 
 ;; TODO: Revisit this; does not appear to be available during action requests.
 #_(defn log-action-wrapper

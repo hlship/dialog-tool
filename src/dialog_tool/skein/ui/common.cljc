@@ -2,13 +2,21 @@
   (:require [clojure.string :as string]
             [hyper.core :as h]))
 
+(defn session-cursor
+  []
+  (h/global-cursor :session))
+
+(defn modal-cursor
+  []
+  (h/global-cursor :modal))
+
 (defn normalize-input
   [s]
   (-> s str string/trim (string/replace #"\s+" " ")))
 
 (defn setup-source-error
   [session error]
-  (reset! (h/global-cursor :modal)
+  (reset! (modal-cursor)
           {:type  :source-error
            :error error})
   (dissoc session :error))

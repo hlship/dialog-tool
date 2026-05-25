@@ -34,8 +34,6 @@ Developing the UI requires an additional window.
   - source error dialog does dismiss when replay all is successful
   - should re-focus on the text input field
   - hitting enter in the field does not submit (because field is unchanged?)
-- source error dialog
-  - should display a source preview (like the trace modal)
 - save preference for proportional vs. fixed width in the skein file
 - page looks odd when running a new skein against a sizable project
   - blank space for the START knot
@@ -43,10 +41,6 @@ Developing the UI requires an additional window.
   - then it blips into place
   - might only be an issue for initial launch (in REPL), but won't that affect deployed all?
   - possibly its cost of starting a Thread and/or initializing core.async
-- long unblessed text extends past the edge of the knot, rather than wrapping
-- new unblessed text should be mono-spaced but is proportional
-- replay (not replay all) does not seem to check for source updates
-- adding a label to a newly labeled node should default to locked
 - Currently doesn't show dynamic state delta for root, because too much
   - Could filter out per-object flags and variables?
 - Be more consistent in how buttons are applied to modal dialogs
@@ -54,6 +48,8 @@ Developing the UI requires an additional window.
 - Do we really need lucene?
 - Revisit storing active-knot-id inside tree, inside undo/redo stack
 - search in trace modal looks broken
+- source popups and links to full source also broken
+- not displaying accels on operations toolbar items
 
 ## Hyper
 
