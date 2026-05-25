@@ -509,6 +509,5 @@
            ;; This lets the client render the initial page before we start sending down
            ;; SSE updates.
            [:div {:data-init
-                  #trace/result
                   (h/action {:as "initial-replay-all"}
                             (actions/replay-all))}])]))))
