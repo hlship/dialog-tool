@@ -1,4 +1,4 @@
-# 2.0-beta-15 -- UNRELEASED
+# 2.0-beta-15 -- 25 May 2026
 
 # 2.0-beta-14 -- 22 May 2026
 
