@@ -11,8 +11,8 @@
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.ui.modals :as modals]
             [dialog-tool.skein.ui.utils :refer [classes]]
-            [dialog-tool.skein.ui.actions :as actions ]
-            [dialog-tool.skein.ui.common :refer [session-cursor]]
+            [dialog-tool.skein.ui.actions :as actions]
+            [dialog-tool.skein.ui.common :as common :refer [session-cursor]]
             [dialog-tool.skein.ui.js :as js]
             [hyper.core :as h]
             [hyper.effects :as effects]))
@@ -45,45 +45,34 @@
     ;; No unblessed, render with ANSI styling
     (ansi/ansi->hiccup response)))
 
-(defn- dismiss-search!
-  "Clears the search results from the session and resets the search input."
-  [cursor]
-  (swap! cursor dissoc :search)
-  (effects/execute-script! "document.getElementById('search-input').value = ''"))
 
 (defn- render-search
   "Renders the knot search input and results dropdown in the operations toolbar."
-  [*session]
-  (let [search-signal (h/local-signal :search-query "")]
+  []
+  (let [search-signal (h/local-signal :search-query "")
+        *search       (common/search-cursor)]
     [:div.relative.grow.focus-within:z-20
      [:label.input.input-sm.input-bordered.flex.items-center.gap-2.w-full.tooltip.tooltip-bottom.search-expand-label
       {:data-accel         "f"
        :data-tip           "Search"
        :data-preserve-attr "data-tip"}
       [:div.icon.w-4.h-4.icon-search]
-      [:input#search-input
+      [:input#search-input.grow
        {:type         "text"
         :placeholder  "Search knots…"
         :autocomplete "off"
-        :class        "grow"
         :data-bind    (:name search-signal)
         :data-on:input
         (h/action {:as "knot-search-update"}
-                  (let [q       (string/trim (str $value))
-                        session @*session]
-                    (if (string/blank? q)
-                      (swap! *session dissoc :search)
-                      (swap! *session assoc :search
-                             {:query   q
-                              :results (search/search-knots (:tree session) q 50)}))))
+                  (actions/search $value))
         :data-on:keydown
         (h/action {:as "knot-search-keydown"}
                   (case $key
-                    "Escape" (dismiss-search! *session)
+                    "Escape" (actions/dismiss-search)
                     "ArrowDown" (effects/execute-script!
                                   "document.querySelector('#search-results button')?.focus()")
                     nil))}]]
-     (when-let [{:keys [results query]} (:search @*session)]
+     (when-let [{:keys [results query]} @*search]
        (when (seq results)
          [:ul#search-results.absolute.z-50.menu.flex-col.bg-base-100.rounded-box.shadow-xl.p-2.overflow-y-auto.mt-1.flex-nowrap
           {:class "max-h-[30rem] w-[36rem]"
@@ -95,10 +84,7 @@
                :data-on:keydown "sk.navigateSearchResults(evt, el)"
                :data-on:click
                (h/action {:as "search-knot-selected"}
-                         (dismiss-search! *session)
-                         (swap! *session session/select-knot knot-id)
-                         (swap! *session session/set-active-knot knot-id)
-                         (js/scroll-knot-into-view! knot-id))}
+                         (actions/jump-to-search-selection knot-id))}
               [:div.text-xs.whitespace-pre-line.line-clamp-7
                (search/highlight-snippet snippet query)]]])]))]))
 
@@ -348,7 +334,7 @@
                    "icon-scroll-bottom")
       ;; Search — fills the space between navigation and operations
       [:div.grow.flex.px-2
-       (render-search *session)]
+       (render-search)]
       ;; Operations — right-aligned
       (toolbar-btn {:disabled      ok?
                     :data-tip      "Bless"
@@ -462,68 +448,67 @@
         session    @*session
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
 
-    ;; Not sure this h/reactive is actually accomplishing anything, though I think the nested reactive for
-    ;; *modal probably does.
-    (h/reactive [*session]
-      ;; This is done early to avoid a possible (?) race condition when the SSE stream
-      ;; is initialized.
-      (when replay-on-launch?
-        (swap! *session dissoc :replay-on-launch?))
+    ;; This is done early to avoid a possible (?) race condition when the SSE stream
+    ;; is initialized.
+    (when replay-on-launch?
+      (swap! *session dissoc :replay-on-launch?))
 
-      (if closing?
-        ;; Server is shutting down — show close message
-        [:div.flex.items-center.justify-center.h-screen
-         [:div.text-center
-          [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
-          [:p.text-base-content.opacity-70 "You may close this window now."]]]
-        ;; Normal page render
-        (let [flash          (first (reset-vals! actions/*pending-flash nil))
-              active-knot-id (:active-knot-id tree)
-              knots          (tree/selected-knots tree)
-              leaf-knot      (last knots)]
-          [:div.relative
-           ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
-           ;; insertion. Uses a random id so each flash is a new element to the morph
-           ;; algorithm. Works in both action and cursor-change render contexts.
-           (when flash
-             (let [{:keys [message type]} (if (string? flash)
-                                            {:message flash :type :info}
-                                            flash)]
-               ;; TODO: I don't think we need the rendered elements, the atom, or anything
-               ;; beyond sk.showFlash().  Or maybe a placeholder with
-               ;; data-ignore (or data-ignore-morph).
-               [:span {:id        (str "flash-trigger-" (random-uuid))
-                       :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
-                       :style     "display:none"}]))
-           ;; Single fixed header containing both toolbars — no gap possible between them
-           [:div.fixed.top-0.start-0.w-full.z-30
-            (navbar *session *app-state)
-            (render-operations-toolbar *session)]
-           ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
-           [:div.w-full.mt-28.px-2
-            (if loading?
-              ;; New skein: process hasn't started yet — show a placeholder until
-              ;; replay-on-launch fires and replay-all! clears the :loading? flag.
-              [:div.flex.items-center.justify-center.py-16
-               [:span.loading.loading-spinner.loading-lg.text-primary]]
-              ;; This is the main part of the page: the root knot and
-              ;; each selected child until we hit a leaf, followed by
-              ;; a command input field.
-              (list
-                (map (fn [knot]
-                       (render-knot *session tree knot {:debug-enabled? debug-enabled?
-                                                        :show-dynamic?  show-dynamic?
-                                                        :fixed-width?   fixed-width?
-                                                        :active-knot-id active-knot-id}))
-                     knots)
-                (new-command/new-command-input *session (:id leaf-knot))))]
-           ;; Modal overlay
-           (modals/render-modal *app-state)
-           ;; FAB for settings
-           (render-fab *session)
-           ;; On initial render, may want to trigger replay-all.
-           (when replay-on-launch?
-             ;; This lets the client render the initial page before we start sending down
-             ;; SSE updates.
-             [:div {:data-init (h/action {:as "initial-replay-all"}
-                                         (actions/replay-all))}])])))))
+    (if closing?
+      ;; Server is shutting down — show close message
+      [:div.flex.items-center.justify-center.h-screen
+       [:div.text-center
+        [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
+        [:p.text-base-content.opacity-70 "You may close this window now."]]]
+      ;; Normal page render
+      (let [flash          (first (reset-vals! actions/*pending-flash nil))
+            active-knot-id (:active-knot-id tree)
+            knots          (tree/selected-knots tree)
+            leaf-knot      (last knots)]
+        [:div.relative
+         ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
+         ;; insertion. Uses a random id so each flash is a new element to the morph
+         ;; algorithm. Works in both action and cursor-change render contexts.
+         (when flash
+           (let [{:keys [message type]} (if (string? flash)
+                                          {:message flash :type :info}
+                                          flash)]
+             ;; TODO: I don't think we need the rendered elements, the atom, or anything
+             ;; beyond sk.showFlash().  Or maybe a placeholder with
+             ;; data-ignore (or data-ignore-morph).
+             [:span {:id        (str "flash-trigger-" (random-uuid))
+                     :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
+                     :style     "display:none"}]))
+         ;; Single fixed header containing both toolbars — no gap possible between them
+         [:div.fixed.top-0.start-0.w-full.z-30
+          (navbar *session *app-state)
+          (render-operations-toolbar *session)]
+         ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
+         [:div.w-full.mt-28.px-2
+          (if loading?
+            ;; New skein: process hasn't started yet — show a placeholder until
+            ;; replay-on-launch fires and replay-all! clears the :loading? flag.
+            [:div.flex.items-center.justify-center.py-16
+             [:span.loading.loading-spinner.loading-lg.text-primary]]
+            ;; This is the main part of the page: the root knot and
+            ;; each selected child until we hit a leaf, followed by
+            ;; a command input field.
+            (list
+              (map (fn [knot]
+                     (render-knot *session tree knot {:debug-enabled? debug-enabled?
+                                                      :show-dynamic?  show-dynamic?
+                                                      :fixed-width?   fixed-width?
+                                                      :active-knot-id active-knot-id}))
+                   knots)
+              (new-command/new-command-input *session (:id leaf-knot))))]
+         ;; Modal overlay
+         (modals/render-modal *app-state)
+         ;; FAB for settings
+         (render-fab *session)
+         ;; On initial render, may want to trigger replay-all.
+         (when replay-on-launch?
+           ;; This lets the client render the initial page before we start sending down
+           ;; SSE updates.
+           [:div {:data-init
+                  #trace/result
+                  (h/action {:as "initial-replay-all"}
+                            (actions/replay-all))}])]))))

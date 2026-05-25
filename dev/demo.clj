@@ -17,7 +17,7 @@
 
 (comment
   (-> @*app :global :session :tree :knots (get 1728874698428))
-  (-> @*app :global :session keys)
+  (-> @*app :tab keys)
   (-> @*app :global :modal)
 
   (swap! *app assoc-in [:global :modal] nil)

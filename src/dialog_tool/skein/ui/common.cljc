@@ -10,6 +10,10 @@
   []
   (h/global-cursor :modal))
 
+(defn search-cursor
+  []
+  (h/global-cursor :search))
+
 (defn normalize-input
   [s]
   (-> s str string/trim (string/replace #"\s+" " ")))

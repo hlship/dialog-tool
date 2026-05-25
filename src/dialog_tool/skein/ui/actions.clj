@@ -1,12 +1,15 @@
 (ns dialog-tool.skein.ui.actions
-  (:require [dialog-tool.env :as env]
+  (:require [clojure.string :as string]
+            [dialog-tool.env :as env]
+            [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.tree :as tree]
-            [dialog-tool.skein.ui.common :as common :refer [session-cursor modal-cursor]]
+            [dialog-tool.skein.ui.common :as common :refer [session-cursor modal-cursor search-cursor]]
             [dialog-tool.skein.ui.js :as js]
             [dialog-tool.skein.ui.modals :as modals]
-            [hyper.core :as h]))
+            [hyper.core :as h]
+            [hyper.effects :as effects]))
 
 (defn init-modal
   [type & kvs]
@@ -270,3 +273,30 @@
           ;; Give hyper time to push the closing message to the browser
           (Thread/sleep 500)
           ((get-in @*app-state [:global :shutdown-fn])))))))
+
+(defn search
+  [q]
+  (let [q'           (-> q str string/trim)
+        *search      (search-cursor)
+        *tree-cursor (h/global-cursor [:session :tree])]
+    (env/log-action "search" (pr-str q'))
+    (if (string/blank? q')
+      (reset! *search nil)
+      (swap! *search assoc
+             :query q'
+             :results  (search/search-knots @*tree-cursor q' 50)))))
+
+(defn dismiss-search
+  "Clears the search results from the session and resets the search input."
+  []
+  (reset! (search-cursor) nil)
+  (effects/execute-script! "document.getElementById('search-input').value = ''"))
+
+(defn jump-to-search-selection
+  [knot-id]
+  (env/log-action "jump-to-search-selection" knot-id)
+  (swap! (session-cursor) #(-> %
+                               (session/select-knot knot-id)
+                               (session/set-active-knot knot-id)))
+  (reset! (search-cursor) nil)
+  (js/scroll-knot-into-view! knot-id))
