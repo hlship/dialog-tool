@@ -105,9 +105,8 @@
     ;; which may be stale if the button wasn't re-rendered after
     ;; the user selected a different knot.
     (let [session      @*session
-          tree         (:tree session)
-          active-id    (:active-knot-id tree)
-          knot         (tree/get-knot tree active-id)
+          active-id    (session/get-active-knot-id session)
+          knot         (session/get-knot session active-id)
           root-action? (= 0 active-id)
           _            (env/log-action (if root-action? "trace-startup" "trace") active-id)
           command      (if root-action?
@@ -144,7 +143,7 @@
   []
   (let [*session (session-cursor)
         session  @*session
-        id       (get-in session [:tree :active-knot-id])
+        id       (session/get-active-knot-id session)
         {:keys [dynamic-response]} (session/get-knot session id)]
     (env/log-action "dynamic-state" id)
     (init-modal :dynamic-state :dynamic-response dynamic-response)))
@@ -226,7 +225,7 @@
   (env/log-action "activate-knot" id)
   (let [*session (session-cursor)
         session' (swap! *session #(-> %
-                                      (session/set-active-knot id)
+                                      (session/set-active-knot-id id)
                                       (js/focus-if-leaf! id)))]
     (js/scroll-knot-into-view! id)))
 
@@ -249,7 +248,7 @@
         (swap! *session #(-> %
                              (assoc-in [:last-jump status] next-id)
                              (session/select-knot next-id)
-                             (session/set-active-knot next-id)))))))
+                             (session/set-active-knot-id next-id)))))))
 
 (defn jump-to-label
   [id]
@@ -257,7 +256,7 @@
   (swap! (session-cursor)
          #(-> %
               (session/select-knot id)
-              (session/set-active-knot id)))
+              (session/set-active-knot-id id)))
   (js/scroll-knot-into-view! id))
 
 (defn quit
@@ -297,6 +296,6 @@
   (env/log-action "jump-to-search-selection" knot-id)
   (swap! (session-cursor) #(-> %
                                (session/select-knot knot-id)
-                               (session/set-active-knot knot-id)))
+                               (session/set-active-knot-id knot-id)))
   (reset! (search-cursor) nil)
   (js/scroll-knot-into-view! knot-id))

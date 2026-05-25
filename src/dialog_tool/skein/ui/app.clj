@@ -250,7 +250,7 @@
                         "border-l-primary"
                         (status->border-class status))
        :data-on:click (h/action {:as "set-active-knot"}
-                                (swap! *session session/set-active-knot id)
+                                (swap! *session session/set-active-knot-id id)
                                 (js/focus-if-leaf! *session id))}
       [:div.w-full.whitespace-pre-wrap.break-words.p-2.bg-base-100
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
@@ -289,7 +289,7 @@
   (let [session        @*session
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
-        knot           (tree/get-knot tree active-knot-id)
+        knot           (session/get-knot session active-knot-id)
         {:keys [id status dynamic-response parent-id]} knot
         root?          (= 0 id)
         ok?            (= :ok status)

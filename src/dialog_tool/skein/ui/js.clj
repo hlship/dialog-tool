@@ -1,5 +1,6 @@
 (ns dialog-tool.skein.ui.js
-  (:require [hyper.effects :as effects]))
+  (:require [dialog-tool.skein.session :as session]
+            [hyper.effects :as effects]))
 
 (defn scroll-knot-into-view!
   "Emits a JS effect that smoothly scrolls the given knot into view."
@@ -23,7 +24,7 @@
   "After undo/redo: focuses the command input if the active knot is the leaf,
   otherwise scrolls it into view."
   [*session]
-  (let [active-id (get-in @*session [:tree :active-knot-id])]
+  (let [active-id (session/get-active-knot-id @*session)]
     (if (nil? (get-in @*session [:tree :selected active-id]))
       (reset-and-focus-command-input!)
       (scroll-knot-into-view! active-id))))

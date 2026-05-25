@@ -235,9 +235,11 @@ These are known rough edges to resolve in future refactoring:
 1. **`{:as}` consistency.** A small number of `h/action` calls omit the `{:as "name"}`
    option (e.g., FAB toggles, `quit-modal`). Audit and add names uniformly.
 
-2. **`session/get-knot` vs `tree/get-knot`.** Some action handlers call
-   `session/get-knot @(session-cursor)`, others call `tree/get-knot (:tree session)`
-   directly. Establish a single preferred call site and apply consistently.
+2. **`session/get-knot` vs `tree/get-knot`.** When a `session` value is in scope, always
+   use `session/get-knot session id`. Use `tree/get-knot` only in model-layer code
+   (`session.clj`, `tree.clj`) that operates directly on a `tree` map with no session.
+   Similarly, prefer `session/get-active-knot-id` and `session/set-active-knot-id` over
+   raw `get-in`/`assoc-in` on `[:tree :active-knot-id]`.
 
 3. **`*app-state` threading.** `quit` and `quit-modal` require `*app-state` for the
    shutdown function, which is threaded manually through `skein-page → navbar → quit`.
