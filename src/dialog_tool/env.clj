@@ -12,9 +12,9 @@
     "DEV"))
 
 (defn log-action
-  "Logs a user action to stderr. Remaining args are concatenated as string parts."
-  [action & parts]
-  (perr (apply str "action: " action parts)))
+  "Logs a user action to stderr. parts are joined with spaces."
+  [& parts]
+  (perr "action: " (string/join " " parts)))
 
 (defn debug-command
   [command]

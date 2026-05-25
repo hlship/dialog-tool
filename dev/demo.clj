@@ -2,7 +2,7 @@
   "Used when manually testing the skein."
   (:require [dialog-tool.skein.service :as service :refer [stop! *app]]))
 
-(-> @*app :global :session :modal)
+(-> @*app :global  :modal)
 
 (defn- start!
   ([path opts]
@@ -16,11 +16,19 @@
                           :exit-when-shutdown? false))))
 
 (comment
+  (-> @*app :global :session :tree :knots (get 1728874698428))
+  (-> @*app :global :session keys)
+  (-> @*app :global :modal)
 
+  (swap! *app assoc-in [:global :modal] nil)
+  
   (stop!)
 
   (start! "../sanddancer-dialog" nil)
 
+  (start! "../futurama" nil)
+
+  (start! "../futurama" "/tmp/fut.skein" nil)
 
   (start! "../failure" nil)
 

@@ -1,4 +1,4 @@
-# Developer Notes
+¡¡# Developer Notes
  
 ## Tests
 
@@ -26,12 +26,9 @@ Developing the UI requires an additional window.
 ## TODO / Ideas / Plans/ Bugs
 
 - The graph view (currently it's just a serial view, one path through the graph)
-- Buttons to jump to next/prev command
-- Search the Skein
 - Color-blind indicators or mode
 - add ability to paste in a transcript (or create a skein from a transcript)
 - use core.cache (or memoize) for caching (of text diffs)
-- :modal should be top-level cursor, not nested inside :session
 - when adding a new command w/ source errors:
   - source error dialog is raised
   - source error dialog does dismiss when replay all is successful
@@ -48,6 +45,15 @@ Developing the UI requires an additional window.
   - possibly its cost of starting a Thread and/or initializing core.async
 - long unblessed text extends past the edge of the knot, rather than wrapping
 - new unblessed text should be mono-spaced but is proportional
+- replay (not replay all) does not seem to check for source updates
+- adding a label to a newly labeled node should default to locked
+- Currently doesn't show dynamic state delta for root, because too much
+  - Could filter out per-object flags and variables?
+- Be more consistent in how buttons are applied to modal dialogs
+
+## Hyper
+
+- doesn't do well when h/reactive body returns nil
 
 ## Releasing
 

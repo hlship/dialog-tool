@@ -64,7 +64,7 @@
 (defn- collect-commands
   [tree initial-knot-id]
   (->> (tree/knots-from-root tree initial-knot-id)
-       (drop 1) ; no command for root knot
+       (drop 1)                                             ; no command for root knot
        (map :command)))
 
 (defn- do-restart!
@@ -111,9 +111,9 @@
   [session parent-knot-id command]
   (let [{:keys [process-knot-id]} session
         ;; Replay if process position doesn't match where we want to execute the command
-        session' (if (= process-knot-id parent-knot-id)
-                   session
-                   (do-replay-to! session parent-knot-id))
+        session'  (if (= process-knot-id parent-knot-id)
+                    session
+                    (do-replay-to! session parent-knot-id))
         session'' (-> session'
                       capture-undo
                       (run-command! command))]
@@ -208,6 +208,8 @@
   (assoc-in session [:tree :active-knot-id] knot-id))
 
 (defn select-knot
+  "Selects a knot as the last knot displayed; this determines which knots will be rendered
+  (from the root to this knot and perhaps further below to any selected children of this knot."
   [session knot-id]
   (-> session
       capture-undo
@@ -276,8 +278,8 @@
   When the active knot is deleted (or is a descendant of the deleted knot),
   the active knot is moved to the deleted knot's parent."
   [session knot-id]
-  (let [tree             (:tree session)
-        active-knot-id   (:active-knot-id tree)]
+  (let [tree           (:tree session)
+        active-knot-id (:active-knot-id tree)]
     (if-not (tree/allow-deletion? tree knot-id)
       ["Cannot delete: this knot (or a descendant) is locked." session]
       (let [parent-id             (-> (tree/get-knot tree knot-id) :parent-id)
@@ -287,7 +289,7 @@
         [nil (cond-> (-> session
                          capture-undo
                          (update :tree tree/delete-knot knot-id))
-               active-knot-deleted?  (assoc-in [:tree :active-knot-id] parent-id)
+               active-knot-deleted? (assoc-in [:tree :active-knot-id] parent-id)
                process-knot-deleted? (assoc :process-knot-id parent-id))]))))
 
 (defn q [s] (str \' s \'))
@@ -298,17 +300,17 @@
   
   Returns a tuple of error and the new session."
   [session knot-id]
-  (let [tree             (:tree session)
-        active-knot-id   (:active-knot-id tree)
+  (let [tree            (:tree session)
+        active-knot-id  (:active-knot-id tree)
         {:keys [parent-id children]} (tree/get-knot tree knot-id)
         parent-commands (->> (tree/find-children tree parent-id)
                              (remove #(= knot-id (:id %)))
                              (map :command)
                              set)
-        child-commands (->> (tree/find-children tree knot-id)
-                            (map :command)
-                            set)
-        overlaps (set/intersection parent-commands child-commands)]
+        child-commands  (->> (tree/find-children tree knot-id)
+                             (map :command)
+                             set)
+        overlaps        (set/intersection parent-commands child-commands)]
     (if (seq overlaps)
       [(format "Parent already has %s %s"
                (pluralize-noun (count overlaps) "command")
@@ -317,7 +319,7 @@
                     (map q)
                     h/oxford))
        session]
-      (let [replay-id (first children)
+      (let [replay-id          (first children)
             active-is-spliced? (= active-knot-id knot-id)]
         [nil (cond-> (-> session
                          capture-undo
@@ -347,15 +349,15 @@
         session' (do-replay-to! session parent-id)]
     (if (:error session')
       [nil session']
-      (let [process (:process session')
+      (let [process        (:process session')
             ;; Enable tracing, execute command, disable tracing
-            _ (sk.process/send-command! process "(trace on)")
+            _              (sk.process/send-command! process "(trace on)")
             trace-response (sk.process/send-command! process command)
-            _ (sk.process/send-command! process "(trace off)")
+            _              (sk.process/send-command! process "(trace off)")
             ;; Update process position and capture dynamic state
-            session'' (-> session'
-                          (assoc :process-knot-id knot-id)
-                          capture-dynamic)]
+            session''      (-> session'
+                               (assoc :process-knot-id knot-id)
+                               capture-dynamic)]
         [trace-response session'']))))
 
 (defn trace-startup!
@@ -368,12 +370,16 @@
   [session]
   (let [{:keys [process start-process-fn]} session
         ;; Start a temporary process with --trace to capture traced startup
-        _ (sk.process/kill! process)
+        _              (sk.process/kill! process)
         traced-process (start-process-fn {:extra-arguments ["--trace"]})
         trace-response (sk.process/read-response! traced-process)
         ;; Kill the traced process and restart normally
-        _ (sk.process/kill! traced-process)
-        session' (do-restart! session)]
+        _              (sk.process/kill! traced-process)
+        session'       (do-restart! session)]
     (if (:error session')
       [nil session']
       [trace-response session'])))
+
+(defn get-knot 
+  [session id]
+  (tree/get-knot (:tree session) id))

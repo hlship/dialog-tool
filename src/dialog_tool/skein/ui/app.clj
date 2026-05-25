@@ -4,15 +4,15 @@
             [dialog-tool.skein.dynamic :as dynamic]
             [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as session]
-            [dialog-tool.skein.trace :as trace]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
-            [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
             [dialog-tool.skein.ui.components.new-command :as new-command]
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.ui.modals :as modals]
             [dialog-tool.skein.ui.utils :refer [classes]]
+            [dialog-tool.skein.ui.actions :as actions]
+            [dialog-tool.skein.ui.js :as js]
             [hyper.core :as h]
             [hyper.effects :as effects]))
 
@@ -47,55 +47,18 @@
 (defn shutdown!
   "Shows a close message, then shuts down after the browser receives the update.
   The shutdown-fn is stored in app-state at [:global :shutdown-fn] by the service."
-  [cursor *app-state]
+  [*session *app-state]
   ;; Set closing state so the page renders the close message
-  (swap! cursor assoc :closing? true)
+  (swap! *session assoc :closing? true)
   (future
     ;; Give hyper time to push the closing message to the browser
     (Thread/sleep 500)
     ((get-in @*app-state [:global :shutdown-fn]))))
 
-;; Pending flash message — stored outside the session cursor so it doesn't
-;; persist across re-renders. The render function consumes and clears it.
-;; TODO: Never happy to have a global like this, there must be a better way
-;; to deal with this.
-(def ^:private *pending-flash (atom nil))
-
-(defn- flash!
-  "Queues a flash message to be shown on the next render.
-  Does not modify the session cursor — the render function reads and clears this."
-  [message]
-  (reset! *pending-flash message))
-
-(defn- scroll-knot-into-view!
-  "Emits a JS effect that smoothly scrolls the given knot into view."
-  [knot-id]
-  (effects/execute-script! (str "sk.scrollKnotIntoView('" knot-id "')")))
-
-(defn- reset-and-focus-command-input!
-  "Clears the command input, scrolls it into view, and focuses it."
-  []
-  (effects/execute-script! "sk.resetAndFocusCommandInput()"))
-
-(defn- focus-if-leaf!
-  "Focuses the command input if knot-id is the leaf of the selected path
-  (i.e. has no selected child)."
-  [cursor knot-id]
-  (when (nil? (get-in @cursor [:tree :selected knot-id]))
-    (reset-and-focus-command-input!)))
-
-(defn- navigate-to-active-knot!
-  "After undo/redo: focuses the command input if the active knot is the leaf,
-  otherwise scrolls it into view."
-  [cursor]
-  (let [active-id (get-in @cursor [:tree :active-knot-id])]
-    (if (nil? (get-in @cursor [:tree :selected active-id]))
-      (reset-and-focus-command-input!)
-      (scroll-knot-into-view! active-id))))
 
 (defn- jump-to-status!
-  [cursor status]
-  (let [session  @cursor
+  [*session status]
+  (let [session  @*session
         tree     (:tree session)
         matching (tree/knots-with-status tree status)]
     (when (seq matching)
@@ -107,9 +70,10 @@
                        (mod (inc idx) (count matching))
                        0)
             next-id  (nth matching next-idx)]
-        (swap! cursor assoc-in [:last-jump status] next-id)
-        (swap! cursor session/select-knot next-id)
-        (swap! cursor session/set-active-knot next-id)))))
+        (swap! *session #(-> %
+                             (assoc-in [:last-jump status] next-id)
+                             (session/select-knot next-id)
+                             (session/set-active-knot next-id)))))))
 
 (defn- swap-session!
   "Swaps the session in the app-state atom. Works from any thread."
@@ -117,87 +81,6 @@
    (swap! *app-state update-in [:global :session] f))
   ([*app-state f & args]
    (apply swap! *app-state update-in [:global :session] f args)))
-
-(defn- reset-session!
-  [*app-state session]
-  (swap! *app-state assoc-in [:global :session] session))
-
-(defn- set-progress!
-  "Updates the progress atom in app-state. Only the progress modal watches this."
-  [*app-state progress]
-  (swap! *app-state assoc-in [:global :progress] progress))
-
-(defn- complete-session-operation
-  "Invoked after a command that operates on the process; if there was a startup error
-  after restarting the process (because of a source code error) then sets up the source error
-  modal dialog.
-  
-  If there's no error, updates the flash message."
-  [session flash-message]
-  (let [{:keys [error]} session]
-    (when-not error
-      (reset! *pending-flash flash-message))
-    (cond-> session
-      error (common/setup-source-error error))))
-
-(defn replay-to!
-  "Replays to a specific knot."
-  [req]
-  (let [{*app-state :hyper/app-state} req
-        knot-id (get-in req [:hyper/route :path-params :id])]
-    (env/log-action "replay-to" " knot=" knot-id)
-    (swap-session! *app-state
-                   (fn [session]
-                     (-> session
-                         session/check-for-changed-sources
-                         (session/replay-to! knot-id)
-                         (complete-session-operation "Replayed"))))
-    {:status 200}))
-
-(defn replay-all!
-  "Replays all leaf knots. Progress is tracked in a separate :progress key
-  so that progress updates don't trigger full page re-renders.
-  The session is accumulated locally and only committed at the end."
-  [req]
-  (let [{*app-state :hyper/app-state} req
-        ;; Ugly: this is to dismiss the source error modal dialog if the user clicks the "Replay All"
-        ;; button on it.
-        app-state  (swap-session! *app-state dissoc :modal)
-        session    (-> app-state
-                       :global
-                       :session
-                       session/capture-undo
-                       session/check-for-changed-sources)
-        leaf-knots (tree/leaf-knots (:tree session))
-        total      (count leaf-knots)
-        cancelled? #(not (get-in @*app-state [:global :progress :continue]))]
-    ;; Store continue flag in progress so cancel can stop the loop
-    (env/log-action "replay-all")
-    (set-progress! *app-state {:continue true})
-    (let [session' (reduce (fn [session [idx knot]]
-                             (if (or (cancelled?)
-                                     (:error session))
-                               (reduced session)
-                               (do
-                                 (set-progress! *app-state
-                                                {:current   (inc idx)
-                                                 :total     total
-                                                 :label     (:label knot)
-                                                 :operation "Replaying All"
-                                                 :continue  true})
-                                 (session/do-replay-to! session (:id knot)))))
-                           session
-                           (map-indexed vector leaf-knots))]
-      ;;  Dismiss the progress dialog
-      (reset-session! *app-state
-                      (-> session'
-                          (complete-session-operation (cond
-                                                        (cancelled?) "Replay cancelled"
-                                                        (:loading? session') nil
-                                                        :else "Replay complete"))
-                          (dissoc :loading?)))
-      (set-progress! *app-state nil)))
-  {:status 200})
 
 (defn- dismiss-search!
   "Clears the search results from the session and resets the search input."
@@ -207,7 +90,7 @@
 
 (defn- render-search
   "Renders the knot search input and results dropdown in the operations toolbar."
-  [session-cursor]
+  [*session]
   (let [search-signal (h/local-signal :search-query "")]
     [:div.relative.grow.focus-within:z-20
      [:label.input.input-sm.input-bordered.flex.items-center.gap-2.w-full.tooltip.tooltip-bottom.search-expand-label
@@ -222,43 +105,43 @@
         :class        "grow"
         :data-bind    (:name search-signal)
         :data-on:input
-        (h/action
-          (let [q (string/trim (str $value))
-                session @session-cursor]
-            (if (string/blank? q)
-              (swap! session-cursor dissoc :search)
-              (swap! session-cursor assoc :search
-                     {:query   q
-                      :results (search/search-knots (:tree session) q 50)}))))
+        (h/action {:as "knot-search-update"}
+                  (let [q       (string/trim (str $value))
+                        session @*session]
+                    (if (string/blank? q)
+                      (swap! *session dissoc :search)
+                      (swap! *session assoc :search
+                             {:query   q
+                              :results (search/search-knots (:tree session) q 50)}))))
         :data-on:keydown
-        (h/action
-          (case $key
-            "Escape" (dismiss-search! session-cursor)
-            "ArrowDown" (effects/execute-script!
-                          "document.querySelector('#search-results button')?.focus()")
-            nil))}]]
-     (when-let [{:keys [results query]} (:search @session-cursor)]
+        (h/action {:as "knot-search-keydown"}
+                  (case $key
+                    "Escape" (dismiss-search! *session)
+                    "ArrowDown" (effects/execute-script!
+                                  "document.querySelector('#search-results button')?.focus()")
+                    nil))}]]
+     (when-let [{:keys [results query]} (:search @*session)]
        (when (seq results)
          [:ul#search-results.absolute.z-50.menu.flex-col.bg-base-100.rounded-box.shadow-xl.p-2.overflow-y-auto.mt-1.flex-nowrap
           {:class "max-h-[30rem] w-[36rem]"
            :style "top: 100%; left: 0;"}
-          (for [{:keys [knot-id command snippet label]} results]
+          (for [{:keys [knot-id snippet]} results]
             [:li
              [:button.w-full.text-left
               {:type            "button"
                :data-on:keydown "sk.navigateSearchResults(evt, el)"
                :data-on:click
-               (h/action
-                 (dismiss-search! session-cursor)
-                 (swap! session-cursor session/select-knot knot-id)
-                 (swap! session-cursor session/set-active-knot knot-id)
-                 (scroll-knot-into-view! knot-id))}
+               (h/action {:as "search-knot-selected"}
+                         (dismiss-search! *session)
+                         (swap! *session session/select-knot knot-id)
+                         (swap! *session session/set-active-knot knot-id)
+                         (js/scroll-knot-into-view! knot-id))}
               [:div.text-xs.whitespace-pre-line.line-clamp-7
                (search/highlight-snippet snippet query)]]])]))]))
 
 (defn navbar
-  [session-cursor *app-state]
-  (let [session       @session-cursor
+  [*session *app-state]
+  (let [session       @*session
         {:keys [skein-path tree dirty?]} session
         can-undo?     (-> session :undo-stack not-empty)
         can-redo?     (-> session :redo-stack not-empty)
@@ -276,75 +159,77 @@
        [:div.bg-warning.text-warning-content.p-2.font-semibold
         (when (pos? new)
           {:class         "cursor-pointer"
-           :data-on:click (h/action
-                            (jump-to-status! session-cursor :new)
-                            (env/log-action "seek-new" " knot=" (get-in @session-cursor [:tree :active-knot-id]))
-                            (navigate-to-active-knot! session-cursor))})
+           :data-on:click (h/action {:as "seek-new"}
+                                    (jump-to-status! *session :new)
+                                    (env/log-action "seek-new" (get-in @*session [:tree :active-knot-id]))
+                                    (js/navigate-to-active-knot! *session))})
         new]
        [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg
         (when (pos? error)
           {:class         "cursor-pointer"
-           :data-on:click (h/action
-                            (jump-to-status! session-cursor :error)
-                            (env/log-action "seek-error" " knot=" (get-in @session-cursor [:tree :active-knot-id]))
-                            (navigate-to-active-knot! session-cursor))})
+           :data-on:click (h/action {:as "seek-error"}
+                                    (jump-to-status! *session :error)
+                                    (env/log-action "seek-error" (get-in @*session [:tree :active-knot-id]))
+                                    (js/navigate-to-active-knot! *session))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
        (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
                            :label    (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])}
                           (for [{:keys [id label]} labeled-knots]
-                            (dropdown/button {:data-on:click (h/action
-                                                               (swap! session-cursor session/select-knot id)
-                                                               (swap! session-cursor session/set-active-knot id)
-                                                               (focus-if-leaf! session-cursor id))}
+                            (dropdown/button {:data-on:click (h/action {:as "jump-to-label"}
+                                                                       #(-> %
+                                                                            (session/select-knot id)
+                                                                            (session/set-active-knot id)
+                                                                            (js/focus-if-leaf! id)))}
                                              label)))
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click          "@post('/action/replay-all')"
+        {:data-on:click          (h/action {:as "replay-all"}
+                                           (actions/replay-all))
          :data-accel__alt__shift "r"
          :data-preserve-attr     "data-tip"}
         [:div.icon.icon-play] [:span.hidden.lg:inline "Replay All"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      (h/action
-                               (env/log-action "save")
-                               (swap! session-cursor session/save!)
-                               (flash! "Saved"))
+        {:data-on:click      (h/action {:as "save"}
+                                       (env/log-action "save")
+                                       (swap! *session session/save!)
+                                       (actions/flash! "Saved"))
          :data-accel         "s"
          :data-preserve-attr "data-tip"
          :class              (when dirty? "btn-soft")}
         [:div.icon.icon-save] [:span.hidden.lg:inline "Save"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      (h/action
-                               (env/log-action "undo")
-                               (swap! session-cursor session/undo)
-                               (flash! "Undo")
-                               (navigate-to-active-knot! session-cursor))
+        {:data-on:click      (h/action {:as "undo"}
+                                       (env/log-action "undo")
+                                       (swap! *session session/undo)
+                                       (actions/flash! "Undo")
+                                       (js/navigate-to-active-knot! *session))
          :data-accel         "z"
          :data-preserve-attr "data-tip"
          :disabled           (not can-undo?)}
         [:div.icon.icon-undo] [:span.hidden.lg:inline "Undo"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      (h/action
-                               (env/log-action "redo")
-                               (swap! session-cursor session/redo)
-                               (flash! "Redo")
-                               (navigate-to-active-knot! session-cursor))
+        {:data-on:click      (h/action {:as "redo"}
+                                       (env/log-action "redo")
+                                       (swap! *session session/redo)
+                                       (actions/flash! "Redo")
+                                       (js/navigate-to-active-knot! *session))
          :data-accel__shift  "z"
          :data-preserve-attr "data-tip"
          :disabled           (not can-redo?)}
         [:div.icon.icon-redo] [:span.hidden.lg:inline "Redo"]]
        [:div.btn.btn-primary.tooltip.tooltip-bottom
-        {:data-on:click      (h/action
-                               (swap! session-cursor session/reload!)
-                               (flash! "Reloaded")
-                               (navigate-to-active-knot! session-cursor))
+        {:data-on:click      (h/action {:as "reload"}
+                                       (swap! *session session/reload!)
+                                       (actions/flash! "Reloaded")
+                                       (js/navigate-to-active-knot! *session))
          :data-preserve-attr "data-tip"
          :data-tip           "Reload"
          :disabled           (not can-reload?)}
         [:div.icon.icon-reload] [:span.hidden.lg:inline "Reload"]]
-       [:div.btn.btn-primary {:data-on:click (h/action
-                                               (if (:dirty? @session-cursor)
-                                                 (swap! session-cursor assoc :modal {:type :quit})
-                                                 (shutdown! session-cursor *app-state)))}
+       [:div.btn.btn-primary {:data-on:click (h/action {:as "quit"}
+                                                       (if (:dirty? @*session)
+                                                         (swap! *session assoc :modal {:type :quit})
+                                                         (shutdown! *session *app-state)))}
         [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
@@ -367,8 +252,7 @@
   [tree knot]
   (let [{:keys [parent-id dynamic-state]} knot
         before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
-    (when (and (seq dynamic-state)
-               (seq before-dynamic-state))
+    (when (seq dynamic-state)
       (let [{:keys [added removed changed]} (dynamic/diff before-dynamic-state dynamic-state)
             tuples (->> []
                         (into (map #(vector :added %) added))
@@ -398,7 +282,8 @@
                                (let [status (tree/greatest-status (tree/knot-status tree id)
                                                                   (tree/descendant-status tree id))]
                                  (dropdown/button {:bg-class      (status->button-class status)
-                                                   :data-on:click (h/action (swap! cursor session/select-knot id))}
+                                                   :data-on:click (h/action {:as "select-child"}
+                                                                            (swap! cursor session/select-knot id))}
                                                   (or label command))))
                              children))
      (when (> (count children) 1)
@@ -411,22 +296,22 @@
         (count children)])]))
 
 (defn- render-knot
-  [cursor tree knot {:keys [debug-enabled? show-dynamic? fixed-width? active-knot-id]}]
+  [*session tree knot {:keys [debug-enabled? show-dynamic? fixed-width? active-knot-id]}]
   (let [{:keys [id label response unblessed status locked]} knot
-        border-class (status->border-class status)
-        active?      (= id active-knot-id)]
+        active? (= id active-knot-id)]
     [:div.flex.flex-row
      {:id (str "knot-" id)}
      ;; Active-knot marker: sits in the left gutter, outside the knot content
      [:div.w-5.shrink-0.flex.items-start.justify-center.pt-2
       (when active?
         [:div.icon.icon-arrow-right {:title "Selected"}])]
-     [:div.border-x-8.grow
-      {:class         (classes border-class (when active? "border-l-primary"))
-       :data-on:click (h/action
-                        (swap! cursor session/set-active-knot id)
-                        (focus-if-leaf! cursor id))
-       :style         "cursor: pointer"}
+     [:div.border-x-8.grow.cursor-pointer
+      {:class         (if active?
+                        "border-l-primary"
+                        (status->border-class status))
+       :data-on:click (h/action {:as "set-active-knot"}
+                                (swap! *session session/set-active-knot id)
+                                (js/focus-if-leaf! *session id))}
       [:div.w-full.whitespace-pre-wrap.break-words.p-2.bg-base-100
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
        [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-28.rounded-bl-lg.pl-2.pb-1.bg-base-100
@@ -434,11 +319,14 @@
           [:div.icon.icon-lock {:title "Locked"}])
         (when label
           [:span.font-bold.bg-neutral.text-neutral-content.p-1.rounded-md label])
-        (render-children-navigation cursor tree knot)]
+        (render-children-navigation *session tree knot)]
        (render-diff response unblessed)
-       [:hr.clear-right.text-base-300]
-       (when (and debug-enabled? show-dynamic?
-                  (not= 0 id))
+       (when (and debug-enabled?                            ;; Running dgdebug? 
+                  show-dynamic?
+                  ;; Don't render dynamic for root knot, as that ends up being a a dump of every
+                  ;; object's flags and variables.  We may do something about that in the future
+                  ;; (just show globals for root knot, perhaps).
+                  (pos? id))
          (render-dynamic tree knot))]]]))
 
 (defn- toolbar-btn
@@ -457,18 +345,21 @@
      [:div.icon.w-4.h-4 {:class icon}]]))
 
 (defn- render-operations-toolbar
-  [session-cursor]
-  (let [session        @session-cursor
+  [*session]
+  (let [session        @*session
+        *modal         (h/global-cursor :modal)
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
         knot           (tree/get-knot tree active-knot-id)
-        {:keys [id status dynamic-response]} knot
+        {:keys [id status dynamic-response parent-id]} knot
         root?          (= 0 id)
         ok?            (= :ok status)
-        parent-id      (:parent-id knot)
         child-id       (get-in tree [:selected id])
         no-child?      (nil? child-id)
-        leaf-knot-id   (:id (last (tree/selected-knots tree)))]
+        leaf-knot-id   (-> tree
+                           tree/selected-knots
+                           last
+                           :id)]
     [:div {:class (classes "bg-base-100 text-base-content border-base-200"
                            "px-2 sm:px-4 py-1"
                            "w-full border-b")}
@@ -478,115 +369,101 @@
                     :disabled               root?
                     :data-accel__alt__shift "ArrowUp"
                     :data-on:click          (when-not root?
-                                              (h/action
-                                                (swap! session-cursor session/set-active-knot 0)
-                                                (scroll-knot-into-view! 0)))}
+                                              (h/action {:as "activate-first-knot"}
+                                                        (swap! *session session/set-active-knot 0)
+                                                        (js/scroll-knot-into-view! 0)))}
                    "icon-scroll-top")
       (toolbar-btn {:disabled        root?
                     :data-tip        "Parent knot"
                     :data-accel__alt "ArrowUp"
                     :data-on:click   (when-not root?
-                                       (h/action
-                                         (swap! session-cursor session/set-active-knot parent-id)
-                                         (scroll-knot-into-view! parent-id)))}
+                                       (h/action {:as "activate-parent"}
+                                                 (swap! *session session/set-active-knot parent-id)
+                                                 (js/scroll-knot-into-view! parent-id)))}
                    "icon-arrow-up")
       (toolbar-btn {:disabled        no-child?
                     :data-tip        "Child knot"
                     :data-accel__alt "ArrowDown"
                     :data-on:click   (when-not no-child?
-                                       (h/action
-                                         (swap! session-cursor session/set-active-knot child-id)
-                                         (scroll-knot-into-view! child-id)
-                                         (focus-if-leaf! session-cursor child-id)))}
+                                       (h/action {:as "activate-child"}
+                                                 (swap! *session session/set-active-knot child-id)
+                                                 (js/scroll-knot-into-view! child-id)
+                                                 (js/focus-if-leaf! *session child-id)))}
                    "icon-arrow-down")
       (toolbar-btn {:data-tip               "Last Knot"
                     :disabled               (= id leaf-knot-id)
                     :data-accel__alt__shift "ArrowDown"
                     :data-on:click          (when-not (= id leaf-knot-id)
-                                              (h/action
-                                                (swap! session-cursor session/set-active-knot leaf-knot-id)
-                                                (focus-if-leaf! session-cursor leaf-knot-id)))}
+                                              (h/action {:as "activate-last"}
+                                                        (swap! *session session/set-active-knot leaf-knot-id)
+                                                        (js/focus-if-leaf! *session leaf-knot-id)))}
                    "icon-scroll-bottom")
       ;; Search — fills the space between navigation and operations
       [:div.grow.flex.px-2
-       (render-search session-cursor)]
+       (render-search *session)]
       ;; Operations — right-aligned
       (toolbar-btn {:disabled      ok?
                     :data-tip      "Bless"
-                    :data-on:click (h/action
-                                     (env/log-action "bless" " knot=" id)
-                                     (swap! session-cursor session/bless id)
-                                     (flash! "Blessed"))}
+                    :data-on:click (h/action {:as "bless"}
+                                             (actions/bless *session id))}
                    "icon-bless")
       (toolbar-btn {:disabled        (or ok? root?)
                     :data-tip        "Bless To Here"
                     :data-accel__alt "b"
                     :data-on:click   (when-not (or ok? root?)
-                                       (h/action
-                                         (env/log-action "bless-to" " knot=" id)
-                                         (swap! session-cursor session/bless-to id)
-                                         (flash! "Blessed to here")))}
+                                       (h/action {:as "bless-to-here"}
+                                                 (actions/bless-to-here *session id)))}
                    "icon-bless-to")
       (toolbar-btn {:data-tip        "Replay"
                     :data-accel__alt "r"
-                    :data-on:click   (str "@post('/action/replay-to/" id "')")}
+                    :data-on:click   (h/action {:as "replay-to"}
+                                               (actions/replay-to id))}
                    "icon-play")
       (toolbar-btn {:data-tip        "New Child"
                     :data-accel__alt "a"
-                    :data-on:click   (h/action
-                                       (env/log-action "new-child" " knot=" id)
-                                       (swap! session-cursor session/prepare-new-child! id)
-                                       (reset-and-focus-command-input!))}
+                    :data-on:click   (h/action {:as "new-child"}
+                                               (actions/new-child *session id))}
                    "icon-add")
       ;; Modal-opening actions (focus goes to modal)
       (toolbar-btn {:disabled        root?
                     :data-tip        "Edit Command…"
                     :data-accel__alt "e"
                     :data-on:click   (when-not root?
-                                       (h/action
-                                         (swap! session-cursor assoc :modal {:type :edit-command :knot-id id})))}
+                                       (h/action {:as "edit-command"}
+                                                 (actions/edit-command *session id)))}
                    "icon-edit")
       (toolbar-btn {:disabled        root?
                     :data-tip        "Edit Label…"
                     :data-accel__alt "l"
                     :data-on:click   (when-not root?
-                                       (h/action
-                                         (swap! session-cursor assoc :modal {:type :edit-label :knot-id id})))}
+                                       (h/action {:as "edit-label"}
+                                                 (actions/edit-label *session id)))}
                    "icon-label")
       (toolbar-btn {:disabled        root?
                     :data-tip        "Toggle Lock"
                     :data-accel__alt "k"
                     :data-on:click   (when-not root?
-                                       (h/action
-                                         (env/log-action "toggle-lock" " knot=" id)
-                                         (swap! session-cursor session/toggle-lock id)
-                                         (let [locked? (get-in @session-cursor [:tree :knots id :locked])]
-                                           (flash! (if locked? "Locked" "Unlocked")))))}
+                                       (h/action {:as "toggle-lock"}
+                                                 (actions/toggle-lock *session id)))}
                    "icon-lock")
       (toolbar-btn {:disabled      root?
                     :data-tip      "Insert Parent…"
                     :data-on:click (when-not root?
-                                     (h/action
-                                       (swap! session-cursor assoc :modal {:type :insert-parent :knot-id id})))}
+                                     (h/action {:as "insert-parent"}
+                                               (actions/insert-parent id)))}
                    "icon-insert")
       (toolbar-btn {:disabled        root?
                     :data-tip        "Delete"
                     :data-accel__alt "d"
                     :data-on:click   (when-not root?
-                                       (h/action
-                                         (env/log-action "delete" " knot=" id)
-                                         (let [[error session'] (session/delete! @session-cursor id)]
-                                           (reset! session-cursor session')
-                                           (flash! (if error {:message error :type :error} "Deleted")))))}
+                                       (h/action {:as "delete"}
+                                                 (actions/delete-knot *session id)))}
                    "icon-delete")
       (toolbar-btn {:disabled      (or root? (nil? (:children knot)))
                     :data-tip      "Splice Out"
                     :data-on:click (when-not (or root? (nil? (:children knot)))
-                                     (h/action
-                                       (env/log-action "splice-out" " knot=" id)
-                                       (let [[error session'] (session/splice-out! @session-cursor id)]
-                                         (reset! session-cursor session')
-                                         (flash! (if error {:message error :type :error} "Spliced Out")))))}
+                                     (h/action {:as "splice-out"}
+                                               (actions/split-out *session id)))}
                    "icon-splice")
       ;; Debug-only operations (hidden when not debug-enabled?)
       (when debug-enabled?
@@ -594,53 +471,19 @@
           (toolbar-btn {:disabled        (nil? dynamic-response)
                         :data-tip        "Dynamic State…"
                         :data-accel__alt "s"
-                        :data-on:click   (h/action
-                                           (swap! session-cursor assoc :modal {:type :dynamic-state :knot-id id}))}
+                        :data-on:click   (h/action {:as "dynamic-state"}
+                                                   (actions/dynamic-state))}
                        "icon-dynamic")
           (toolbar-btn {:data-tip        (if root? "Trace Startup…" "Trace…")
                         :data-accel__alt "t"
                         :tooltip-dir     "left"
-                        :data-on:click   (h/action
-                                           (swap! session-cursor session/check-for-changed-sources)
-                                           ;; Read active-knot-id from the live cursor here rather than
-                                           ;; relying on the render-time captures of `root?` and `id`,
-                                           ;; which may be stale if the button wasn't re-rendered after
-                                           ;; the user selected a different knot.
-                                           (let [active-id    (get-in @session-cursor [:tree :active-knot-id])
-                                                 root-action? (= 0 active-id)
-                                                 _            (env/log-action (if root-action? "trace-startup" "trace") " knot=" active-id)
-                                                 command      (if root-action? "Startup"
-                                                                               (:command (tree/get-knot (:tree @session-cursor) active-id)))
-                                                 [trace-response session']
-                                                 (if root-action?
-                                                   (session/trace-startup! @session-cursor)
-                                                   (session/trace-command! @session-cursor active-id))]
-                                             (env/log-action "trace-done"
-                                                             " response=" (if trace-response "present" "nil")
-                                                             " error=" (if (:error session') (pr-str (:error session')) "none"))
-                                             ;; Strip :modal and :trace before reset so Hyper always sees a
-                                             ;; state change when the new trace is applied — even if the
-                                             ;; content is identical to the previous run.
-                                             #_ (swap! session-cursor dissoc session' :modal :trace)
-                                             (if trace-response
-                                               (let [_      (env/log-action "trace-parse-start")
-                                                     parsed (trace/parse-trace trace-response)
-                                                     _      (env/log-action "trace-build-start" " lines=" (count parsed))
-                                                     nodes  (trace/build-tree parsed)
-                                                     _      (env/log-action "trace-swap-start" " nodes=" (trace/count-nodes nodes))]
-                                                 (swap! session-cursor assoc
-                                                        :trace {:nodes      nodes
-                                                                :search     ""
-                                                                :node-count (trace/count-nodes nodes)
-                                                                :command    command}
-                                                        :modal {:type :trace})
-                                                 (env/log-action "trace-modal-set"))
-                                               (swap! session-cursor common/maybe-apply-source-error))))}
+                        :data-on:click   (h/action {:as "trace"}
+                                                   (actions/trace))}
                        "icon-trace")))]]))
 
 (defn- render-fab
-  [session-cursor]
-  (let [{:keys [debug-enabled? show-dynamic? fixed-width?]} @session-cursor]
+  [*session]
+  (let [{:keys [debug-enabled? show-dynamic? fixed-width?]} @*session]
     [:div.fab
      [:div.btn.btn-lg.btn-circle.btn-primary
       {:tabindex "0"
@@ -651,110 +494,90 @@
       [:label.label.p-2
        [:input.toggle {:type           "checkbox"
                        :checked        fixed-width?
-                       :data-on:change (h/action
-                                         (swap! session-cursor update :fixed-width? not))}]
+                       :data-on:change (h/action {:as "toggle-fixed-width"}
+                                                 (swap! *session update :fixed-width? not))}]
        "Fixed-width font"]
       [:label.label.p-2
        [:input.toggle {:type           "checkbox"
                        :checked        show-dynamic?
                        :disabled       (not debug-enabled?)
-                       :data-on:change (h/action
-                                         (swap! session-cursor update :show-dynamic? not))}]
+                       :data-on:change (h/action {:as "toggle-show-dynamic"}
+                                                 (swap! *session update :show-dynamic? not))}]
        "Show dynamic state"]]]))
 
-(defn- render-modal
-  "Renders the appropriate modal based on the :modal key in the session,
-  or the :progress key in the app-state."
-  [cursor session *app-state]
-  (let [{:keys [modal tree]} session
-        progress (get-in @*app-state [:global :progress])]
-    (cond
-      progress
-      (modals/progress *app-state progress)
 
-      modal
-      (let [{:keys [type knot-id error]} modal
-            knot (when knot-id (tree/get-knot tree knot-id))]
-        (case type
-          :edit-command
-          (modals/edit-command cursor knot-id (:command knot) error)
-
-          :edit-label
-          (modals/edit-label cursor knot-id (or (:label knot) "") (boolean (:locked knot)) error)
-
-          :insert-parent
-          (modals/insert-parent cursor knot-id "" error)
-
-          :dynamic-state
-          (modals/dynamic-state cursor (:dynamic-response knot))
-
-          :quit
-          (modals/quit-modal cursor *app-state)
-
-          :trace
-          (modals/trace-modal cursor (:trace session))
-
-          :source-error
-          (modals/source-error cursor)
-
-          nil)))))
 
 (defn skein-page
   "Main hyper page function. Renders the full skein UI from the session cursor.
-  Hyper calls this whenever the cursor changes and pushes the diff via SSE."
+  Hyper calls this whenever the :session cursor changes and pushes the diff via SSE."
   [req]
-  (let [session-cursor (h/global-cursor :session)
-        *app-state     (:hyper/app-state req)
-        session        @session-cursor
+  (let [*session   (h/global-cursor :session)
+        *app-state (:hyper/app-state req)
+        session    @*session
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
+ 
+    ;; Not sure this h/reactive is actually accomplishing anything, though I think the nested reactive for
+    ;; *modal probably does.
+    (h/reactive [*session]
+      ;; This is done early to avoid a possible (?) race condition when the SSE stream
+      ;; is initialized.
+      (when replay-on-launch?
+        (swap! *session dissoc :replay-on-launch?))
 
-    (swap! session-cursor dissoc :replay-on-launch?)
-
-    (if closing?
-      ;; Server is shutting down — show close message
-      [:div.flex.items-center.justify-center.h-screen
-       [:div.text-center
-        [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
-        [:p.text-base-content.opacity-70 "You may close this window now."]]]
-      ;; Normal page render
-      (let [flash          (first (reset-vals! *pending-flash nil))
-            active-knot-id (:active-knot-id tree)
-            knots          (tree/selected-knots tree)
-            leaf-knot      (last knots)]
-        [:div.relative
-         ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
-         ;; insertion. Uses a random id so each flash is a new element to the morph
-         ;; algorithm. Works in both action and cursor-change render contexts.
-         (when flash
-           (let [{:keys [message type]} (if (string? flash)
-                                          {:message flash :type :info}
-                                          flash)]
-             [:span {:id        (str "flash-trigger-" (random-uuid))
-                     :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
-                     :style     "display:none"}]))
-         ;; Single fixed header containing both toolbars — no gap possible between them
-         [:div.fixed.top-0.start-0.w-full.z-30
-          (navbar session-cursor *app-state)
-          (render-operations-toolbar session-cursor)]
-         ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
-         [:div.w-full.mt-28.px-2
-          (if loading?
-            ;; New skein: process hasn't started yet — show a placeholder until
-            ;; replay-on-launch fires and replay-all! clears the :loading? flag.
-            [:div.flex.items-center.justify-center.py-16
-             [:span.loading.loading-spinner.loading-lg.text-primary]]
-            (list
-              (map (fn [knot]
-                     (render-knot session-cursor tree knot {:debug-enabled? debug-enabled?
-                                                            :show-dynamic?  show-dynamic?
-                                                            :fixed-width?   fixed-width?
-                                                            :active-knot-id active-knot-id}))
-                   knots)
-              (new-command/new-command-input session-cursor (:id leaf-knot))))]
-         ;; Modal overlay
-         (render-modal session-cursor session *app-state)
-         ;; FAB for settings
-         (render-fab session-cursor)
-         ;; On initial render, may want to trigger replay-all.
-         (when replay-on-launch?
-           [:div {:data-init "@post('/action/replay-all')"}])]))))
+      (if closing?
+        ;; Server is shutting down — show close message
+        [:div.flex.items-center.justify-center.h-screen
+         [:div.text-center
+          [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
+          [:p.text-base-content.opacity-70 "You may close this window now."]]]
+        ;; Normal page render
+        (let [flash          (first (reset-vals! actions/*pending-flash nil))
+              active-knot-id (:active-knot-id tree)
+              knots          (tree/selected-knots tree)
+              leaf-knot      (last knots)]
+          [:div.relative
+           ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
+           ;; insertion. Uses a random id so each flash is a new element to the morph
+           ;; algorithm. Works in both action and cursor-change render contexts.
+           (when flash
+             (let [{:keys [message type]} (if (string? flash)
+                                            {:message flash :type :info}
+                                            flash)]
+               ;; TODO: I don't think we need the rendered elements, the atom, or anything
+               ;; beyond sk.showFlash().  Or maybe a placeholder with
+               ;; data-ignore (or data-ignore-morph).
+               [:span {:id        (str "flash-trigger-" (random-uuid))
+                       :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
+                       :style     "display:none"}]))
+           ;; Single fixed header containing both toolbars — no gap possible between them
+           [:div.fixed.top-0.start-0.w-full.z-30
+            (navbar *session *app-state)
+            (render-operations-toolbar *session)]
+           ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
+           [:div.w-full.mt-28.px-2
+            (if loading?
+              ;; New skein: process hasn't started yet — show a placeholder until
+              ;; replay-on-launch fires and replay-all! clears the :loading? flag.
+              [:div.flex.items-center.justify-center.py-16
+               [:span.loading.loading-spinner.loading-lg.text-primary]]
+              ;; This is the main part of the page: the root knot and
+              ;; each selected child until we hit a leaf, followed by
+              ;; a command input field.
+              (list
+                (map (fn [knot]
+                       (render-knot *session tree knot {:debug-enabled? debug-enabled?
+                                                        :show-dynamic?  show-dynamic?
+                                                        :fixed-width?   fixed-width?
+                                                        :active-knot-id active-knot-id}))
+                     knots)
+                (new-command/new-command-input *session (:id leaf-knot))))]
+           ;; Modal overlay
+           (modals/render-modal *session *app-state)
+           ;; FAB for settings
+           (render-fab *session)
+           ;; On initial render, may want to trigger replay-all.
+           (when replay-on-launch?
+             ;; This lets the client render the initial page before we start sending down
+             ;; SSE updates.
+             [:div {:data-init (h/action {:as "initial-replay-all"}
+                                         (actions/replay-all))}])])))))
