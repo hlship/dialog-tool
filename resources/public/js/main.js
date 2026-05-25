@@ -291,24 +291,22 @@ attribute({
     const needsShift = mods.has('shift');
     const isAlt = mods.has('alt');
 
-    // Build tooltip shortcut label.
-    // When data-tip-base is present the server owns the base label; we append the
-    // shortcut and store the result in data-tip (which is preserved across morphs).
-    // A MutationObserver rebuilds data-tip whenever data-tip-base changes so the
-    // label stays current after server-side updates (e.g. "Trace Startup…" → "Trace…").
+    // Write the full label + shortcut into data-tip, which DaisyUI reads for its
+    // ::before tooltip. The server emits data-preserve-attr="data-tip" so that
+    // Datastar's morph never removes or overwrites data-tip between patches.
     const keyLabel = keyDisplayMap[accelKey] ?? accelKey.toUpperCase();
     const shiftPart = needsShift ? (isMac ? '⇧' : 'Shift+') : '';
     const shortcut = (isAlt ? altSymbol : modSymbol) + shiftPart + keyLabel;
-    const suffix = ` (${shortcut})`;
 
     const buildTip = () => {
-      const base = el.getAttribute('data-tip-base') ?? el.getAttribute('data-tip') ?? '';
-      el.setAttribute('data-tip', base ? `${base}${suffix}` : shortcut);
+      const label = el.getAttribute('data-label') ?? '';
+      el.setAttribute('data-tip', label ? `${label} (${shortcut})` : shortcut);
     };
     buildTip();
 
+    // Re-build when data-label changes (e.g. "Trace Startup…" → "Trace…").
     const observer = new MutationObserver(buildTip);
-    observer.observe(el, { attributes: true, attributeFilter: ['data-tip-base'] });
+    observer.observe(el, { attributes: true, attributeFilter: ['data-label'] });
 
     // On Mac, Option+letter produces a special character (e.g. Option+R → '®'),
     // so e.key is unreliable in Alt mode for letter keys. Use e.code instead

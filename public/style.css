@@ -186,8 +186,8 @@ html {
 }
 
 /* Tooltip direction overrides.
-   DaisyUI 5 places .tooltip and .tooltip-left in the same @layer at equal
-   specificity, so processing order determines the winner — unreliably.
+   DaisyUI 5 places .tooltip and .tooltip-left/.tooltip-right in the same @layer
+   at equal specificity, so processing order determines the winner — unreliably.
    Styles outside any @layer always beat @layer styles, so these win cleanly. */
 .tooltip.tooltip-left[data-tip]::before,
 .tooltip.tooltip-left > .tooltip-content {
@@ -197,6 +197,15 @@ html {
 .tooltip.tooltip-left::after {
   inset: 50% calc(var(--tt-tail) + 1px) auto auto;
   transform: translateX(var(--tt-pos, .25rem)) translateY(-50%) rotate(-90deg);
+}
+.tooltip.tooltip-right[data-tip]::before,
+.tooltip.tooltip-right > .tooltip-content {
+  inset: 50% auto auto var(--tt-off);
+  transform: translateX(calc(var(--tt-pos, -.25rem) + .25rem)) translateY(-50%);
+}
+.tooltip.tooltip-right::after {
+  inset: 50% auto auto calc(var(--tt-tail) + 1px);
+  transform: translateX(var(--tt-pos, -.25rem)) translateY(-50%) rotate(90deg);
 }
 
 /* Tooltips: high-contrast colours that flip with the OS colour scheme */

@@ -2,7 +2,7 @@
   "Used when manually testing the skein."
   (:require [dialog-tool.skein.service :as service :refer [stop! *app]]))
 
-(-> @*app :global  :modal)
+(-> @*app :global :modal)
 
 (defn- start!
   ([path opts]
@@ -10,10 +10,10 @@
   ([path skein-file opts]
    (stop!)
    (service/start! path
-                   (assoc opts
-                          :port 10140
-                          :skein-path (str path "/" (or skein-file "default.skein"))
-                          :exit-when-shutdown? false))))
+                   (merge {:port                10140
+                           :skein-path          (str path "/" (or skein-file "default.skein"))
+                           :exit-when-shutdown? false}
+                          opts))))
 
 (comment
   (-> @*app :global :session :tree :knots (get 1728874698428))
@@ -21,7 +21,7 @@
   (-> @*app :global :modal)
 
   (swap! *app assoc-in [:global :modal] nil)
-  
+
   (stop!)
 
   (start! "../sanddancer-dialog" nil)

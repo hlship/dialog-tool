@@ -16,7 +16,8 @@
     [:div
      [:button {:class (classes "btn m-0" button-class)
                :disabled disabled
-               :popovertarget id}
+               :popovertarget id
+               :data-on:click__stop "return"}
       label]
      [:ul.menu.bg-base-100.rounded-box.p-2.w-96.overflow-y-auto.flex-nowrap
       {:id id
