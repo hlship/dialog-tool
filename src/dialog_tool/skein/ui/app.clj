@@ -70,7 +70,7 @@
                     "ArrowDown" (effects/execute-script!
                                   "document.querySelector('#search-results button')?.focus()")
                     nil))}]]
-     (when-let [{:keys [results query]} @*search]
+     (when-let [{:keys [results]} @*search]
        (when (seq results)
          [:ul#search-results.absolute.z-50.menu.flex-col.bg-base-100.rounded-box.shadow-xl.p-2.overflow-y-auto.mt-1.flex-nowrap
           {:class "max-h-[30rem] w-[36rem]"
@@ -84,7 +84,7 @@
                (h/action {:as "search-knot-selected"}
                          (actions/jump-to-search-selection knot-id))}
               [:div.text-xs.whitespace-pre-line.line-clamp-7
-               (search/highlight-snippet snippet query)]]])]))]))
+               snippet]]])]))]))
 
 (defn- navbar-btn
   "Renders a navbar button with a visible text label and a hover tooltip.
