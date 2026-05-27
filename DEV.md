@@ -43,10 +43,7 @@ Developing the UI requires an additional window.
   - possibly its cost of starting a Thread and/or initializing core.async
 - Currently doesn't show dynamic state delta for root, because too much
   - Could filter out per-object flags and variables?
-- Be more consistent in how buttons are applied to modal dialogs
-- Do we really need lucene?
 - Revisit storing active-knot-id inside tree, inside undo/redo stack
-- not displaying accels on operations toolbar items
 - Should Reload trigger a Replay All?
 
 ## Hyper
