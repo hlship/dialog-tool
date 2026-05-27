@@ -196,12 +196,6 @@
        :tree
        tree/totals))
 
-(defn bless
-  [session knot-id]
-  (-> session
-      capture-undo
-      (update :tree tree/bless-response knot-id)))
-
 (defn bless-to
   [session knot-id]
   (let [{:keys [tree]} session
@@ -387,5 +381,3 @@
 (defn get-knot
   [session id]
   (tree/get-knot (:tree session) id))
-
-

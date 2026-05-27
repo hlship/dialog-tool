@@ -339,18 +339,12 @@
       [:div.grow.flex.px-2
        (render-search)]
       ;; Operations — right-aligned
-      (toolbar-btn {:disabled      ok?
-                    :data-tip      "Bless"
-                    :data-on:click (h/action {:as "bless"}
-                                             (actions/bless id))}
-                   "icon-bless")
-      (toolbar-btn {:disabled        (or ok? root?)
-                    :data-label      "Bless To Here"
+      (toolbar-btn {:disabled        ok?
+                    :data-label      "Bless Changes"
                     :data-accel__alt "b"
-                    :data-on:click   (when-not (or ok? root?)
-                                       (h/action {:as "bless-to-here"}
-                                                 (actions/bless-to-here id)))}
-                   "icon-bless-to")
+                    :data-on:click   (h/action {:as "bless"}
+                                               (actions/bless-to-here id))}
+                   "icon-bless")
       (toolbar-btn {:data-label      "Replay"
                     :data-accel__alt "r"
                     :data-on:click   (h/action {:as "replay-to"}
