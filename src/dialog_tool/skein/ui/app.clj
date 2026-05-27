@@ -457,25 +457,11 @@
         [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
         [:p.text-base-content.opacity-70 "You may close this window now."]]]
       ;; Normal page render
-      (let [flash          (first (reset-vals! actions/*pending-flash nil))
-            active-knot-id (:active-knot-id tree)
+      (let [active-knot-id (:active-knot-id tree)
             knots          (tree/selected-knots tree)
 
             leaf-knot      (last knots)]
         [:div.relative
-         ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
-         ;; insertion. Uses a random id so each flash is a new element to the morph
-         ;; algorithm. Works in both action and cursor-change render contexts.
-         (when flash
-           (let [{:keys [message type]} (if (string? flash)
-                                          {:message flash :type :info}
-                                          flash)]
-             ;; TODO: I don't think we need the rendered elements, the atom, or anything
-             ;; beyond sk.showFlash().  Or maybe a placeholder with
-             ;; data-ignore (or data-ignore-morph).
-             [:span {:id        (str "flash-trigger-" (random-uuid))
-                     :data-init (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")")
-                     :style     "display:none"}]))
          ;; Single fixed header containing both toolbars — no gap possible between them
          [:div.fixed.top-0.start-0.w-full.z-30
           (navbar *session)

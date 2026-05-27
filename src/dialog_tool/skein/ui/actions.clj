@@ -16,17 +16,16 @@
   (reset! (modal-cursor)
           (apply hash-map :type type kvs)))
 
-;; Pending flash message — stored outside the session cursor so it doesn't
-;; persist across re-renders. The render function consumes and clears it.
-;; TODO: Never happy to have a global like this, there must be a better way
-;; to deal with this.
-(def *pending-flash (atom nil))
 
 (defn flash!
-  "Queues a flash message to be shown on the next render.
-  Does not modify the session cursor — the render function reads and clears this."
-  [message]
-  (reset! *pending-flash message))
+  "Sends JS to the client to display a flash message.  This may be a string, or a map
+  w/ keys :message and :type."
+  [flash-message]
+  (let [{:keys [message type]} (if (string? flash-message)
+                                 {:message flash-message :type :info}
+                                 flash-message)]
+    (effects/execute-script!
+      (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")"))))
 
 (defn complete-session-operation
   "Invoked after a command that operates on the process; if there was a startup error
@@ -37,7 +36,7 @@
   [session flash-message]
   (let [{:keys [error]} session]
     (when-not error
-      (reset! *pending-flash flash-message))
+      (flash! flash-message))
     (cond-> session
       error (common/setup-source-error error))))
 
@@ -256,7 +255,7 @@
 (defn quit
   []
   (env/log-action "quit")
-  (let [*session    (session-cursor)]
+  (let [*session (session-cursor)]
     (if (:dirty? @*session)
       (init-modal :quit)
       (common/quit))))
