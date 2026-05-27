@@ -53,7 +53,7 @@
     [:div.ml-4 {:key id}
      [:div.flex.items-center.gap-1.py-0.5.group.hover:bg-base-200.rounded
       (cond-> {}
-        match? (assoc :class "bg-warning opacity-5")
+        match? (assoc :class "text-warning")
         scroll-to? (assoc :data-init "el.scrollIntoView({block:'center',behavior:'smooth'})"))
       ;; Expand/collapse toggle
       (if has-children?
