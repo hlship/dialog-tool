@@ -212,7 +212,7 @@
                          predicate]))])))))
 
 (defn- render-children-navigation
-  [cursor tree knot]
+  [*session tree knot]
   (let [children (tree/children tree knot)
         {:keys [descendant-status]} knot]
     [:div.indicator
@@ -224,7 +224,11 @@
                                                                   (tree/descendant-status tree id))]
                                  (dropdown/button {:bg-class      (status->button-class status)
                                                    :data-on:click (h/action {:as "select-child"}
-                                                                            (swap! cursor session/select-knot id))}
+                                                                            (env/log-action "select-child" id)
+                                                                            (swap! *session #(-> %
+                                                                                                 (session/select-knot id)
+                                                                                                 (session/set-active-knot-id id)
+                                                                                                 js/navigate-to-active-knot!)))}
                                                   (or label command))))
                              children))
      (when (> (count children) 1)
@@ -240,16 +244,17 @@
   [*session tree knot {:keys [debug-enabled? show-dynamic? fixed-width? active-knot-id]}]
   (let [{:keys [id label response unblessed status locked]} knot
         active? (= id active-knot-id)]
+    (:status knot)
     [:div.flex.flex-row
      {:id (str "knot-" id)}
      ;; Active-knot marker: sits in the left gutter, outside the knot content
      [:div.w-5.shrink-0.flex.items-start.justify-center.pt-2
       (when active?
         [:div.icon.icon-arrow-right {:title "Selected"}])]
-     [:div.border-x-8.grow.cursor-pointer
-      {:class         (if active?
-                        "border-l-primary"
-                        (status->border-class status))
+     [:div
+      {:class         (classes "border-x-8 grow cursor-pointer"
+                               (when active? "border-l-primary")
+                               (status->border-class status))
        :data-on:click (h/action {:as "set-active-knot"}
                                 (swap! *session #(-> %
                                                      (session/set-active-knot-id id)

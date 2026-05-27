@@ -3,6 +3,7 @@
   (:require [dialog-tool.env :as env]
             [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.session :as session]
+            [dialog-tool.skein.ui.js :as js]
             [hyper.core :as h]
             [hyper.effects :as effects]))
 
@@ -15,8 +16,8 @@
                       (-> session
                           session/check-for-changed-sources
                           (session/command! parent-knot-id normalized)
-                          common/maybe-apply-source-error))))))
-
+                          common/maybe-apply-source-error
+                          js/navigate-to-active-knot!))))))
 
 
 (defn new-command-input
@@ -35,5 +36,4 @@
         :class       "flex-1 rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
         :data-bind   (:name command-signal)
         :data-on:change (h/action
-                         (process-new-command cursor parent-knot-id $value)
-                         (effects/execute-script! "sk.resetAndFocusCommandInput()"))}]]]))
+                          (process-new-command cursor parent-knot-id $value))}]]]))
