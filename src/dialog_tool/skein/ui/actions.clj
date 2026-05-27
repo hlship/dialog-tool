@@ -21,11 +21,12 @@
   "Sends JS to the client to display a flash message.  This may be a string, or a map
   w/ keys :message and :type."
   [flash-message]
-  (let [{:keys [message type]} (if (string? flash-message)
-                                 {:message flash-message :type :info}
-                                 flash-message)]
-    (effects/execute-script!
-      (str "sk.showFlash(" (pr-str message) "," (pr-str (name type)) ")"))))
+  (when flash-message
+    (let [{:keys [message type]} (if (string? flash-message)
+                                   {:message flash-message :type :info}
+                                   flash-message)]
+      (effects/execute-script!
+        (str "sk.showFlash(" (pr-str message) "," (-> type name pr-str) ")")))))
 
 (defn complete-session-operation
   "Invoked after a command that operates on the process; if there was a startup error
@@ -94,6 +95,22 @@
                 session/check-for-changed-sources
                 (session/replay-to! knot-id)
                 (complete-session-operation "Replayed")))))
+
+(defn initial-load
+  []
+  (env/log-action "initial-load")
+  (let [*session (session-cursor)
+        {:keys [loading?]} @*session]
+    ;; loading? is true on startup for a new tree (not one loaded from an existing skein).
+    (if loading?
+      (do
+        (swap! *session #(-> %
+                             (session/replay-to! 0)
+                             (complete-session-operation nil)
+                             ;; Clear the spin cursor
+                             (dissoc :loading?)
+                             (js/focus-if-leaf! 0))))
+      (replay-all))))
 
 (defn trace
   []

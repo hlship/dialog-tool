@@ -444,7 +444,6 @@
   (let [*session (session-cursor)
         session  @*session
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
-
     ;; This is done early to avoid a possible (?) race condition when the SSE stream
     ;; is initialized.
     (when replay-on-launch?
@@ -462,6 +461,12 @@
 
             leaf-knot      (last knots)]
         [:div.relative
+         (when replay-on-launch?
+           ;; This lets the client render the initial page before we start sending down
+           ;; SSE updates.
+           [:div {:data-init
+                  (h/action {:as "initial-load"}
+                            (actions/initial-load))}])
          ;; Single fixed header containing both toolbars — no gap possible between them
          [:div.fixed.top-0.start-0.w-full.z-30
           (navbar *session)
@@ -486,11 +491,4 @@
          ;; Modal overlay
          (modals/render-modal)
          ;; FAB for settings
-         (render-fab *session)
-         ;; On initial render, may want to trigger replay-all.
-         (when replay-on-launch?
-           ;; This lets the client render the initial page before we start sending down
-           ;; SSE updates.
-           [:div {:data-init
-                  (h/action {:as "initial-replay-all"}
-                            (actions/replay-all))}])]))))
+         (render-fab *session)]))))
