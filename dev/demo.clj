@@ -20,6 +20,7 @@
   (-> @*app :tab keys)
   (-> @*app :global :modal)
   (-> @*app :global :shutdown-fn)
+  (-> @*app :global :session :tree :active-knot-id)
 
   (swap! *app assoc-in [:global :modal] nil)
 

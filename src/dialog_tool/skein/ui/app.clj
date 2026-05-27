@@ -101,6 +101,14 @@
      [:div.icon {:class icon}]
      [:span.hidden.lg:inline label]]))
 
+(defn- simple-action
+  [*session label flash-message f]
+  (env/log-action label)
+  (swap! *session #(-> %
+                       f
+                       js/navigate-to-active-knot!))
+  (actions/flash! flash-message))
+
 (defn navbar
   [*session]
   (let [session       @*session
@@ -142,32 +150,22 @@
                     :data-accel__alt__shift "r"}
                    "icon-play" "Replay All")
        (navbar-btn {:data-on:click (h/action {:as "save"}
-                                             (env/log-action "save")
-                                             (swap! *session session/save!)
-                                             (actions/flash! "Saved"))
+                                             (simple-action *session "save" "Saved" session/save!))
                     :data-accel    "s"
                     :class         (when dirty? "btn-soft")}
                    "icon-save" "Save")
        (navbar-btn {:data-on:click (h/action {:as "undo"}
-                                             (env/log-action "undo")
-                                             (swap! *session session/undo)
-                                             (actions/flash! "Undo")
-                                             (js/navigate-to-active-knot! *session))
+                                             (simple-action *session "undo" "Undo" session/undo))
                     :data-accel    "z"
                     :disabled      (not can-undo?)}
                    "icon-undo" "Undo")
        (navbar-btn {:data-on:click     (h/action {:as "redo"}
-                                                 (env/log-action "redo")
-                                                 (swap! *session session/redo)
-                                                 (actions/flash! "Redo")
-                                                 (js/navigate-to-active-knot! *session))
+                                                 (simple-action *session "redo" "Redo" session/redo))
                     :data-accel__shift "z"
                     :disabled          (not can-redo?)}
                    "icon-redo" "Redo")
        (navbar-btn {:data-on:click (h/action {:as "reload"}
-                                             (swap! *session session/reload!)
-                                             (actions/flash! "Reloaded")
-                                             (js/navigate-to-active-knot! *session))
+                                             (simple-action *session "reload" "Reloaded" session/reload!))
                     :data-tip      "Reload"
                     :disabled      (not can-reload?)}
                    "icon-reload" "Reload")
@@ -253,8 +251,9 @@
                         "border-l-primary"
                         (status->border-class status))
        :data-on:click (h/action {:as "set-active-knot"}
-                                (swap! *session session/set-active-knot-id id)
-                                (js/focus-if-leaf! *session id))}
+                                (swap! *session #(-> %
+                                                     (session/set-active-knot-id id)
+                                                     js/navigate-to-active-knot!)))}
       [:div.w-full.whitespace-pre-wrap.break-words.p-2.bg-base-100
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
        [:div.whitespace-normal.font-sans.flex.flex-row.items-center.gap-x-2.float-right.sticky.top-28.rounded-bl-lg.pl-2.pb-1.bg-base-100
@@ -291,11 +290,8 @@
   (let [session        @*session
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
-        knot           (session/get-knot session active-knot-id)
-        {:keys [id dynamic-response parent-id]} knot
+        {:keys [id dynamic-response parent-id selected-child-id children]} (session/get-knot session active-knot-id)
         root?          (= 0 id)
-        child-id       (get-in tree [:selected id])
-        no-child?      (nil? child-id)
         all-ok?        (->> selected-knots
                             (map :status)
                             (every? #(= % :ok)))
@@ -322,20 +318,22 @@
                                        (h/action {:as "activate-parent"}
                                                  (actions/activate-knot parent-id)))}
                    "icon-arrow-up")
-      (toolbar-btn {:disabled        no-child?
-                    :data-label      "Child knot"
-                    :data-accel__alt "ArrowDown"
-                    :data-on:click   (when-not no-child?
-                                       (h/action {:as "activate-child"}
-                                                 (actions/activate-knot child-id)))}
-                   "icon-arrow-down")
-      (toolbar-btn {:data-label             "Last Knot"
-                    :disabled               (= id leaf-knot-id)
-                    :data-accel__alt__shift "ArrowDown"
-                    :data-on:click          (when-not (= id leaf-knot-id)
-                                              (h/action {:as "activate-last"}
-                                                        (actions/activate-knot leaf-knot-id)))}
-                   "icon-scroll-bottom")
+      (let [disabled? (nil? selected-child-id)]
+        (toolbar-btn {:disabled        disabled?
+                      :data-label      "Child knot"
+                      :data-accel__alt "ArrowDown"
+                      :data-on:click   (when-not disabled?
+                                         (h/action {:as "activate-child"}
+                                                   (actions/activate-knot selected-child-id)))}
+                     "icon-arrow-down"))
+      (let [disabled? (= id leaf-knot-id)]
+        (toolbar-btn {:data-label             "Last Knot"
+                      :disabled               disabled?
+                      :data-accel__alt__shift "ArrowDown"
+                      :data-on:click          (when-not disabled?
+                                                (h/action {:as "activate-last"}
+                                                          (actions/activate-knot leaf-knot-id)))}
+                     "icon-scroll-bottom"))
       ;; Search — fills the space between navigation and operations
       [:div.grow.flex.px-2
        (render-search)]
@@ -391,12 +389,13 @@
                                        (h/action {:as "delete"}
                                                  (actions/delete-knot id)))}
                    "icon-delete")
-      (toolbar-btn {:disabled      (or root? (nil? (:children knot)))
-                    :data-tip      "Splice Out"
-                    :data-on:click (when-not (or root? (nil? (:children knot)))
-                                     (h/action {:as "splice-out"}
-                                               (actions/split-out id)))}
-                   "icon-splice")
+      (let [disabled? (or root? (nil? children))]
+        (toolbar-btn {:disabled      disabled?
+                      :data-tip      "Splice Out"
+                      :data-on:click (when-not disabled?
+                                       (h/action {:as "splice-out"}
+                                                 (actions/split-out id)))}
+                     "icon-splice"))
       ;; Debug-only operations (hidden when not debug-enabled?)
       (when debug-enabled?
         (list
@@ -449,34 +448,40 @@
     (when replay-on-launch?
       (swap! *session dissoc :replay-on-launch?))
 
-    (if closing?
-      ;; Server is shutting down — show close message
-      [:div.flex.items-center.justify-center.h-screen
-       [:div.text-center
-        [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
-        [:p.text-base-content.opacity-70 "You may close this window now."]]]
-      ;; Normal page render
-      (let [active-knot-id (:active-knot-id tree)
-            knots          (tree/selected-knots tree)
+    (list
+      (cond
+        closing?
+        ;; Server is shutting down — show close message
+        [:div.flex.items-center.justify-center.h-screen
+         [:div.text-center
+          [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
+          [:p.text-base-content.opacity-70 "You may close this window now."]]]
 
-            leaf-knot      (last knots)]
-        [:div.relative
-         (when replay-on-launch?
-           ;; This lets the client render the initial page before we start sending down
-           ;; SSE updates.
-           [:div {:data-init
-                  (h/action {:as "initial-load"}
-                            (actions/initial-load))}])
-         ;; Single fixed header containing both toolbars — no gap possible between them
-         [:div.fixed.top-0.start-0.w-full.z-30
-          (navbar *session)
-          (render-operations-toolbar *session knots)]       ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
-         [:div.w-full.mt-28.px-2
-          (if loading?
-            ;; New skein: process hasn't started yet — show a placeholder until
-            ;; replay-on-launch fires and replay-all! clears the :loading? flag.
-            [:div.flex.items-center.justify-center.py-16
-             [:span.loading.loading-spinner.loading-lg.text-primary]]
+        loading?
+        ;; New skein: process hasn't started yet — show a placeholder until
+        ;; replay-on-launch fires and replay-all! clears the :loading? flag.
+        [:div.flex.items-center.justify-center.py-16
+         {:data-init (h/action {:as "initial-load"}
+                               (actions/initial-load))}
+         [:span.loading.loading-spinner.loading-lg.text-primary]]
+
+        :else
+        ;; Normal page render
+        (let [active-knot-id (session/get-active-knot-id session)
+              knots          (session/selected-knots session)
+              leaf-knot      (last knots)]
+          [:div.relative
+           (when replay-on-launch?
+             ;; This lets the client render the initial page before we start sending down
+             ;; SSE updates.
+             [:div {:data-init
+                    (h/action {:as "initial-replay"}
+                              (actions/initial-load))}])
+           ;; Single fixed header containing both toolbars — no gap possible between them
+           [:div.fixed.top-0.start-0.w-full.z-30
+            (navbar *session)
+            (render-operations-toolbar *session knots)]     ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
+           [:div.w-full.mt-28.px-2
             ;; This is the main part of the page: the root knot and
             ;; each selected child until we hit a leaf, followed by
             ;; a command input field.
@@ -487,8 +492,8 @@
                                                       :fixed-width?   fixed-width?
                                                       :active-knot-id active-knot-id}))
                    knots)
-              (new-command/new-command-input *session (:id leaf-knot))))]
-         ;; Modal overlay
-         (modals/render-modal)
-         ;; FAB for settings
-         (render-fab *session)]))))
+              (new-command/new-command-input *session (:id leaf-knot)))]
+           ;; Modal overlay
+           (modals/render-modal)
+           ;; FAB for settings
+           (render-fab *session)])))))

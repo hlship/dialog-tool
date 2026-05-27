@@ -109,7 +109,7 @@
                              (complete-session-operation nil)
                              ;; Clear the spin cursor
                              (dissoc :loading?)
-                             (js/focus-if-leaf! 0))))
+                             (js/navigate-to-knot! 0))))
       (replay-all))))
 
 (defn trace
@@ -221,11 +221,9 @@
 (defn activate-knot
   [id]
   (env/log-action "activate-knot" id)
-  (let [*session (session-cursor)]
-    (swap! *session #(-> %
-                         (session/set-active-knot-id id)
-                         (js/focus-if-leaf! id)))
-    (js/scroll-knot-into-view! id)))
+  (swap! (session-cursor) #(-> %
+                               (session/set-active-knot-id id)
+                               js/navigate-to-active-knot!)))
 
 (defn seek-status
   [status]
@@ -254,8 +252,8 @@
   (swap! (session-cursor)
          #(-> %
               (session/select-knot id)
-              (session/set-active-knot-id id)))
-  (js/scroll-knot-into-view! id))
+              (session/set-active-knot-id id)
+              js/navigate-to-active-knot!)))
 
 (defn quit
   []
@@ -290,4 +288,4 @@
                                (session/select-knot knot-id)
                                (session/set-active-knot-id knot-id)))
   (reset! (search-cursor) nil)
-  (js/scroll-knot-into-view! knot-id))
+  (swap! (session-cursor) js/navigate-to-knot! knot-id))

@@ -381,3 +381,7 @@
 (defn get-knot
   [session id]
   (tree/get-knot (:tree session) id))
+
+(defn selected-knots
+  [session]
+  (tree/selected-knots (:tree session)))

@@ -49,7 +49,7 @@
   (update-in tree [:children parent-id] conj* child-id))
 
 (defn- get-selected
-  "Gets the selected child ID for a parent knot."
+  "Gets the selected child ID for a parent knot, or ni."
   [tree parent-id]
   (get-in tree [:selected parent-id]))
 
@@ -353,6 +353,7 @@
   [tree knot-id]
   (when-let [knot (get-in tree [:knots knot-id])]
     (assoc knot
+           :selected-child-id (get-in tree [:selected knot-id])
            :children (get-in tree [:children knot-id])
            :status (get-in tree [:status knot-id])
            :descendant-status (get-in tree [:descendant-status knot-id])
