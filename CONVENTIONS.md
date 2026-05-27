@@ -138,10 +138,10 @@ orchestrates mutations across multiple cursors simultaneously.
 
 ### Reusable coordination primitives defined here
 
-| Function | Purpose |
-|---|---|
-| `init-modal` | Open a modal by type with initial key/value pairs |
-| `flash!` | Schedule a transient status message |
+| Function                     | Purpose                                                  |
+|------------------------------|----------------------------------------------------------|
+| `init-modal`                 | Open a modal by type with initial key/value pairs        |
+| `flash!`                     | Send a flash message (via JavaScript event)              |
 | `complete-session-operation` | Terminal step for async ops: apply flash or source error |
 
 ### What does NOT belong here
@@ -161,12 +161,12 @@ Before writing new logic, check whether a helper already exists in one of these 
 
 Pure functions and cursor accessors shared across the controller and renderer tiers.
 
-| Function | Purpose |
-|---|---|
-| `session-cursor` / `modal-cursor` / `search-cursor` | Cursor accessors |
-| `normalize-input` | Trim and nil-blank strings from form input |
-| `setup-source-error` | Open source-error modal and strip `:error` from session |
-| `maybe-apply-source-error` | Terminal pipeline step: apply source error if present |
+| Function                                              | Purpose                                                 |
+|-------------------------------------------------------|---------------------------------------------------------|
+| `session-cursor` / `modal-cursor` / `search-cursor`   | Cursor accessors                                        |
+| `normalize-input`                                     | Trim and nil-blank strings from form input              |
+| `setup-source-error`                                  | Open source-error modal and strip `:error` from session |
+| `maybe-apply-source-error`                            | Terminal pipeline step: apply source error if present   |
 
 `maybe-apply-source-error` is designed for use at the end of `->` pipelines:
 
@@ -221,7 +221,7 @@ modal cursor — never by throwing an exception.
 ```clojure
 (defn complete-session-operation [session flash-message]
   (let [{:keys [error]} session]
-    (when-not error (reset! *pending-flash flash-message))
+    (when-not error (flash! flash-message))
     (cond-> session
       error (common/setup-source-error error))))
 ```
@@ -235,18 +235,7 @@ These are known rough edges to resolve in future refactoring:
 1. **`{:as}` consistency.** A small number of `h/action` calls omit the `{:as "name"}`
    option (e.g., FAB toggles, `quit-modal`). Audit and add names uniformly.
 
-2. **`session/get-knot` vs `tree/get-knot`.** When a `session` value is in scope, always
-   use `session/get-knot session id`. Use `tree/get-knot` only in model-layer code
-   (`session.clj`, `tree.clj`) that operates directly on a `tree` map with no session.
-   Similarly, prefer `session/get-active-knot-id` and `session/set-active-knot-id` over
-   raw `get-in`/`assoc-in` on `[:tree :active-knot-id]`.
-
-3. **`*app-state` threading.** `quit` and `quit-modal` require `*app-state` for the
-   shutdown function, which is threaded manually through `skein-page → navbar → quit`.
-   This is a layering violation (a renderer is threading infrastructure state). Needs
-   a cleaner injection mechanism.
-
-4. **`replay-all` circular dependency.** The `replay-all` function is injected into the
+2. **`replay-all` circular dependency.** The `replay-all` function is injected into the
    session map at startup in `service.clj` to break a circular dependency between
    `actions` and `session`. This is marked with a TODO comment and should be resolved
    by introducing a protocol or a separate coordination namespace.

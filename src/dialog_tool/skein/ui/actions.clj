@@ -107,29 +107,17 @@
           active-id    (session/get-active-knot-id session)
           knot         (session/get-knot session active-id)
           root-action? (= 0 active-id)
-          _            (env/log-action (if root-action? "trace-startup" "trace") active-id)
+          _            (env/log-action "trace" active-id)
           command      (if root-action?
                          "Startup"
                          (:command knot))
-          [trace-response session']
-          ;; TODO: Handling source code error here?
-          (if root-action?
-            (session/trace-startup! session)
-            (session/trace-command! session active-id))]
-      ;; TODO: If a source error in trace, then jump directly to source error modal.
-      #_(env/log-action "trace-done"
-                        " response=" (if trace-response "present" "nil")
-                        " error=" (if (:error session') (pr-str (:error session')) "none"))
-      ;; Strip :modal and :trace before reset so Hyper always sees a
-      ;; state change when the new trace is applied — even if the
-      ;; content is identical to the previous run.
+          [trace-response session'] (if root-action?
+                                      (session/trace-startup! session)
+                                      (session/trace-command! session active-id))]
       (reset! *session session')
       (if trace-response
-        (let [_      (env/log-action "trace-parse-start")
-              parsed (trace/parse-trace trace-response)
-              _      (env/log-action "trace-build-start" " lines=" (count parsed))
-              nodes  (trace/build-tree parsed)
-              _      (env/log-action "trace-swap-start" " nodes=" (trace/count-nodes nodes))]
+        (let [parsed (trace/parse-trace trace-response)
+              nodes  (trace/build-tree parsed)]
           (init-modal :trace
                       :nodes nodes
                       :search ""
@@ -216,10 +204,10 @@
 (defn activate-knot
   [id]
   (env/log-action "activate-knot" id)
-  (let [*session (session-cursor)
-        session' (swap! *session #(-> %
-                                      (session/set-active-knot-id id)
-                                      (js/focus-if-leaf! id)))]
+  (let [*session (session-cursor)]
+    (swap! *session #(-> %
+                         (session/set-active-knot-id id)
+                         (js/focus-if-leaf! id)))
     (js/scroll-knot-into-view! id)))
 
 (defn seek-status
