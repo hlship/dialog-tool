@@ -287,18 +287,19 @@
      [:div.icon.w-4.h-4 {:class icon}]]))
 
 (defn- render-operations-toolbar
-  [*session]
+  [*session selected-knots]
   (let [session        @*session
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
         knot           (session/get-knot session active-knot-id)
-        {:keys [id status dynamic-response parent-id]} knot
+        {:keys [id dynamic-response parent-id]} knot
         root?          (= 0 id)
-        ok?            (= :ok status)
         child-id       (get-in tree [:selected id])
         no-child?      (nil? child-id)
-        leaf-knot-id   (-> tree
-                           tree/selected-knots
+        all-ok?        (->> selected-knots
+                            (map :status)
+                            (every? #(= % :ok)))
+        leaf-knot-id   (-> selected-knots
                            last
                            :id)]
     [:div {:class (classes "bg-base-100 text-base-content border-base-200"
@@ -339,11 +340,11 @@
       [:div.grow.flex.px-2
        (render-search)]
       ;; Operations — right-aligned
-      (toolbar-btn {:disabled        ok?
+      (toolbar-btn {:disabled        all-ok?
                     :data-label      "Bless Changes"
                     :data-accel__alt "b"
                     :data-on:click   (h/action {:as "bless"}
-                                               (actions/bless-to-here id))}
+                                               (actions/bless-changes leaf-knot-id))}
                    "icon-bless")
       (toolbar-btn {:data-label      "Replay"
                     :data-accel__alt "r"
@@ -440,9 +441,8 @@
   "Main hyper page function. Renders the full skein UI from the session cursor.
   Hyper calls this whenever the :session cursor changes and pushes the diff via SSE."
   [req]
-  (let [*session   (session-cursor)
-        *app-state (:hyper/app-state req)
-        session    @*session
+  (let [*session (session-cursor)
+        session  @*session
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
 
     ;; This is done early to avoid a possible (?) race condition when the SSE stream
@@ -460,6 +460,7 @@
       (let [flash          (first (reset-vals! actions/*pending-flash nil))
             active-knot-id (:active-knot-id tree)
             knots          (tree/selected-knots tree)
+
             leaf-knot      (last knots)]
         [:div.relative
          ;; Flash trigger: a hidden span whose data-init fires sk.showFlash once on
@@ -478,8 +479,7 @@
          ;; Single fixed header containing both toolbars — no gap possible between them
          [:div.fixed.top-0.start-0.w-full.z-30
           (navbar *session)
-          (render-operations-toolbar *session)]
-         ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
+          (render-operations-toolbar *session knots)]       ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
          [:div.w-full.mt-28.px-2
           (if loading?
             ;; New skein: process hasn't started yet — show a placeholder until

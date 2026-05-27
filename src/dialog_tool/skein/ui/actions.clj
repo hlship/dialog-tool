@@ -156,11 +156,11 @@
                 :id id
                 :command command)))
 
-(defn bless-to-here
+(defn bless-changes
   [id]
-  (env/log-action "bless-to" id)
+  (env/log-action "bless-changes" id)
   (swap! (session-cursor) session/bless-to id)
-  (flash! "Blessed to here"))
+  (flash! "Blessed"))
 
 (defn new-child
   [id]
