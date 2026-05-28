@@ -69,7 +69,7 @@
           first-error (some :error results)
           session'    (if first-error
                         (assoc session :error first-error)
-                        (session/apply-responses session (reduce merge {} results)))]
+                        (session/apply-responses session (apply merge results)))]
       (modals/dismiss-modal)
       (reset! *session
               (-> session'

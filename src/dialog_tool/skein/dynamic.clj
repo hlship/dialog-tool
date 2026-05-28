@@ -122,7 +122,7 @@
     \s+
     (.*) # value"
                                    line)]
-    (if (string/starts-with? value "on")
+    (if (and value (string/starts-with? value "on"))
       (update output :global-flags conj fact)
       output)))
 
@@ -133,7 +133,7 @@
     \s+
     (.*)"
                                    line)]
-    (if-not (= value "<unset>")
+    (if (and value (not= value "<unset>"))
       (assoc-in output [:global-vars fact] value)
       output)))
 

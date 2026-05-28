@@ -61,7 +61,7 @@
                             (when (= $key "Escape")
                               (cancel))))]
     [:div#modal-container
-     {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/60"}
+     {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-grayscale"}
      [:div.bg-base-100.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
       (cond-> {:data-on:click__stop "return"
                :tabindex            "-1"
