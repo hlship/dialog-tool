@@ -1,3 +1,5 @@
+# 2.0-beta-17 -- UNRELEASED
+
 # 2.0-beta-16 -- 28 May 2026
 
 Upgraded full-text search to EnglishAnalyzer with stemming, Lucene Highlighter for
