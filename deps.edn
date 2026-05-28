@@ -1,7 +1,7 @@
 {:paths ["src"
          "generated-resources"
          "resources"]
- :deps  {io.github.hlship/cli-tools                       {:mvn/version "0.16.0-beta-7"}
+ :deps  {io.github.hlship/cli-tools                       {:mvn/version "0.16.0-beta-8"}
          org.jetbrains.pty4j/pty4j                        {:mvn/version "0.13.12"}
          dynamic-alpha/hyper                              {:git/url "https://github.com/dynamic-alpha/hyper"
                                                            :git/sha "c84c52da62e7e2d93f6af38ae82cc236baaf2234"}

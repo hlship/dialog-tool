@@ -39,10 +39,7 @@
             (fs/create-dirs out-dir)
             (fs/create-dirs class-dir)
             (fs/create-dirs build-dir))
-        ;; Add a random suffix to the JAR file to defeat cli-tools caching.
-        suffix (when (= tag "test")
-                 (str "-" (random-uuid)))
-        uber-file (fs/file build-dir (str "dialog-tool-" tag suffix ".jar"))
+        uber-file (fs/file build-dir (str "dialog-tool-" tag  ".jar"))
         zip-file (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
     (sh "tailwindcss --minimize --map"
         "--input" "public/style.css"
