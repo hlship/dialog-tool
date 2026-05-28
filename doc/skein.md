@@ -75,12 +75,53 @@ The above is an example of a new Skein for the Sand-dancer project.
 
 Let's break down the interface.
 
-![](skein-tour.png)
+From top to bottom:
 
-At the top of the Skein is the navigation bar.
-It identifies the file name for this Skein,
-the knot status,
-and then a set of commands.
+* The main toolbar, with commands that affect the entire Skein
+* The active knot toolbar, with navigation, search, and operations on the _active_ knot
+* The transcript, showing a series of player commands and game responses
+* A command entry field  to enter the next command
+* In the bottom right: the Floating Action Button, which provides some power tools
+
+You can mouse over the toolbar buttons for a reminder of what they do and what accellerator keys can be used instead.
+
+The Skein is designed to work very efficiently with just keyboard, no mouse.
+
+## Transcript
+
+The Transcript is broken into knots - each showing a player command and the project's response - forming a series 
+of interactions from the START knot to the end.
+
+![](skein-knot.png)
+
+One knot is the _active_ knot; it gets a blue left border (instead of grey, yellow, or red) and an arrow.
+The other colors indicate that the knot's response is new (yellow), or doesn't match the recorded response (red).
+
+In the overview image, the knot is a _new_ knot, because it is a fresh skein.  The text is output in a fixed width
+font, with visible whitespace. The right border is in yellow, to mark it as new.  Later we'll see what a knot looks
+like when it contains an error.
+
+This knot, for the command "open wallet", is in the valid state: the most recent replay output matches what's stored in
+the Skein. 
+
+Most of the time, each knot has just one child knot; in some cases, a knot may be a branching point, with two or more
+children. The child navigation button identifies the number of children.  Clicking on the button raises a popup
+to select between those children:
+
+![](skein-knot-nav.png)
+
+Later we'll see how to give knots labels, and lock them against accidental deletion; this appears next to the
+navigation button:
+
+![](skein-knot-label.png)
+
+## Toolbar
+
+At the top of the screen is the main toolbar; it contains operations that affects the entire Skein.
+
+![](skein-toolbar.png)
+
+The main toolbar identifies, across the top, the path to the Skein file, the knot status, and then a series of command buttons.
 
 The  knot status is a count of
 all the knots in the Skein, broken into three categories:
@@ -93,57 +134,67 @@ The yellow and red badges are clickable when their count is non-zero; clicking a
 
 We'll loop back to this shortly to explain how the Skein knows which knots are valid or otherwise.
 
-Each knot may have a label, but this is optional; the *Jump* menu item makes it easy to jump to any labeled knot.
+The other buttons are self-explanatory:
 
-The text and border of each knot identifies its status: blue text for new unblessed responses, red/blue diff highlighting for changed responses, and a colour-coded left border (grey for ok, yellow for new, red for error).
+* Replay All will be discussed below (but it's important!)
+* Undo and Redo work as you'd expect; the Undo is effectively unlimited
+* Reload reloads the Skein from the file - useful if you've made changes there (for example, rolling back changes as a Git operation)
+* Quit will cause `dgt` to exit - but you are given a chance to save the Skein before exiting, if it has changes.
 
-At the bottom of the Skein is a place to enter the next player command, and floating at the bottom right, the floating action button; we'll come back to these later.
+You can even undo and redo past a reload.
 
 ## Active Knot and Operations Toolbar
 
+Below the main toolbar is the operations tool bar.
+
+
+![](skein-knot-ops.png)
+
+The Skein is organized such that there is always one selected _leaf_ (a knot with no further commands after it), and forms
+a transcript of that particular run through the project.  However, the Skein tracks _all_ the different paths that have been recorded.
+
 Clicking any knot makes it the _active knot_, highlighted with a blue left border and a ▶ marker in the left gutter.  All operations in the secondary toolbar below the navigation bar apply to the active knot.
 
-![](skein-active-knot.png)
-
-> **Screenshot needed:** skein-active-knot.png — a knot highlighted as active (blue left border, ▶ gutter marker), with the secondary operations toolbar visible below the navigation bar.
+In addition, the search bar is also in the operation bar.
 
 The secondary toolbar has two groups of buttons:
 
 **Left side — navigation:**  Four buttons navigate between knots in the currently visible path.
 
-| Button | Action | Shortcut |
-|--------|--------|----------|
-| ⏫ | First Knot — scroll to root | ⌘⇧↑ |
-| ↑ | Parent Knot | ⌘↑ |
-| ↓ | Child Knot | ⌘↓ |
-| ⏬ | Last Knot — scroll to and focus leaf | ⌘⇧↓ |
+| Button | Action                               | Shortcut |
+|--------|--------------------------------------|----------|
+| ⏫ | First Knot — scroll to START knot    | ⌥⇧↑ |
+| ↑ | Parent Knot                          | ⌥↑ |
+| ↓ | Child Knot                           | ⌥↓ |
+| ⏬ | Last Knot — scroll to leaf | ⌥⇧↓ |
+
+Whenever the last knot is the active knot, the command input field will receive focus and be scrolled into view.
 
 **Right side — operations** applied to the active knot:
 
-| Button | Action | Shortcut |
-|--------|--------|----------|
-| ✓ | Bless — accept this knot's response | |
-| ✓✓ | Bless To Here — bless from root to here | ⌘B |
-| ▶ | Replay to this knot | ⌘Y |
-| + | New Child — prepare to add a command here | ⌘A |
-| ✏ | Edit Command… | |
-| 🏷 | Edit Label… | |
-| 🔒 | Toggle Lock | ⌘K |
-| ⤴ | Insert Parent… | |
-| 🗑 | Delete | ⌘D |
-| ✂ | Splice Out | |
+| Button | Action                                     | Shortcut |
+|------|--------------------------------------------|----------|
+| ✓| Bless Changes - accept all visible changes | ⌥B |
+| ▶ | Replay to this knot                        | ⌥R |
+| + | New Child — prepare to add a command here  | ⌥A |
+| ✏ | Edit Command…                              | ⌥E |
+| 🏷 | Edit Label…                                | ⌥L |
+| 🔒 | Toggle Lock                                | ⌥K |
+| ⤴ | Insert Parent…                             | |
+| 🗑 | Delete                                     | ⌥D |
+| ✂ | Splice Out                                 | |
 
 When the active knot is the root, all operations that do not apply to the root are disabled (rather than hidden) so the toolbar layout stays stable.
 
 When running with the `dgdebug` engine, two additional buttons appear:
 
-| Button | Action |
-|--------|--------|
-| 🖥 | Dynamic State… |
-| 🐛 | Trace… |
+| Button | Action           | Shortcut |
+|--------|------------------|----------|
+| 🖥 | Dynamic State… | ⌥S |
+| 🐛 | Trace…         | ⌥T |
 
-The most important action is _Bless_ which tells the Skein that the text for
-the knot is correct.
+The most important action is _Bless_ which tells the Skein that all the changes in the visible in the transcript are correct.
+
 
 The Skein stores the most recent response from the running project for each knot, but also an expected (or "blessed") response.  When these two values
 align, the knot is valid; When they differ, the knot is in error.
@@ -156,9 +207,9 @@ If we click the _Bless_ action the Skein will update:
 
 ![](skein-root-blessed.png)
 
-> **Screenshot needed:** skein-root-blessed.png — root knot after blessing, showing 1/0/0 status, plain font, grey borders, and the operations toolbar with Bless disabled.
+Now the special markers for fonts are gone.
 
-Notice that the knot counts in the navigation bar has changed to 1/0/0 ... one single knot whose response matches the expected response, no new knots, no knots in error.  The knot's text is now  in a plain font, not bold blue, and the knot's borders are grey.
+Notice that the knot counts in the toolbar have changed to 1/0/0 ... one single knot whose response matches the expected response, no new knots, no knots in error.  The knot's text is now  in a plain font, not bold blue, and the knot's right border is gray.
 
 The font, by default, reverts to proportional, which is appropriate for most projects.
 
@@ -168,17 +219,23 @@ You can enter a command, such as `x lizard` in the text field at the bottom to a
 
 ![](skein-new-command.png)
 
-With a child knot active, all operations in the toolbar are enabled:
+You can enter a series of commands, and if the responses are to your liking, bless them as a single operation with ⌥B
+(or by clicking the Bless Changes icon).
 
-![](skein-child-toolbar.png)
+## Searching
 
-> **Screenshot needed:** skein-child-toolbar.png — a child knot selected as active (blue left border, ▶ marker), with the operations toolbar showing all buttons enabled.
+Use ⌘F to enter the search field; this is a fast search of all the content in the skein.
 
-You can _Bless_ just this knot, or _Bless To Here_ (⌘B) to bless all knots from the root to this knot.  We'll cover the remaining actions shortly.
+![](skein-search.png)
+
+From within the search text field, you can hit the down arrow to select the different matches, and hit enter to 
+select that knot as the active knot.
+
+You can hit escape to return to the search text field, and escape again to clear the search text.
 
 ## Replaying
 
-The _Replay_ action will restart the debugger, and run all the commands from the root through to this knot.
+The _Replay_ action will restart the debugger, and run all the commands from the root through to the active knot.
 
 Along the way, the Skein will check each response against the blessed response and identify any knots that have changed content.
 
@@ -198,12 +255,14 @@ picked up):
 The knot is now in error:  The Skein displays
 the new response in fixed width; it identifies
 the changed text:  red text for deleted,
-blue text for added, and white space ins changed
+blue text for added, and white space in changed
 sections is made visible.
 
-Because Dialog word-wraps all the output, changing
-even a couple of words can have a ripple effect all
-the way down through the knot's response.
+Further, all the navigation buttons of prior knots leading up to this knot have changed color to indicate the path from
+the START knot to the error.
+
+Remember that you can also click the error count in the knot status at the top of the page to cycle through knots that are
+in error.
 
 Now that you can identify the changes, you can decide whether to bless them, or change the source and replay the knot again.
 
@@ -246,10 +305,10 @@ Likewise, there are Skein actions that move or delete knots in the Skein; those 
 
 ## Undo/Redo
 
-Be fearless.  The Skein supports unlimited _Undo_ and _Redo_ (in the top navigation bar).  These commands only juggle things in memory, _Undo_ and _Redo_ don't run commands or affect files.  You can undo even after saving to a file.
+Be fearless.  The Skein supports unlimited _Undo_ and _Redo_ (in the top navigation bar).  These commands only juggle things in memory, _Undo_ and _Redo_ don't run commands or affect files.  You can undo even after saving to a file or reloading from a file.
 
 For example, sometimes its easier to verify textual changes by using undo (to see how it used to look) then redo (to see how it now looks) before blessing the changes; this
-is particularily useful when there's some subtle whitespace changes in the output.
+is particularly useful when there's some subtle whitespace changes in the output.
 
 ## Saving
 
@@ -262,35 +321,40 @@ The `dgt skein test` command can be used, from the command line, to do the same 
 
 ## Keyboard Shortcuts
 
-All toolbar buttons show their shortcut in a tooltip on hover.  Shortcuts use ⌘ (Cmd) on Mac or Ctrl on Windows/Linux.  Shortcuts are suppressed when a modal dialog is open, and ignored when the button is disabled.
+All toolbar buttons show their shortcut in a tooltip on hover.  Shortcuts are suppressed when a modal dialog is open, and ignored when the button is disabled.
+
+Most operation shortcuts use ⌥ (Option) on Mac or Alt on Windows/Linux; a few use ⌘ (Cmd) on Mac or Ctrl on Windows/Linux.
 
 ### Navigation bar
 
-| Shortcut | Action |
-|----------|--------|
-| ⌘⇧Y | Replay All |
-| ⌘S | Save |
-| ⌘Z | Undo |
-| ⌘⇧Z | Redo |
+| Shortcut | Action     |
+|----------|------------|
+| ⌥⇧R      | Replay All |
+| ⌘S       | Save       |
+| ⌘Z       | Undo       |
+| ⌘⇧Z      | Redo       |
+| ⌘F       | Search     |
 
 ### Operations toolbar — knot navigation
 
-| Shortcut | Action |
-|----------|--------|
-| ⌘⇧↑ | First Knot (scroll to root) |
-| ⌘↑ | Parent Knot |
-| ⌘↓ | Child Knot |
-| ⌘⇧↓ | Last Knot (scroll to leaf, focus command input) |
+| Shortcut | Action                                          |
+|----------|-------------------------------------------------|
+| ⌥⇧↑      | First Knot (scroll to root)                     |
+| ⌥↑       | Parent Knot                                     |
+| ⌥↓       | Child Knot                                      |
+| ⌥⇧↓      | Last Knot (scroll to leaf, focus command input) |
 
 ### Operations toolbar — knot operations
 
-| Shortcut | Action |
-|----------|--------|
-| ⌘B | Bless To Here |
-| ⌘Y | Replay to active knot |
-| ⌘A | New Child |
-| ⌘K | Toggle Lock |
-| ⌘D | Delete |
+| Shortcut | Action                |
+|----------|-----------------------|
+| ⌥B       | Bless Changes         |
+| ⌥R       | Replay to active knot |
+| ⌥A       | New Child             |
+| ⌥E       | Edit Command          |
+| ⌥L       | Edit Label            |
+| ⌥K       | Toggle Lock           |
+| ⌥D       | Delete                |
 
 ## Beyond Player Commands
 
@@ -399,7 +463,7 @@ understand the player's command before an action is identified.
 
 ## Time Travel
 
-To time-travel, click a knot to make it the active knot, then click the _New Child_ button (⌘A) in the operations toolbar.  This will deselect any children of the knot and move focus to the player command text field at the bottom.
+To time-travel, click a knot to make it the active knot, then click the _New Child_ button (⌥A) in the operations toolbar.  This will deselect any children of the knot and move focus to the player command text field at the bottom.
 
 For example, in the below screenshot, the player opened the wallet and was hinted by the project to brood about their job.  Clicking on the "open wallet" knot and then _New Child_ is how we time travel:
 
@@ -416,8 +480,6 @@ there is a new knot somewhere below it.  It also gets an indicator
 of the count of immediate
 children of the parent; this indicator is only
 displayed when there are two or more children.
-
-![](skein-navigation-popup.png)
 
 Those yellow navigation buttons will extend all the way up to the root knot.
 
@@ -445,6 +507,19 @@ The Skein also notices changes to `dialog.edn` itself.
 
 Because of this, you can keep the Skein running even when modifying your source files and source
 directories and the Skein will just keep up.  But don't forget to `Replay All` after such changes!
+
+## Source Errors
+
+You may occasionally enter a source error while you are in your code/test/replay loop.
+
+This will be noticed by the Skein:
+
+![](skein-source-error.png)
+
+Here, I accidentally deleted the closing parenthesis on line 287; Dialog figured it out on line 290.
+
+You can make corrections and then dismiss the modal, or directly replay all knots (the latter is advised).
+
 
 ## Engines
 
@@ -482,6 +557,6 @@ The Skein has limitations, which are fundamentally based on
 the fact that it treats the interaction as a series of commands and responses; some of Dialog's capabilities are outside this simple model.
 
 * It can't help you with **status lines** as the debugger can't display those
-* It does not handle [non-command input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
+* It does not (yet!) handle [non-command input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
 * It doesn't allow for hyperlinks
 * Neither `dgdebug` nor `dfrotz` honors colors specified in style classes
