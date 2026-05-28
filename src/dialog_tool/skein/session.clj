@@ -99,6 +99,44 @@
       session'
       (assoc session' :process-knot-id knot-id))))
 
+(defn collect-replay-to
+  "Replays to knot-id using a freshly spawned process, without touching the
+  session's own process. Returns a map of knot-id -> response string for every
+  knot along the path from root to knot-id (including root knot 0).
+  On process startup failure, returns {:error <message>}."
+  [session knot-id]
+  (let [knots  (tree/knots-from-root (:tree session) knot-id)
+        ;; Start a worker with a nil process so do-restart! won't kill the live one.
+        ;; Disable debug-enabled? so capture-dynamic does not issue @dynamic commands.
+        worker (-> session
+                   (assoc :process nil)
+                   (dissoc :debug-enabled?)
+                   do-restart!)]
+    (if (:error worker)
+      {:error (:error worker)}
+      (let [commands (->> knots (drop 1) (map :command))
+            worker'  (reduce run-command! worker commands)]
+        (sk.process/kill! (:process worker'))
+        (if (:error worker')
+          {:error (:error worker')}
+          ;; Collect responses for every knot on the path from the worker's tree.
+          (->> knots
+               (map (fn [{:keys [id]}]
+                      [id (get-in worker' [:tree :knots id :response])]))
+               (into {})))))))
+
+(defn apply-responses
+  "Applies a knot-id -> response map to the session's tree, updating :response,
+  :unblessed, :status, and :descendant-status for each knot.
+  This is the merge step after parallel collection via collect-replay-to."
+  [session responses]
+  (update session :tree
+          (fn [tree]
+            (reduce (fn [t [knot-id response]]
+                      (tree/update-response t knot-id response))
+                    tree
+                    responses))))
+
 (defn get-active-knot-id
   [session]
   (get-in session [:tree :active-knot-id]))

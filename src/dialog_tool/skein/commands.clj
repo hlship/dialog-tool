@@ -17,26 +17,28 @@
 
 (defn- run-tests
   [width quiet? skein-path]
-  (let [tree (sk.file/load-tree skein-path)
+  (let [tree          (sk.file/load-tree skein-path)
         {:keys [engine seed]
          :or {engine :dgdebug}} (:meta tree)
         start-process (fn [& [opts]] (sk.process/start-process! nil engine seed opts))
-        session (s/create-loaded! start-process skein-path tree)
-        leaf-ids (->> tree
-                      tree/leaf-knots
-                      (map :id))
-        test-leaf (fn [session id]
-                    (when-not quiet?
-                      (print ".") (flush))
-                    (s/do-replay-to! session id))
-        spaces (- width (count skein-path))
-        session' (do
-                   (when-not quiet?
-                     (printf "Testing %s%s: "
-                             (apply str (repeat spaces " "))
-                             skein-path))
-                   (reduce test-leaf session leaf-ids))
-        totals (s/totals session')]
+        session       (s/create-loaded! start-process skein-path tree)
+        leaf-knots    (tree/leaf-knots tree)
+        spaces        (- width (count skein-path))
+        _             (when-not quiet?
+                        (printf "Testing %s%s: "
+                                (apply str (repeat spaces " "))
+                                skein-path))
+        ;; pmap runs collect-replay-to concurrently for all leaf knots.
+        results       (pmap (fn [knot]
+                              (when-not quiet?
+                                (print ".") (flush))
+                              (s/collect-replay-to session (:id knot)))
+                            leaf-knots)
+        first-error   (some :error results)
+        session'      (if first-error
+                        (assoc session :error first-error)
+                        (s/apply-responses session (apply merge results)))
+        totals        (s/totals session')]
     (when-not quiet?
       (print " ")
       (println (compose-totals totals)))

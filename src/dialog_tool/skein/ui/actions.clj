@@ -42,8 +42,8 @@
       error (common/setup-source-error error))))
 
 (defn replay-all
-  "Replays all leaf knots. 
-  The session is accumulated locally and only committed at the end."
+  "Replays all leaf knots in parallel via pmap, then merges the collected
+  responses into the session tree in a single pass."
   []
   (let [*session   (session-cursor)
         *modal     (modal-cursor)
@@ -51,36 +51,30 @@
                        session/capture-undo
                        session/check-for-changed-sources)
         leaf-knots (tree/leaf-knots (:tree session))
-        total      (count leaf-knots)
-        cancelled? #(not (:continue @*modal))]
-    ;; Store continue flag in progress so cancel can stop the loop
+        total      (count leaf-knots)]
     (env/log-action "replay-all")
     (init-modal :progress
                 :operation "Replaying All"
-                :continue true)
-    (let [session'      (reduce (fn [session [idx knot]]
-                                  (if (or (cancelled?)
-                                          (:error session))
-                                    (reduced session)
-                                    (do
-                                      (swap! *modal assoc
-                                             :current (inc idx)
-                                             :total total
-                                             :label (:label knot))
-                                      (session/do-replay-to! session (:id knot)))))
-                                session
-                                (map-indexed vector leaf-knots))
-          was-canceled? (cancelled?)]
-      ;; Clear the progress modal
+                :current 0
+                :total total)
+    (let [;; pmap runs collect-replay-to concurrently; each call spawns its own
+          ;; process and is fully independent of the live session process.
+          results     (pmap (fn [knot]
+                              (let [result (session/collect-replay-to session (:id knot))]
+                                (swap! *modal #(-> %
+                                                   (update :current inc)
+                                                   (assoc :label (:label knot))))
+                                result))
+                            leaf-knots)
+          first-error (some :error results)
+          session'    (if first-error
+                        (assoc session :error first-error)
+                        (session/apply-responses session (reduce merge {} results)))]
       (modals/dismiss-modal)
       (reset! *session
               (-> session'
-                  ;; This will open the source error modal if necessary
                   (complete-session-operation (cond
-                                                was-canceled? "Replay cancelled"
-                                                ;; :loading? is just for a new skein, this ensures
-                                                ;; that the process is launched and root node
-                                                ;; collected.
+                                                first-error nil
                                                 (:loading? session') nil
                                                 :else "Replay complete"))
                   (dissoc :loading?))))))
