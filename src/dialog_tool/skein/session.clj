@@ -234,7 +234,15 @@
        :tree
        tree/totals))
 
+(defn bless-knot
+  "Blesses only the single knot, leaving all other knots unchanged."
+  [session knot-id]
+  (-> session
+      capture-undo
+      (update :tree tree/bless-response knot-id)))
+
 (defn bless-to
+  "Blesses all knots from root to knot-id."
   [session knot-id]
   (let [{:keys [tree]} session
         ids (->> (tree/knots-from-root tree knot-id)

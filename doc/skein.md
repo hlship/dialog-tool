@@ -172,17 +172,18 @@ Whenever the last knot is the active knot, the command input field will receive 
 
 **Right side — operations** applied to the active knot:
 
-| Button | Action                                     | Shortcut |
-|------|--------------------------------------------|----------|
-| ✓| Bless Changes - accept all visible changes | ⌥B |
-| ▶ | Replay to this knot                        | ⌥R |
-| + | New Child — prepare to add a command here  | ⌥A |
-| ✏ | Edit Command…                              | ⌥E |
-| 🏷 | Edit Label…                                | ⌥L |
-| 🔒 | Toggle Lock                                | ⌥K |
-| ⤴ | Insert Parent…                             | |
-| 🗑 | Delete                                     | ⌥D |
-| ✂ | Splice Out                                 | |
+| Button | Action                                                  | Shortcut |
+|--------|---------------------------------------------------------|----------|
+| ✓ | Bless Knot — accept the active knot's changes only      | ⌥B |
+| ✓ | Bless Changes — accept all visible changes to the leaf  | ⌥⇧B |
+| ▶ | Replay to this knot                                     | ⌥R |
+| + | New Child — prepare to add a command here               | ⌥A |
+| ✏ | Edit Command…                                           | ⌥E |
+| 🏷 | Edit Label…                                             | ⌥L |
+| 🔒 | Toggle Lock                                             | ⌥K |
+| ⤴ | Insert Parent…                                          | |
+| 🗑 | Delete                                                  | ⌥D |
+| ✂ | Splice Out                                              | |
 
 When the active knot is the root, all operations that do not apply to the root are disabled (rather than hidden) so the toolbar layout stays stable.
 
@@ -193,7 +194,7 @@ When running with the `dgdebug` engine, two additional buttons appear:
 | 🖥 | Dynamic State… | ⌥S |
 | 🐛 | Trace…         | ⌥T |
 
-The most important action is _Bless_ which tells the Skein that all the changes in the visible in the transcript are correct.
+The two most important actions are _Bless Knot_ and _Bless Changes_.  _Bless Knot_ (⌥B) accepts the response of just the active knot.  _Bless Changes_ (⌥⇧B) accepts all changes from the root through to the visible leaf knot.
 
 
 The Skein stores the most recent response from the running project for each knot, but also an expected (or "blessed") response.  When these two values
@@ -219,8 +220,8 @@ You can enter a command, such as `x lizard` in the text field at the bottom to a
 
 ![](skein-new-command.png)
 
-You can enter a series of commands, and if the responses are to your liking, bless them as a single operation with ⌥B
-(or by clicking the Bless Changes icon).
+You can enter a series of commands, and if the responses are to your liking, bless them as a single operation with ⌥⇧B
+(or by clicking the Bless Changes icon), or bless just the active knot with ⌥B.
 
 ## Searching
 
@@ -346,15 +347,16 @@ Most operation shortcuts use ⌥ (Option) on Mac or Alt on Windows/Linux; a few 
 
 ### Operations toolbar — knot operations
 
-| Shortcut | Action                |
-|----------|-----------------------|
-| ⌥B       | Bless Changes         |
-| ⌥R       | Replay to active knot |
-| ⌥A       | New Child             |
-| ⌥E       | Edit Command          |
-| ⌥L       | Edit Label            |
-| ⌥K       | Toggle Lock           |
-| ⌥D       | Delete                |
+| Shortcut | Action                        |
+|----------|-------------------------------|
+| ⌥B       | Bless Knot (active knot only) |
+| ⌥⇧B      | Bless Changes (to leaf)       |
+| ⌥R       | Replay to active knot         |
+| ⌥A       | New Child                     |
+| ⌥E       | Edit Command                  |
+| ⌥L       | Edit Label                    |
+| ⌥K       | Toggle Lock                   |
+| ⌥D       | Delete                        |
 
 ## Beyond Player Commands
 

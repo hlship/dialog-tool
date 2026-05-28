@@ -295,7 +295,7 @@
   (let [session        @*session
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
-        {:keys [id dynamic-response parent-id selected-child-id children]} (session/get-knot session active-knot-id)
+        {:keys [id dynamic-response parent-id selected-child-id children unblessed]} (session/get-knot session active-knot-id)
         root?          (= 0 id)
         all-ok?        (->> selected-knots
                             (map :status)
@@ -343,12 +343,18 @@
       [:div.grow.flex.px-2
        (render-search)]
       ;; Operations — right-aligned
-      (toolbar-btn {:disabled        all-ok?
-                    :data-label      "Bless Changes"
-                    :data-accel__alt "b"
-                    :data-on:click   (h/action {:as "bless"}
-                                               (actions/bless-changes leaf-knot-id))}
+      (toolbar-btn {:disabled              (not unblessed)
+                    :data-label            "Bless Knot"
+                    :data-accel__alt       "b"
+                    :data-on:click         (h/action {:as "bless-knot"}
+                                                     (actions/bless-knot id))}
                    "icon-bless")
+      (toolbar-btn {:disabled                  all-ok?
+                    :data-label                "Bless Changes"
+                    :data-accel__alt__shift    "b"
+                    :data-on:click             (h/action {:as "bless"}
+                                                         (actions/bless-changes leaf-knot-id))}
+                   "icon-bless-all")
       (toolbar-btn {:data-label      "Replay"
                     :data-accel__alt "r"
                     :data-on:click   (h/action {:as "replay-to"}

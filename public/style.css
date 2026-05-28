@@ -126,6 +126,11 @@ html {
   -webkit-mask-image: url('/icons/check-circle-solid.svg');
 }
 
+.icon-bless-all {
+  mask-image: url('/icons/check-badge-solid.svg');
+  -webkit-mask-image: url('/icons/check-badge-solid.svg');
+}
+
 .icon-add {
   mask-image: url('/icons/plus-circle-solid.svg');
   -webkit-mask-image: url('/icons/plus-circle-solid.svg');

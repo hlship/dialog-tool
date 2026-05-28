@@ -154,6 +154,12 @@
                 :id id
                 :command command)))
 
+(defn bless-knot
+  [id]
+  (env/log-action "bless-knot" id)
+  (swap! (session-cursor) session/bless-knot id)
+  (flash! "Blessed"))
+
 (defn bless-changes
   [id]
   (env/log-action "bless-changes" id)
