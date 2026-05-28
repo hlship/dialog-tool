@@ -29,13 +29,8 @@ Developing the UI requires an additional window.
 - Color-blind indicators or mode
 - add ability to paste in a transcript (or create a skein from a transcript)
 - use core.cache (or memoize) for caching (of text diffs)
-- when adding a new command w/ source errors:
-  - source error dialog is raised
-  - source error dialog does dismiss when replay all is successful
-  - should re-focus on the text input field
-  - hitting enter in the field does not submit (because field is unchanged?)
 - save preference for proportional vs. fixed width in the skein file
-- Currently doesn't show dynamic state delta for root, because too much
+- Currently, doesn't show dynamic state delta for root, because too much
   - Could filter out per-object flags and variables?
 - Revisit storing active-knot-id inside tree, inside undo/redo stack
 - Should Reload trigger a Replay All?
