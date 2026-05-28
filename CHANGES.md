@@ -1,4 +1,18 @@
-# 2.0-beta-16 -- UNRELEASED
+# 2.0-beta-16 -- 28 May 2026
+
+Upgraded full-text search to EnglishAnalyzer with stemming, Lucene Highlighter for
+accurate snippet highlighting, and stemmed prefix queries.
+
+Simplified bless actions: removed standalone "Bless" action; "Bless Changes"
+(formerly "Bless to Here") now blesses all changes visible on the page.
+
+Fixed highlighted predicates in trace view being unreadable.
+
+Fixed edge cases related to active knot vs. command input field focus.
+
+Fixed incorrect field focus when adding a new command.
+
+Fixed new skein replay to only replay the root knot.
 
 # 2.0-beta-15 -- 25 May 2026
 
