@@ -72,17 +72,22 @@
   [session]
   (let [{:keys [process start-process-fn]} session
         _ (sk.process/kill! process)
-        process' (start-process-fn)
-        ;; Read the initial startup text (or the startup error)
-        initial-response (sk.process/read-response! process')
-        session' (assoc session :process process')]
-    (if-not (sk.process/alive? process')
-      (assoc session' :error initial-response)
-      (-> session'
-          (assoc :process-knot-id 0)
-          (dissoc :error)
-          (update :tree tree/update-response 0 initial-response)
-          capture-dynamic))))
+        process' (try
+                   (start-process-fn)
+                   (catch Exception e
+                     {:startup-error (ex-message e)}))]
+    (if-let [startup-error (:startup-error process')]
+      (assoc session :process nil :error startup-error)
+      ;; Read the initial startup text (or the startup error)
+      (let [initial-response (sk.process/read-response! process')
+            session' (assoc session :process process')]
+        (if-not (sk.process/alive? process')
+          (assoc session' :error initial-response)
+          (-> session'
+              (assoc :process-knot-id 0)
+              (dissoc :error)
+              (update :tree tree/update-response 0 initial-response)
+              capture-dynamic))))))
 
 (defn check-for-changed-sources
   [session]
@@ -415,14 +420,19 @@
   (let [{:keys [process start-process-fn]} session
         ;; Start a temporary process with --trace to capture traced startup
         _ (sk.process/kill! process)
-        traced-process (start-process-fn {:extra-arguments ["--trace"]})
-        trace-response (sk.process/read-response! traced-process)
+        traced-process (try
+                         (start-process-fn {:extra-arguments ["--trace"]})
+                         (catch Exception e
+                           {:startup-error (ex-message e)}))]
+    (if-let [startup-error (:startup-error traced-process)]
+      [nil (assoc session :process nil :error startup-error)]
+      (let [trace-response (sk.process/read-response! traced-process)]
         ;; Kill the traced process and restart normally
-        _ (sk.process/kill! traced-process)
-        session' (do-restart! session)]
-    (if (:error session')
-      [nil session']
-      [trace-response session'])))
+        (sk.process/kill! traced-process)
+        (let [session' (do-restart! session)]
+          (if (:error session')
+            [nil session']
+            [trace-response session']))))))
 
 (defn get-knot
   [session id]

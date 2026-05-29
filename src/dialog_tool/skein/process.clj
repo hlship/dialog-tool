@@ -75,6 +75,7 @@
         _             (when pre-flight
                         (pre-flight))
         process       (-> (ProcessBuilder. cmd)
+                          (.redirectErrorStream true)
                           .start)
         stdout-reader (.inputReader process)
         output-ch     (chan)]
