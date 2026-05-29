@@ -2,7 +2,6 @@
   "Wraps the Skein session in an HTTP service using Hyper for reactive
   server-rendered UI over Datastar/SSE."
   (:require [babashka.fs :as fs]
-            [clj-commons.ansi :refer [perr]]
             [dialog-tool.skein.file :as sk.file]
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.search :as search]
@@ -10,7 +9,6 @@
             [dialog-tool.skein.source-handlers :as source]
             [dialog-tool.skein.ui.actions :as actions]
             [dialog-tool.skein.ui.app :as ui.app]
-            [hyper.context :as context]
             [hyper.core :as h]
             [hyper.state :as state])
   (:import (java.net ServerSocket)))
@@ -111,16 +109,15 @@
                         (h/start! (create-handler *app) {:port port'}))
         shutdown-fn   (fn []
                         ;; Give hyper a little time to get last updates to browser.
-                        (do
-                          (Thread/sleep 500)
-                          (h/stop! stop-server)
-                          (sk.process/kill! (get-in @*app [:global :session :process]))
-                          (search/close!)
+                        (Thread/sleep 500)
+                        (h/stop! stop-server)
+                        (sk.process/kill! (get-in @*app [:global :session :process]))
+                        (search/close!)
 
-                          (println "Shut down")
+                        (println "Shut down")
 
-                          (when (and exit-when-shutdown? (not development-mode?))
-                            (System/exit 0))))]
+                        (when (and exit-when-shutdown? (not development-mode?))
+                          (System/exit 0)))]
     ;; This is not what cursors are really intended for, but it works for this case.
     (swap! *app assoc-in [:global :shutdown-fn] shutdown-fn)
     port'))

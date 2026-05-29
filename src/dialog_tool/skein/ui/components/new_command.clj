@@ -4,8 +4,7 @@
             [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.ui.js :as js]
-            [hyper.core :as h]
-            [hyper.effects :as effects]))
+            [hyper.core :as h]))
 
 (defn- process-new-command
   [cursor parent-knot-id command-text]

@@ -1,6 +1,6 @@
 (ns dialog-tool.skein.ui.js
+  "JavaScript effects for the client side - mostly, scrolling to knots and managing text field focus."
   (:require [dialog-tool.skein.session :as session]
-            [dialog-tool.skein.tree :as tree]
             [hyper.effects :as effects]))
 
 (defn reset-and-focus-command-input!
