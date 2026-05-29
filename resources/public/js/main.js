@@ -220,11 +220,12 @@ function showNetworkErrorModal() {
   if (networkErrorShown) return;
   networkErrorShown = true;
 
-  const container = document.getElementById('modal-container');
-  if (!container) return;
-
-  container.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60';
-  container.innerHTML = `
+  // #modal-container only exists in the DOM when a server-rendered modal is open.
+  // We can't rely on it being present, so create our own overlay from scratch.
+  const overlay = document.createElement('div');
+  overlay.id = 'network-error-modal';
+  overlay.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60';
+  overlay.innerHTML = `
     <div class="bg-white rounded-lg shadow-xl max-w-full min-w-md mx-4"
          onclick="event.stopPropagation()">
       <div class="px-6 py-4 border-b border-gray-200">
@@ -238,6 +239,7 @@ function showNetworkErrorModal() {
       </div>
     </div>
   `;
+  document.body.appendChild(overlay);
 }
 
 // Wrap window.fetch to detect server connection failures immediately.
