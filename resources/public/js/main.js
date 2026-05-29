@@ -240,12 +240,23 @@ function showNetworkErrorModal() {
   `;
 }
 
-document.addEventListener('datastar-fetch', (e) => {
-  const type = e.detail?.type;
-  if (type === 'retrying' || type === 'retries-failed' || type === 'error') {
-    showNetworkErrorModal();
+// Wrap window.fetch to detect server connection failures immediately.
+// Datastar's datastar-fetch events only cover SSE streams (and only after many
+// retries), so action POSTs that fail with a network error go undetected.
+// This wrapper catches any TypeError (network failure) on same-origin requests
+// and shows the modal right away.
+const _originalFetch = window.fetch;
+window.fetch = async function(...args) {
+  try {
+    return await _originalFetch.apply(this, args);
+  } catch (e) {
+    if (e instanceof TypeError) {
+      // TypeError means the request could not be made at all (server unreachable).
+      showNetworkErrorModal();
+    }
+    throw e;
   }
-});
+};
 
 /**
  * Datastar plugin: data-accel
