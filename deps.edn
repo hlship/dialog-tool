@@ -2,9 +2,8 @@
          "generated-resources"
          "resources"]
  :deps  {io.github.hlship/cli-tools                       {:mvn/version "0.16.0-beta-8"}
-         org.jetbrains.pty4j/pty4j                        {:mvn/version "0.13.12"}
          dynamic-alpha/hyper                              {:git/url "https://github.com/dynamic-alpha/hyper"
-                                                           :git/sha "c84c52da62e7e2d93f6af38ae82cc236baaf2234"}
+                                                           :git/sha "2713c6c86b6c6986dda9a80b709b77d574026d0b"}
          ;; hyper depends on brotli4j, which uses Maven profiles to pull in native
          ;; libraries for the *build* machine's OS/arch only. Explicitly include
          ;; all target platforms so the uberjar works everywhere.
@@ -13,7 +12,7 @@
          com.aayushatharva.brotli4j/native-linux-x86_64   {:mvn/version "1.23.0"}
          com.aayushatharva.brotli4j/native-windows-x86_64 {:mvn/version "1.23.0"}
          plumula/diff                                     {:mvn/version "0.1.1"}
-         selmer/selmer                                    {:mvn/version "1.13.1"}
+         selmer/selmer                                    {:mvn/version "1.13.3"}
          babashka/fs                                      {:mvn/version "0.5.33"}
          babashka/process                                 {:mvn/version "0.6.25"}
          org.clojure/core.async                           {:mvn/version "1.9.865"}
@@ -30,7 +29,7 @@
 
  :aliases
  {:build
-  {:deps       {io.github.clojure/tools.build {:mvn/version "0.10.13"}}
+  {:deps       {io.github.clojure/tools.build {:mvn/version "0.10.14"}}
    :ns-default build}
 
   :dev  {:extra-paths ["dev"

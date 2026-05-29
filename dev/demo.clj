@@ -1,6 +1,7 @@
 (ns demo
   "Used when manually testing the skein."
-  (:require [dialog-tool.skein.service :as service :refer [stop! *app]]
+  (:require [dialog-tool.env :as env]
+            [dialog-tool.skein.service :as service :refer [stop! *app]]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.tree :as tree]))
 
@@ -24,6 +25,8 @@
   (-> @*app :global :shutdown-fn)
   (-> @*app :global :session :tree :active-knot-id)
   (-> @*app :global :session session/selected-knots)
+  (alter-var-root #'env/*debug* (constantly false))
+  env/*debug*
 
   (swap! *app assoc-in [:global :modal] nil)
 

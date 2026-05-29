@@ -2,7 +2,6 @@
   (:require [clojure.test :refer [deftest is testing]]
             [matcher-combinators.test :refer [match?]]
             [matcher-combinators.matchers :as m]
-            [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.session :as session]))
 
@@ -16,15 +15,6 @@
   {:tree tree
    :undo-stack []
    :redo-stack []})
-
-(defn- make-process-session
-  "Creates a session with a start-process-fn that spawns real processes, for
-  testing functions that need to actually run the game engine."
-  [tree engine seed]
-  (let [start-process-fn (fn [& [opts]] (sk.process/start-process! nil engine seed opts))]
-    (assoc (make-session tree)
-           :start-process-fn start-process-fn
-           :process nil)))
 
 (deftest collect-replay-to-test
   (testing "apply-responses sets :unblessed when response differs"

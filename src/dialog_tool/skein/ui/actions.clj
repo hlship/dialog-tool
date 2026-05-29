@@ -97,13 +97,12 @@
         {:keys [loading?]} @*session]
     ;; loading? is true on startup for a new tree (not one loaded from an existing skein).
     (if loading?
-      (do
-        (swap! *session #(-> %
-                             (session/replay-to! 0)
-                             (complete-session-operation nil)
-                             ;; Clear the spin cursor
-                             (dissoc :loading?)
-                             (js/navigate-to-knot! 0))))
+      (swap! *session #(-> %
+                           (session/replay-to! 0)
+                           (complete-session-operation nil)
+                           ;; Clear the spin cursor
+                           (dissoc :loading?)
+                           (js/navigate-to-knot! 0)))
       (replay-all))))
 
 (defn trace

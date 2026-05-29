@@ -2,7 +2,6 @@
   (:require [clojure.string :as string]
             [dialog-tool.env :as env]
             [dialog-tool.skein.dynamic :as dynamic]
-            [dialog-tool.skein.search :as search]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
@@ -450,7 +449,7 @@
 (defn skein-page
   "Main hyper page function. Renders the full skein UI from the session cursor.
   Hyper calls this whenever the :session cursor changes and pushes the diff via SSE."
-  [req]
+  [_req]
   (let [*session (session-cursor)
         session  @*session
         {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
