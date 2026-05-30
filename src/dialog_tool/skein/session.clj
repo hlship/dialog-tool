@@ -140,8 +140,12 @@
           {:error (:error worker')}
           (->> knots
                (map (fn [{:keys [id]}]
-                      [id [(get-in worker' [:tree :knots id :response])
-                           (get-in worker' [:tree :dynamic id :response])]]))
+                      (let [knot (get-in worker' [:tree :knots id])]
+                        ;; run-command! stores the fresh response in :unblessed when it
+                        ;; differs from the blessed :response.  We want the actual new
+                        ;; response, so prefer :unblessed, falling back to :response.
+                        [id [(or (:unblessed knot) (:response knot))
+                             (get-in worker' [:tree :dynamic id :response])]])))
                (into {})))))))
 
 (defn apply-responses
