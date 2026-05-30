@@ -288,3 +288,20 @@
                                (session/set-active-knot-id knot-id)))
   (reset! (search-cursor) nil)
   (swap! (session-cursor) js/navigate-to-knot! knot-id))
+
+(defn toggle-tree-node
+  "Toggles the expanded/collapsed state of a node in the tree pane."
+  [knot-id]
+  (env/log-action "toggle-tree-node" knot-id)
+  (swap! (session-cursor) session/toggle-expanded knot-id))
+
+(defn select-tree-node
+  "Selects a node in the tree pane, changing the spine and replaying to it."
+  [knot-id]
+  (env/log-action "select-tree-node" knot-id)
+  (swap! (session-cursor)
+         #(-> %
+              (session/select-knot knot-id)
+              (session/set-active-knot-id knot-id)
+              (session/replay-to! knot-id)
+              (complete-session-operation nil))))

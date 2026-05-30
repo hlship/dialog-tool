@@ -207,6 +207,44 @@ window.sk = {
     }
   },
 
+  /**
+   * Initialises drag-to-resize on the tree pane.
+   * Called once from the tree pane's data-init attribute.
+   *
+   * The handle element (#tree-pane-handle) sits on the left edge of the pane.
+   * Dragging it left/right resizes the pane by adjusting its inline width style.
+   * Width is clamped between 160 px and 640 px.
+   */
+  initTreePaneResize() {
+    const handle = document.getElementById('tree-pane-handle');
+    const pane   = document.getElementById('tree-pane-outer');
+    if (!handle || !pane) return;
+
+    handle.addEventListener('mousedown', (startEvt) => {
+      startEvt.preventDefault();
+      const startX     = startEvt.clientX;
+      const startWidth = pane.getBoundingClientRect().width;
+
+      const onMove = (e) => {
+        const delta    = startX - e.clientX;          // drag left → pane grows
+        const newWidth = Math.min(1200, Math.max(160, startWidth + delta));
+        pane.style.width = newWidth + 'px';
+      };
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup',   onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      document.body.style.cursor     = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup',   onUp);
+    });
+  },
+
 };
 
 /**
