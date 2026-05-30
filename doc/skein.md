@@ -75,15 +75,18 @@ The above is an example of a new Skein for the Sand-dancer project.
 
 Let's break down the interface.
 
-From top to bottom:
+From top to bottom / left to right:
 
 * The main toolbar, with commands that affect the entire Skein
 * The active knot toolbar, with navigation, search, and operations on the _active_ knot
-* The transcript, showing a series of player commands and game responses
-* A command entry field  to enter the next command
+* **Left panel:** The nav graph — a scrollable tree showing every knot and their relationships
+* **Right panel:** The transcript, showing a series of player commands and game responses in a linear sequence
+* A command entry field to enter the next command
 * In the bottom right: the Floating Action Button, which provides some power tools
 
-You can mouse over the toolbar buttons for a reminder of what they do and what accellerator keys can be used instead.
+The two panels are separated by a drag handle; pull it left or right to resize.
+
+You can mouse over the toolbar buttons for a reminder of what they do and what accelerator keys can be used instead.
 
 The Skein is designed to work very efficiently with just keyboard, no mouse.
 
@@ -114,6 +117,46 @@ Later we'll see how to give knots labels, and lock them against accidental delet
 navigation button:
 
 ![](skein-knot-label.png)
+
+## Nav Graph
+
+The nav graph on the left shows the full tree of all knots, arranged as a top-down tree with arrows connecting each knot to its children.
+
+> **Screenshot needed:** skein-nav-graph.png — the nav graph pane showing a tree with several branches, the active spine highlighted, and some error/new tinting on ancestors.
+
+The _spine_ is the set of nodes in the nav graph that correspond to what is currently shown in the transcript — the path from root down to the active knot.
+
+### Node colours
+
+Each node pill is colour-coded to communicate status at a glance:
+
+| Colour | Meaning |
+|--------|---------|
+| Primary blue (full) | Active knot |
+| Primary blue (lighter) | On the spine (matches the transcript) |
+| Neutral grey | Off-spine, no issues |
+| Warning yellow (full) | This knot is **new** (no blessed response yet) |
+| Warning yellow (faded) | This knot is ok, but has a **new** descendant somewhere below it |
+| Error red (full) | This knot is in **error** |
+| Error red (faded) | This knot is ok, but has an **error** descendant somewhere below it |
+
+The faded ancestor tinting makes it easy to spot, at a glance, which branches contain new or broken knots — without needing to expand every subtree.
+
+### Navigation
+
+Clicking a node in the nav graph makes it the active knot and updates the transcript to show the path through that node.  When navigating to a node with a single chain of descendants, the Skein automatically selects down through the chain until it reaches a leaf or a branching point.
+
+Siblings are displayed in alphabetical order by command.
+
+### Expand and collapse
+
+Nodes with children show a small ▾/▸ toggle below them.  Click it to collapse or expand that subtree.  Spine nodes (on the path to the active knot) are always shown; only off-spine branches can be collapsed.
+
+The **Toggle Expand** button (⌥X) in the operations toolbar expands or collapses the active knot's subtree.
+
+### Resizing
+
+Drag the handle between the nav graph and the transcript to resize the panels.
 
 ## Toolbar
 
@@ -159,16 +202,21 @@ In addition, the search bar is also in the operation bar.
 
 The secondary toolbar has two groups of buttons:
 
-**Left side — navigation:**  Four buttons navigate between knots in the currently visible path.
+**Left side — navigation:**  Buttons navigate between knots in the currently visible path and across siblings.
 
 | Button | Action                               | Shortcut |
 |--------|--------------------------------------|----------|
 | ⏫ | First Knot — scroll to START knot    | ⌥⇧↑ |
 | ↑ | Parent Knot                          | ⌥↑ |
+| ← | Previous Sibling                     | ⌥← |
+| → | Next Sibling                         | ⌥→ |
+| ⊙ | Toggle Expand (nav graph)            | ⌥X |
 | ↓ | Child Knot                           | ⌥↓ |
-| ⏬ | Last Knot — scroll to leaf | ⌥⇧↓ |
+| ⏬ | Last Knot — scroll to leaf           | ⌥⇧↓ |
 
 Whenever the last knot is the active knot, the command input field will receive focus and be scrolled into view.
+
+The sibling navigation buttons (⌥←/⌥→) move to the previous or next sibling of the active knot, sorted alphabetically.  The transcript spine updates to reflect the new path.
 
 **Right side — operations** applied to the active knot:
 
@@ -181,7 +229,7 @@ Whenever the last knot is the active knot, the command input field will receive 
 | ✏ | Edit Command…                                           | ⌥E |
 | 🏷 | Edit Label…                                             | ⌥L |
 | 🔒 | Toggle Lock                                             | ⌥K |
-| ⤴ | Insert Parent…                                          | |
+| ⤴ | Insert Parent…                                          | ⌥I |
 | 🗑 | Delete                                                  | ⌥D |
 | ✂ | Splice Out                                              | |
 
@@ -281,8 +329,7 @@ For large skeins, this replay process can take a few seconds, so there's a progr
 
 The above is from the Skein for Sand-dancer.
 
-Don't worry, with modern hardware, even replays of large projects 
-are ludicrously fast. On my laptop, it takes under six seconds to replay all 50 leaf knots in the Sand-dancer Skein, and many of these knots are dozens of player commands deep in the tree. 
+Don't worry, with modern hardware, even replays of large projects are ludicrously fast. Replay All runs all leaf knots in parallel, so wall-clock time is limited by the longest single path rather than the total number of knots.  On a laptop, replaying all 50 leaf knots in the Sand-dancer Skein takes well under six seconds, and many of those knots are dozens of player commands deep in the tree.
 
 ## Understanding Randomness
 
@@ -342,6 +389,9 @@ Most operation shortcuts use ⌥ (Option) on Mac or Alt on Windows/Linux; a few 
 |----------|-------------------------------------------------|
 | ⌥⇧↑      | First Knot (scroll to root)                     |
 | ⌥↑       | Parent Knot                                     |
+| ⌥←       | Previous Sibling (alphabetical order)           |
+| ⌥→       | Next Sibling (alphabetical order)               |
+| ⌥X       | Toggle Expand (nav graph)                       |
 | ⌥↓       | Child Knot                                      |
 | ⌥⇧↓      | Last Knot (scroll to leaf, focus command input) |
 
@@ -354,6 +404,7 @@ Most operation shortcuts use ⌥ (Option) on Mac or Alt on Windows/Linux; a few 
 | ⌥R       | Replay to active knot         |
 | ⌥A       | New Child                     |
 | ⌥E       | Edit Command                  |
+| ⌥I       | Insert Parent…                |
 | ⌥L       | Edit Label                    |
 | ⌥K       | Toggle Lock                   |
 | ⌥D       | Delete                        |
