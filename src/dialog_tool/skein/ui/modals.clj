@@ -99,7 +99,16 @@
     (-> @*session
         session/check-for-changed-sources
         (session/insert-parent! id command)
-        handle-operation-error)))
+        handle-operation-error)
+    ;; On success the session has :new-id set. Navigate to it:
+    ;; update :selected + extend through single-child chain + set active/expanded-ids.
+    ;; We bypass session/select-knot to avoid a second undo entry.
+    (when-let [new-id (:new-id @*session)]
+      (swap! *session
+             #(-> %
+                  (update :tree tree/select-knot new-id)
+                  (update :tree tree/extend-selection new-id)
+                  (session/set-active-knot-id new-id))))))
 
 (defn insert-parent
   "Renders the insert parent modal."

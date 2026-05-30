@@ -390,7 +390,8 @@
                                                (actions/toggle-lock id)))}
                    "icon-lock")
       (toolbar-btn {:disabled root?
-                    :data-tip "Insert Parent…"
+                    :data-label      "Insert Parent…"
+                    :data-accel__alt "i"
                     :data-on:click (when-not root?
                                      (h/action {:as "insert-parent"}
                                                (actions/insert-parent id)))}
