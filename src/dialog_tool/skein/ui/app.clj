@@ -477,7 +477,7 @@
            ;; that the JS drag handler writes.
            [:div#tree-pane-outer
             {:class "sticky top-28 shrink-0 h-[calc(100vh-7rem)] flex flex-row"
-             :style "width: 18rem"
+             :style "width: 50rem"
              :data-preserve-attr "style"
              :data-init (h/action {:as "init-tree-pane-resize"}
                                   (effects/execute-script! "sk.initTreePaneResize()"))}

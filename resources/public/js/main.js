@@ -191,6 +191,128 @@ window.sk = {
     }
   },
 
+  // ---------------------------------------------------------------------------
+  // Nav graph: SVG arrows between knot nodes
+
+  _arrowSvg: null,
+
+  /**
+   * Called once via data-init on #tree-pane.
+   * Draws arrows immediately, then watches for DOM changes (SSE patches that
+   * rebuild the tree) and redraws.  Disconnects before redrawing to avoid
+   * recursive MutationObserver triggers.
+   */
+  initTreeGraph() {
+    const pane = document.getElementById('tree-pane');
+    if (!pane) return;
+    // Defer initial draw until layout is complete so getBoundingClientRect is accurate.
+    // After drawing, scroll root into horizontal center so the tree is visible.
+    requestAnimationFrame(() => this.drawTreeArrows());
+    const self = this;
+    const observer = new MutationObserver(() => {
+      observer.disconnect();
+      // Another rAF here ensures the browser has finished reflowing after the
+      // SSE patch before we measure node positions for the arrows.
+      requestAnimationFrame(() => {
+        self.drawTreeArrows();
+        observer.observe(pane, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-active-knot'] });
+      });
+    });
+    observer.observe(pane, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-active-knot'] });
+  },
+
+  /**
+   * Draws SVG bezier arrows from each node's pill bottom-centre to its
+   * children's pill top-centres.  Replaces any previous SVG overlay.
+   * After drawing, scrolls the active knot into view.
+   */
+  drawTreeArrows() {
+    const pane = document.getElementById('tree-pane');
+    if (!pane) return;
+
+    this._arrowSvg?.remove();
+    this._arrowSvg = null;
+
+    // Build SVG overlay — absolutely positioned inside #tree-pane (.relative).
+    // Size it to the full scrollable content so it scrolls with the nodes.
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    Object.assign(svg.style, {
+      position: 'absolute', top: '0', left: '0',
+      width: pane.scrollWidth + 'px',
+      height: pane.scrollHeight + 'px',
+      overflow: 'visible', pointerEvents: 'none',
+    });
+
+    // Arrowhead marker
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'tree-arrow');
+    marker.setAttribute('markerWidth', '6');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('refX', '5');
+    marker.setAttribute('refY', '3');
+    marker.setAttribute('orient', 'auto');
+    const tip = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    tip.setAttribute('d', 'M0,0 L0,6 L6,3 z');
+    tip.setAttribute('fill', 'currentColor');
+    marker.appendChild(tip);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Collect pill positions relative to the pane's scrollable content origin.
+    // getBoundingClientRect gives viewport-relative coords; adjusting by scroll
+    // offsets converts to content-relative coords that match the SVG coordinate space.
+    const paneRect  = pane.getBoundingClientRect();
+    const scrollLeft = pane.scrollLeft;
+    const scrollTop  = pane.scrollTop;
+    const nodes = {};
+    pane.querySelectorAll('[data-tree-node-id]').forEach(el => {
+      const id  = el.getAttribute('data-tree-node-id');
+      const pid = el.getAttribute('data-parent-id');   // absent on root
+      const r   = el.getBoundingClientRect();
+      nodes[id] = {
+        parentId: pid || null,
+        cx:     r.left - paneRect.left + scrollLeft + r.width / 2,
+        top:    r.top  - paneRect.top  + scrollTop,
+        bottom: r.bottom - paneRect.top + scrollTop,
+      };
+    });
+
+    // Draw a cubic bezier from parent bottom-centre to child top-centre.
+    // Control points: depart vertically from parent (cp1 shares x1), arrive from
+    // the parent's direction (cp2 shares x1 so the tangent at the child is angled).
+    // orient="auto" on the marker then rotates the arrowhead to match that tangent.
+    for (const n of Object.values(nodes)) {
+      if (!n.parentId || !nodes[n.parentId]) continue;
+      const p    = nodes[n.parentId];
+      const x1   = p.cx,  y1 = p.bottom;
+      const x2   = n.cx,  y2 = n.top;
+      const gap  = Math.min(Math.abs(y2 - y1) / 3, 36);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      // cp1: depart straight down from parent; cp2: arrive from parent's x-position
+      // so the end tangent is (x2-x1, gap), matching the parent→child direction.
+      path.setAttribute('d', `M${x1},${y1} C${x1},${y1+gap} ${x1},${y2-gap} ${x2},${y2}`);
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('stroke-opacity', '0.35');
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('marker-end', 'url(#tree-arrow)');
+      svg.appendChild(path);
+    }
+
+    this._arrowSvg = svg;
+    pane.appendChild(svg);
+
+    // Scroll the active knot into view in the pane's scroll container
+    const activeId = pane.getAttribute('data-active-knot');
+    if (activeId) {
+      pane.querySelector(`[data-tree-node-id="${activeId}"]`)
+          ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+
   hideSourcePreview() {
     if (this._previewController) {
       this._previewController.abort();

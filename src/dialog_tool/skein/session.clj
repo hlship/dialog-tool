@@ -167,8 +167,9 @@
   (get-in session [:tree :active-knot-id]))
 
 (defn set-active-knot-id
-  "Sets the active knot id without capturing undo. Also expands all ancestors of
-  knot-id in :expanded-ids so the nav graph shows the path to the newly active knot."
+  "Sets the active knot id without capturing undo. Ensures the active knot and
+  all its ancestors up to root are in :expanded-ids so the nav graph shows the
+  full path to the newly active knot."
   [session knot-id]
   (-> session
       (assoc-in [:tree :active-knot-id] knot-id)
