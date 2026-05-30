@@ -213,7 +213,7 @@
 
 (defn- render-knot
   [*session tree knot {:keys [debug-enabled? show-dynamic? fixed-width? active-knot-id]}]
-  (let [{:keys [id response unblessed status]} knot
+  (let [{:keys [id response unblessed status locked label]} knot
         active? (= id active-knot-id)]
     [:div.flex.flex-row
      {:id (str "knot-" id)
@@ -232,6 +232,14 @@
                                                      js/navigate-to-active-knot!)))}
       [:div.w-full.whitespace-pre-wrap.break-words.p-2.bg-base-100
        {:class (when (or fixed-width? (not= :ok status)) "font-mono")}
+       ;; Lock icon and label float to the right inside the knot content
+       (when (or locked label)
+         [:div.float-right.flex.flex-row.items-center.gap-1.pl-2.pb-1
+          (when locked
+            [:div.icon.icon-lock {:title "Locked"}])
+          (when label
+            [:span.font-bold.bg-neutral.text-neutral-content.px-1.py-0.5.rounded.text-sm
+             label])])
        (render-diff response unblessed)
        (when (and debug-enabled?
                   show-dynamic?

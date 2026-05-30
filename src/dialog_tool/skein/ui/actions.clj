@@ -190,7 +190,7 @@
   (let [*session (session-cursor)
         locked?  (get-in @*session [:tree :knots id :locked])]
     (swap! *session session/toggle-lock id)
-    (flash! (if locked? "Locked" "Unlocked"))))
+    (flash! (if locked? "Unlocked" "Locked"))))
 
 (defn insert-parent
   [id]
