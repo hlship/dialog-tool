@@ -36,7 +36,7 @@
 
   (start! "../futurama" nil)
 
-  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)
+  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)  
 
   (start! "../failure" nil)
 

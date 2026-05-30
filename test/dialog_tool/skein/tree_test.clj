@@ -23,7 +23,8 @@
                   :selected {}
                   :active-knot-id 0
                   :status {0 :new}
-                  :descendant-status {}}
+                  :descendant-status {}
+                  :expanded-ids #{}}
                  tree)))))
 
 (deftest add-child-test

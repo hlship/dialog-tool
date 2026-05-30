@@ -13,6 +13,7 @@
       (env/log-action "command"  parent-knot-id " " (pr-str normalized))
       (swap! cursor (fn [session]
                       (-> session
+                          session/capture-undo
                           session/check-for-changed-sources
                           (session/command! parent-knot-id normalized)
                           common/maybe-apply-source-error

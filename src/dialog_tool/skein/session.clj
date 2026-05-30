@@ -9,16 +9,26 @@
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]))
 
+(defn- init-tree
+  "Sets :active-knot-id to the leaf of the selected spine and expands all nodes
+  along that spine in :expanded-ids. Used when first loading or reloading a tree."
+  [tree]
+  (let [selected     (tree/selected-knots tree)
+        leaf-knot-id (or (some-> selected last :id) 0)]
+    (-> tree
+        (assoc :active-knot-id leaf-knot-id)
+        (tree/expand-ids (map :id selected)))))
+
 (defn create-loaded!
   "Creates a new session from a tree loaded from the path, and a process started with
   the skein's seed."
   [start-process-fn skein-path tree]
-  {:skein-path skein-path
-   :undo-stack []
-   :redo-stack []
+  {:skein-path       skein-path
+   :undo-stack       []
+   :redo-stack       []
    :start-process-fn start-process-fn
-   :tree (assoc tree :active-knot-id 0)
-   :process-knot-id 0})
+   :tree             (init-tree tree)
+   :process-knot-id  0})
 
 (defn create-new!
   "Creates a new session for a new skein, using an existing process.  The process should be
@@ -125,8 +135,12 @@
           {:error (:error worker')}
           (->> knots
                (map (fn [{:keys [id]}]
-                      [id [(get-in worker' [:tree :knots id :response])
-                           (get-in worker' [:tree :dynamic id :response])]]))
+                      (let [knot (get-in worker' [:tree :knots id])]
+                        ;; run-command! stores the fresh response in :unblessed when it
+                        ;; differs from the blessed :response.  We want the actual new
+                        ;; response, so prefer :unblessed, falling back to :response.
+                        [id [(or (:unblessed knot) (:response knot))
+                             (get-in worker' [:tree :dynamic id :response])]])))
                (into {})))))))
 
 (defn apply-responses
@@ -148,10 +162,12 @@
   (get-in session [:tree :active-knot-id]))
 
 (defn set-active-knot-id
-  "Sets the active knot id without capturing undo. Used when the user clicks a knot
-  to make it the active (operated-on) knot."
+  "Sets the active knot id without capturing undo. Expands all nodes on the
+  current spine in tree[:expanded-ids] so the nav graph shows the full path."
   [session knot-id]
-  (assoc-in session [:tree :active-knot-id] knot-id))
+  (-> session
+      (assoc-in [:tree :active-knot-id] knot-id)
+      (update :tree tree/expand-ids (map :id (tree/selected-knots (:tree session))))))
 
 (defn command!
   "Sends a player command to the process as a child of the given parent knot.
@@ -168,9 +184,7 @@
         session' (if (= process-knot-id parent-knot-id)
                    session
                    (do-replay-to! session parent-knot-id))
-        session'' (-> session'
-                      capture-undo
-                      (run-command! command))]
+        session'' (run-command! session' command)]
     ;; Make the newly added/updated child knot the active (highlighted) knot
     (set-active-knot-id session'' (:process-knot-id session''))))
 
@@ -182,7 +196,7 @@
   Alternately, there may be a startup error, in which case the
   returned session will have an :error key."
   [session knot-id]
-  (do-replay-to! (capture-undo session) knot-id))
+  (do-replay-to! session knot-id))
 
 (defn prepare-new-child!
   "Prepares the session to add a new child to the specified knot.
@@ -190,7 +204,6 @@
    The actual replay to that knot happens in command! when the user types a command."
   [session knot-id]
   (-> session
-      capture-undo
       (update :tree tree/select-knot knot-id)
       (update :tree tree/deselect knot-id)
       (set-active-knot-id knot-id)))
@@ -209,7 +222,6 @@
          session]
         [nil
          (-> session
-             capture-undo
              (update :tree tree/change-command knot-id new-command)
              (do-replay-to! knot-id))]))))
 
@@ -226,11 +238,16 @@
          session]
         (let [new-id (tree/next-id)
               session' (-> session
-                           capture-undo
                            (update :tree tree/insert-parent knot-id new-id new-command)
                            (do-replay-to! knot-id))]
           [nil (cond-> session'
-                 (not (:error session')) (assoc :new-id new-id))])))))
+                 (not (:error session'))
+                 (-> (assoc :new-id new-id)
+                     ;; Navigate to the new parent as part of the same undo entry.
+                     ;; Use tree functions directly (select-knot is defined later in file).
+                     (update :tree tree/select-knot new-id)
+                     (update :tree tree/extend-selection new-id)
+                     (set-active-knot-id new-id)))])))))
 
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."
@@ -242,9 +259,7 @@
 (defn bless-knot
   "Blesses only the single knot, leaving all other knots unchanged."
   [session knot-id]
-  (-> session
-      capture-undo
-      (update :tree tree/bless-response knot-id)))
+  (update session :tree tree/bless-response knot-id))
 
 (defn bless-to
   "Blesses all knots from root to knot-id."
@@ -252,17 +267,16 @@
   (let [{:keys [tree]} session
         ids (->> (tree/knots-from-root tree knot-id)
                  (map :id))]
-    (-> session
-        capture-undo
-        (assoc :tree (reduce tree/bless-response tree ids)))))
+    (assoc session :tree (reduce tree/bless-response tree ids))))
 
 (defn select-knot
-  "Selects a knot as the last knot displayed; this determines which knots will be rendered
-  (from the root to this knot and perhaps further below to any selected children of this knot."
+  "Updates the spine from root to knot-id, then extends selection downward through
+  single-child chains until a leaf or branch point. Does not capture undo — callers
+  are responsible for calling capture-undo before navigation if desired."
   [session knot-id]
   (-> session
-      capture-undo
-      (update :tree tree/select-knot knot-id)))
+      (update :tree tree/select-knot knot-id)
+      (update :tree tree/extend-selection knot-id)))
 
 (defn save!
   "Saves the current tree state to the file."
@@ -279,12 +293,12 @@
 
 (defn reload!
   "Re-reads the skein file from disk, replacing the current tree.
-   Captures undo so the reload can be undone."
+  Restores active-knot-id and expanded-ids to match the selected spine,
+  the same as when the skein is first opened."
   [session]
-  (-> session
-      capture-undo
-      (assoc :tree (sk.file/load-tree (:skein-path session))
-             :dirty? false)))
+  (assoc session
+         :tree (-> (:skein-path session) sk.file/load-tree init-tree)
+         :dirty? false))
 
 (defn undo
   "Undoes the state of the tree one step; the current tree is pushed onto the
@@ -308,17 +322,14 @@
 (defn label
   [session knot-id label locked?]
   (-> session
-      capture-undo
       (update :tree tree/label-knot knot-id label)
       (update :tree tree/set-locked knot-id locked?)))
 
 (defn toggle-lock
-  "Toggles the locked state of a knot. Creates one undo entry."
+  "Toggles the locked state of a knot."
   [session knot-id]
   (let [locked? (tree/locked? (:tree session) knot-id)]
-    (-> session
-        capture-undo
-        (update :tree tree/set-locked knot-id (not locked?)))))
+    (update session :tree tree/set-locked knot-id (not locked?))))
 
 (defn delete!
   "Deletes a knot from the tree, including any descendants of the knot.
@@ -335,9 +346,7 @@
             deleted-ids (set (map :id (tree/knots-from-root tree knot-id)))
             active-knot-deleted? (contains? deleted-ids active-knot-id)
             process-knot-deleted? (contains? deleted-ids (:process-knot-id session))]
-        [nil (cond-> (-> session
-                         capture-undo
-                         (update :tree tree/delete-knot knot-id))
+        [nil (cond-> (update session :tree tree/delete-knot knot-id)
                active-knot-deleted? (set-active-knot-id parent-id)
                process-knot-deleted? (assoc :process-knot-id parent-id))]))))
 
@@ -371,7 +380,6 @@
       (let [replay-id (first children)
             active-is-spliced? (= active-knot-id knot-id)]
         [nil (cond-> (-> session
-                         capture-undo
                          (update :tree tree/splice-out knot-id)
                          (assoc :new-id (or replay-id parent-id)))
                ;; Replay to first child if exists (process state still valid for that path)
@@ -441,3 +449,8 @@
 (defn selected-knots
   [session]
   (tree/selected-knots (:tree session)))
+
+(defn toggle-expanded
+  "Toggles the expanded state of a knot in the nav graph."
+  [session knot-id]
+  (update session :tree tree/toggle-expanded knot-id))

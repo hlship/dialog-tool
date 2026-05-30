@@ -16,6 +16,8 @@ window.sk = {
     if (evt.newState !== 'open') {
       // Remove positioned so next open starts hidden (prevents flash)
       menu.classList.remove('positioned');
+      // Return focus to the trigger button when the popover closes.
+      menu.previousElementSibling?.focus();
       return;
     }
 
@@ -38,6 +40,38 @@ window.sk = {
         menu.classList.add('positioned');
       });
     });
+
+    // Focus the first enabled item after the position has been computed.
+    requestAnimationFrame(() => {
+      menu.querySelector('li:not(.menu-disabled) button')?.focus();
+    });
+  },
+
+  /**
+   * Keyboard navigation inside a dropdown menu popup.
+   * ArrowDown/Up move focus between enabled items. ArrowUp on the first item
+   * closes the popup and returns focus to the trigger. Escape does the same.
+   * Enter and Space activate the focused item (browser default — no handling needed).
+   * Called from data-on:keydown on the popup <ul>.
+   */
+  navigateDropdown(menu, evt) {
+    const items  = [...menu.querySelectorAll('li:not(.menu-disabled) button')];
+    const idx    = items.indexOf(document.activeElement);
+
+    if (evt.key === 'ArrowDown') {
+      evt.preventDefault();
+      items[Math.min(idx + 1, items.length - 1)]?.focus();
+    } else if (evt.key === 'ArrowUp') {
+      evt.preventDefault();
+      if (idx <= 0) {
+        menu.hidePopover();              // toggle event returns focus to trigger
+      } else {
+        items[idx - 1]?.focus();
+      }
+    } else if (evt.key === 'Escape') {
+      // hidePopover fires the toggle event which returns focus to trigger.
+      menu.hidePopover();
+    }
   },
 
   // --- Flash messages ---
@@ -191,6 +225,136 @@ window.sk = {
     }
   },
 
+  // ---------------------------------------------------------------------------
+  // Nav graph: SVG arrows between knot nodes
+
+  _arrowSvg: null,
+
+  /**
+   * Called once via data-init on #tree-pane.
+   * Draws arrows immediately, then watches for DOM changes (SSE patches that
+   * rebuild the tree) and redraws.  Disconnects before redrawing to avoid
+   * recursive MutationObserver triggers.
+   */
+  initTreeGraph() {
+    if (this._treeGraphReady) return;
+    this._treeGraphReady = true;
+
+    const pane = document.getElementById('tree-pane');
+    if (!pane) return;
+    // Defer initial draw until layout is complete so getBoundingClientRect is accurate.
+    // After drawing, scroll root into horizontal center so the tree is visible.
+    requestAnimationFrame(() => this.drawTreeArrows());
+    const self = this;
+    const observer = new MutationObserver(() => {
+      observer.disconnect();
+      // Another rAF here ensures the browser has finished reflowing after the
+      // SSE patch before we measure node positions for the arrows.
+      requestAnimationFrame(() => {
+        self.drawTreeArrows();
+        observer.observe(pane, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-active-knot'] });
+      });
+    });
+    observer.observe(pane, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-active-knot'] });
+
+    // Redraw arrows when the pane's outer size changes — catches both window
+    // resize and the pane splitter being dragged (neither triggers a DOM mutation).
+    new ResizeObserver(() => requestAnimationFrame(() => self.drawTreeArrows()))
+      .observe(pane);
+  },
+
+  /**
+   * Draws SVG bezier arrows from each node's pill bottom-centre to its
+   * children's pill top-centres.  Replaces any previous SVG overlay.
+   * After drawing, scrolls the active knot into view.
+   */
+  drawTreeArrows() {
+    const pane = document.getElementById('tree-pane');
+    if (!pane) return;
+
+    this._arrowSvg?.remove();
+    this._arrowSvg = null;
+
+    // Build SVG overlay — absolutely positioned inside #tree-pane (.relative).
+    // Size it to the full scrollable content so it scrolls with the nodes.
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    Object.assign(svg.style, {
+      position: 'absolute', top: '0', left: '0',
+      width: pane.scrollWidth + 'px',
+      height: pane.scrollHeight + 'px',
+      overflow: 'visible', pointerEvents: 'none',
+    });
+
+    // Arrowhead marker
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'tree-arrow');
+    marker.setAttribute('markerWidth', '6');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('refX', '5');
+    marker.setAttribute('refY', '3');
+    marker.setAttribute('orient', 'auto');
+    const tip = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    tip.setAttribute('d', 'M0,0 L0,6 L6,3 z');
+    tip.setAttribute('fill', 'currentColor');
+    marker.appendChild(tip);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
+    // Collect pill positions relative to the pane's scrollable content origin.
+    // getBoundingClientRect gives viewport-relative coords; adjusting by scroll
+    // offsets converts to content-relative coords that match the SVG coordinate space.
+    const paneRect  = pane.getBoundingClientRect();
+    const scrollLeft = pane.scrollLeft;
+    const scrollTop  = pane.scrollTop;
+    const nodes = {};
+    pane.querySelectorAll('[data-tree-node-id]').forEach(el => {
+      const id  = el.getAttribute('data-tree-node-id');
+      const pid = el.getAttribute('data-parent-id');   // absent on root
+      const r   = el.getBoundingClientRect();
+      nodes[id] = {
+        parentId: pid || null,
+        cx:     r.left - paneRect.left + scrollLeft + r.width / 2,
+        top:    r.top  - paneRect.top  + scrollTop,
+        bottom: r.bottom - paneRect.top + scrollTop,
+      };
+    });
+
+    // Draw a cubic bezier from parent bottom-centre to child top-centre.
+    // Control points: depart vertically from parent (cp1 shares x1), arrive from
+    // the parent's direction (cp2 shares x1 so the tangent at the child is angled).
+    // orient="auto" on the marker then rotates the arrowhead to match that tangent.
+    for (const n of Object.values(nodes)) {
+      if (!n.parentId || !nodes[n.parentId]) continue;
+      const p    = nodes[n.parentId];
+      const x1   = p.cx,  y1 = p.bottom;
+      const x2   = n.cx,  y2 = n.top;
+      const gap  = Math.min(Math.abs(y2 - y1) / 3, 36);
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      // cp1: depart straight down from parent; cp2: arrive from parent's x-position
+      // so the end tangent is (x2-x1, gap), matching the parent→child direction.
+      path.setAttribute('d', `M${x1},${y1} C${x1},${y1+gap} ${x1},${y2-gap} ${x2},${y2}`);
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('stroke-opacity', '0.35');
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('marker-end', 'url(#tree-arrow)');
+      svg.appendChild(path);
+    }
+
+    this._arrowSvg = svg;
+    pane.appendChild(svg);
+
+    // Smooth-scroll the active knot into view in the pane's scroll container.
+    const activeId = pane.getAttribute('data-active-knot');
+    if (activeId) {
+      pane.querySelector(`[data-tree-node-id="${activeId}"]`)
+          ?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+
   hideSourcePreview() {
     if (this._previewController) {
       this._previewController.abort();
@@ -205,6 +369,68 @@ window.sk = {
       popup.classList.add('hidden');
       popup.innerHTML = '';
     }
+  },
+
+  /**
+   * Initialises drag-to-resize on the tree pane.
+   * Called once from the tree pane's data-init attribute.
+   *
+   * Width is stored in a JS closure variable (currentWidth) so the
+   * MutationObserver can restore it instantly if Datastar's morph resets
+   * the inline style. It is also persisted to localStorage so it survives
+   * page refreshes.
+   */
+  initTreePaneResize() {
+    // Guard: data-init re-fires on every SSE update because h/action generates
+    // a fresh expression each render. Without this, multiple MutationObservers
+    // are created with different currentWidth closures and fight each other,
+    // causing an infinite mutation loop that locks up the page.
+    if (this._treePaneResizeReady) return;
+    this._treePaneResizeReady = true;
+
+    const handle = document.getElementById('tree-pane-handle');
+    const pane   = document.getElementById('tree-pane-outer');
+    if (!handle || !pane) return;
+
+    // Restore from last session (page refresh) or keep server default.
+    let currentWidth = localStorage.getItem('treePaneWidth') || null;
+    if (currentWidth) pane.style.width = currentWidth;
+
+    // If Datastar morphs #tree-pane-outer and resets the inline style back
+    // to the server value, immediately restore the user's last-set width.
+    new MutationObserver(() => {
+      if (currentWidth && pane.style.width !== currentWidth) {
+        pane.style.width = currentWidth;
+      }
+    }).observe(pane, { attributes: true, attributeFilter: ['style'] });
+
+    handle.addEventListener('mousedown', (startEvt) => {
+      startEvt.preventDefault();
+      const startX     = startEvt.clientX;
+      const startWidth = pane.getBoundingClientRect().width;
+
+      const onMove = (e) => {
+        const delta = e.clientX - startX;          // drag right → pane grows
+        // Update currentWidth before setting style so the MutationObserver
+        // sees the new value and does not immediately undo it.
+        const maxWidth = Math.floor(window.innerWidth * 0.8);
+        currentWidth = Math.min(maxWidth, Math.max(160, startWidth + delta)) + 'px';
+        pane.style.width = currentWidth;
+      };
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup',   onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        if (currentWidth) localStorage.setItem('treePaneWidth', currentWidth);
+      };
+
+      document.body.style.cursor     = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup',   onUp);
+    });
   },
 
 };

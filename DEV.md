@@ -25,7 +25,6 @@ Developing the UI requires an additional window.
 
 ## TODO / Ideas / Plans/ Bugs
 
-- The graph view (currently it's just a serial view, one path through the graph)
 - Color-blind indicators or mode
 - add ability to paste in a transcript (or create a skein from a transcript)
 - use core.cache (or memoize) for caching (of text diffs)
@@ -34,7 +33,6 @@ Developing the UI requires an additional window.
   - Could filter out per-object flags and variables?
 - Revisit storing active-knot-id inside tree, inside undo/redo stack
 - Should Reload trigger a Replay All?
-- If the server is shut down, the client should display an error modal
 
 ## Hyper
 
