@@ -82,12 +82,9 @@
   "Recursively renders a node and its (possibly expanded) children."
   [*session tree knot-id spine-ids' expanded-ids]
   (let [children  (tree/find-children tree knot-id)
-        sorted    (sort-by (fn [{:keys [id command]}]
-                             [(if (contains? spine-ids' id) 0 1)
-                              (or command "")])
-                           children)
+        sorted    (sort-by (fn [{:keys [command]}] (or command "")) children)
         expanded? (contains? expanded-ids knot-id)]
-    [:div.flex.flex-col.items-start.gap-10
+    [:div.flex.flex-col.items-center.gap-10.min-w-max
      (render-node *session tree knot-id spine-ids' expanded-ids)
      (when (and (seq sorted) expanded?)
        (if (= 1 (count sorted))

@@ -222,6 +222,11 @@ window.sk = {
       });
     });
     observer.observe(pane, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'data-active-knot'] });
+
+    // Redraw arrows when the pane's outer size changes — catches both window
+    // resize and the pane splitter being dragged (neither triggers a DOM mutation).
+    new ResizeObserver(() => requestAnimationFrame(() => self.drawTreeArrows()))
+      .observe(pane);
   },
 
   /**
@@ -306,11 +311,11 @@ window.sk = {
     this._arrowSvg = svg;
     pane.appendChild(svg);
 
-    // Scroll the active knot into view in the pane's scroll container
+    // Smooth-scroll the active knot into view in the pane's scroll container.
     const activeId = pane.getAttribute('data-active-knot');
     if (activeId) {
       pane.querySelector(`[data-tree-node-id="${activeId}"]`)
-          ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+          ?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
     }
   },
 
