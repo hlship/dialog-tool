@@ -376,7 +376,7 @@ window.sk = {
       const startWidth = pane.getBoundingClientRect().width;
 
       const onMove = (e) => {
-        const delta = startX - e.clientX;          // drag left → pane grows
+        const delta = e.clientX - startX;          // drag right → pane grows
         // Update currentWidth before setting style so the MutationObserver
         // sees the new value and does not immediately undo it.
         const maxWidth = Math.floor(window.innerWidth * 0.8);

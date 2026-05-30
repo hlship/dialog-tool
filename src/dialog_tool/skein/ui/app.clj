@@ -463,16 +463,7 @@
            (navbar *session)
            (render-operations-toolbar *session knots)] ;; mt-28 clears the combined height of both fixed toolbars (with room for the badge)
           [:div.flex.flex-row.w-full.mt-28
-           ;; Left: transcript (takes remaining width, scrolls normally)
-           [:div.flex-1.min-w-0.px-2
-            (map (fn [knot]
-                   (render-knot *session tree knot {:debug-enabled? debug-enabled?
-                                                    :show-dynamic? show-dynamic?
-                                                    :fixed-width? fixed-width?
-                                                    :active-knot-id active-knot-id}))
-                 knots)
-            (new-command/new-command-input *session (:id leaf-knot))]
-           ;; Right: tree pane (sticky, resizable, scrolls independently).
+           ;; Left: tree pane (sticky, resizable, scrolls independently).
            ;; data-preserve-attr keeps Datastar's morph from resetting the inline width
            ;; that the JS drag handler writes.
            [:div#tree-pane-outer
@@ -481,14 +472,23 @@
              :data-preserve-attr "style"
              :data-init (h/action {:as "init-tree-pane-resize"}
                                   (effects/execute-script! "sk.initTreePaneResize()"))}
-            ;; Drag handle on the left edge
-            [:div#tree-pane-handle
-             {:class "w-1 shrink-0 cursor-col-resize bg-base-300 hover:bg-primary transition-colors"}]
-            ;; Tree pane — flex-1 fills remaining width after handle.
+            ;; Tree pane — flex-1 fills available width.
             ;; bg-base-200 here (not on #tree-pane) so the background covers
             ;; the full scroll region, not just the content extent.
-            [:div {:class "flex-1 min-w-0 overflow-y-auto overflow-x-auto bg-base-200 border-l border-base-300"}
-             (tree-pane/render-tree-pane *session)]]]
+            [:div {:class "flex-1 min-w-0 bg-base-200 border-r border-base-300"}
+             (tree-pane/render-tree-pane *session)]
+            ;; Drag handle on the right edge
+            [:div#tree-pane-handle
+             {:class "w-1 shrink-0 cursor-col-resize bg-base-300 hover:bg-primary transition-colors"}]]
+           ;; Right: transcript (takes remaining width, scrolls normally)
+           [:div.flex-1.min-w-0.px-2
+            (map (fn [knot]
+                   (render-knot *session tree knot {:debug-enabled? debug-enabled?
+                                                    :show-dynamic? show-dynamic?
+                                                    :fixed-width? fixed-width?
+                                                    :active-knot-id active-knot-id}))
+                 knots)
+            (new-command/new-command-input *session (:id leaf-knot))]]
            ;; Modal overlay
           (modals/render-modal)
            ;; FAB for settings
