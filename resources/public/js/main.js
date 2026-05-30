@@ -242,7 +242,8 @@ window.sk = {
         const delta = startX - e.clientX;          // drag left → pane grows
         // Update currentWidth before setting style so the MutationObserver
         // sees the new value and does not immediately undo it.
-        currentWidth = Math.min(1200, Math.max(160, startWidth + delta)) + 'px';
+        const maxWidth = Math.floor(window.innerWidth * 0.8);
+        currentWidth = Math.min(maxWidth, Math.max(160, startWidth + delta)) + 'px';
         pane.style.width = currentWidth;
       };
 
