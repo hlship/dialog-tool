@@ -169,7 +169,7 @@
                     :disabled (not can-redo?)}
                    "icon-redo" "Redo")
        (navbar-btn {:data-on:click (h/action {:as "reload"}
-                                             (simple-action *session "reload" "Reloaded" session/reload!))
+                                             (actions/reload))
                     :data-tip "Reload"
                     :disabled (not can-reload?)}
                    "icon-reload" "Reload")

@@ -24,7 +24,9 @@
    ;; knot-id -> status (just for knot)
    :status {0 :new}
    ;; knot-id -> status (derived from children of knot)
-   :descendant-status {}})
+   :descendant-status {}
+   ;; UI: set of expanded knot ids (not persisted to file)
+   :expanded-ids #{}})
 
 (def *next-id (atom (System/currentTimeMillis)))
 
@@ -143,8 +145,8 @@
         (propagate-status parent-id))))
 
 (defn rebuild
-  "Rebuilds a tree as loaded from a file, populating the :children, :selected, :status, 
-  and :descendant-status maps."
+  "Rebuilds a tree as loaded from a file, populating the :children, :selected, :status,
+  :descendant-status, and :expanded-ids maps."
   [tree]
   (let [knots (-> tree :knots vals)
         parent->children (->> knots
@@ -168,7 +170,8 @@
         tree' (assoc tree
                      :children parent->children
                      :status status
-                     :selected selected)]
+                     :selected selected
+                     :expanded-ids #{})]
     (reduce propagate-status tree' leaf-ids)))
 
 (defn- adjust-selection-after-deletion
@@ -393,18 +396,20 @@
       (recur (set-selected tree parent-id knot-id) parent-id))))
 
 (defn extend-selection
-  "Starting from knot-id, follows single-child chains downward, setting :selected
-  at each step until a leaf (no children) or a branch point (multiple children)
-  is reached. Ensures the transcript shows the full unambiguous path below knot-id."
+  "Starting from knot-id, follows single-child chains downward, collecting
+  parent->child pairs until a leaf (no children) or a branch point (multiple
+  children) is reached, then updates :selected for all of them at once."
   [tree knot-id]
-  (loop [tree tree
-         id   knot-id]
+  (loop [pairs []
+         id    knot-id]
     (let [children (find-children tree id)]
       (if (= 1 (count children))
         (let [child-id (:id (first children))]
-          (recur (set-selected tree id child-id)
-                 child-id))
-        tree))))
+          (recur (conj pairs [id child-id]) child-id))
+        (reduce (fn [t [parent-id child-id]]
+                  (set-selected t parent-id child-id))
+                tree
+                pairs)))))
 
 (defn expand-ids
   "Adds the given knot-ids to tree[:expanded-ids], creating the set if absent."
@@ -414,9 +419,9 @@
 (defn toggle-expanded
   "Toggles knot-id in tree[:expanded-ids]."
   [tree knot-id]
-  (if (contains? (get tree :expanded-ids #{}) knot-id)
+  (if (contains? (:expanded-ids tree) knot-id)
     (update tree :expanded-ids disj knot-id)
-    (update tree :expanded-ids (fnil conj #{}) knot-id)))
+    (update tree :expanded-ids conj knot-id)))
 
 (defn deselect
   "Unselects any child as the selection for the indicated parent knot."

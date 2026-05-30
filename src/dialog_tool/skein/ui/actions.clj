@@ -86,6 +86,7 @@
     (env/log-action "replay-to" knot-id)
     (swap! *session
            #(-> %
+                session/capture-undo
                 session/check-for-changed-sources
                 (session/replay-to! knot-id)
                 (complete-session-operation "Replayed")))))
@@ -156,13 +157,13 @@
 (defn bless-knot
   [id]
   (env/log-action "bless-knot" id)
-  (swap! (session-cursor) session/bless-knot id)
+  (swap! (session-cursor) #(-> % session/capture-undo (session/bless-knot id)))
   (flash! "Blessed"))
 
 (defn bless-changes
   [id]
   (env/log-action "bless-changes" id)
-  (swap! (session-cursor) session/bless-to id)
+  (swap! (session-cursor) #(-> % session/capture-undo (session/bless-to id)))
   (flash! "Blessed"))
 
 (defn new-child
@@ -189,7 +190,7 @@
   (env/log-action "toggle-lock" id)
   (let [*session (session-cursor)
         locked?  (get-in @*session [:tree :knots id :locked])]
-    (swap! *session session/toggle-lock id)
+    (swap! *session #(-> % session/capture-undo (session/toggle-lock id)))
     (flash! (if locked? "Unlocked" "Locked"))))
 
 (defn insert-parent
@@ -201,7 +202,7 @@
   [id]
   (env/log-action "delete" id)
   (let [*session (session-cursor)
-        [error session'] (session/delete! @*session id)]
+        [error session'] (session/delete! (session/capture-undo @*session) id)]
     (reset! *session session')
     (flash! (if error {:message error
                        :type    :error}
@@ -211,7 +212,7 @@
   [id]
   (env/log-action "splice-out" id)
   (let [*session (session-cursor)
-        [error session'] (session/splice-out! @*session id)]
+        [error session'] (session/splice-out! (session/capture-undo @*session) id)]
     (reset! *session session')
     (flash! (if error {:message error
                        :type    :error}
@@ -257,6 +258,14 @@
               (session/set-active-knot-id id)
               js/navigate-to-active-knot!)))
 
+(defn reload
+  "Reloads the skein from disk, capturing undo first."
+  []
+  (env/log-action "reload")
+  (let [*session (session-cursor)]
+    (swap! *session #(-> % session/capture-undo session/reload! js/navigate-to-active-knot!))
+    (flash! "Reloaded")))
+
 (defn quit
   []
   (env/log-action "quit")
@@ -297,7 +306,7 @@
   "Toggles the expanded/collapsed state of a node in the tree pane."
   [knot-id]
   (env/log-action "toggle-tree-node" knot-id)
-  (swap! (session-cursor) session/toggle-expanded knot-id))
+  (swap! (session-cursor) #(-> % session/capture-undo (session/toggle-expanded knot-id))))
 
 (defn select-tree-node
   "Selects a node in the tree pane, making it the active knot and updating

@@ -63,6 +63,7 @@
   (let [*session (session-cursor)
         command  (common/normalize-input raw-command)]
     (-> @*session
+        session/capture-undo
         session/check-for-changed-sources
         (session/edit-command! id command)
         handle-operation-error)))
@@ -99,6 +100,7 @@
     ;; Navigation to the new parent is included in the insert-parent! result,
     ;; under the same undo entry as the insert itself.
     (-> @*session
+        session/capture-undo
         session/check-for-changed-sources
         (session/insert-parent! id command)
         handle-operation-error)))
@@ -149,7 +151,7 @@
                             (swap! *modal assoc :error
                                    (str "Label \"" lbl "\" is already used by another knot."))
                             (do
-                              (swap! *session session/label id lbl locked?)
+                              (swap! *session #(-> % session/capture-undo (session/label id lbl locked?)))
                               (dismiss-modal)))))}
        [:div.mb-4
         [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "edit-label-input"}
