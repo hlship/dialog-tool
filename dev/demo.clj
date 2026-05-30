@@ -14,7 +14,7 @@
    (stop!)
    (service/start! path
                    (merge {:port                10140
-                           :skein-path          (str path "/" (or "default.skein"))
+                           :skein-path          (str path "/" (or skein-file "default.skein"))
                            :exit-when-shutdown? false}
                           opts))))
 
@@ -36,7 +36,7 @@
 
   (start! "../futurama" nil)
 
-  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)
+  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)  
 
   (start! "../failure" nil)
 
