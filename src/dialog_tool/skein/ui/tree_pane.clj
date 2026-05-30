@@ -18,8 +18,10 @@
 ;; Helpers
 
 (defn- node-color-class
-  "Returns bg+text classes for a node pill by status and spine position."
-  [status on-spine? active?]
+  "Returns bg+text classes for a node pill.
+  Own status takes priority; when own status is :ok, a faded tint is applied
+  based on descendant-status so problem knots are visible from their ancestors."
+  [status descendant-status on-spine? active?]
   (case status
     :new   (cond active?   "bg-warning text-warning-content"
                  on-spine? "bg-warning/80 text-warning-content"
@@ -27,9 +29,17 @@
     :error (cond active?   "bg-error text-error-content"
                  on-spine? "bg-error/80 text-error-content"
                  :else     "bg-error/40 text-error-content")
-    (cond active?   "bg-primary text-primary-content"
-          on-spine? "bg-primary-content text-primary"
-          :else     "bg-neutral-content text-neutral")))
+    ;; Own status is :ok — tint by worst descendant status if any
+    (case descendant-status
+      :error (cond active?   "bg-error/50 text-base-content"
+                   on-spine? "bg-error/30 text-base-content"
+                   :else     "bg-error/20 text-base-content")
+      :new   (cond active?   "bg-warning/50 text-base-content"
+                   on-spine? "bg-warning/30 text-base-content"
+                   :else     "bg-warning/20 text-base-content")
+      (cond active?   "bg-primary text-primary-content"
+            on-spine? "bg-primary-content text-primary"
+            :else     "bg-neutral-content text-neutral"))))
 
 (defn- truncate
   "Truncates s to at most n chars, appending … if longer."
@@ -45,17 +55,18 @@
   "Renders a single tree node pill with an optional expand/collapse toggle.
   data-tree-node-id and data-parent-id are read by sk.drawTreeArrows()."
   [*session tree knot-id spine-ids' expanded-ids]
-  (let [knot          (tree/get-knot tree knot-id)
+  (let [knot              (tree/get-knot tree knot-id)
         {:keys [id command label locked status children parent-id]} knot
-        on-spine?     (contains? spine-ids' id)
-        has-kids?     (seq children)
-        expanded?     (contains? expanded-ids id)
-        active?       (= id (get-in tree [:active-knot-id]))]
+        descendant-status (get-in tree [:descendant-status id])
+        on-spine?         (contains? spine-ids' id)
+        has-kids?         (seq children)
+        expanded?         (contains? expanded-ids id)
+        active?           (= id (get-in tree [:active-knot-id]))]
     [:div.flex.flex-col.items-center.gap-1
      [:div
       {:class             (classes "flex flex-row items-center gap-1 px-2 py-1 rounded-lg border-2"
                                    "cursor-pointer select-none text-sm min-w-16 max-w-48"
-                                   (node-color-class status on-spine? active?)
+                                   (node-color-class status descendant-status on-spine? active?)
                                    (if active? "border-primary" "border-transparent"))
        :data-tree-node-id (str id)
        :data-parent-id    (some-> parent-id str)
