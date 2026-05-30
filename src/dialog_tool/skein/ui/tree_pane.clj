@@ -109,7 +109,8 @@
         spine-ids'   (into #{} (map :id (tree/selected-knots tree)))
         expanded-ids (or (:expanded-ids session) #{})]
     [:div#tree-pane
-     {:class            "overflow-x-auto overflow-y-auto p-4 relative bg-base-200 border-l border-base-300"
-      :data-active-knot (str active-knot-id)
-      :data-init        "sk.initTreeGraph()"}
+     {:class                    "overflow-x-auto overflow-y-auto p-4 relative bg-base-200 border-l border-base-300"
+      :data-active-knot         (str active-knot-id)
+      :data-init                "sk.initTreeGraph()"
+      :data-on:resize__window   "sk.drawTreeArrows()"}
      (render-subtree *session tree 0 spine-ids' expanded-ids)]))

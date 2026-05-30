@@ -203,6 +203,9 @@ window.sk = {
    * recursive MutationObserver triggers.
    */
   initTreeGraph() {
+    if (this._treeGraphReady) return;
+    this._treeGraphReady = true;
+
     const pane = document.getElementById('tree-pane');
     if (!pane) return;
     // Defer initial draw until layout is complete so getBoundingClientRect is accurate.
@@ -339,6 +342,13 @@ window.sk = {
    * page refreshes.
    */
   initTreePaneResize() {
+    // Guard: data-init re-fires on every SSE update because h/action generates
+    // a fresh expression each render. Without this, multiple MutationObservers
+    // are created with different currentWidth closures and fight each other,
+    // causing an infinite mutation loop that locks up the page.
+    if (this._treePaneResizeReady) return;
+    this._treePaneResizeReady = true;
+
     const handle = document.getElementById('tree-pane-handle');
     const pane   = document.getElementById('tree-pane-outer');
     if (!handle || !pane) return;
