@@ -382,6 +382,7 @@ Most operation shortcuts use ⌥ (Option) on Mac or Alt on Windows/Linux; a few 
 | ⌘Z       | Undo       |
 | ⌘⇧Z      | Redo       |
 | ⌘F       | Search     |
+| ⌥J       | Jump (open labeled-knot dropdown) |
 
 ### Operations toolbar — knot navigation
 

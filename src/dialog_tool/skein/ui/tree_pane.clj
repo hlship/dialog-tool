@@ -115,7 +115,7 @@
         tree           (:tree session)
         active-knot-id (get-in tree [:active-knot-id])
         spine-ids'   (into #{} (map :id (tree/selected-knots tree)))
-        expanded-ids (or (:expanded-ids session) #{})]
+        expanded-ids (get tree :expanded-ids #{})]
     [:div#tree-pane
           {:class            "overflow-x-auto overflow-y-auto p-4 relative bg-base-200 h-full"
       :data-active-knot         (str active-knot-id)

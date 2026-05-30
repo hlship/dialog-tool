@@ -9,31 +9,24 @@
             [dialog-tool.skein.process :as sk.process]
             [dialog-tool.skein.tree :as tree]))
 
-(defn- spine-expanded-ids
-  "Returns the expanded-ids set covering all ancestors of knot-id (inclusive),
-  i.e. all knot IDs on the path from root to knot-id."
-  [tree knot-id]
-  (->> (tree/knots-from-root tree knot-id)
-       (map :id)
-       set))
-
 (defn create-loaded!
   "Creates a new session from a tree loaded from the path, and a process started with
   the skein's seed."
   [start-process-fn skein-path tree]
   (let [;; The transcript displays tree/selected-knots (root → leaf via the :selected map).
-        ;; Use that same path: the last knot is the active knot, and all knots on the
-        ;; path become the initial expanded-ids for the nav graph.
+        ;; The last knot is the active knot; all knots on the path seed :expanded-ids in
+        ;; the tree so the nav graph shows the full spine on launch.
         selected     (tree/selected-knots tree)
         leaf-knot-id (or (some-> selected last :id) 0)
-        tree'        (assoc tree :active-knot-id leaf-knot-id)]
+        tree'        (-> tree
+                         (assoc :active-knot-id leaf-knot-id)
+                         (tree/expand-ids (map :id selected)))]
     {:skein-path       skein-path
      :undo-stack       []
      :redo-stack       []
      :start-process-fn start-process-fn
      :tree             tree'
-     :process-knot-id  0
-     :expanded-ids     (into #{} (map :id selected))}))
+     :process-knot-id  0}))
 
 (defn create-new!
   "Creates a new session for a new skein, using an existing process.  The process should be
@@ -168,13 +161,11 @@
 
 (defn set-active-knot-id
   "Sets the active knot id without capturing undo. Expands all nodes on the
-  current spine (root → selected leaf via :selected links, including any
-  single-child extension from extend-selection) so the nav graph shows the
-  full path."
+  current spine in tree[:expanded-ids] so the nav graph shows the full path."
   [session knot-id]
   (-> session
       (assoc-in [:tree :active-knot-id] knot-id)
-      (update :expanded-ids (fnil into #{}) (map :id (tree/selected-knots (:tree session))))))
+      (update :tree tree/expand-ids (map :id (tree/selected-knots (:tree session))))))
 
 (defn command!
   "Sends a player command to the process as a child of the given parent knot.
@@ -253,7 +244,13 @@
                            (update :tree tree/insert-parent knot-id new-id new-command)
                            (do-replay-to! knot-id))]
           [nil (cond-> session'
-                 (not (:error session')) (assoc :new-id new-id))])))))
+                 (not (:error session'))
+                 (-> (assoc :new-id new-id)
+                     ;; Navigate to the new parent as part of the same undo entry.
+                     ;; Use tree functions directly (select-knot is defined later in file).
+                     (update :tree tree/select-knot new-id)
+                     (update :tree tree/extend-selection new-id)
+                     (set-active-knot-id new-id)))])))))
 
 (defn totals
   "Totals the number of nodes that are :ok, :new, or :error."
@@ -280,12 +277,11 @@
         (assoc :tree (reduce tree/bless-response tree ids)))))
 
 (defn select-knot
-  "Selects a knot as the last knot displayed. Updates the spine from root to
-  knot-id, then extends selection downward through single-child chains until a
-  leaf or branch point, so the transcript shows the full unambiguous path."
+  "Updates the spine from root to knot-id, then extends selection downward through
+  single-child chains until a leaf or branch point. Does not capture undo — callers
+  are responsible for calling capture-undo before navigation if desired."
   [session knot-id]
   (-> session
-      capture-undo
       (update :tree tree/select-knot knot-id)
       (update :tree tree/extend-selection knot-id)))
 
@@ -468,9 +464,9 @@
   (tree/selected-knots (:tree session)))
 
 (defn toggle-expanded
-  "Toggles the expanded state of a knot in the tree pane.
-  Expanded knot IDs are stored in :expanded-ids on the session (not persisted)."
+  "Toggles the expanded state of a knot in the nav graph. Captures undo so
+  expand/collapse is reversible. Delegates to tree/toggle-expanded."
   [session knot-id]
-  (if (contains? (:expanded-ids session) knot-id)
-    (update session :expanded-ids disj knot-id)
-    (update session :expanded-ids (fnil conj #{}) knot-id)))
+  (-> session
+      capture-undo
+      (update :tree tree/toggle-expanded knot-id)))

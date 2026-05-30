@@ -16,6 +16,8 @@ window.sk = {
     if (evt.newState !== 'open') {
       // Remove positioned so next open starts hidden (prevents flash)
       menu.classList.remove('positioned');
+      // Return focus to the trigger button when the popover closes.
+      menu.previousElementSibling?.focus();
       return;
     }
 
@@ -38,6 +40,38 @@ window.sk = {
         menu.classList.add('positioned');
       });
     });
+
+    // Focus the first enabled item after the position has been computed.
+    requestAnimationFrame(() => {
+      menu.querySelector('li:not(.menu-disabled) button')?.focus();
+    });
+  },
+
+  /**
+   * Keyboard navigation inside a dropdown menu popup.
+   * ArrowDown/Up move focus between enabled items. ArrowUp on the first item
+   * closes the popup and returns focus to the trigger. Escape does the same.
+   * Enter and Space activate the focused item (browser default — no handling needed).
+   * Called from data-on:keydown on the popup <ul>.
+   */
+  navigateDropdown(menu, evt) {
+    const items  = [...menu.querySelectorAll('li:not(.menu-disabled) button')];
+    const idx    = items.indexOf(document.activeElement);
+
+    if (evt.key === 'ArrowDown') {
+      evt.preventDefault();
+      items[Math.min(idx + 1, items.length - 1)]?.focus();
+    } else if (evt.key === 'ArrowUp') {
+      evt.preventDefault();
+      if (idx <= 0) {
+        menu.hidePopover();              // toggle event returns focus to trigger
+      } else {
+        items[idx - 1]?.focus();
+      }
+    } else if (evt.key === 'Escape') {
+      // hidePopover fires the toggle event which returns focus to trigger.
+      menu.hidePopover();
+    }
   },
 
   // --- Flash messages ---

@@ -139,12 +139,16 @@
                                     (actions/seek-status :error))})
         error]]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
-       (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
-                           :label (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])}
-                          (for [{:keys [id label]} labeled-knots]
-                            (dropdown/button {:data-on:click (h/action {:as "jump-to-label"}
-                                                                       (actions/jump-to-label id))}
-                                             label)))
+              (dropdown/dropdown {:disabled              (<= (count labeled-knots) 1)
+                                  :label                 (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])
+                                  :button-class          "btn-primary tooltip tooltip-bottom"
+                                  :data-label            "Jump"
+                                  :data-accel__alt       "j"
+                                  :data-preserve-attr    "data-tip"}
+                                 (for [{:keys [id label]} labeled-knots]
+                                   (dropdown/button {:data-on:click (h/action {:as "jump-to-label"}
+                                                                              (actions/jump-to-label id))}
+                                                    label)))
        (navbar-btn {:data-on:click (h/action {:as "replay-all"}
                                              (actions/replay-all))
                     :data-accel__alt__shift "r"}

@@ -14,7 +14,7 @@
    (stop!)
    (service/start! path
                    (merge {:port                10140
-                           :skein-path          (str path "/" (or skein-file "default.skein"))
+                           :skein-path          (str path "/" (or "default.skein"))
                            :exit-when-shutdown? false}
                           opts))))
 

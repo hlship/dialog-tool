@@ -221,6 +221,7 @@
   [id]
   (env/log-action "activate-knot" id)
   (swap! (session-cursor) #(-> %
+                               session/capture-undo
                                (session/set-active-knot-id id)
                                js/navigate-to-active-knot!)))
 
@@ -241,6 +242,7 @@
                        0)
             next-id  (nth matching next-idx)]
         (swap! *session #(-> %
+                             session/capture-undo
                              (assoc-in [:last-jump status] next-id)
                              (session/select-knot next-id)
                              (session/set-active-knot-id next-id)))))))
@@ -250,6 +252,7 @@
   (env/log-action "jump-to-label" id)
   (swap! (session-cursor)
          #(-> %
+              session/capture-undo
               (session/select-knot id)
               (session/set-active-knot-id id)
               js/navigate-to-active-knot!)))
@@ -284,6 +287,7 @@
   [knot-id]
   (env/log-action "jump-to-search-selection" knot-id)
   (swap! (session-cursor) #(-> %
+                               session/capture-undo
                                (session/select-knot knot-id)
                                (session/set-active-knot-id knot-id)))
   (reset! (search-cursor) nil)
@@ -302,6 +306,7 @@
   (env/log-action "select-tree-node" knot-id)
   (swap! (session-cursor)
          #(-> %
+              session/capture-undo
               (session/select-knot knot-id)
               (session/set-active-knot-id knot-id)
               js/navigate-to-active-knot!)))

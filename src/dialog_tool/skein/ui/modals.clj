@@ -96,19 +96,12 @@
   (env/log-action "insert-parent:submit" id)
   (let [*session (session-cursor)
         command  (common/normalize-input raw-command)]
+    ;; Navigation to the new parent is included in the insert-parent! result,
+    ;; under the same undo entry as the insert itself.
     (-> @*session
         session/check-for-changed-sources
         (session/insert-parent! id command)
-        handle-operation-error)
-    ;; On success the session has :new-id set. Navigate to it:
-    ;; update :selected + extend through single-child chain + set active/expanded-ids.
-    ;; We bypass session/select-knot to avoid a second undo entry.
-    (when-let [new-id (:new-id @*session)]
-      (swap! *session
-             #(-> %
-                  (update :tree tree/select-knot new-id)
-                  (update :tree tree/extend-selection new-id)
-                  (session/set-active-knot-id new-id))))))
+        handle-operation-error)))
 
 (defn insert-parent
   "Renders the insert parent modal."

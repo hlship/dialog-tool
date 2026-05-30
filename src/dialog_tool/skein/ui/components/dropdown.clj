@@ -8,23 +8,28 @@
    Options:
    - :label - content to display in the trigger button
    - :disabled - when truthy, the dropdown button is disabled
-   - :button-class - button style class (default: btn-primary)"
+   - :button-class - button style class (default: btn-primary)
+   - any other keys are forwarded as attributes on the trigger button (e.g. data-accel__alt)"
   [{:keys [label disabled button-class]
     :or {label "Drop Down"
-         button-class "btn-primary"}} & items]
-  (let [id (str "dd-" (random-uuid))]
+         button-class "btn-primary"}
+    :as opts} & items]
+  (let [id          (str "dd-" (random-uuid))
+        extra-attrs (dissoc opts :label :disabled :button-class)]
     [:div
-     [:button {:class (classes "btn m-0" button-class)
-               :disabled disabled
-               :popovertarget id
-               :data-on:click__stop "return"}
+     [:button (merge {:class           (classes "btn m-0" button-class)
+                      :disabled        disabled
+                      :popovertarget   id
+                      :data-on:click__stop "return"}
+                     extra-attrs)
       label]
      [:ul.menu.bg-base-100.rounded-box.p-2.w-96.overflow-y-auto.flex-nowrap
       {:id id
        :popover "auto"
        :class "shadow-xl/30 max-h-[30rem]"
        :data-on:toggle "sk.positionDropdown(el, evt)"
-       :data-on:click "el.hidePopover()"}
+       :data-on:click   "el.hidePopover()"
+       :data-on:keydown "sk.navigateDropdown(el, evt)"}
       items]]))
 
 (defn button

@@ -406,6 +406,18 @@
                  child-id))
         tree))))
 
+(defn expand-ids
+  "Adds the given knot-ids to tree[:expanded-ids], creating the set if absent."
+  [tree ids]
+  (update tree :expanded-ids (fnil into #{}) ids))
+
+(defn toggle-expanded
+  "Toggles knot-id in tree[:expanded-ids]."
+  [tree knot-id]
+  (if (contains? (get tree :expanded-ids #{}) knot-id)
+    (update tree :expanded-ids disj knot-id)
+    (update tree :expanded-ids (fnil conj #{}) knot-id)))
+
 (defn deselect
   "Unselects any child as the selection for the indicated parent knot."
   [tree knot-id]
