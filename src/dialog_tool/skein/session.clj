@@ -167,13 +167,14 @@
   (get-in session [:tree :active-knot-id]))
 
 (defn set-active-knot-id
-  "Sets the active knot id without capturing undo. Ensures the active knot and
-  all its ancestors up to root are in :expanded-ids so the nav graph shows the
-  full path to the newly active knot."
+  "Sets the active knot id without capturing undo. Expands all nodes on the
+  current spine (root → selected leaf via :selected links, including any
+  single-child extension from extend-selection) so the nav graph shows the
+  full path."
   [session knot-id]
   (-> session
       (assoc-in [:tree :active-knot-id] knot-id)
-      (update :expanded-ids (fnil into #{}) (spine-expanded-ids (:tree session) knot-id))))
+      (update :expanded-ids (fnil into #{}) (map :id (tree/selected-knots (:tree session))))))
 
 (defn command!
   "Sends a player command to the process as a child of the given parent knot.
@@ -279,12 +280,14 @@
         (assoc :tree (reduce tree/bless-response tree ids)))))
 
 (defn select-knot
-  "Selects a knot as the last knot displayed; this determines which knots will be rendered
-  (from the root to this knot and perhaps further below to any selected children of this knot."
+  "Selects a knot as the last knot displayed. Updates the spine from root to
+  knot-id, then extends selection downward through single-child chains until a
+  leaf or branch point, so the transcript shows the full unambiguous path."
   [session knot-id]
   (-> session
       capture-undo
-      (update :tree tree/select-knot knot-id)))
+      (update :tree tree/select-knot knot-id)
+      (update :tree tree/extend-selection knot-id)))
 
 (defn save!
   "Saves the current tree state to the file."

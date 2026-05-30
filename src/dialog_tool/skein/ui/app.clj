@@ -266,13 +266,23 @@
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
         {:keys [id dynamic-response parent-id selected-child-id children unblessed]} (session/get-knot session active-knot-id)
-        root? (= 0 id)
-        all-ok? (->> selected-knots
-                     (map :status)
-                     (every? #(= % :ok)))
-        leaf-knot-id (-> selected-knots
-                         last
-                         :id)]
+        root?            (= 0 id)
+        all-ok?          (->> selected-knots
+                              (map :status)
+                              (every? #(= % :ok)))
+        leaf-knot-id     (-> selected-knots last :id)
+        ;; Siblings: other children of parent, sorted alphabetically (matching nav graph order)
+        sorted-siblings  (when-not root?
+                           (->> (tree/find-children tree parent-id)
+                                (sort-by :command)
+                                vec))
+        sibling-idx      (when (seq sorted-siblings)
+                           (first (keep-indexed (fn [i s] (when (= (:id s) id) i))
+                                                sorted-siblings)))
+        prev-sibling-id  (when (and sibling-idx (pos? sibling-idx))
+                           (:id (nth sorted-siblings (dec sibling-idx))))
+        next-sibling-id  (when (and sibling-idx (< sibling-idx (dec (count sorted-siblings))))
+                           (:id (nth sorted-siblings (inc sibling-idx))))]
     [:div {:class (classes "bg-base-100 text-base-content border-base-200"
                            "px-2 sm:px-4 py-1"
                            "w-full border-b")}
@@ -293,6 +303,28 @@
                                      (h/action {:as "activate-parent"}
                                                (actions/activate-knot parent-id)))}
                    "icon-arrow-up")
+      (toolbar-btn {:disabled (nil? prev-sibling-id)
+                    :data-label "Previous Sibling"
+                    :data-accel__alt "ArrowLeft"
+                    :data-on:click (when prev-sibling-id
+                                     (h/action {:as "activate-prev-sibling"}
+                                               (actions/select-tree-node prev-sibling-id)))}
+                   "icon-arrow-left")
+      (toolbar-btn {:disabled (nil? next-sibling-id)
+                    :data-label "Next Sibling"
+                    :data-accel__alt "ArrowRight"
+                    :data-on:click (when next-sibling-id
+                                     (h/action {:as "activate-next-sibling"}
+                                               (actions/select-tree-node next-sibling-id)))}
+                   "icon-arrow-right")
+      (let [disabled? (not (seq (get-in tree [:children id])))]
+        (toolbar-btn {:disabled disabled?
+                      :data-label "Toggle Expand"
+                      :data-accel__alt "x"
+                      :data-on:click (when-not disabled?
+                                       (h/action {:as "toggle-expand"}
+                                                 (actions/toggle-tree-node id)))}
+                     "icon-arrow-down-circle"))
       (let [disabled? (nil? selected-child-id)]
         (toolbar-btn {:disabled disabled?
                       :data-label "Child knot"

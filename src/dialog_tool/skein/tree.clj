@@ -392,6 +392,20 @@
     (let [parent-id (get-parent-id tree knot-id)]
       (recur (set-selected tree parent-id knot-id) parent-id))))
 
+(defn extend-selection
+  "Starting from knot-id, follows single-child chains downward, setting :selected
+  at each step until a leaf (no children) or a branch point (multiple children)
+  is reached. Ensures the transcript shows the full unambiguous path below knot-id."
+  [tree knot-id]
+  (loop [tree tree
+         id   knot-id]
+    (let [children (find-children tree id)]
+      (if (= 1 (count children))
+        (let [child-id (:id (first children))]
+          (recur (set-selected tree id child-id)
+                 child-id))
+        tree))))
+
 (defn deselect
   "Unselects any child as the selection for the indicated parent knot."
   [tree knot-id]

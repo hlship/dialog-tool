@@ -61,6 +61,11 @@ html {
   -webkit-mask-image: url('/icons/bookmark-solid.svg');
 }
 
+.icon-arrow-down-circle {
+  mask-image: url('/icons/arrow-down-circle-solid.svg');
+  -webkit-mask-image: url('/icons/arrow-down-circle-solid.svg');
+}
+
 .icon-children {
   mask-image: url('/icons/command-line-solid.svg');
   -webkit-mask-image: url('/icons/command-line-solid.svg');
@@ -119,6 +124,12 @@ html {
 .icon-arrow-right {
   mask-image: url('/icons/arrow-right-solid.svg');
   -webkit-mask-image: url('/icons/arrow-right-solid.svg');
+}
+
+.icon-arrow-left {
+  mask-image: url('/icons/arrow-right-solid.svg');
+  -webkit-mask-image: url('/icons/arrow-right-solid.svg');
+  transform: scaleX(-1);
 }
 
 .icon-bless {
