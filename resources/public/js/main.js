@@ -211,14 +211,27 @@ window.sk = {
    * Initialises drag-to-resize on the tree pane.
    * Called once from the tree pane's data-init attribute.
    *
-   * The handle element (#tree-pane-handle) sits on the left edge of the pane.
-   * Dragging it left/right resizes the pane by adjusting its inline width style.
-   * Width is clamped between 160 px and 640 px.
+   * Width is stored in a JS closure variable (currentWidth) so the
+   * MutationObserver can restore it instantly if Datastar's morph resets
+   * the inline style. It is also persisted to localStorage so it survives
+   * page refreshes.
    */
   initTreePaneResize() {
     const handle = document.getElementById('tree-pane-handle');
     const pane   = document.getElementById('tree-pane-outer');
     if (!handle || !pane) return;
+
+    // Restore from last session (page refresh) or keep server default.
+    let currentWidth = localStorage.getItem('treePaneWidth') || null;
+    if (currentWidth) pane.style.width = currentWidth;
+
+    // If Datastar morphs #tree-pane-outer and resets the inline style back
+    // to the server value, immediately restore the user's last-set width.
+    new MutationObserver(() => {
+      if (currentWidth && pane.style.width !== currentWidth) {
+        pane.style.width = currentWidth;
+      }
+    }).observe(pane, { attributes: true, attributeFilter: ['style'] });
 
     handle.addEventListener('mousedown', (startEvt) => {
       startEvt.preventDefault();
@@ -226,9 +239,11 @@ window.sk = {
       const startWidth = pane.getBoundingClientRect().width;
 
       const onMove = (e) => {
-        const delta    = startX - e.clientX;          // drag left → pane grows
-        const newWidth = Math.min(1200, Math.max(160, startWidth + delta));
-        pane.style.width = newWidth + 'px';
+        const delta = startX - e.clientX;          // drag left → pane grows
+        // Update currentWidth before setting style so the MutationObserver
+        // sees the new value and does not immediately undo it.
+        currentWidth = Math.min(1200, Math.max(160, startWidth + delta)) + 'px';
+        pane.style.width = currentWidth;
       };
 
       const onUp = () => {
@@ -236,6 +251,7 @@ window.sk = {
         document.removeEventListener('mouseup',   onUp);
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        if (currentWidth) localStorage.setItem('treePaneWidth', currentWidth);
       };
 
       document.body.style.cursor     = 'col-resize';
