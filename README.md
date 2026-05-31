@@ -7,13 +7,14 @@ written in the [Dialog](https://github.com/dialog-if/dialog) language. Not every
 including what individual source files to use, and then provides commands to:
 
 - run your project in the Dialog debugger
-- run the web-based Skein UI
+- run the web-based Skein UI to develop, test, and debug your project
 - run tests derived from your skein files
+- run unit tests against your project
 - package your project for release
 
 > [!WARNING]
-> `dgt` can be sensitive to the exact version of Dialog; this release is based on Dialog 1b/02. If you have
-> a different version of Dialog installed, you may encounter problems.
+> `dgt` can be sensitive to the exact version of Dialog you have installed; this release is based on Dialog `1c/01`. 
+> If you have a different version of Dialog installed, you may encounter problems.
 
 ## Installing
 
@@ -37,7 +38,7 @@ Download the latest release zip from the [GitHub releases page](https://github.c
 The zip contains two files you need:
 
 - `dgt` — the launcher script
-- `dialog-tool-<version>.jar` — the uberjar containing all Clojure dependencies
+- `dialog-tool-<version>.jar` — the uberjar containing all Clojure code and dependencies
 
 Extract both files into the same directory, then add that directory to your `PATH`,
 or symlink `dgt` into a directory already on your `PATH`.
@@ -89,6 +90,9 @@ and `dialog.edn` lists individual source files rather than directories.
 
 `dgt new` will create a unique [IFID](https://linusakesson.net/dialog/docs/beyondprg.html) for your project; it
 will be part of the content in the `meta.dg` file. 
+
+Once you have created your project, you should change to the new directory to execute
+and additional commands.
 
 ## dialog.edn
 
@@ -176,7 +180,8 @@ default command search path (as specified in the `$PATH` environment variable).
 
 If your `dialog.edn` contains a :bin-dir key, its value is used as the directory containing these commands. 
 
-This is a rarely used option, such as when testing a project against a new version of Dialog without installing that new version.
+This is a rarely used option, such as when testing a project against a new version of the Dialog command
+line tools, without installing those new command versions.
 
 ## Running your project
 
@@ -212,7 +217,7 @@ This will compile your project first.
 By default, debug sources are excluded, but you can run with the `--debug` switch to include them as well.
 
 Neither the debugger nor the Skein can present all the possible Dialog screen effects, such
-as status bar updates; to verify these, you must run using Frotz.
+as status bar updates; to verify these, you must run using Frotz, and manually verify your desired behavior.
 
 ## Running unit tests
 
