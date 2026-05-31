@@ -1,4 +1,4 @@
-# 2.0-beta-17 -- UNRELEASED
+# 2.0-beta-17 -- 31 May 2026
 
 # 2.0-beta-16 -- 28 May 2026
 
