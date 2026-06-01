@@ -238,6 +238,8 @@ Testing #sample-unit-test: Passed!
 The [Skein](doc/skein.md) is an interactive web interface for running, debugging, and
 testing your project.
 
+![Skein Screenshot](doc/skein-overview.png)
+
 `dgt skein new` will open up the skein UI for a new skein file.
 By default, the file is named `default.skein`, or you can provide a different
 name, as you may want to have multiple skein files. 
