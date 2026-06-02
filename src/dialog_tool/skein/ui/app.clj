@@ -54,7 +54,7 @@
      [:label.input.input-sm.input-bordered.flex.items-center.gap-2.w-full.tooltip.tooltip-bottom.search-expand-label
       {:data-accel "f"
        :data-label "Search"}
-      [:div.icon.w-4.h-4.icon-search]
+      [:div.icon.w-4.h-4.icon-search {:aria-hidden "true"}]
       [:input#search-input.grow
        {:type "text"
         :placeholder "Search knots…"
@@ -94,11 +94,12 @@
   [attrs icon label]
   (let [extra-class (:class attrs)
         attrs' (into {} (remove (comp nil? val) (dissoc attrs :class)))]
-    [:div (assoc attrs'
-                 :class (classes "btn btn-primary tooltip tooltip-bottom" extra-class)
-                 :data-label label
-                 :data-preserve-attr "data-tip")
-     [:div.icon {:class icon}]
+    [:button (assoc attrs'
+                    :type "button"
+                    :class (classes "btn btn-primary tooltip tooltip-bottom" extra-class)
+                    :data-label label
+                    :data-preserve-attr "data-tip")
+     [:div.icon {:class icon :aria-hidden "true"}]
      [:span.hidden.lg:inline label]]))
 
 (defn- simple-action
@@ -125,19 +126,31 @@
       [:div.self-center.truncate.text-xl.font-semibold.shrink.min-w-0
        skein-path]
       [:div.join.shrink-0.mx-auto
-       [:div.bg-success.text-success-content.p-2.font-semibold.rounded-l-lg ok]
-       [:div.bg-warning.text-warning-content.p-2.font-semibold
-        (when (pos? new)
-          {:class "cursor-pointer"
+       [:div.bg-success.text-success-content.p-2.font-semibold.rounded-l-lg
+        {:aria-label (str ok " ok knots")}
+        ok]
+       (if (pos? new)
+         [:div.bg-warning.text-warning-content.p-2.font-semibold.cursor-pointer
+          {:role          "button"
+           :tabindex      "0"
+           :aria-label    (str new " new knots")
            :data-on:click (h/action {:as "seek-new"}
-                                    (actions/seek-status :new))})
-        new]
-       [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg
-        (when (pos? error)
-          {:class "cursor-pointer"
+                                    (actions/seek-status :new))}
+          new]
+         [:div.bg-warning.text-warning-content.p-2.font-semibold
+          {:aria-label (str new " new knots")}
+          new])
+       (if (pos? error)
+         [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg.cursor-pointer
+          {:role          "button"
+           :tabindex      "0"
+           :aria-label    (str error " error knots")
            :data-on:click (h/action {:as "seek-error"}
-                                    (actions/seek-status :error))})
-        error]]
+                                    (actions/seek-status :error))}
+          error]
+         [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg
+          {:aria-label (str error " error knots")}
+          error])]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
               (dropdown/dropdown {:disabled              (<= (count labeled-knots) 1)
                                   :label                 (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])
@@ -173,9 +186,10 @@
                     :data-tip "Reload"
                     :disabled (not can-reload?)}
                    "icon-reload" "Reload")
-       [:div.btn.btn-primary {:data-on:click (h/action {:as "quit"}
-                                                       (actions/quit))}
-        [:div.icon.icon-quit] [:span.hidden.lg:inline "Quit"]]]]]))
+       [:button.btn.btn-primary {:type "button"
+                                  :data-on:click (h/action {:as "quit"}
+                                                           (actions/quit))}
+        [:div.icon.icon-quit {:aria-hidden "true"}] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
   {:ok "border-base-300"
@@ -225,10 +239,10 @@
      ;; Active-knot marker + status icon: sit in the left gutter, outside the knot content
      [:div.w-5.shrink-0.flex.flex-col.items-center.justify-start.pt-2.gap-1.pr-1
       (when active?
-        [:div.icon.icon-arrow-right {:title "Selected"}])
+        [:div.icon.icon-arrow-right {:role "img" :aria-label "Selected"}])
       (case status
-        :new   [:div.icon.icon-warning.w-4.h-4 {:title "New knot"}]
-        :error [:div.icon.icon-error.w-4.h-4 {:title "Error knot"}]
+        :new   [:div.icon.icon-warning.w-4.h-4 {:role "img" :aria-label "New knot"}]
+        :error [:div.icon.icon-error.w-4.h-4   {:role "img" :aria-label "Error knot"}]
         nil)]
      [:div
       {:class (classes "border-x-8 grow cursor-pointer"
@@ -244,7 +258,7 @@
        (when (or locked label)
          [:div.float-right.flex.flex-row.items-center.gap-1.pl-2.pb-1
           (when locked
-            [:div.icon.icon-lock {:title "Locked"}])
+            [:div.icon.icon-lock {:role "img" :aria-label "Locked"}])
           (when label
             [:span.font-bold.bg-neutral.text-neutral-content.px-1.py-0.5.rounded.text-sm
              label])])
@@ -256,17 +270,17 @@
 
 (defn- toolbar-btn
   "Renders a single operations-toolbar button.
-  For accel buttons pass :data-label — the plugin reads it to build data-tip (label
-  + shortcut). For non-accel buttons pass :data-tip directly.
+  Pass :data-label — the accel plugin reads it to build data-tip (label + shortcut).
   data-preserve-attr ensures Datastar's morph never removes the plugin-written data-tip.
   Accepts an optional :tooltip-dir key (default \"bottom\") to control placement."
   [attrs icon]
   (let [tooltip-dir (get attrs :tooltip-dir "bottom")
         attrs' (into {} (remove (comp nil? val) (dissoc attrs :tooltip-dir)))]
-    [:div (assoc attrs'
-                 :class (classes "btn btn-xs btn-primary tooltip" (str "tooltip-" tooltip-dir))
-                 :data-preserve-attr "data-tip")
-     [:div.icon.w-4.h-4 {:class icon}]]))
+    [:button (assoc attrs'
+                    :type "button"
+                    :class (classes "btn btn-xs btn-primary tooltip" (str "tooltip-" tooltip-dir))
+                    :data-preserve-attr "data-tip")
+     [:div.icon.w-4.h-4 {:class icon :aria-hidden "true"}]]))
 
 (defn- render-operations-toolbar
   [*session selected-knots]
@@ -413,7 +427,7 @@
                    "icon-delete")
       (let [disabled? (or root? (nil? children))]
         (toolbar-btn {:disabled disabled?
-                      :data-tip "Splice Out"
+                      :data-label "Splice Out"
                       :data-on:click (when-not disabled?
                                        (h/action {:as "splice-out"}
                                                  (actions/split-out id)))}

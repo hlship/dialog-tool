@@ -63,17 +63,21 @@
     [:div#modal-container
      {:class "fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-grayscale"}
      [:div.bg-base-100.rounded-lg.shadow-xl.max-w-full.min-w-md.mx-4
-      (cond-> {:data-on:click__stop "return"
+      (cond-> {:role                "dialog"
+               :aria-modal          "true"
+               :aria-labelledby     "modal-title"
+               :data-on:click__stop "return"
                :tabindex            "-1"
                :data-init           "el.focus()"}
         keydown (assoc :data-on:keydown keydown))
       ;; Header
       [:div.px-6.py-4.border-b.border-base-200
-       [:h3.text-lg.font-medium.text-base-content title]]
+       [:h3#modal-title.text-lg.font-medium.text-base-content title]]
       ;; Error message (if present)
       (when error
         [:div.px-6.pt-4
          [:div.alert.alert-error.text-sm
+          {:role "alert" :aria-live "assertive"}
           [:p.text-sm error]]])
       ;; Body
       [:div.px-6.py-4
