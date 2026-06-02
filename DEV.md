@@ -14,8 +14,6 @@ Developing the UI requires an additional window.
 
 ### Tailwind
 
-`brew install tailwindcss`
-
 `bb tailwind`
 - Watches source folders, identifies CSS classes, regenerates `style.css`
 
@@ -40,12 +38,10 @@ Developing the UI requires an additional window.
 
 ## Releasing
 
-- `git tag` and push *first*
-  - the latest tag will be the version
-- `bb release`
-  - Builds the deployable bundle and uploads to GitHub
-  - Need `gh` installed
-  - Prints out info about release
-  - Generates `out/dialog-tool.rb` from template
-- Copy `out/dialog-tool.rb` to `hlship/homebrew-brew` repo (`/Formulas` directory) 
-  - Commit and push -- it's live!
+- `git tag` and push the tag — the GitHub Actions release workflow triggers automatically
+  - Builds native installers (.deb, .msi) and a zip archive (for Homebrew), then publishes a GitHub Release
+- Update the Homebrew formula in `hlship/homebrew-brew` (`Formula/dialog-tool.rb`):
+  - Set `version` to the new tag
+  - Set `url` to point to the new zip asset
+  - Set `sha256` to the SHA256 of the zip (shown on the GitHub Release page or via `shasum -a 256`)
+  - Commit and push — it's live!

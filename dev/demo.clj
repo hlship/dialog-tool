@@ -2,8 +2,7 @@
   "Used when manually testing the skein."
   (:require [dialog-tool.env :as env]
             [dialog-tool.skein.service :as service :refer [stop! *app]]
-            [dialog-tool.skein.session :as session]
-            [dialog-tool.skein.tree :as tree]))
+            [dialog-tool.skein.session :as session]))
 
 (-> @*app :global :modal)
 

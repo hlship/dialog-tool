@@ -54,7 +54,7 @@
 (defn- render-node
   "Renders a single tree node pill with an optional expand/collapse toggle.
   data-tree-node-id and data-parent-id are read by sk.drawTreeArrows()."
-  [*session tree knot-id spine-ids' expanded-ids]
+  [_session tree knot-id spine-ids' expanded-ids]
   (let [knot              (tree/get-knot tree knot-id)
         {:keys [id command label locked status children parent-id]} knot
         descendant-status (get-in tree [:descendant-status id])

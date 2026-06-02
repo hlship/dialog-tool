@@ -114,10 +114,3 @@
         (perr "Installer: " [:bold installer])
         installer))))
 
-(defn sha256
-  [zip-file]
-  (-> (sh {:out :string
-           :quiet? true}
-          "shasum --algorithm 256 --binary" zip-file)
-      (string/split #"\s+")
-      first))
