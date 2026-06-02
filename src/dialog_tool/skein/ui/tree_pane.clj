@@ -54,7 +54,7 @@
 (defn- render-node
   "Renders a single tree node pill with an optional expand/collapse toggle.
   data-tree-node-id and data-parent-id are read by sk.drawTreeArrows()."
-  [_session tree knot-id spine-ids' expanded-ids]
+  [tree knot-id spine-ids' expanded-ids]
   (let [knot              (tree/get-knot tree knot-id)
         {:keys [id command label locked status children parent-id]} knot
         descendant-status (get-in tree [:descendant-status id])
@@ -91,19 +91,19 @@
 
 (defn- render-subtree
   "Recursively renders a node and its (possibly expanded) children."
-  [*session tree knot-id spine-ids' expanded-ids]
+  [tree knot-id spine-ids' expanded-ids]
   (let [children  (tree/find-children tree knot-id)
         sorted    (sort-by (fn [{:keys [command]}] (or command "")) children)
         expanded? (contains? expanded-ids knot-id)]
     [:div.flex.flex-col.items-center.gap-10.min-w-max
-     (render-node *session tree knot-id spine-ids' expanded-ids)
+     (render-node tree knot-id spine-ids' expanded-ids)
      (when (and (seq sorted) expanded?)
        (if (= 1 (count sorted))
-         (render-subtree *session tree (:id (first sorted)) spine-ids' expanded-ids)
+         (render-subtree tree (:id (first sorted)) spine-ids' expanded-ids)
          [:div.flex.flex-row.items-start.gap-6
           (for [child sorted]
             [:div.flex.flex-col.items-center {:key (:id child)}
-             (render-subtree *session tree (:id child) spine-ids' expanded-ids)])]))]))
+             (render-subtree tree (:id child) spine-ids' expanded-ids)])]))]))
 
 ;; ---------------------------------------------------------------------------
 ;; Public API
@@ -121,4 +121,4 @@
       :data-active-knot         (str active-knot-id)
       :data-init                "sk.initTreeGraph()"
       :data-on:resize__window   "sk.drawTreeArrows()"}
-     (render-subtree *session tree 0 spine-ids' expanded-ids)]))
+     (render-subtree tree 0 spine-ids' expanded-ids)]))
