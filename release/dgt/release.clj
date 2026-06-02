@@ -60,7 +60,7 @@
     (fs/create-dirs build-dir)
     (let [uber-file (fs/file build-dir (str "dialog-tool-" tag ".jar"))
           zip-file  (fs/file out-dir (str "dialog-tool-" tag ".zip"))]
-      (sh "tailwindcss --minimize --map"
+      (sh "npx tailwindcss --minimize --map"
           "--input"  "public/style.css"
           "--output" (str (fs/file class-dir "public" "style.css")))
       (spit (fs/file class-dir "dialog-tool-version.txt") tag)
@@ -92,7 +92,7 @@
     (fs/create-dirs packages-dir)
     (let [uber-file (fs/file build-dir (str "dialog-tool-" tag ".jar"))
           version   (sanitize-version tag)]
-      (sh "tailwindcss --minimize --map"
+      (sh "npx tailwindcss --minimize --map"
           "--input"  "public/style.css"
           "--output" (str (fs/file class-dir "public" "style.css")))
       (spit (fs/file class-dir "dialog-tool-version.txt") tag)
