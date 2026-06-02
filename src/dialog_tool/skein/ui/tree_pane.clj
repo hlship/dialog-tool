@@ -63,25 +63,32 @@
         expanded?         (contains? expanded-ids id)
         active?           (= id (get-in tree [:active-knot-id]))]
     [:div.flex.flex-col.items-center.gap-1
-     [:div
-      {:class             (classes "flex flex-row items-center gap-1 px-2 py-1 rounded-lg border-2"
+     [:button
+      {:type              "button"
+       :class             (classes "flex flex-row items-center gap-1 px-2 py-1 rounded-lg border-2"
                                    "cursor-pointer select-none text-sm min-w-16 max-w-48"
                                    (node-color-class status descendant-status on-spine? active?)
                                    (if active? "border-primary" "border-transparent"))
        :data-tree-node-id (str id)
        :data-parent-id    (some-> parent-id str)
-       :title             command
+       :aria-label        (str command (case status :new " (new)" :error " (error)" ""))
+       :aria-pressed      (str active?)
        :data-on:click     (h/action {:as "tree-node-click"}
                                     (actions/select-tree-node id))}
+      (case status
+        :new   [:div.icon.icon-warning.w-3.h-3.shrink-0 {:aria-hidden "true"}]
+        :error [:div.icon.icon-error.w-3.h-3.shrink-0   {:aria-hidden "true"}]
+        nil)
       (when locked
-        [:div.icon.icon-lock.w-3.h-3.shrink-0 {:title "Locked"}])
+        [:div.icon.icon-lock.w-3.h-3.shrink-0 {:aria-hidden "true"}])
       (when label
         [:span.text-xs.font-bold.bg-neutral.text-neutral-content.px-1.rounded.shrink-0 label])
       [:span.truncate.font-mono.text-xs (truncate command 22)]]
      (when has-kids?
        [:button
         {:class         "btn btn-xs btn-ghost py-0 px-1 min-h-0 h-5 leading-none"
-         :title         (if expanded? "Collapse" "Expand")
+         :aria-label    (if expanded? "Collapse" "Expand")
+         :aria-expanded (str expanded?)
          :data-on:click (h/action {:as "toggle-tree-node"}
                                   (actions/toggle-tree-node id))}
         (if expanded? "\u25be" "\u25b8")])]))

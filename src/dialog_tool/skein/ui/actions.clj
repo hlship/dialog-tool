@@ -246,7 +246,8 @@
                              session/capture-undo
                              (assoc-in [:last-jump status] next-id)
                              (session/select-knot next-id)
-                             (session/set-active-knot-id next-id)))))))
+                             (session/set-active-knot-id next-id)
+                             js/navigate-to-active-knot!))))))
 
 (defn jump-to-label
   [id]
