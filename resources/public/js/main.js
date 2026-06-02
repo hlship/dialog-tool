@@ -444,6 +444,10 @@ let networkErrorShown = false;
 
 function showNetworkErrorModal() {
   if (networkErrorShown) return;
+  // Suppress if the server already rendered the intentional shutdown page.
+  // The closing-page DOM update arrives via SSE before the reconnect failure
+  // fires this function, so this check reliably catches intentional shutdowns.
+  if (document.getElementById('skein-shutdown')) return;
   networkErrorShown = true;
 
   // #modal-container only exists in the DOM when a server-rendered modal is open.

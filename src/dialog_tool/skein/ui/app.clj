@@ -488,7 +488,7 @@
      (cond
        closing?
         ;; Server is shutting down — show close message
-       [:div.flex.items-center.justify-center.h-screen
+       [:div#skein-shutdown.flex.items-center.justify-center.h-screen
         [:div.text-center
          [:h2.text-2xl.font-semibold.text-base-content.mb-4 "Skein Shutdown"]
          [:p.text-base-content.opacity-70 "You may close this window now."]]]
