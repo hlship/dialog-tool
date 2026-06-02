@@ -10,20 +10,15 @@ on:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Build native installer on each target platform
+  # Build native installer on Linux (.deb) and Windows (.msi)
+  # macOS is distributed via Homebrew (see build-zip job below)
   # ---------------------------------------------------------------------------
-  build:
-    name: Build (${{ matrix.platform-label }})
+  build-installers:
+    name: Build installer (${{ matrix.platform-label }})
     strategy:
-      fail-fast: false   # let all platforms finish even if one fails
+      fail-fast: false
       matrix:
         include:
-          - os: macos-13          # Intel x86_64
-            jpackage-type: dmg
-            platform-label: mac-intel
-          - os: macos-latest      # ARM64 (M-series)
-            jpackage-type: dmg
-            platform-label: mac-arm
           - os: ubuntu-latest
             jpackage-type: deb
             platform-label: linux
@@ -133,11 +128,45 @@ jobs:
           path: out/packages/*
 
   # ---------------------------------------------------------------------------
-  # Collect all four artifacts and publish the GitHub Release
+  # Build zip archive for Homebrew / macOS distribution
+  # ---------------------------------------------------------------------------
+  build-zip:
+    name: Build zip (Homebrew / macOS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Clojure and Babashka
+        uses: DeLaGuardo/setup-clojure@12
+        with:
+          cli: latest
+          bb: latest
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build zip
+        run: bb package-zip "${{ github.ref_name }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dgt-zip
+          path: out/dialog-tool-*.zip
+
+  # ---------------------------------------------------------------------------
+  # Collect all artifacts and publish the GitHub Release
   # ---------------------------------------------------------------------------
   release:
     name: Create GitHub Release
-    needs: build
+    needs: [build-installers, build-zip]
     runs-on: ubuntu-latest
     permissions:
       contents: write

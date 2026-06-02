@@ -14,8 +14,16 @@
   tailwind  {:doc "Watch for changes and regenerate style.css using tailwindcss"
              :task
              (p/shell "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")}
-  package   {:doc  "Package a test version of the tool"
-             :task (r/package "test")}
+  package     {:doc  "Build a native installer for the current platform (bb package [tag])"
+               :task (let [tag (or (first *command-line-args*)
+                                   (sh {:out :string :quiet? true}
+                                       "git describe --tags --abbrev=0"))]
+                       (r/package tag))}
+  package-zip {:doc  "Build the zip archive for Homebrew / macOS distribution (bb package-zip [tag])"
+               :task (let [tag (or (first *command-line-args*)
+                                   (sh {:out :string :quiet? true}
+                                       "git describe --tags --abbrev=0"))]
+                       (r/package-zip tag))}
   lint      {:doc "Run clj-kondo to lint all fille"
              :task
              (do
@@ -38,7 +46,7 @@
   release   {:doc "Create a release using the most recent Git tag"
              :task
              (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
-                   zip-file (r/package tag)
+                   zip-file (r/package-zip tag)
                    sha (r/sha256 zip-file)
                    create-opts (cond-> ["--verify-tag" "--generate-notes"]
                                  (or (string/includes? tag "alpha")
