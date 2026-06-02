@@ -2,7 +2,7 @@
   "name": "dialog-tool",
   "private": true,
   "devDependencies": {
-    "daisyui": "^5.5.20",
-    "tailwindcss": "^4"
+    "@tailwindcss/cli": "^4",
+    "daisyui": "^5.5.20"
   }
 }

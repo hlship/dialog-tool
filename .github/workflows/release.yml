@@ -33,11 +33,11 @@ jobs:
 
       # jpackage is bundled with the JDK; temurin 21 is an LTS build available
       # on all three platforms via the same action.
-      - name: Set up JDK 21
+      - name: Set up JDK 24
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 24
 
       - name: Set up Clojure CLI
         uses: DeLaGuardo/setup-clojure@13.4
@@ -137,11 +137,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 24
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 24
 
       - name: Set up Clojure and Babashka
         uses: DeLaGuardo/setup-clojure@13.4
