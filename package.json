@@ -2,6 +2,7 @@
   "name": "dialog-tool",
   "private": true,
   "devDependencies": {
-    "daisyui": "^5.5.14"
+    "daisyui": "^5.5.14",
+    "tailwindcss": "^4"
   }
 }
