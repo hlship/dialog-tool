@@ -73,6 +73,10 @@
        :title             command
        :data-on:click     (h/action {:as "tree-node-click"}
                                     (actions/select-tree-node id))}
+      (case status
+        :new   [:div.icon.icon-warning.w-3.h-3.shrink-0 {:title "New knot"}]
+        :error [:div.icon.icon-error.w-3.h-3.shrink-0 {:title "Error knot"}]
+        nil)
       (when locked
         [:div.icon.icon-lock.w-3.h-3.shrink-0 {:title "Locked"}])
       (when label

@@ -46,6 +46,11 @@ html {
   -webkit-mask-image: url('/icons/exclamation-triangle.svg');
 }
 
+.icon-error {
+  mask-image: url('/icons/x-circle-solid.svg');
+  -webkit-mask-image: url('/icons/x-circle-solid.svg');
+}
+
 .icon-undo {
   mask-image: url('/icons/arrow-uturn-left.svg');
   -webkit-mask-image: url('/icons/arrow-uturn-left.svg');

@@ -222,10 +222,14 @@
     [:div.flex.flex-row
      {:id (str "knot-" id)
       :data-knot-id (str id)}
-     ;; Active-knot marker: sits in the left gutter, outside the knot content
-     [:div.w-5.shrink-0.flex.items-start.justify-center.pt-2
+     ;; Active-knot marker + status icon: sit in the left gutter, outside the knot content
+     [:div.w-5.shrink-0.flex.flex-col.items-center.justify-start.pt-2.gap-1.pr-1
       (when active?
-        [:div.icon.icon-arrow-right {:title "Selected"}])]
+        [:div.icon.icon-arrow-right {:title "Selected"}])
+      (case status
+        :new   [:div.icon.icon-warning.w-4.h-4 {:title "New knot"}]
+        :error [:div.icon.icon-error.w-4.h-4 {:title "Error knot"}]
+        nil)]
      [:div
       {:class (classes "border-x-8 grow cursor-pointer"
                        (when active? "border-l-primary")
