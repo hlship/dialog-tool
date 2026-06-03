@@ -6,7 +6,7 @@ written in the [Dialog](https://github.com/dialog-if/dialog) language. Not every
 `dgt` simplifies Dialog development, it allows you to specify the details of your project,
 including what individual source files to use, and then provides commands to:
 
-- run your project in the Dialog debugger
+- run your project in the Dialog deBbugger
 - run the web-based Skein UI to develop, test, and debug your project
 - run tests derived from your skein files
 - run unit tests against your project

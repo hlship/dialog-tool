@@ -1,4 +1,12 @@
-# 2.0-beta-18 -- UNRELEASED
+# 2.0-beta-18 -- 2 Jun 2026
+
+Now generates installers for Windows and Linux.
+
+Accessibility improvements - icons to supplement colors, better ARIA control descriptions.
+
+Network error modal no longer is displayed when the Skein is shutdown properly (via the Quit command).
+
+Navigation graph and transcript both scroll to active knot when a count (new or error) is clicked in the status counts.
 
 # 2.0-beta-17 -- 31 May 2026
 
