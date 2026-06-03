@@ -232,9 +232,8 @@ window.sk = {
 
   /**
    * Called once via data-init on #tree-pane.
-   * Draws arrows immediately, then watches for DOM changes (SSE patches that
-   * rebuild the tree) and redraws.  Disconnects before redrawing to avoid
-   * recursive MutationObserver triggers.
+   * - Draws SVG arrows immediately and keeps them redrawn on DOM / size changes.
+   * - Enables click-and-drag panning on the pane background.
    */
   initTreeGraph() {
     if (this._treeGraphReady) return;
@@ -242,8 +241,9 @@ window.sk = {
 
     const pane = document.getElementById('tree-pane');
     if (!pane) return;
+
+    // --- Arrow drawing ---
     // Defer initial draw until layout is complete so getBoundingClientRect is accurate.
-    // After drawing, scroll root into horizontal center so the tree is visible.
     requestAnimationFrame(() => this.drawTreeArrows());
     const self = this;
     const observer = new MutationObserver(() => {
@@ -261,6 +261,41 @@ window.sk = {
     // resize and the pane splitter being dragged (neither triggers a DOM mutation).
     new ResizeObserver(() => requestAnimationFrame(() => self.drawTreeArrows()))
       .observe(pane);
+
+    // --- Drag-to-scroll (pan) ---
+    // Clicking on the pane background and dragging scrolls the pane.
+    // Clicks that land on interactive descendants (buttons, links, etc.) are ignored.
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let scrollX = 0;
+    let scrollY = 0;
+
+    pane.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      if (e.target.closest('button, a, input, select, textarea')) return;
+      dragging = true;
+      startX  = e.clientX;
+      startY  = e.clientY;
+      scrollX = pane.scrollLeft;
+      scrollY = pane.scrollTop;
+      pane.style.cursor = 'grabbing';
+      pane.style.userSelect = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      pane.scrollLeft = scrollX - (e.clientX - startX);
+      pane.scrollTop  = scrollY - (e.clientY - startY);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      pane.style.cursor = '';
+      pane.style.userSelect = '';
+    });
   },
 
   /**
