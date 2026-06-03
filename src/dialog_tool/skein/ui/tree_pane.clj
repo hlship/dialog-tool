@@ -23,23 +23,23 @@
   based on descendant-status so problem knots are visible from their ancestors."
   [status descendant-status on-spine? active?]
   (case status
-    :new   (cond active?   "bg-warning text-warning-content"
-                 on-spine? "bg-warning/80 text-warning-content"
-                 :else     "bg-warning/40 text-warning-content")
-    :error (cond active?   "bg-error text-error-content"
+    :new (cond active? "bg-warning text-warning-content"
+               on-spine? "bg-warning/80 text-warning-content"
+               :else "bg-warning/40 text-warning-content")
+    :error (cond active? "bg-error text-error-content"
                  on-spine? "bg-error/80 text-error-content"
-                 :else     "bg-error/40 text-error-content")
+                 :else "bg-error/40 text-error-content")
     ;; Own status is :ok — tint by worst descendant status if any
     (case descendant-status
-      :error (cond active?   "bg-error/50 text-base-content"
+      :error (cond active? "bg-error/50 text-base-content"
                    on-spine? "bg-error/30 text-base-content"
-                   :else     "bg-error/20 text-base-content")
-      :new   (cond active?   "bg-warning/50 text-base-content"
-                   on-spine? "bg-warning/30 text-base-content"
-                   :else     "bg-warning/20 text-base-content")
-      (cond active?   "bg-primary text-primary-content"
+                   :else "bg-error/20 text-base-content")
+      :new (cond active? "bg-warning/50 text-base-content"
+                 on-spine? "bg-warning/30 text-base-content"
+                 :else "bg-warning/20 text-base-content")
+      (cond active? "bg-primary text-primary-content"
             on-spine? "bg-primary-content text-primary"
-            :else     "bg-neutral-content text-neutral"))))
+            :else "bg-neutral-content text-neutral"))))
 
 (defn- truncate
   "Truncates s to at most n chars, appending … if longer."
@@ -76,8 +76,8 @@
        :data-on:click     (h/action {:as "tree-node-click"}
                                     (actions/select-tree-node id))}
       (case status
-        :new   [:div.icon.icon-warning.w-3.h-3.shrink-0 {:aria-hidden "true"}]
-        :error [:div.icon.icon-error.w-3.h-3.shrink-0   {:aria-hidden "true"}]
+        :new [:div.icon.icon-warning.w-3.h-3.shrink-0 {:aria-hidden "true"}]
+        :error [:div.icon.icon-error.w-3.h-3.shrink-0 {:aria-hidden "true"}]
         nil)
       (when locked
         [:div.icon.icon-lock.w-3.h-3.shrink-0 {:aria-hidden "true"}])
@@ -121,11 +121,11 @@
   (let [session        @*session
         tree           (:tree session)
         active-knot-id (get-in tree [:active-knot-id])
-        spine-ids'   (into #{} (map :id (tree/selected-knots tree)))
-        expanded-ids (get tree :expanded-ids #{})]
+        spine-ids'     (into #{} (map :id (tree/selected-knots tree)))
+        expanded-ids   (get tree :expanded-ids #{})]
     [:div#tree-pane
-          {:class            "overflow-x-auto overflow-y-auto p-4 relative bg-base-200 h-full"
-      :data-active-knot         (str active-knot-id)
-      :data-init                "sk.initTreeGraph()"
-      :data-on:resize__window   "sk.drawTreeArrows()"}
+     {:class                  "overflow-x-auto overflow-y-auto p-4 relative bg-base-200 h-full cursor-grab"
+      :data-active-knot       (str active-knot-id)
+      :data-init              "sk.initTreeGraph()"
+      :data-on:resize__window "sk.drawTreeArrows()"}
      (render-subtree tree 0 spine-ids' expanded-ids)]))
