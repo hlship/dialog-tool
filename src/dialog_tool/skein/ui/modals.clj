@@ -36,7 +36,8 @@
        [:div.flex.justify-end.gap-2.mt-2
         (modal/cancel-button)
         [:button.btn.btn-primary
-         {:data-on:click (h/action {:as "source-error:replay-all"}
+         {:type          "button"
+          :data-on:click (h/action {:as "source-error:replay-all"}
                                    (replay-all))}
          "Replay All"]]])))
 
@@ -199,7 +200,9 @@
             [:span.text-sm.text-base-content.opacity-70 label])]
          ;; Progress bar
          [:progress.progress.progress-primary.w-full
-          {:value current :max total}]]))))
+          {:value     current
+           :max       total
+           :aria-label operation}]]))))
 
 (defn dynamic-state
   "Renders a modal dialog displaying the dynamic response."
@@ -264,7 +267,8 @@
                           :submit dismiss-modal})]
        ;; Hidden popup for source preview on hover (positioned by JS)
        [:div#source-preview-popup.hidden.fixed.z-50.bg-white.text-black.border.border-gray-200.rounded-lg.shadow-xl.overflow-hidden
-        {:class "max-w-[80vw]"}]])))
+        {:class       "max-w-[80vw]"
+         :aria-hidden "true"}]])))
 
 (defn render-modal
   "Renders the appropriate modal based on the global :modal cursor."

@@ -28,10 +28,11 @@
   (let [command-signal (h/local-signal :new-command "")]
     [:div.mt-4.mb-8
      [:div.flex.items-center.gap-2
-      [:span.text-gray-400 ">"]
+      [:span.text-gray-400 {:aria-hidden "true"} ">"]
       [:input#new-command-input
        {:type        "text"
         :name        "command"
+        :aria-label  "Enter command"
         :placeholder "Enter command..."
         :class       "flex-1 rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
         :data-bind   (:name command-signal)

@@ -17,17 +17,19 @@
   (let [id          (str "dd-" (random-uuid))
         extra-attrs (dissoc opts :label :disabled :button-class)]
     [:div
-     [:button (merge {:class           (classes "btn m-0" button-class)
-                      :disabled        disabled
-                      :popovertarget   id
+     [:button (merge {:class               (classes "btn m-0" button-class)
+                      :disabled            disabled
+                      :aria-haspopup       "menu"
+                      :popovertarget       id
                       :data-on:click__stop "return"}
                      extra-attrs)
       label]
      [:ul.menu.bg-base-100.rounded-box.p-2.w-96.overflow-y-auto.flex-nowrap
-      {:id id
-       :popover "auto"
-       :class "shadow-xl/30 max-h-[30rem]"
-       :data-on:toggle "sk.positionDropdown(el, evt)"
+      {:id              id
+       :role            "menu"
+       :popover         "auto"
+       :class           "shadow-xl/30 max-h-[30rem]"
+       :data-on:toggle  "sk.positionDropdown(el, evt)"
        :data-on:click   "el.hidePopover()"
        :data-on:keydown "sk.navigateDropdown(el, evt)"}
       items]]))
@@ -48,7 +50,7 @@
                                :class bg-class
                                :role "menuitem"
                                :tabindex "-1"}
-                              (dissoc options :disabled))
+                              (dissoc options :disabled :bg-class))
                  disabled (assoc :disabled true))]
      [:li
       {:class (when disabled "menu-disabled")}
