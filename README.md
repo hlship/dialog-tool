@@ -18,9 +18,9 @@ including what individual source files to use, and then provides commands to:
 
 ## Installing
 
-### Homebrew (macOS)
+### Homebrew (OS X)
 
-The easiest way to install `dgt` on macOS is via [Homebrew](https://brew.sh/), which handles all dependencies automatically:
+The easiest way to install `dgt` on macOS is via [Homebrew](https://brew.sh/), which handles all tool dependencies automatically:
 
 ```
 brew install hlship/brew/dialog-tool
@@ -32,7 +32,27 @@ Once `dgt` is installed, `brew upgrade` will keep it up-to date with the latest 
 
 The Homebrew installation also sets up zsh command completions for `dgt`.  Type `dgt <TAB>` to get started.
 
-### Manual install
+### Windows
+
+Download the Windows installer from [GitHub releases page](https://github.com/hlship/dialog-tool/releases); executing this will add the `dgt` command line
+tool, which you can use from Windows PowerShell.
+
+This version of `dgt` does not require a JRE (it's built in), but you will need to ensure that the other necessary tools
+(see the Manual Install notes).
+
+## Linux 
+
+Download the Debian installer file (.deb) extension from the [GitHub releases page](https://github.com/hlship/dialog-tool/releases) page.
+
+You can install the tool using `dpkg`: 
+ 
+    sudo dpkg -i dgt-<version>.deb
+
+Or using `apt`:
+
+    sudo apt install ./dgt-<version>.deb
+
+### Manual Install (Linux or OS X)
 
 Download the latest release zip from the [GitHub releases page](https://github.com/hlship/dialog-tool/releases).
 The zip contains two files you need:

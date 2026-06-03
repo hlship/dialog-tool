@@ -1,0 +1,197 @@
+name: Release
+
+# Triggered by any tag push.  Each platform builds its own native installer
+# via jpackage; a final job collects all four artifacts and publishes the
+# GitHub Release.
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build native installer on Linux (.deb) and Windows (.msi)
+  # macOS is distributed via Homebrew (see build-zip job below)
+  # ---------------------------------------------------------------------------
+  build-installers:
+    name: Build installer (${{ matrix.platform-label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            jpackage-type: deb
+            platform-label: linux
+          - os: windows-latest
+            jpackage-type: msi
+            platform-label: windows
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # jpackage is bundled with the JDK; temurin 21 is an LTS build available
+      # on all three platforms via the same action.
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 24
+
+      - name: Set up Clojure CLI
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: latest
+
+      # jpackage needs fakeroot to build .deb packages on Linux.
+      - name: Install Linux packaging dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y fakeroot
+
+      # tailwindcss is a devDependency (added to package.json for CI).
+      - name: Install npm dependencies
+        run: npm install
+
+      # jpackage --app-version requires N[.N[.N[.N]]] with no letters.
+      # Examples:  2.0-beta-18  →  2.0.18
+      #            2.0-beta-17a →  2.0.17
+      #            v2.1.0       →  2.1.0
+      - name: Compute jpackage version
+        id: ver
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION=$(echo "$TAG" \
+            | sed 's/^v//' \
+            | sed 's/-alpha-/./g' \
+            | sed 's/-beta-/./g' \
+            | sed 's/[^0-9.]//g')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # CSS must land in out/classes before the uberjar step so that
+      # build.clj picks it up when assembling the jar.
+      - name: Generate CSS
+        shell: bash
+        run: |
+          mkdir -p out/classes/public
+          npx tailwindcss --minify \
+            --input  public/style.css \
+            --output out/classes/public/style.css
+
+      - name: Write version file
+        shell: bash
+        run: echo "${{ github.ref_name }}" > out/classes/dialog-tool-version.txt
+
+      - name: Build uberjar
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          clojure -T:build uber \
+            :uber-file "\"out/build/dialog-tool-${TAG}.jar\"" \
+            :class-dir '"out/classes"'
+
+      - name: Run jpackage
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${{ steps.ver.outputs.version }}"
+          mkdir -p out/packages
+          jpackage \
+            --name          dgt \
+            --app-version   "$VERSION" \
+            --input         out/build/ \
+            --main-jar      "dialog-tool-${TAG}.jar" \
+            --main-class    dialog_tool.main \
+            --java-options  "--enable-native-access=ALL-UNNAMED" \
+            --type          ${{ matrix.jpackage-type }} \
+            --dest          out/packages/
+
+      # jpackage names its output after --name and --app-version, e.g.
+      # dgt-2.0.18.dmg.  Rename to include the git tag and platform label
+      # so all four artifacts are unambiguous in the release.
+      - name: Rename artifact
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          LABEL="${{ matrix.platform-label }}"
+          cd out/packages
+          for f in *; do
+            ext="${f##*.}"
+            mv "$f" "dgt-${TAG}-${LABEL}.${ext}"
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dgt-${{ matrix.platform-label }}
+          path: out/packages/*
+
+  # ---------------------------------------------------------------------------
+  # Build zip archive for Homebrew / macOS distribution
+  # ---------------------------------------------------------------------------
+  build-zip:
+    name: Build zip (Homebrew / macOS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 24
+
+      - name: Set up Clojure and Babashka
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: latest
+          bb: latest
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build zip
+        run: bb package-zip "${{ github.ref_name }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dgt-zip
+          path: out/dialog-tool-*.zip
+
+  # ---------------------------------------------------------------------------
+  # Collect all artifacts and publish the GitHub Release
+  # ---------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    needs: [build-installers, build-zip]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Detect prerelease
+        id: pre
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          if echo "$TAG" | grep -qiE 'alpha|beta'; then
+            echo "prerelease=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          prerelease: ${{ steps.pre.outputs.prerelease == 'true' }}
+          files: artifacts/*

@@ -12,5 +12,6 @@ generated-resources/
 
 # Node modules
 node_modules/
+.npmrc
 .calva
 .eca/

@@ -16,7 +16,6 @@
   (reset! (modal-cursor)
           (apply hash-map :type type kvs)))
 
-
 (defn flash!
   "Sends JS to the client to display a flash message.  This may be a string, or a map
   w/ keys :message and :type."
@@ -26,7 +25,7 @@
                                    {:message flash-message :type :info}
                                    flash-message)]
       (effects/execute-script!
-        (str "sk.showFlash(" (pr-str message) "," (-> type name pr-str) ")")))))
+       (str "sk.showFlash(" (pr-str message) "," (-> type name pr-str) ")")))))
 
 (defn complete-session-operation
   "Invoked after a command that operates on the process; if there was a startup error
@@ -45,13 +44,13 @@
   "Replays all leaf knots in parallel via pmap, then merges the collected
   responses into the session tree in a single pass."
   []
-  (let [*session   (session-cursor)
-        *modal     (modal-cursor)
-        session    (-> @*session
-                       session/capture-undo
-                       session/check-for-changed-sources)
+  (let [*session (session-cursor)
+        *modal (modal-cursor)
+        session (-> @*session
+                    session/capture-undo
+                    session/check-for-changed-sources)
         leaf-knots (tree/leaf-knots (:tree session))
-        total      (count leaf-knots)]
+        total (count leaf-knots)]
     (env/log-action "replay-all")
     (init-modal :progress
                 :operation "Replaying All"
@@ -59,17 +58,17 @@
                 :total total)
     (let [;; pmap runs collect-replay-to concurrently; each call spawns its own
           ;; process and is fully independent of the live session process.
-          results     (pmap (fn [knot]
-                              (let [result (session/collect-replay-to session (:id knot))]
-                                (swap! *modal #(-> %
-                                                   (update :current inc)
-                                                   (assoc :label (:label knot))))
-                                result))
-                            leaf-knots)
+          results (pmap (fn [knot]
+                          (let [result (session/collect-replay-to session (:id knot))]
+                            (swap! *modal #(-> %
+                                               (update :current inc)
+                                               (assoc :label (:label knot))))
+                            result))
+                        leaf-knots)
           first-error (some :error results)
-          session'    (if first-error
-                        (assoc session :error first-error)
-                        (session/apply-responses session (apply merge results)))]
+          session' (if first-error
+                     (assoc session :error first-error)
+                     (session/apply-responses session (apply merge results)))]
       (modals/dismiss-modal)
       (reset! *session
               (-> session'
@@ -114,21 +113,21 @@
     ;; relying on the render-time captures of `root?` and `id`,
     ;; which may be stale if the button wasn't re-rendered after
     ;; the user selected a different knot.
-    (let [session      @*session
-          active-id    (session/get-active-knot-id session)
-          knot         (session/get-knot session active-id)
+    (let [session @*session
+          active-id (session/get-active-knot-id session)
+          knot (session/get-knot session active-id)
           root-action? (= 0 active-id)
-          _            (env/log-action "trace" active-id)
-          command      (if root-action?
-                         "Startup"
-                         (:command knot))
+          _ (env/log-action "trace" active-id)
+          command (if root-action?
+                    "Startup"
+                    (:command knot))
           [trace-response session'] (if root-action?
                                       (session/trace-startup! session)
                                       (session/trace-command! session active-id))]
       (reset! *session session')
       (if trace-response
         (let [parsed (trace/parse-trace trace-response)
-              nodes  (trace/build-tree parsed)]
+              nodes (trace/build-tree parsed)]
           (init-modal :trace
                       :nodes nodes
                       :search ""
@@ -140,8 +139,8 @@
   "Presents the raw dynamic response from the @dynamic command with minimal formatting."
   []
   (let [*session (session-cursor)
-        session  @*session
-        id       (session/get-active-knot-id session)
+        session @*session
+        id (session/get-active-knot-id session)
         {:keys [dynamic-response]} (session/get-knot session id)]
     (env/log-action "dynamic-state" id)
     (init-modal :dynamic-state :dynamic-response dynamic-response)))
@@ -189,7 +188,7 @@
   [id]
   (env/log-action "toggle-lock" id)
   (let [*session (session-cursor)
-        locked?  (get-in @*session [:tree :knots id :locked])]
+        locked? (get-in @*session [:tree :knots id :locked])]
     (swap! *session #(-> % session/capture-undo (session/toggle-lock id)))
     (flash! (if locked? "Unlocked" "Locked"))))
 
@@ -205,8 +204,8 @@
         [error session'] (session/delete! (session/capture-undo @*session) id)]
     (reset! *session session')
     (flash! (if error {:message error
-                       :type    :error}
-                      "Deleted"))))
+                       :type :error}
+                "Deleted"))))
 
 (defn split-out
   [id]
@@ -215,8 +214,8 @@
         [error session'] (session/splice-out! (session/capture-undo @*session) id)]
     (reset! *session session')
     (flash! (if error {:message error
-                       :type    :error}
-                      "Spliced Out"))))
+                       :type :error}
+                "Spliced Out"))))
 
 (defn activate-knot
   [id]
@@ -230,24 +229,24 @@
   [status]
   (env/log-action (str "seek-" (name status)))
   (let [*session (session-cursor)
-        session  @*session
-        tree     (:tree session)
+        session @*session
+        tree (:tree session)
         matching (tree/knots-with-status tree status)]
     (when (seq matching)
-      (let [last-id  (get-in session [:last-jump status])
-            idx      (when last-id
-                       (let [i (.indexOf matching last-id)]
-                         (when (>= i 0) i)))
+      (let [last-id (get-in session [:last-jump status])
+            idx (when last-id
+                  (let [i (.indexOf matching last-id)]
+                    (when (>= i 0) i)))
             next-idx (if idx
                        (mod (inc idx) (count matching))
                        0)
-            next-id  (nth matching next-idx)]
+            next-id (nth matching next-idx)]
         (swap! *session #(-> %
                              session/capture-undo
                              (assoc-in [:last-jump status] next-id)
                              (session/select-knot next-id)
-                             (session/set-active-knot-id next-id)
-                             js/navigate-to-active-knot!))))))
+                             (session/set-active-knot-id next-id)))
+        (js/navigate-to-active-knot! @*session)))))
 
 (defn jump-to-label
   [id]
@@ -277,8 +276,8 @@
 
 (defn search
   [q]
-  (let [q'           (-> q str string/trim)
-        *search      (search-cursor)
+  (let [q' (-> q str string/trim)
+        *search (search-cursor)
         *tree-cursor (h/global-cursor [:session :tree])]
     (env/log-action "search" (pr-str q'))
     (if (string/blank? q')

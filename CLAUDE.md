@@ -32,7 +32,7 @@ The tool provides commands for:
     - `session.clj`, `tree.clj`, `process.clj` — Core skein logic
 - `test/` — Tests (run with `bb test` or `clj -M:test`)
 - `resources/` — Templates, bundled assets, skein resources
-- `release/` — Babashka release scripts and Homebrew formula template
+- `release/` — Babashka release scripts (packaging tasks; releases are published via GitHub Actions)
 - `build.clj` — tools.build uberjar configuration
 
 ## Key Technologies

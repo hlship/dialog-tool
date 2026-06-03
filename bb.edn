@@ -13,9 +13,17 @@
                (System/exit exit))}
   tailwind  {:doc "Watch for changes and regenerate style.css using tailwindcss"
              :task
-             (p/shell "tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")}
-  package   {:doc  "Package a test version of the tool"
-             :task (r/package "test")}
+             (p/shell "npx tailwindcss -i public/style.css -o generated-resources/public/style.css --watch")}
+  package     {:doc  "Build a native installer for the current platform (bb package [tag])"
+               :task (let [tag (or (first *command-line-args*)
+                                   (sh {:out :string :quiet? true}
+                                       "git describe --tags --abbrev=0"))]
+                       (r/package tag))}
+  package-zip {:doc  "Build the zip archive for Homebrew / macOS distribution (bb package-zip [tag])"
+               :task (let [tag (or (first *command-line-args*)
+                                   (sh {:out :string :quiet? true}
+                                       "git describe --tags --abbrev=0"))]
+                       (r/package-zip tag))}
   lint      {:doc "Run clj-kondo to lint all fille"
              :task
              (do
@@ -35,39 +43,4 @@
                  (fs/copy (fs/path source-path f)
                    (fs/path output-path f)
                    {:replace-existing true})))}
-  release   {:doc "Create a release using the most recent Git tag"
-             :task
-             (let [tag (sh {:out :string} "git describe --tags --abbrev=0")
-                   zip-file (r/package tag)
-                   sha (r/sha256 zip-file)
-                   create-opts (cond-> ["--verify-tag" "--generate-notes"]
-                                 (or (string/includes? tag "alpha")
-                                   (string/includes? tag "beta"))
-                                 (conj "--prerelease"))
-                   formula (-> zip-file fs/parent (fs/file "dialog-tool.rb"))
-                   scoop-manifest (-> zip-file fs/parent (fs/file "dialog-tool.json"))]
-               (apply sh "gh release create" tag create-opts)
-               (sh "gh release upload --clobber" tag zip-file)
-               (println)
-               (pout "Release URL: "
-                 [:bold
-                  "https://github.com/hlship/dialog-tool/releases/tag/" tag])
-               (pout "  Asset URL: "
-                 [:bold "https://github.com/hlship/dialog-tool/releases/download/"
-                  tag "/" (fs/file-name zip-file)])
-               (pout "     SHA256: " [:bold sha])
-               (r/render-template "templates/dialog-tool.rb"
-                 formula
-                 {:tag      tag
-                  :sha      sha
-                  :uber-jar (str "dialog-tool-" tag ".jar")
-                  :zip-name (fs/file-name zip-file)})
-               (println)
-               (pout "Wrote Homebrew formula to " [:bold formula])
-               (r/render-template "templates/dialog-tool.json"
-                 scoop-manifest
-                 {:tag      tag
-                  :sha      sha
-                  :uber-jar (str "dialog-tool-" tag ".jar")
-                  :zip-name (fs/file-name zip-file)})
-               (pout "Wrote Scoop manifest to " [:bold scoop-manifest]))}}}
+  }}

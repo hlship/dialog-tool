@@ -196,10 +196,7 @@
    :new "border-warning"
    :error "border-error"})
 
-(def ^:private status->button-class
-  {:ok nil
-   :new "bg-warning"
-   :error "bg-error"})
+
 
 (defn- compare-pred
   [left right]
