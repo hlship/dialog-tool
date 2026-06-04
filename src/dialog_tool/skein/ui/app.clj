@@ -131,9 +131,9 @@
         ok]
        (if (pos? new)
          [:div.bg-warning.text-warning-content.p-2.font-semibold.cursor-pointer
-          {:role          "button"
-           :tabindex      "0"
-           :aria-label    (str new " new knots")
+          {:role "button"
+           :tabindex "0"
+           :aria-label (str new " new knots")
            :data-on:click (h/action {:as "seek-new"}
                                     (actions/seek-status :new))}
           new]
@@ -142,9 +142,9 @@
           new])
        (if (pos? error)
          [:div.bg-error.text-error-content.p-2.font-semibold.rounded-r-lg.cursor-pointer
-          {:role          "button"
-           :tabindex      "0"
-           :aria-label    (str error " error knots")
+          {:role "button"
+           :tabindex "0"
+           :aria-label (str error " error knots")
            :data-on:click (h/action {:as "seek-error"}
                                     (actions/seek-status :error))}
           error]
@@ -152,16 +152,16 @@
           {:aria-label (str error " error knots")}
           error])]
       [:div.flex.items-center.gap-1.shrink-0.ml-auto
-              (dropdown/dropdown {:disabled              (<= (count labeled-knots) 1)
-                                  :label                 (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])
-                                  :button-class          "btn-primary tooltip tooltip-bottom"
-                                  :data-label            "Jump"
-                                  :data-accel__alt       "j"
-                                  :data-preserve-attr    "data-tip"}
-                                 (for [{:keys [id label]} labeled-knots]
-                                   (dropdown/button {:data-on:click (h/action {:as "jump-to-label"}
-                                                                              (actions/jump-to-label id))}
-                                                    label)))
+       (dropdown/dropdown {:disabled (<= (count labeled-knots) 1)
+                           :label (list [:div.icon.icon-jump] [:span.hidden.lg:inline "Jump"])
+                           :button-class "btn-primary tooltip tooltip-bottom"
+                           :data-label "Jump"
+                           :data-accel__alt "j"
+                           :data-preserve-attr "data-tip"}
+                          (for [{:keys [id label]} labeled-knots]
+                            (dropdown/button {:data-on:click (h/action {:as "jump-to-label"}
+                                                                       (actions/jump-to-label id))}
+                                             label)))
        (navbar-btn {:data-on:click (h/action {:as "replay-all"}
                                              (actions/replay-all))
                     :data-accel__alt__shift "r"}
@@ -187,16 +187,14 @@
                     :disabled (not can-reload?)}
                    "icon-reload" "Reload")
        [:button.btn.btn-primary {:type "button"
-                                  :data-on:click (h/action {:as "quit"}
-                                                           (actions/quit))}
+                                 :data-on:click (h/action {:as "quit"}
+                                                          (actions/quit))}
         [:div.icon.icon-quit {:aria-hidden "true"}] [:span.hidden.lg:inline "Quit"]]]]]))
 
 (def ^:private status->border-class
   {:ok "border-base-300"
    :new "border-warning"
    :error "border-error"})
-
-
 
 (defn- compare-pred
   [left right]
@@ -238,8 +236,8 @@
       (when active?
         [:div.icon.icon-arrow-right {:role "img" :aria-label "Selected"}])
       (case status
-        :new   [:div.icon.icon-warning.w-4.h-4 {:role "img" :aria-label "New knot"}]
-        :error [:div.icon.icon-error.w-4.h-4   {:role "img" :aria-label "Error knot"}]
+        :new [:div.icon.icon-warning.w-4.h-4 {:role "img" :aria-label "New knot"}]
+        :error [:div.icon.icon-error.w-4.h-4 {:role "img" :aria-label "Error knot"}]
         nil)]
      [:div
       {:class (classes "border-x-8 grow cursor-pointer"
@@ -285,23 +283,23 @@
         {:keys [tree debug-enabled?]} session
         active-knot-id (:active-knot-id tree)
         {:keys [id dynamic-response parent-id selected-child-id children unblessed]} (session/get-knot session active-knot-id)
-        root?            (= 0 id)
-        all-ok?          (->> selected-knots
-                              (map :status)
-                              (every? #(= % :ok)))
-        leaf-knot-id     (-> selected-knots last :id)
+        root? (= 0 id)
+        all-ok? (->> selected-knots
+                     (map :status)
+                     (every? #(= % :ok)))
+        leaf-knot-id (-> selected-knots last :id)
         ;; Siblings: other children of parent, sorted alphabetically (matching nav graph order)
-        sorted-siblings  (when-not root?
-                           (->> (tree/find-children tree parent-id)
-                                (sort-by :command)
-                                vec))
-        sibling-idx      (when (seq sorted-siblings)
-                           (first (keep-indexed (fn [i s] (when (= (:id s) id) i))
-                                                sorted-siblings)))
-        prev-sibling-id  (when (and sibling-idx (pos? sibling-idx))
-                           (:id (nth sorted-siblings (dec sibling-idx))))
-        next-sibling-id  (when (and sibling-idx (< sibling-idx (dec (count sorted-siblings))))
-                           (:id (nth sorted-siblings (inc sibling-idx))))]
+        sorted-siblings (when-not root?
+                          (->> (tree/find-children tree parent-id)
+                               (sort-by :command)
+                               vec))
+        sibling-idx (when (seq sorted-siblings)
+                      (first (keep-indexed (fn [i s] (when (= (:id s) id) i))
+                                           sorted-siblings)))
+        prev-sibling-id (when (and sibling-idx (pos? sibling-idx))
+                          (:id (nth sorted-siblings (dec sibling-idx))))
+        next-sibling-id (when (and sibling-idx (< sibling-idx (dec (count sorted-siblings))))
+                          (:id (nth sorted-siblings (inc sibling-idx))))]
     [:div {:class (classes "bg-base-100 text-base-content border-base-200"
                            "px-2 sm:px-4 py-1"
                            "w-full border-b")}
@@ -409,7 +407,7 @@
                                                (actions/toggle-lock id)))}
                    "icon-lock")
       (toolbar-btn {:disabled root?
-                    :data-label      "Insert Parent…"
+                    :data-label "Insert Parent…"
                     :data-accel__alt "i"
                     :data-on:click (when-not root?
                                      (h/action {:as "insert-parent"}
@@ -448,13 +446,19 @@
 (defn- render-fab
   [*session]
   (let [{:keys [debug-enabled? show-dynamic? fixed-width?]} @*session]
-    [:div.fab
-     [:div.btn.btn-lg.btn-circle.btn-primary
-      {:tabindex "0"
-       :role "button"}
-      [:div.icon.icon-globe]]
-
-     [:div.rounded-box.bg-base-100.border.border-base-200.flex.flex-col.items-start
+    [:div#fab
+     {:class "fixed bottom-4 right-4 z-[999] flex flex-col-reverse items-end gap-2 text-sm"
+      :data-init "sk.initFab()"}
+     [:span#fab-tooltip.tooltip.tooltip-left
+      {:data-preserve-attr "data-tip"}
+      [:button.btn.btn-lg.btn-circle.btn-primary
+       {:aria-label "Settings"
+        :aria-haspopup "true"
+        :aria-expanded "false"}
+       [:div.icon.icon-globe]]]
+     [:div.rounded-box.bg-base-100.border.border-base-200.flex.flex-col.items-start.shadow-lg
+      {:style "display:none"
+       :data-preserve-attr "style"}
       [:label.label.p-2
        [:input.toggle {:type "checkbox"
                        :checked fixed-width?
