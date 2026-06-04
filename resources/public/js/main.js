@@ -203,6 +203,112 @@ window.sk = {
   },
 
   /**
+   * Initialises the FAB settings panel.  Called once via data-init on #fab.
+   *
+   * Self-contained: sets the tooltip, registers Alt+G, and handles all
+   * open/close/navigation natively.
+   *
+   * Key design choices:
+   *  - Tooltip lives on #fab-tooltip (a wrapper span), not the button, so the
+   *    ::before pseudo-element is never clipped by button styles.
+   *  - Panel is fetched fresh via getPanel() on each interaction rather than
+   *    captured in a closure, avoiding stale references after Datastar morphs.
+   *  - Click-outside uses a document mousedown listener (reliable); focusout is
+   *    only used for keyboard Tab-away, and only when relatedTarget is non-null.
+   */
+  initFab() {
+    const fab     = document.getElementById('fab');
+    const tooltip = document.getElementById('fab-tooltip');
+    if (!fab || fab._fabReady) return;
+    fab._fabReady = true;
+
+    const btn = fab.querySelector('button');
+    if (!btn) { fab._fabReady = false; return; }
+
+    // Always query fresh — avoids stale closure reference if Datastar replaces the node.
+    const getPanel   = () => fab.children[1];
+    const firstInput = () => getPanel()?.querySelector('input:not(:disabled)');
+    const allInputs  = () => [...(getPanel()?.querySelectorAll('input:not(:disabled)') ?? [])];
+    const isOpen     = () => getPanel()?.style.display !== 'none';
+
+    // Remember what was focused before opening so Escape can restore it.
+    // Restoring prevents btn from getting :focus-visible, which would show the tooltip.
+    let preFocusEl = null;
+
+    const open = () => {
+      const panel = getPanel();
+      if (!panel) return;
+      preFocusEl = document.activeElement;
+      panel.style.display = '';
+      btn.setAttribute('aria-expanded', 'true');
+      firstInput()?.focus();
+    };
+
+    // refocus=true (Escape, click-toggle): restore pre-open focus, or blur the button.
+    // refocus=false (focusout, clicked outside): leave focus wherever it went.
+    const close = (refocus = true) => {
+      const panel = getPanel();
+      if (panel) panel.style.display = 'none';
+      btn.setAttribute('aria-expanded', 'false');
+      if (refocus) {
+        const target = preFocusEl && preFocusEl !== btn && document.body.contains(preFocusEl)
+          ? preFocusEl : null;
+        if (target) target.focus();
+        else btn.blur();   // blur so :focus-visible never triggers the tooltip
+      }
+      preFocusEl = null;
+    };
+
+    // Tooltip on the wrapper span (data-preserve-attr="data-tip" survives SSE morphs).
+    if (tooltip) tooltip.setAttribute('data-tip', `Settings (${altSymbol}G)`);
+
+    // Click the button to toggle.
+    btn.addEventListener('click', () => isOpen() ? close() : open());
+
+    // Alt+G toggles from anywhere (same rules as the data-accel__alt plugin).
+    window.addEventListener('keydown', (e) => {
+      if (!e.altKey || e.metaKey || e.ctrlKey) return;
+      if (e.code !== 'KeyG') return;
+      if (document.querySelector('#modal-container > *')) return;
+      e.preventDefault();
+      isOpen() ? close() : open();
+    }, true);
+
+    // Keyboard handling inside #fab: Escape closes; arrows navigate inputs.
+    fab.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        return;
+      }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const inputs = allInputs();
+      if (!inputs.includes(document.activeElement)) return;
+      e.preventDefault();
+      const idx = inputs.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') inputs[Math.min(idx + 1, inputs.length - 1)]?.focus();
+      else if (idx > 0) inputs[idx - 1]?.focus();
+      // ArrowUp on first item: already at top, do nothing.
+    });
+
+    // Click outside #fab closes the panel.  Checking e.target on mousedown (before
+    // focus moves) is reliable; focusout is not, because clicking a non-focusable
+    // element like label text produces relatedTarget=null before focus settles.
+    document.addEventListener('mousedown', (e) => {
+      if (isOpen() && !fab.contains(e.target)) close(false);
+    }, true);
+
+    // Keyboard navigation (Tab) out of #fab closes the panel.
+    // Only act when relatedTarget is set — a null relatedTarget means the browser
+    // moved focus to body (e.g. label-text click), which we handle via mousedown above.
+    fab.addEventListener('focusout', (e) => {
+      if (e.relatedTarget && !fab.contains(e.relatedTarget)) close(false);
+    });
+  },
+
+
+
+  /**
    * Keyboard navigation for search result buttons.
    * ArrowDown/Up move focus between result buttons (or back to the search input
    * when Up is pressed on the first result). Escape returns focus to the input.
