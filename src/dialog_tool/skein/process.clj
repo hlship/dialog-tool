@@ -107,7 +107,8 @@
                       "--transcripting"
                       "--formatting" "ansi"]
                      (into (:extra-arguments opts))
-                     (into (pf/expand-sources project {:debug? true})))]
+                     (into (pf/expand-sources project {:debug? true
+                                                       :target :dgdebug})))]
      (start! cmd {:post-process #(-> %
                                      trim-returns
                                      ;; TODO: Is this still needed?
@@ -149,6 +150,7 @@
                                           ;; the patch prevents the status line from being presented
                                           ;; (otherwise it shows up inline)
                                           (pf/expand-sources project {:debug?    debug?
+                                                                      :target    :zblorb
                                                                       :pre-patch [@*patch-path]}))]
                         (env/debug-command command)
                         (p/check

@@ -175,12 +175,30 @@ in your `dialog.edn`, but if you are starting from scratch, the directory-based 
 
 The :target key defines the output when the project is built. It may be a single keyword
 (e.g., `:target :zblorb`) or a vector of keywords (e.g., `:target [:zblorb :z8]`).
-:zblorb is a good general choice.
+:zblorb is a good general choice, and is the default if :target is omitted.
+
 In specific situations you may want to build for :z5, :z8, or :aa.  The differences between
 these targets are described in [the Dialog manual](https://dialog-if.github.io/manual/dialog/1a01/software.html).
 
 `dgt build` builds all targets defined in the project; use the `--target` option to build
 a single specific target instead.
+
+### Target Specific Sources
+
+In certain particular cases, part of the source may vary based on the target being built for.
+
+This is largely related to the different audio/visual capabilities of the :zblorb format
+(targeting a desktop application such as [Spatterlight](https://github.com/angstsmurf/spatterlight)) versus
+interpreters for the :aa target (which may be running on a Commodore 64!).
+
+In any case, you may encode the target of a source file as an extra extension between the main file name and the
+`.dg` extension; for example a file named `effects.zblorb.dg` will _only_ be included when the target
+is :zblorb.
+
+Files without such an extra extension, the normal case, are always included.
+
+Finally, when building for `dgdebug` (including the Skein), the target is :dgdebug, though it would be rare
+to have dgdebug-specific sources (that's what the :debug source category is for).
 
 ### Build Config
 

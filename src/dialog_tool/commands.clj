@@ -12,6 +12,12 @@
 
 (def debug-opt ["-d" "--debug" "Include debug sources"])
 
+(def basic-targets #{:zblorb :z5 :z8 :aa})
+
+(def target-opt (cli/select-option "-T" "--target TARGET"
+                                   "Output target:"
+                                   basic-targets))
+
 (defcommand debug
   "Run the project in the Dialog debugger."
   [width ["-w" "--width NUMBER" "Output width (omit to use terminal width)"
@@ -29,7 +35,8 @@
         cmd        (-> [(pf/command-path project "dgdebug") "--quit"]
                        (into extra-args)
                        (into debug-args)
-                       (into (pf/expand-sources project {:debug? true})))
+                       (into (pf/expand-sources project {:debug? true
+                                                         :target :dgdebug})))
         _          (env/debug-command cmd)
         *process   (p/process {:cmd     cmd
                                :inherit true})
@@ -47,7 +54,9 @@
   (let [project  (pf/read-project)
         cmd      (-> [(pf/command-path project "dgdebug") "--unit-test"]
                      (into debug-args)
-                     (into (pf/expand-sources project {:debug? true :test? true})))
+                     (into (pf/expand-sources project {:debug? true
+                                                       :test?  true
+                                                       :target :dgdebug})))
         _        (env/debug-command cmd)
         *process (p/process {:cmd     cmd
                              :inherit true})
@@ -133,10 +142,15 @@
 (defcommand sources
   "Print the sources for the project in compilation order."
   [debug? debug-opt
+   target (cli/select-option "-T" "--target TARGET"
+                             "Output target:"
+                             (conj basic-targets :dgdebug))
    test? ["-t" "--test" "Include test sources"]
    one? ["-1" "--single-line" "Output as a single line, colon-separated"]]
   (let [project (pf/read-project)
-        paths   (pf/expand-sources project {:debug? debug? :test? test?})]
+        paths   (pf/expand-sources project {:debug? debug?
+                                            :test?  test?
+                                            :target target})]
     (if one?
       (println (string/join ":" paths))
       (let [longest (apply max (map count paths))]
