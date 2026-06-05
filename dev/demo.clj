@@ -18,7 +18,7 @@
                           opts))))
 
 (comment
-  (-> @*app :global :session :tree :knots (get 1728874698428))
+  (-> @*app :global :session :tree :knots (get 1723218892802))
   (-> @*app :tab keys)
   (-> @*app :global :modal)
   (-> @*app :global :shutdown-fn)
@@ -35,7 +35,7 @@
 
   (start! "../futurama" nil)
 
-  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)  
+  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)
 
   (start! "../failure" nil)
 

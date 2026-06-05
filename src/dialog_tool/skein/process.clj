@@ -13,7 +13,7 @@
             [clojure.string :as string]
             [dialog-tool.env :as env]
             [dialog-tool.project-file :as pf])
-  (:import (java.io BufferedReader PrintWriter)
+  (:import (java.io BufferedReader IOException PrintWriter)
            (java.util List)))
 
 (defn alive?
@@ -24,16 +24,14 @@
 
 (defn- check-for-end-of-response
   [sb output-ch post-process]
-  (let [s (.toString sb)]
-    (when (string/ends-with? s "> ")
-      (let [last-nl (string/last-index-of s \newline)]
-        (assert (pos? last-nl))
-        (.setLength sb 0)
-        ;; Keep only up to (and including) the newline
-        (>!! output-ch
-             (post-process (subs s 0 (inc last-nl))))
-        ;; Put prompt back into the SB
-        (.append sb (subs s (inc last-nl)))))))
+  ;; TODO: Check for single char prompt as well.
+  (when (string/ends-with? sb "\n> ")
+    (>!! output-ch
+         (post-process (str sb)))
+    ;; Put prompt back into the SB
+    (.setLength sb 0)
+    ;; Is this going to be correct for single char input?
+    (.append sb "  > ")))
 
 (defn- read-loop
   [^BufferedReader r output-ch post-process]
@@ -45,17 +43,21 @@
       ;; up to the prompt (which will not have a trailing new line). Reading past the prompt will block.
       (let [n-read (try
                      (.read r buffer 0 buffer-size)
-                     (catch java.io.IOException _
-                       ;; PTY closed or bad fd after process kill — treat as EOF
+                     (catch IOException _
+                       ;; Process died
                        -1))]
         (if (neg? n-read)
           ;; Process died, pipe closed -- this can happen when there are errors in
           ;; the source code.  Provide as much as was read:
           (do
-            (>!! output-ch (-> sb str post-process string/trim))
+            ;; TODO: Test failures, may need to adjust post process for startup failures
+            (>!! output-ch (-> sb str post-process))
             (close! output-ch))
           (do
-            (.append sb buffer 0 n-read)
+            (.append sb buffer 0 (int n-read))
+            ;; Generally, dgdebug (or frotz) is blazing fast, and so once we get any input
+            ;; we get a very complete response, but maybe someone's writing a novel
+            ;; and 10K isn't big enough to get it in a single gulp.
             (check-for-end-of-response sb output-ch post-process)
             (recur)))))))
 
@@ -91,6 +93,32 @@
   [s]
   (string/replace s "\r" ""))
 
+(defn- remove-tail
+  [value lines]
+  (if (= value (last lines))
+    (recur value (butlast lines))
+    lines))
+
+(defn- remove-dgdbebug-taglines
+  [response]
+  (let [lines        (->> response
+                          string/split-lines
+                          (drop-while #(= % ""))            ; Initial response can start with empty string for first line
+                          butlast                           ; The line with the prompt  TODO: For single char?
+                          ;; Most output line start with two spaces
+                          ;; The final output line is '>' or ')' and a space
+                          (mapv #(subs % 2))
+                          (remove-tail "> "))
+        single-char? (-> lines
+                         last
+                         (= ") "))
+        response'    (string/replace-first (->> lines
+                                                (string/join "\n"))
+                                           #"^\u001b\[0m" "")]
+    {:response (cond-> response'
+                 (not (string/ends-with? response' "/n")) (str "\n"))
+     :prompt   (if single-char? :keypress :line)}))
+
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger.
    opts is an optional map; :extra-arguments are added to the command line
@@ -105,14 +133,14 @@
                       "--width" "-1"                        ;; No set width; UI will word-wrap
                       "--unit-test"
                       "--transcripting"
+                      "--tag-lines"
                       "--formatting" "ansi"]
                      (into (:extra-arguments opts))
                      (into (pf/expand-sources project {:debug? true
                                                        :target :dgdebug})))]
      (start! cmd {:post-process #(-> %
                                      trim-returns
-                                     ;; TODO: Is this still needed?
-                                     (string/replace-first #"^\u001b\[0m" ""))}))))
+                                     remove-dgdbebug-taglines)}))))
 
 (def engines #{:dgdebug :frotz :frotz-release})
 
@@ -181,12 +209,15 @@
   (start-frotz-process project-root seed (assoc opts :debug? false)))
 
 (defn read-response!
+  "Reads the response as a map with two values:
+  * :response - string response, starting with the previous command's input prompt, ending with blank line
+  * :prompt - :keypress or :line"
   [process]
   (-> process :output-ch <!!))
 
 (defn send-command!
   "Sends a player command to the process, blocking until a response to the command
-  is available.  Returns the response."
+  is available.  Returns the response (see read-response!)."
   [process ^String command]
   (let [{:keys [^PrintWriter stdin-writer]} process
         _ (doto stdin-writer
