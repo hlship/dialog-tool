@@ -1,12 +1,15 @@
 # dgt - Dialog Tool
 
-`dgt` is a tool to assist in the development of interactive fiction
-written in the [Dialog](https://github.com/dialog-if/dialog) language. Not every work of IF is a "game" so we use the term "project".
+`dgt` is a command line tool to assist in the development of interactive fiction
+written in the [Dialog](https://github.com/dialog-if/dialog) language. 
+
+> [!NOTE]
+> Not every work of IF is a "game" so we use the term "project".
 
 `dgt` simplifies Dialog development, it allows you to specify the details of your project,
 including what individual source files to use, and then provides commands to:
 
-- run your project in the Dialog deBbugger
+- run your project in the Dialog debugger, or the frotz interpreter
 - run the web-based Skein UI to develop, test, and debug your project
 - run tests derived from your skein files
 - run unit tests against your project
@@ -20,7 +23,7 @@ including what individual source files to use, and then provides commands to:
 
 ### Homebrew (OS X)
 
-The easiest way to install `dgt` on macOS is via [Homebrew](https://brew.sh/), which handles all tool dependencies automatically:
+The easiest way to install `dgt` on macOS is via [Homebrew](https://brew.sh/):
 
 ```
 brew install hlship/brew/dialog-tool
@@ -38,7 +41,7 @@ Download the Windows installer from [GitHub releases page](https://github.com/hl
 tool, which you can use from Windows PowerShell.
 
 This version of `dgt` does not require a JRE (it's built in), but you will need to ensure that the other necessary tools
-(see the Manual Install notes).
+are available (see the Manual Install notes).
 
 ## Linux 
 
@@ -105,7 +108,7 @@ The exact files created by `dgt new` may change over time.
 
 The directory must not already exist.
 
-With the `--flat` option, library files are placed directly in `lib/` (instead of subdirectories)
+With the `--flat` option, library files are placed directly in `src/` (instead of subdirectories)
 and `dialog.edn` lists individual source files rather than directories.
 
 `dgt new` will create a unique [IFID](https://linusakesson.net/dialog/docs/beyondprg.html) for your project; it
@@ -167,7 +170,7 @@ It is a common practice to modify libraries as necessary, even the standard libr
 good practice is to try and split out reusable code (code that could reasonably be used in an entirely different
 project) under :library (and :debug).
 
-Alternately, a source may be a specific file, which is simply added to the list of source files.
+In addition to specifying directories, a source may be a single file, which is simply added to the list of source files.
 If you are coming to `dgt` from a different approach, it may be easier to just list all the files, in order,
 in your `dialog.edn`, but if you are starting from scratch, the directory-based approach is easier.
 
@@ -178,12 +181,14 @@ The :target key defines the output when the project is built. It may be a single
 :zblorb is a good general choice, and is the default if :target is omitted.
 
 In specific situations you may want to build for :z5, :z8, or :aa.  The differences between
-these targets are described in [the Dialog manual](https://dialog-if.github.io/manual/dialog/1a01/software.html).
+these targets are described in [the Dialog manual](https://dialog-if.github.io/manual/dialog/1c01/software.html).
 
 `dgt build` builds all targets defined in the project; use the `--target` option to build
 a single specific target instead.
 
-### Target Specific Sources
+By default, the output is built for release, but the `--debug` switch will include debug sources when building.
+
+### Target-specific Sources
 
 In certain particular cases, part of the source may vary based on the target being built for.
 
@@ -218,8 +223,8 @@ default command search path (as specified in the `$PATH` environment variable).
 
 If your `dialog.edn` contains a :bin-dir key, its value is used as the directory containing these commands. 
 
-This is a rarely used option, such as when testing a project against a new version of the Dialog command
-line tools, without installing those new command versions.
+This is a rarely used option; it is sometimes used by the maintainers when testing a project against a new version 
+of the Dialog command line tools, without installing those new command versions.
 
 ## Running your project
 
@@ -227,25 +232,23 @@ line tools, without installing those new command versions.
 
 ```
 > dgt debug
-Dialog Interactive Debugger (dgdebug) version 0m/03.
+Dialog Interactive Debugger (dgdebug) version 1c/01.
 Type @help at the game prompt for a brief introduction.
 
 
 The Featureless Space
 An interactive fiction by The Intrepid Author.
 Release 0. Serial number DEBUG.
-Dialog Interactive Debugger (dgdebug) version 0m/03. Library version 0.46.
-Debugging extension 1.1.
+Dialog Interactive Debugger (dgdebug) version 1c/01. Library version 1.2.2. Debugging extension 1.2.2-dev.
 
 Endless Featureless Space
 You are in an endless, featureless space. Just what will you create within it?
-
 >
 ```
 
 Again, the title, author, release number, and other details can be configured by editing `meta.dg`.
 The file `magnum-opus.dg` generated by the template 
-contains the room and player and not anything else.  From here, it is all about
+contains the room and player and not anything else.  From here forward, it is all about
 your imagination.
 
 However, you are likely to spend very little time directly running the debugger; instead, you'll run the debugger indirectly, via the Skein.
@@ -293,6 +296,9 @@ to completion.
 `dgt skein run` will open an existing skein. When launched, the Skein automatically
 replays all branches to ensure responses and dynamic state are up to date.
 
+Refer to the [full documentation](doc/skein.md) for more details.  The Skein is invaluable for testing
+and debugging your project.
+
 ## Building and Bundling
 
 The `dgt build` command is used to build your project; the :target key of `dialog.edn` determines how it
@@ -333,6 +339,10 @@ Building out/release/magnum-opus.aastory ...
 ```
 The `bundle` command creates a directory and populates it with a custom page for your project.
 It also creates a `.zip` file of the contents of `out/web` (the name is based on the project's name, and the version number inside `src/meta.dg`)
+
+> [!NOTE]
+> `bundle` creates `cover-small.jpg` from `cover.png`, using [ImageMagick](https://imagemagick.org/), which must be
+> installed.
 
 If you open `out/web/index.html` in a web browser, you'll be provided with an option to download the game file, or play the game in-browser:
 
