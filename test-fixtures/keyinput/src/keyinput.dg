@@ -19,6 +19,8 @@
 (supporter *)
 (* is #in #featureless-space)
 
+(global variable (confirmation value $))
+
 #switch
 (name *) red toggle switch
 (switchable *)
@@ -32,6 +34,7 @@
     (space)
     (get key $Char)
     [You pressed: $Char]
+    (now) (confirmation value $Char)
     (if) ($Char = @y)
     (then)
         (fail)

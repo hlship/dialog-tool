@@ -201,11 +201,22 @@
   (compare (string/replace left "#" "")
            (string/replace right "#" "")))
 
+(defn- find-dynamic-state
+  "Searches the knot for its dynamic state; if not found, (typically, because of a keystroke prompt)
+  searches upwards. May return nil if not found."
+  [tree knot-id]
+  (if (= 0 knot-id)
+    nil
+    (let [{:keys [dynamic-state parent-id]} (tree/get-knot tree knot-id)]
+      (if dynamic-state
+        dynamic-state
+        (recur tree parent-id)))))
+
 (defn- render-dynamic
   "Renders the dynamic state."
   [tree knot]
   (let [{:keys [parent-id dynamic-state]} knot
-        before-dynamic-state (-> (tree/get-knot tree parent-id) :dynamic-state)]
+        before-dynamic-state (find-dynamic-state tree parent-id)]
     (when (seq dynamic-state)
       (let [{:keys [added removed changed]} (dynamic/diff before-dynamic-state dynamic-state)
             tuples (->> []
@@ -518,7 +529,7 @@
         (let [active-knot-id (session/get-active-knot-id session)
               knots          (session/selected-knots session)
               {parent-knot-id :id
-               :keys [prompt]}     (last knots)]
+               :keys          [prompt]} (last knots)]
           [:div.relative
            (when replay-on-launch?
              ;; This lets the client render the initial page before we start sending down
