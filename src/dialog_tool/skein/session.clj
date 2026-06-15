@@ -75,7 +75,7 @@
           child-knot-id (tree/find-child-id tree process-knot-id command)
           command'      (if-not keystroke?
                           command
-                         #trace/result (get command->key command command))
+                          (get command->key command command))
           {:keys [prompt] :as response} (sk.process/send-command! process command' keystroke?)
           session'      (if child-knot-id
                           (-> session
@@ -174,7 +174,7 @@
   [session collected]
   (update session :tree
           (fn [tree]
-            (reduce (fn [t [knot-id [response dynamic]]]
+            (reduce (fn [t [knot-id [response _prompt dynamic]]]
                       (-> t
                           (tree/update-response knot-id response)
                           (cond-> dynamic (tree/update-dynamic knot-id dynamic))))

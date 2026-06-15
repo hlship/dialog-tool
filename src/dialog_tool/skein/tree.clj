@@ -293,7 +293,8 @@
   [tree knot-id dynamic]
   (let [predicate-state (dynamic/parse dynamic)]
     (update-in tree [:dynamic knot-id]
-               assoc :response dynamic
+               assoc
+               :response dynamic
                :state predicate-state)))
 
 (defn find-children

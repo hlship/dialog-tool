@@ -21,7 +21,7 @@
                           opts))))
 
 (comment
-  (-> @*app :global :session :tree :knots vals)
+  (-> @*app :global :session :tree)
   (-> @*app :tab keys)
   (-> @*app :global :modal)
   (-> @*app :global :shutdown-fn)
