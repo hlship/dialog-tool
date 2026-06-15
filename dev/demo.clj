@@ -21,7 +21,7 @@
                           opts))))
 
 (comment
-  (-> @*app :global :session :tree)
+  (-> @*app :global :session :tree :dynamic (update-vals :state))
   (-> @*app :tab keys)
   (-> @*app :global :modal)
   (-> @*app :global :shutdown-fn)

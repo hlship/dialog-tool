@@ -205,8 +205,7 @@
   "Searches the knot for its dynamic state; if not found, (typically, because of a keystroke prompt)
   searches upwards. May return nil if not found."
   [tree knot-id]
-  (if (= 0 knot-id)
-    nil
+  (when knot-id
     (let [{:keys [dynamic-state parent-id]} (tree/get-knot tree knot-id)]
       (if dynamic-state
         dynamic-state
