@@ -1,0 +1,42 @@
+#featureless-space
+(room *)
+(name *) Endless Featureless Space
+(look *)
+    You are in an endless, featureless space, receding off to the distance in every
+    direction. The only break from this is a small circular table in front of you.
+
+#player
+(current player *)
+(descr *)
+    As undefined as the space you inhabit.
+(* is #in #featureless-space)
+
+#table 
+(name *) circular table
+(descr *)
+    A medium sized table, circular, made of a milky-white, almost translucent, material. 
+    (list objects #on *)
+(supporter *)
+(* is #in #featureless-space)
+
+#switch
+(name *) red toggle switch
+(switchable *)
+(* is on)
+(* is #on #table)
+(descr *) A red toggle switch.
+(prevent [switch off *])
+    A pleasant voice announces "This switch deactivates the universe. Are you sure you want to proceed?"
+    You intuit that you merely need to think your response.
+    \(yes or no\)
+    (space)
+    (get key $Char)
+    [You pressed: $Char]
+    (if) ($Char = @y)
+    (then)
+        (fail)
+    (else)
+        Oh, thank heavens!
+    (endif)
+(perform [switch off *])
+    (game over { The light dims to blackness. })

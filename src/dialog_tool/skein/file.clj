@@ -40,17 +40,19 @@
     (p out "seed" (:seed meta))
     (p out "engine" (:engine meta))
     (doseq [knot-id (-> tree :knots keys sort)
-            ;; Purposely don't write the :selected property as that is only meaningful
-            ;; during editing and would cause many unwanted changes to the skein stored in
-            ;; version control.  We want skein changes to be reviewable.
-            :let [{:keys [id parent-id response unblessed command label locked]} (get knots knot-id)]]
+            :let [{:keys [id parent-id response unblessed command label locked prompt]} (get knots knot-id)]]
       (.println out sep)
       (p out "id" id)
       (p out "label" label)
       (p out "locked" (when locked "true"))
       (p out "parent-id" parent-id)
       (p out "command" command)
+      ;; :line is the default, :keystroke is a rarity
+      (when (not= prompt :line)
+        (p out "prompt" (name prompt)))
       (.println out sep)
+      ;; When collecting content from the process, we ensure that the response ends with a newline
+      ;; even if one has to be added.
       (when response
         (.print out ^String response))
       (when unblessed
@@ -58,7 +60,7 @@
         (.print out unblessed)))))
 
 (def meta-parsers
-  {"seed" s->long
+  {"seed"   s->long
    "engine" keyword})
 
 (def kv-re #"(?x)
@@ -90,11 +92,12 @@
             (recur meta)))))))
 
 (def knot-parsers
-  {"id" s->long
+  {"id"        s->long
    "parent-id" s->long
-   "command" identity
-   "label" identity
-   "locked" #(= "true" %)})
+   "command"   identity
+   "label"     identity
+   "prompt"    keyword
+   "locked"    #(= "true" %)})
 
 (defn- apply-content
   [knot k ^StringBuilder sb]
@@ -108,7 +111,7 @@
   [initial-knot ^LineNumberingPushbackReader r]
   (let [sb (StringBuilder. 1000)]
     (loop [knot initial-knot
-           k :response]
+           k    :response]
       (let [line (.readLine r)]
         (cond
           (sep? line)
@@ -125,7 +128,7 @@
 
 (defn- read-knot
   [^LineNumberingPushbackReader r]
-  (loop [knot nil]
+  (loop [knot {:prompt :line}]
     (let [line (.readLine r)]
       (cond
         (nil? line)
@@ -143,10 +146,12 @@
 (defn- read-knots
   [initial-tree ^LineNumberingPushbackReader in]
   (loop [tree initial-tree]
-    (if-let [knot (read-knot in)]
+    (let [knot (read-knot in)]
       ;; Just add the knot, we rebuild the :children key for each knot at the end
-      (recur (assoc-in tree [:knots (:id knot)] knot))
-      tree)))
+      ;; Check for :id on knot, as we may get a partial knot of just defaults
+      (if (:id knot)
+        (recur (assoc-in tree [:knots (:id knot)] knot))
+        tree))))
 
 (defn read-tree
   [^LineNumberingPushbackReader in]
@@ -155,8 +160,8 @@
         (read-knots in)
         tree/rebuild)
     (catch Exception e
-      (let [m (or (ex-message e)
-                  (-> e class .getName))
+      (let [m    (or (ex-message e)
+                     (-> e class .getName))
             line (.getLineNumber in)]
         (throw (IOException. (format "Unable to read skein: %s (on line %d)"
                                      m line)
@@ -182,12 +187,12 @@
   "Saves the Skein tree to the file identified by the given path.  Writes the file atomically,
   then returns the tree."
   [tree path]
-  (let [path' (fs/path path)
+  (let [path'     (fs/path path)
         temp-path (-> path'
                       fs/canonicalize
                       fs/parent
                       (fs/path (str "_" (fs/file-name path'))))
-        parent (fs/parent temp-path)]
+        parent    (fs/parent temp-path)]
     (when-not (fs/exists? parent)
       (fs/create-dir parent))
     (with-open [out (-> temp-path
@@ -196,6 +201,6 @@
                         PrintWriter.)]
       (write-skein tree out))
     (fs/move temp-path path' {:replace-existing true
-                              :atomic-move true})
+                              :atomic-move      true})
 
     tree))

@@ -31,6 +31,7 @@ Developing the UI requires an additional window.
   - Could filter out per-object flags and variables?
 - Revisit storing active-knot-id inside tree, inside undo/redo stack
 - Should Reload trigger a Replay All?
+- Sometimes Replay All doesn't update the skein but Replay does
 
 ## Hyper
 

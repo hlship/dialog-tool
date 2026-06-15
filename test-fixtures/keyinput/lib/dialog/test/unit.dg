@@ -1,0 +1,177 @@
+%% unit.dg
+(extension version)	Unit test runner 1.2.2-dev by Susan Davis.
+
+%% See example(s) in test/unit in Dialog source distribution, and chapter 12 of
+%% the library manual.
+
+%% Copyright © 2021-2026, Susan Davis. All rights reserved. Licensed under the
+%% same license as the rest of Dialog; see license.txt or LICENSE for details.
+
+%%-------------------------------- INTERFACES --------------------------------
+
+%% Give all your tests the (test *) trait.
+
+(interface (test $Testname))
+
+%% (run #foo) expr will pass if expr is true and fail if expr is false.
+%% Include #foo in the global variable (list of tests [test1 test2 ...])
+
+(interface (run $<Testname))
+
+(interface (set up $<Testname)) %% special setup for the test
+
+(interface (clean up $<Testname)) %% restore to original state afterward
+
+(interface (assert $<Var = $<Val))
+
+(interface (assert $<Var > $<Val))
+
+(interface (assert $<Var < $<Val))
+
+(keep running on failure) %% negate to stop at first failed test
+
+(using color) %% negate to use default output instead of green and red
+
+~(list failing tests) %% un-negate to summarize failing tests at the end
+
+%%----------------------------- IMPLEMENTATION -----------------------------
+
+%% We almost don't need these, since that final line already does what we
+%% want, but adding binding checks can be useful.
+
+(assert $Thing1 = $Thing2) %% true if both are bound and ($Thing1 = $Thing2)
+	(fully bound $Thing1)
+	(bound $Thing2)
+	($Thing1 = $Thing2)
+
+(assert $Thing1 > $Thing2)
+	(fully bound $Thing1)
+	(bound $Thing2)
+	($Thing1 > $Thing2)
+
+(assert $Thing1 < $Thing2)
+	(fully bound $Thing1)
+	(bound $Thing2)
+	($Thing1 < $Thing2)
+
+(style class @green-bar)
+	   color: green;
+
+(style class @red-bar)
+	   color: red;
+
+(global variable (list of failures []))
+
+(program entry point)
+	(accumulate 1) *(test $) (into $Number)
+	(bold) Attempting $Number test
+	(if) ~($Number = 1) (then) (no space) s (endif)
+	(no space) . (roman) (line)
+	(stoppable) (exhaust) {
+		*(test $Test)
+		(run test $Test)
+	}
+	(reset body style)
+	(list of failures $Failures)
+	(if) ($Failures = []) (then)
+		(bold) $Number test
+		(if) ~($Number = 1) (then) (no space) s (endif)
+		(bold)  passed successfully. (roman) (par)
+		(quit 0)
+	(else)
+		(length of $Failures into $Num)
+		(bold) $Num TEST
+		(if) ~($Num = 1) (then) (no space) S (endif)
+		FAILED
+		(if) (list failing tests) (then)
+			 (roman) $Failures (bold)
+		(endif)
+		(no space) . (roman) (par)
+		(quit 1)
+	(endif)
+
+(update body style)
+	(if) (using color) (then)
+		 (list of failures $Failures)
+		 (if) ($Failures = []) (then)
+		 	  (body style @green-bar)
+		 (else)
+		 	  (body style @red-bar)
+		 (endif)
+	(else)
+		 (reset body style)
+	(endif)
+
+($Test has failed)
+	(list of failures $List)
+	(append $List [$Test] $ListPlusTest)
+	(now) (list of failures $ListPlusTest)
+
+(run test $Test)
+	(update body style)
+	Testing $Test :
+	(reset body style) %% display output from the test itself in default colours
+	(if)
+		(stoppable) (exhaust) *(set up $Test)   %% don't fail if absent
+		(run $Test)
+		(stoppable) (exhaust) *(clean up $Test) %% don't fail if absent
+	(then)
+		(update body style)
+	 	Passed! (line)
+	(else)
+		($Test has failed)
+		(update body style)
+		(bold) Failed. (roman) (space) :-\( (line)
+		(if) ~(keep running on failure) (then) (stop) (endif)
+	(endif)
+
+(error $Code entry point)
+	(if) (using color) (then)
+		 (body style @red-bar)
+    (endif)
+	(bold) FAILED TEST -- FATAL ERROR $Code. (roman) (par)
+	(quit 2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% License and copyright notice
+%% Copyright 2018-2026 the Dialog Project contributors
+%%
+%% Redistribution and use in source and binary forms, with or without
+%% modification, are permitted provided that the following conditions are met:
+%%
+%%  1. Redistributions of source code must retain the above copyright
+%%      notice, this list of conditions and the following disclaimer.
+%%
+%%  2. Redistributions in binary form must reproduce the above copyright
+%%     notice, this list of conditions and the following disclaimer in the
+%%     documentation and/or other materials provided with the distribution.
+%%
+%%     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+%%     IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+%%     TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+%%     PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+%%     HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%     SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+%%     LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+%%     DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+%%     THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+%%     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+%%     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%%
+%% This license is intended to apply to the Dialog compiler and debugger and
+%% the source code of the standard libraries. Any time those components are
+%% distributed, this copyright notice should be attached. But it is not meant
+%% to limit what the compiler's output can be used for, even for projects that
+%% include the standard libraries. To make this explicit, the project is ALSO
+%% released under a modified two-clause BSD license, which is exactly the same
+%% as the above but adds this exception:
+%%
+%%     As an exception, if, as a result of you compiling your source code,
+%%     portions of this software are embedded into compiler output in binary
+%%     form, you may redistribute such embedded portions without complying
+%%     with condition 2 of the license.
+%%
+%% In other words, you can distribute the Z-machine and Å-machine bytecode that
+%% the compiler produces in any way you like, without needing to include this
+%% license file or comply with the attribution requirements (for the library
+%% or for the Z-machine runtime routines).

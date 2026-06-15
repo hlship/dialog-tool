@@ -25,13 +25,17 @@
 (defn- check-for-end-of-response
   [sb output-ch post-process]
   ;; TODO: Check for single char prompt as well.
-  (when (string/ends-with? sb "\n> ")
-    (>!! output-ch
-         (post-process (str sb)))
-    ;; Put prompt back into the SB
-    (.setLength sb 0)
-    ;; Is this going to be correct for single char input?
-    (.append sb "  > ")))
+  (let [line-input? (string/ends-with? sb "\n> ")
+        keystroke?   (string/ends-with? sb "\n) ")]
+    (when (or line-input?
+              keystroke?)
+      (>!! output-ch
+           (post-process (str sb)))
+      (.setLength sb 0)
+      (.append sb "  ")
+      ;; Put prompt back into the SB
+      (when line-input?
+        (.append sb "> ")))))
 
 (defn- read-loop
   [^BufferedReader r output-ch post-process]
@@ -101,15 +105,15 @@
 
 (defn- remove-dgdbebug-taglines
   [response]
-  (let [lines        (->> response
-                          string/split-lines
+  (let [raw-lines    (string/split-lines response)
+        lines        (->> raw-lines
                           (drop-while #(= % ""))            ; Initial response can start with empty string for first line
                           butlast                           ; The line with the prompt  TODO: For single char?
                           ;; Most output line start with two spaces
                           ;; The final output line is '>' or ')' and a space
                           (mapv #(subs % 2))
                           (remove-tail "> "))
-        single-char? (-> lines
+        single-char? (-> raw-lines
                          last
                          (= ") "))
         response'    (string/replace-first (->> lines
@@ -117,7 +121,7 @@
                                            #"^\u001b\[0m" "")]
     {:response (cond-> response'
                  (not (string/ends-with? response' "/n")) (str "\n"))
-     :prompt   (if single-char? :keypress :line)}))
+     :prompt   (if single-char? :keystroke :line)}))
 
 (defn start-debug-process!
   "Starts a Skein process using the Dialog debugger.
@@ -211,19 +215,22 @@
 (defn read-response!
   "Reads the response as a map with two values:
   * :response - string response, starting with the previous command's input prompt, ending with blank line
-  * :prompt - :keypress or :line"
+  * :prompt - :keystroke or :line"
   [process]
   (-> process :output-ch <!!))
 
 (defn send-command!
   "Sends a player command to the process, blocking until a response to the command
   is available.  Returns the response (see read-response!)."
-  [process ^String command]
-  (let [{:keys [^PrintWriter stdin-writer]} process
-        _ (doto stdin-writer
-            (.println command)
-            .flush)]
-    (read-response! process)))
+  ([process ^String command]
+   (send-command! process command false))
+  ([process ^String command keystroke?]
+   (let [{:keys [^PrintWriter stdin-writer]} process]
+     (if keystroke?
+       (.print stdin-writer command)
+       (.println stdin-writer command))
+     (.flush stdin-writer)
+     (read-response! process))))
 
 (defn kill!
   "Kills the OS process and returns nil."

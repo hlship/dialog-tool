@@ -1,0 +1,90 @@
+seed: 57435
+--------------------------------------------------------------------------------
+id: 0
+label: START
+--------------------------------------------------------------------------------
+
+[0m[1mThe Featureless Space
+[0mAn interactive fiction by The Intrepid Author.
+Release 0. Serial number DEBUG.
+Dialog Interactive Debugger (dgdebug) version 1c/01. Library version 1.2.2. Debugging extension 1.2.2-dev.
+
+[0m[1mEndless Featureless Space[0m
+You are in an endless, featureless space, receding off to the distance in every direction. The only break from this is a small circular table in front of you.
+
+--------------------------------------------------------------------------------
+id: 1781460447846
+parent-id: 0
+command: x table
+--------------------------------------------------------------------------------
+> x table
+A medium sized table, circular, made of a milky-white, almost translucent, material. On the circular table is a red toggle switch.
+
+--------------------------------------------------------------------------------
+id: 1781460447847
+parent-id: 1781460447846
+command: turn it off
+prompt: keystroke
+--------------------------------------------------------------------------------
+> turn it off
+A pleasant voice announces "This switch deactivates the universe. Are you sure you want to proceed?" You intuit that you merely need to think your response. (yes or no) 
+--------------------------------------------------------------------------------
+id: 1781460447848
+parent-id: 1781460447847
+command: enter
+--------------------------------------------------------------------------------
+[you pressed: @\n] Oh, thank heavens!
+
+--------------------------------------------------------------------------------
+id: 1781460447849
+parent-id: 1781460447848
+command: turn it off
+prompt: keystroke
+--------------------------------------------------------------------------------
+> turn it off
+A pleasant voice announces "This switch deactivates the universe. Are you sure you want to proceed?" You intuit that you merely need to think your response. (yes or no) 
+--------------------------------------------------------------------------------
+id: 1781460447850
+parent-id: 1781460447849
+command: space
+--------------------------------------------------------------------------------
+[you pressed: @\s] Oh, thank heavens!
+
+--------------------------------------------------------------------------------
+id: 1781460447851
+parent-id: 1781460447850
+command: turn it off
+prompt: keystroke
+--------------------------------------------------------------------------------
+> turn it off
+A pleasant voice announces "This switch deactivates the universe. Are you sure you want to proceed?" You intuit that you merely need to think your response. (yes or no) 
+--------------------------------------------------------------------------------
+id: 1781460447852
+parent-id: 1781460447851
+command: backspace
+--------------------------------------------------------------------------------
+[you pressed: @\b] Oh, thank heavens!
+
+--------------------------------------------------------------------------------
+id: 1781460447853
+parent-id: 1781460447852
+command: turn it off
+prompt: keystroke
+--------------------------------------------------------------------------------
+> turn it off
+A pleasant voice announces "This switch deactivates the universe. Are you sure you want to proceed?" You intuit that you merely need to think your response. (yes or no) 
+--------------------------------------------------------------------------------
+id: 1781460447854
+parent-id: 1781460447853
+command: y
+--------------------------------------------------------------------------------
+[you pressed: y]
+
+[0m[1m     *** The light dims to blackness. ***     
+[0m
+[0m[4mWould you like to:
+     UNDO the last move,
+     RESTORE a saved position,
+     QUIT the program,
+     or RESTART from the beginning?
+[0m> 

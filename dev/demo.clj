@@ -1,8 +1,11 @@
 (ns demo
   "Used when manually testing the skein."
   (:require [dialog-tool.env :as env]
+            [dialog-tool.skein.file :as file]
+            [clojure.java.io :as io]
             [dialog-tool.skein.service :as service :refer [stop! *app]]
-            [dialog-tool.skein.session :as session]))
+            [dialog-tool.skein.session :as session])
+  (:import (clojure.lang LineNumberingPushbackReader)))
 
 (-> @*app :global :modal)
 
@@ -18,7 +21,7 @@
                           opts))))
 
 (comment
-  (-> @*app :global :session :tree :knots (get 1723218892802))
+  (-> @*app :global :session :tree :knots vals)
   (-> @*app :tab keys)
   (-> @*app :global :modal)
   (-> @*app :global :shutdown-fn)
@@ -27,11 +30,20 @@
   (alter-var-root #'env/*debug* (constantly false))
   env/*debug*
 
+  (-> "test-fixtures/keyinput/default.skein"
+      io/reader
+      LineNumberingPushbackReader. 
+      file/read-tree
+      :knots
+      vals)
+  
   (swap! *app assoc-in [:global :modal] nil)
 
   (stop!)
 
   (start! "../sanddancer-dialog" nil)
+  
+  (start! "test-fixtures/keyinput" nil)
 
   (start! "../futurama" nil)
 
