@@ -6,6 +6,7 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.common :as common :refer [session-cursor modal-cursor]]
+            [dialog-tool.skein.ui.components.command-input :as command-input]
             [dialog-tool.skein.ui.components.modal :as modal]
             [dialog-tool.skein.ui.trace-view :as trace-view]
             [hyper.core :as h]))
@@ -69,29 +70,80 @@
         (session/edit-command! id command)
         handle-operation-error)))
 
+
+(defn- edit-command-line
+  [{:keys [id command error]}]
+  (modal/modal
+    (cond-> {:title "Edit Command"}
+      error (assoc :error error))
+    [:form {:data-on:submit__prevent
+            (h/action {:as "edit-command:submit"}
+                      (do-edit-command id (get $form-data "command")))}
+     [:div.mb-4
+      [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "edit-command-input"}
+       "Command:"]
+      [:input#edit-command-input
+       {:type      "text"
+        :name      "command"
+        :value     (or command "")
+        :data-init "el.select()"
+        :class     "w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"}]]
+     [:div.flex.justify-end.gap-2
+      (modal/cancel-button)
+      (modal/ok-button)]]))
+
+(defn- do-edit-keystroke
+  [id key]
+  (env/log-action "edit-keystroke:submit" id)
+  (let [*session (session-cursor)]
+    (-> @*session
+        session/capture-undo
+        session/check-for-changed-sources
+        (session/edit-command! id (command-input/normalize-keystroke key))
+        handle-operation-error)))
+
+(defn- edit-keystroke
+  [{:keys [id command error]}]
+  (modal/modal
+    (cond-> {:title   [:span "Edit Keystroke: " [:span.bg-neutral-content.rounded-md.border.border-neutral.px-2.py-1.text-sm
+                                                 command]]
+             :buttons modal/cancel-button}
+      error (assoc :error error))
+    [:div.mt-4.mb-8
+      [:div.flex.items-center.gap-2
+       [:span.text-gray-400 {:aria-hidden "true"} "Key:"]
+       [:input#edit-keystroke-input
+        {:type             "text"
+         :name             "keystroke"
+         :class            "text-center rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-1 border"
+         :size             1
+         :maxlength        1
+         :minlength        1
+         :value            (if (= 1 (count command))
+                             command
+                             "")
+         :data-init        "el.focus()"
+         :data-on:keypress (h/action
+                             {:as "edit-keystroke"}
+                             (do-edit-keystroke id $key))}]
+       " or "
+              (map (fn [label]
+                     [:button.btn.btn-sm
+                      {:type          "button"
+                       :data-on:click (h/action
+                                        {:as "new-keystroke:special"}
+                                        (do-edit-keystroke id label))}
+                      label])
+                   command-input/special-keystrokes)]]))
+
 (defn edit-command
   "Renders the edit command modal."
   []
-  (let [*modal (modal-cursor)
-        {:keys [id command error]} @*modal]
-    (modal/modal
-      (cond-> {:title "Edit Command"}
-        error (assoc :error error))
-      [:form {:data-on:submit__prevent
-              (h/action {:as "edit-command:submit"}
-                        (do-edit-command id (get $form-data "command")))}
-       [:div.mb-4
-        [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "edit-command-input"}
-         "Command:"]
-        [:input#edit-command-input
-         {:type      "text"
-          :name      "command"
-          :value     (or command "")
-          :data-init "el.select()"
-          :class     "w-full rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"}]]
-       [:div.flex.justify-end.gap-2
-        (modal/cancel-button)
-        (modal/ok-button)]])))
+  (let [modal @(modal-cursor)
+        {:keys [keystroke?]} modal]
+    (if keystroke?
+      (edit-keystroke modal)
+      (edit-command-line modal))))
 
 (defn- do-insert-parent
   [id raw-command]
@@ -200,8 +252,8 @@
             [:span.text-sm.text-base-content.opacity-70 label])]
          ;; Progress bar
          [:progress.progress.progress-primary.w-full
-          {:value     current
-           :max       total
+          {:value      current
+           :max        total
            :aria-label operation}]]))))
 
 (defn dynamic-state

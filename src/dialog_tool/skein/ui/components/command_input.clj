@@ -6,6 +6,14 @@
             [dialog-tool.skein.ui.js :as js]
             [hyper.core :as h]))
 
+(def special-keystrokes
+  ["enter" "space" "backspace"])
+
+(defn normalize-keystroke
+  [key]
+  (get {" "     "space"
+        "Enter" "enter"} key key))
+
 (defn- apply-new-command
   [*session parent-knot-id command]
   (swap! *session (fn [session]
@@ -27,9 +35,8 @@
   [*session parent-knot-id key]
   (env/log-action "keystroke" parent-knot-id " " (pr-str key))
   ;; The session layer knows about "space" "enter" and "backspace"
-  (let [key' (get {" "     "space"
-                   "Enter" "enter"} key key)]
-    (apply-new-command *session parent-knot-id key')))
+  (apply-new-command *session parent-knot-id (normalize-keystroke key)))
+
 
 (defn new-keystroke-input
   [*session parent-knot-id]
@@ -37,13 +44,15 @@
     [:div.mt-4.mb-8
      [:div.flex.items-center.gap-2
       [:span.text-gray-400 {:aria-hidden "true"} "Key:"]
-      [:input#new-command-input
+      [:input#new-keystroke-input
        {:type             "text"
         :name             "keystroke"
-        :class            "rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
+        :class            "text-center rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
+        :size 2
         :maxlength        1
         :minlength        1
         :data-bind        (:name input-signal)
+        :data-init "el.focus()"
         :data-on:keypress (h/action
                             {:as "new-keystroke"}
                             (process-new-keystroke-command *session parent-knot-id $key))}]
@@ -55,7 +64,7 @@
                                 {:as "new-keystroke:special"}
                                 (process-new-keystroke-command *session parent-knot-id label))}
               label])
-           ["enter" "space" "backspace"])]]))
+           special-keystrokes)]]))
 
 (defn new-command-input
   "Renders an input field for entering new commands.
