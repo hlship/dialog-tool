@@ -6,7 +6,7 @@
             [dialog-tool.skein.tree :as tree]
             [dialog-tool.skein.ui.ansi :as ansi]
             [dialog-tool.skein.ui.components.dropdown :as dropdown]
-            [dialog-tool.skein.ui.components.new-command :as new-command]
+            [dialog-tool.skein.ui.components.command-input :as command-input]
             [dialog-tool.skein.ui.tree-pane :as tree-pane]
             [dialog-tool.skein.ui.diff :as diff]
             [dialog-tool.skein.ui.modals :as modals]
@@ -568,8 +568,8 @@
                                      :fixed-width?   fixed-width?
                                      :active-knot-id active-knot-id} knots)
              (if (= prompt :keystroke)
-               (new-command/new-keystroke-input *session parent-knot-id)
-               (new-command/new-command-input *session parent-knot-id))]]
+               (command-input/new-keystroke-input *session parent-knot-id)
+               (command-input/new-command-input *session parent-knot-id))]]
            ;; Modal overlay
            (modals/render-modal)
            ;; FAB for settings

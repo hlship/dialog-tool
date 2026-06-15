@@ -1,4 +1,4 @@
-(ns dialog-tool.skein.ui.components.new-command
+(ns dialog-tool.skein.ui.components.command-input
   "Component for entering a new command to add as a child node."
   (:require [dialog-tool.env :as env]
             [dialog-tool.skein.ui.common :as common]
