@@ -13,8 +13,8 @@
   [engine seed]
   {:meta              {:engine engine
                        :seed   seed}
-   :knots             {0 {:id    0
-                          :label "START"
+   :knots             {0 {:id     0
+                          :label  "START"
                           :prompt :line}}
    ;; knot-id -> #{knot-id}
    :children          {}
@@ -367,14 +367,16 @@
 (defn get-knot
   "Returns the knot with the given id."
   [tree knot-id]
-  (when-let [knot (get-in tree [:knots knot-id])]
+  (when-let [{:keys [parent-id]
+              :as   knot} (get-in tree [:knots knot-id])]
     (assoc knot
            :selected-child-id (get-in tree [:selected knot-id])
            :children (get-in tree [:children knot-id])
            :status (get-in tree [:status knot-id])
-           :descendant-status (get-in tree [:descendant-status knot-id])
-                              :dynamic-response (get-in tree [:dynamic knot-id :response])
-                              :dynamic-state (get-in tree [:dynamic knot-id :state]))))
+           :parent-prompt (get-in tree [:knots parent-id :prompt])
+                          :descendant-status (get-in tree [:descendant-status knot-id])
+                          :dynamic-response (get-in tree [:dynamic knot-id :response])
+                          :dynamic-state (get-in tree [:dynamic knot-id :state]))))
 
 (defn knots-from-root
   "Returns a seq of knots at or above the given knot in the tree; order is from

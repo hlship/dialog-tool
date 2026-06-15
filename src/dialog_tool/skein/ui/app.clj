@@ -236,8 +236,7 @@
 
 (defn- render-knot
   [*session tree knot {:keys [debug-enabled? show-dynamic? fixed-width? active-knot-id]}]
-  (let [{:keys [id response unblessed status locked label parent-id command]} knot
-        {:keys [prompt]} (tree/get-knot tree parent-id)
+  (let [{:keys [id response unblessed status locked label parent-prompt command]} knot
         active? (= id active-knot-id)]
     [:div.flex.flex-row
      {:id           (str "knot-" id)
@@ -268,7 +267,7 @@
           (when label
             [:span.font-bold.bg-neutral.text-neutral-content.px-1.py-0.5.rounded.text-sm
              label])])
-       (when (= prompt :keystroke)
+       (when (= parent-prompt :keystroke)
          [:div.w-fit.bg-neutral-content.rounded-md.border.border-neutral.px-2.py-1.text-sm
           command])
        (render-diff response unblessed)
@@ -296,7 +295,7 @@
   (let [session         @*session
         {:keys [tree debug-enabled?]} session
         active-knot-id  (:active-knot-id tree)
-        {:keys [id dynamic-response parent-id selected-child-id children unblessed]} (session/get-knot session active-knot-id)
+        {:keys [id dynamic-response parent-id selected-child-id children unblessed prompt parent-prompt]} (session/get-knot session active-knot-id)
         root?           (= 0 id)
         all-ok?         (->> selected-knots
                              (map :status)
@@ -450,8 +449,12 @@
                         :data-on:click   (h/action {:as "dynamic-state"}
                                                    (actions/dynamic-state))}
                        "icon-dynamic")
+          ;; When a knot OR its parent is a keystroke, then the knot is not complete enough to contain
+          ;; tracing data (it's broken up before and after).
           (toolbar-btn {:data-label      (if root? "Trace Startup…" "Trace…")
                         :data-accel__alt "t"
+                        :disabled        (or (= :keystroke prompt)
+                                             (= :keystroke parent-prompt))
                         :tooltip-dir     "left"
                         :data-on:click   (h/action {:as "trace"}
                                                    (actions/trace))}

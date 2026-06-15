@@ -108,7 +108,7 @@
   (let [raw-lines    (string/split-lines response)
         lines        (->> raw-lines
                           (drop-while #(= % ""))            ; Initial response can start with empty string for first line
-                          butlast                           ; The line with the prompt  TODO: For single char?
+                          butlast                           ; The line with the prompt
                           ;; Most output line start with two spaces
                           ;; The final output line is '>' or ')' and a space
                           (mapv #(subs % 2))

@@ -436,6 +436,7 @@
                              (tree/update-dynamic 2 dynamic-response))]
     (is (match?
           {:dynamic-response dynamic-response
+           :parent-prompt    :line
            :dynamic-state    (m/equals {:flags #{"(sand-dancer is named)"
                                                  "(#drawer is closed)"}
                                         :vars  {"(#flashlight is $ $)"     "(#flashlight is #heldby #knock)"

@@ -157,7 +157,7 @@
           {:error (:error worker')}
           (->> knots
                (map (fn [{:keys [id]}]
-                      (let [{:keys [prompt unblessed response] :as knot} (get-in worker' [:tree :knots id])]
+                      (let [{:keys [prompt unblessed response]} (get-in worker' [:tree :knots id])]
                         ;; run-command! stores the fresh response in :unblessed when it
                         ;; differs from the blessed :response.  We want the actual new
                         ;; response, so prefer :unblessed, falling back to :response.
