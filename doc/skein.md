@@ -266,6 +266,9 @@ The font, by default, reverts to proportional, which is appropriate for most pro
 
 You can enter a command, such as `x lizard` in the text field at the bottom to add a new child knot.
 
+In some cases, a game may prompt for single character input, in which case you get a slightly different
+input, with just room for a single character, and extra buttons for easy entry of supported non-visible characters.
+
 ![](skein-new-command.png)
 
 You can enter a series of commands, and if the responses are to your liking, bless them as a single operation with ⌥⇧B
@@ -410,6 +413,7 @@ Most operation shortcuts use ⌥ (Option) on Mac or Alt on Windows/Linux; a few 
 | ⌥K       | Toggle Lock                   |
 | ⌥D       | Delete                        |
 
+
 ## Beyond Player Commands
 
 The text that you enter as a command is not limited to player commands for your project.  Just as with the Dialog debugger, you can enter
@@ -499,6 +503,22 @@ This lets you quickly glance at the source without leaving the trace view.
 Nodes with children can be expanded or collapsed by clicking the arrow toggle.
 
 The _Expand All_ and _Collapse All_ buttons control the entire tree at once.
+
+## Keystroke Input
+
+Dialog games support single keystroke input; this is a rarity, but the Skein recognizes such inputs.
+
+When a single keystroke is expected, a different UI is presented for typing the single character; for
+non-visual characters (space, enter, and backspace), buttons are provided. This will occur when adding new commands,
+or editting existing commands.
+
+Keystroke input breaks the general flow of processing a line  of command input, parsing the command, and acting upon it; when the debugger
+is waiting for a single key of input, it isn't possible to send it the `@dynamic` command used
+for collecting dynamic state, or the `(trace on)` and `(trace off)` commands used to capture tracing information; you'll see that the Dynamic State and
+Trace toolbar icons are disabled for such knots.
+
+You'll also see, when displaying dynamic state changes, that knots that prompt for a single keystroke will not display
+dynamic state changes (again, those can't be collected); the changes for both the command knot and the keystroke knot (or knots) are collected after the (last) keystroke knot.
 
 ### Searching
 
@@ -611,6 +631,6 @@ The Skein has limitations, which are fundamentally based on
 the fact that it treats the interaction as a series of commands and responses; some of Dialog's capabilities are outside this simple model.
 
 * It can't help you with **status lines** as the debugger can't display those
-* It does not (yet!) handle [non-command input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
+* Only limited support for  [keystroke input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
 * It doesn't allow for hyperlinks
 * Neither `dgdebug` nor `dfrotz` honors colors specified in style classes
