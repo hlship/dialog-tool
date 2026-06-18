@@ -1,0 +1,4 @@
+{:name   "keyinput"
+ :sources
+ {:main    ["src"]
+  :library ["../../resources/template/stdlib.dg"]}}

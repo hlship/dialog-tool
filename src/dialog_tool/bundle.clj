@@ -19,8 +19,8 @@
 
 (defn- extract-text
   [process command]
-  (let [response (sk.process/send-command! process command)
-        lines (string/split-lines response)]
+  (let [{:keys [content]} (sk.process/send-command! process command)
+        lines (string/split-lines content)]
     (->> lines
          (drop 1)
          butlast
@@ -29,14 +29,14 @@
 (defn- extract-story-info
   [project]
   (let [process (sk.process/start-debug-process! (pf/root-dir project) 0)
-        _ (sk.process/read-response! process)
-        info (reduce (fn [m k]
-                       (assoc m k
-                              (extract-text process (str "(story " (name k) ")"))))
-                     nil
-                     [:title :author :ifid :noun :blurb])
-        response (sk.process/send-command! process "(story release $)")
-        [_ release] (re-find #"\(story release (\d+)\)" response)]
+        _       (sk.process/read-response! process)
+        info    (reduce (fn [m k]
+                          (assoc m k
+                                 (extract-text process (str "(story " (name k) ")"))))
+                        nil
+                        [:title :author :ifid :noun :blurb])
+        {:keys [content]} (sk.process/send-command! process "(story release $)")
+        [_ release] (re-find #"\(story release (\d+)\)" content)]
     (sk.process/kill! process)
     (assoc info :release release)))
 
@@ -44,7 +44,7 @@
   "Returns the text of the walkthrough, or nil."
   [project]
   (let [{:keys [walkthrough-skein]
-         :or {walkthrough-skein "default.skein"}} project]
+         :or   {walkthrough-skein "default.skein"}} project]
     (when (and walkthrough-skein
                (fs/exists? walkthrough-skein))
       (let [tree (try
@@ -63,30 +63,30 @@
   "Builds a single target, returning a map with :target, :path, :name, and :description."
   [project target]
   (let [path (build/build-project project {:target target})]
-    {:target target
-     :path path
-     :name (str (fs/file-name path))
+    {:target      target
+     :path        path
+     :name        (str (fs/file-name path))
      :description (str (name target)
                        " "
                        (-> path fs/size h/filesize))}))
 
 (defn bundle-project
   [project]
-  (let [project-name (:name project)
-        targets (:target project)
+  (let [project-name    (:name project)
+        targets         (:target project)
         ;; Build all unique targets needed: project targets + :aa for web player
-        all-targets (distinct (conj (vec targets) :aa))
-        built (mapv #(build-target project %) all-targets)
+        all-targets     (distinct (conj (vec targets) :aa))
+        built           (mapv #(build-target project %) all-targets)
         built-by-target (into {} (map (juxt :target identity)) built)
         ;; The :aa build is for the web player
-        aa-build (get built-by-target :aa)
+        aa-build        (get built-by-target :aa)
         ;; Story files are for download; include :aa only if explicitly in project targets
-        story-files (if (some #{:aa} targets)
-                      built
-                      (filterv #(not= :aa (:target %)) built))
-        story (extract-story-info project)
-        zip-file (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
-        bundle-out-dir (fs/path "." "out" "web")]
+        story-files     (if (some #{:aa} targets)
+                          built
+                          (filterv #(not= :aa (:target %)) built))
+        story           (extract-story-info project)
+        zip-file        (fs/path "." "out" (str project-name "-" (:release story) ".zip"))
+        bundle-out-dir  (fs/path "." "out" "web")]
 
     ;; DELETE output tree first (for aambundle)
 
@@ -121,7 +121,7 @@
     (perr [:cyan "  out/web/cover-small.jpg"])
     (p/shell (pf/command-path project "magick") "cover.png" "-resize" "120" "out/web/cover-small.jpg")
 
-    (let [walkthrough (extract-walkthrough project)
+    (let [walkthrough             (extract-walkthrough project)
           walkthrough-description (when walkthrough
                                     (let [path (fs/path bundle-out-dir "walkthrough.txt")]
                                       (t/copy-string walkthrough path)
@@ -129,8 +129,8 @@
                                       (str "text "
                                            (-> path fs/size h/filesize))))]
       (t/copy-rendered "bundle/index.html"
-                       {:story story
-                        :story-files story-files
+                       {:story                   story
+                        :story-files             story-files
                         :walkthrough-description walkthrough-description}
                        (fs/path bundle-out-dir "index.html")))
 

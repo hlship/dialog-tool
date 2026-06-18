@@ -1,8 +1,11 @@
 (ns demo
   "Used when manually testing the skein."
   (:require [dialog-tool.env :as env]
+            [dialog-tool.skein.file :as file]
+            [clojure.java.io :as io]
             [dialog-tool.skein.service :as service :refer [stop! *app]]
-            [dialog-tool.skein.session :as session]))
+            [dialog-tool.skein.session :as session])
+  (:import (clojure.lang LineNumberingPushbackReader)))
 
 (-> @*app :global :modal)
 
@@ -18,24 +21,37 @@
                           opts))))
 
 (comment
-  (-> @*app :global :session :tree :knots (get 1728874698428))
+  (-> @*app :global :session :tree :dynamic (update-vals :state))
   (-> @*app :tab keys)
   (-> @*app :global :modal)
   (-> @*app :global :shutdown-fn)
   (-> @*app :global :session :tree :active-knot-id)
-  (-> @*app :global :session session/selected-knots)
+  (-> @*app :global :session session/selected-knots)l
   (alter-var-root #'env/*debug* (constantly false))
   env/*debug*
 
+  (-> "test-fixtures/keyinput/default.skein"
+      io/reader
+      LineNumberingPushbackReader. 
+      file/read-tree
+      :knots
+      vals)
+  
   (swap! *app assoc-in [:global :modal] nil)
 
   (stop!)
 
   (start! "../sanddancer-dialog" nil)
+  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)
 
+  
+  (start! "test-fixtures/keyinput" nil)
+  (start! "test-fixtures/keyinput" "frotz.skein" {:engine :frotz})
+
+  
   (start! "../futurama" nil)
 
-  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)  
+  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)
 
   (start! "../failure" nil)
 
