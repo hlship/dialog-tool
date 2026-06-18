@@ -31,8 +31,8 @@
     (let [tree  (make-tree)
           tree' (-> tree
                     (tree/add-child 0 1 "look" (response "You see a room."))
-                    (tree/add-child 0 2 "i" {:response "I'm asking you for input"
-                                             :prompt   :keystroke}))]
+                    (tree/add-child 0 2 "i" {:content "I'm asking you for input"
+                                             :prompt  :keystroke}))]
       (is (match? {:knots    {0 {}
                               1 {:id        1
                                  :parent-id 0
@@ -144,7 +144,8 @@
                    (tree/add-child 0 1 "look" (response "Room."))
                    (tree/bless-response 1)
                    (tree/update-response 1 (response "Different room.")))]
-      (is (match? {:knots             {1 (response "Room.")}
+      (is (match? {:knots             {1 {:response  "Room."
+                                          :unblessed "Different room."}}
                    :status            {0 :new
                                        1 :error}
                    :descendant-status {0 :error}}

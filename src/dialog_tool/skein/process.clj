@@ -28,10 +28,10 @@
         line-input      (str "\n" line-input-char " " line-input-suffix)
         keystroke-input (str keystroke-input-char " ")]
     (fn [sb]
-      #_ (when false
-        (println "Input:")
-        (run! prn (-> sb str string/split-lines))
-        (println "---------------------------"))
+      #_(when false
+          (println "Input:")
+          (run! prn (-> sb str string/split-lines))
+          (println "---------------------------"))
       (let [response          (str sb)
             input-prompt?     (string/ends-with? response line-input)
             keystroke-prompt? (and (not input-prompt?)
@@ -75,7 +75,7 @@
                                    ;; keystroke prompt: dgdebug outputs a newline and ") " on its own line.
                                    ;; dfrotz outputs ") " as a prefix to the last line (which is not blank).
                                    (mapv #(subs % 2))
-                                   (drop-while #(= % "")) 
+                                   (drop-while #(= % ""))
                                    ;; Remove the prompt (if not a keystroke prompt) from this response; we hack it
                                    ;; as a prefix of the next response.
                                    (remove-tail "")
@@ -89,9 +89,9 @@
                                                     #"^\u001b\[0m" "")]
         ;; We need each response to end with a newline even when it's a keypress prompt that doesn't
         ;; inclde one (this is needed for consistency writing to and reading from a skein file).
-        {:response (cond-> response'
-                     (not (string/ends-with? response' "/n")) (str "\n"))
-         :prompt   (if keystroke-prompt? :keystroke :line)}))))
+        {:content (cond-> response'
+                    (not (string/ends-with? response' "/n")) (str "\n"))
+         :prompt  (if keystroke-prompt? :keystroke :line)}))))
 
 (def ^:private buffer-size 100000)
 

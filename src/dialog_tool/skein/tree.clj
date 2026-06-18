@@ -133,12 +133,12 @@
 
 (defn add-child
   "Adds a child knot.  The response is initially unblessed, and the knot's status is :new."
-  [tree parent-id new-id command {:keys [prompt response]}]
+  [tree parent-id new-id command {:keys [prompt content]}]
   (let [knot {:id        new-id
               :parent-id parent-id
               :command   command
               :prompt    prompt
-              :unblessed response}]
+              :unblessed content}]
     (-> tree
         (assoc-in [:knots new-id] knot)
         (assoc-in [:status new-id] :new)
@@ -262,10 +262,10 @@
 
 (defn- store-response
   [knot new-response]
-  (let [{:keys [prompt response]} new-response
-        knot' (if (= (:response knot) response)
+  (let [{:keys [prompt content]} new-response
+        knot' (if (= (:response knot) content)
                 (dissoc knot :unblessed)
-                (assoc knot :unblessed response))]
+                (assoc knot :unblessed content))]
     (assoc knot' :prompt prompt)))
 
 (defn update-response
@@ -275,7 +275,7 @@
   
   new-response is a map
   
-  * :response - text of response (including the prompt and player's command) 
+  * :content - text of response (including the prompt and player's command) 
   * :prompt - :line or :keystroke
   
   The prompt affects how the next command after this knot is processed (normally,

@@ -8,5 +8,5 @@
 
 
 (defn response [text]
-  {:response text
-   :prompt   :line})
+  {:content text
+   :prompt  :line})

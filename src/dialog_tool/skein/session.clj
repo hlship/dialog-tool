@@ -51,10 +51,10 @@
 (defn- capture-dynamic
   [session]
   (let [{:keys [process-knot-id debug-enabled? process]} session
-        {:keys [response]} (when debug-enabled?
+        {:keys [content]} (when debug-enabled?
                              (sk.process/send-command! process "@dynamic"))]
     (cond-> session
-      response (update :tree tree/update-dynamic process-knot-id response))))
+      content (update :tree tree/update-dynamic process-knot-id content))))
 
 (def ^:private command->key
   {"enter"     "\n"
@@ -110,7 +110,7 @@
       (let [initial-response (sk.process/read-response! process')
             session'         (assoc session :process process')]
         (if-not (sk.process/alive? process')
-          (assoc session' :error (:response initial-response))
+          (assoc session' :error (:content initial-response))
           (-> session'
               (assoc :process-knot-id 0)
               (dissoc :error)
@@ -433,13 +433,13 @@
       (let [process   (:process session')
             ;; Enable tracing, execute command, disable tracing
             _         (sk.process/send-command! process "(trace on)")
-            {trace-response :response} (sk.process/send-command! process command)
+            {trace-content :content} (sk.process/send-command! process command)
             _         (sk.process/send-command! process "(trace off)")
             ;; Update process position and capture dynamic state
             session'' (-> session'
                           (assoc :process-knot-id knot-id)
                           capture-dynamic)]
-        [trace-response session'']))))
+        [trace-content session'']))))
 
 (defn trace-startup!
   "Traces game startup by restarting the process with the --trace flag.

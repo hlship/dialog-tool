@@ -26,7 +26,7 @@
   (-> @*app :global :modal)
   (-> @*app :global :shutdown-fn)
   (-> @*app :global :session :tree :active-knot-id)
-  (-> @*app :global :session session/selected-knots)
+  (-> @*app :global :session session/selected-knots)l
   (alter-var-root #'env/*debug* (constantly false))
   env/*debug*
 

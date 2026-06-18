@@ -19,8 +19,8 @@
 
 (defn- extract-text
   [process command]
-  (let [{:keys [response]} (sk.process/send-command! process command)
-        lines (string/split-lines response)]
+  (let [{:keys [content]} (sk.process/send-command! process command)
+        lines (string/split-lines content)]
     (->> lines
          (drop 1)
          butlast
@@ -35,8 +35,8 @@
                                  (extract-text process (str "(story " (name k) ")"))))
                         nil
                         [:title :author :ifid :noun :blurb])
-        {:keys [response]} (sk.process/send-command! process "(story release $)")
-        [_ release] (re-find #"\(story release (\d+)\)" response)]
+        {:keys [content]} (sk.process/send-command! process "(story release $)")
+        [_ release] (re-find #"\(story release (\d+)\)" content)]
     (sk.process/kill! process)
     (assoc info :release release)))
 
