@@ -634,3 +634,4 @@ the fact that it treats the interaction as a series of commands and responses; s
 * Only limited support for  [keystroke input](https://dialog-if.github.io/manual/dialog/1a01/lang/io.html#input)
 * It doesn't allow for hyperlinks
 * Neither `dgdebug` nor `dfrotz` honors colors specified in style classes
+* `dfrotz 2.55` [echos the previous line when responding to a keystroke input](https://gitlab.com/DavidGriffith/frotz/-/work_items/309) before producing the response to the keystroke

@@ -3,7 +3,7 @@
 (name *) Endless Featureless Space
 (look *)
     You are in an endless, featureless space, receding off to the distance in every
-    direction. The only break from this is a small circular table in front of you.
+    direction. The only break from the monotony is a small circular table in front of you.
 
 #player
 (current player *)

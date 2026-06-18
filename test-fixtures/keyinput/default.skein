@@ -3,14 +3,13 @@ seed: 57435
 id: 0
 label: START
 --------------------------------------------------------------------------------
-
-[0m[1mThe Featureless Space
+[1mThe Featureless Space
 [0mAn interactive fiction by The Intrepid Author.
 Release 0. Serial number DEBUG.
-Dialog Interactive Debugger (dgdebug) version 1c/01. Library version 1.2.2. Debugging extension 1.2.2-dev.
+Dialog Interactive Debugger (dgdebug) version 1c/02. Library version 1.2.2. Debugging extension 1.2.2-dev.
 
 [0m[1mEndless Featureless Space[0m
-You are in an endless, featureless space, receding off to the distance in every direction. The only break from this is a small circular table in front of you.
+You are in an endless, featureless space, receding off to the distance in every direction. The only break from the monotony is a small circular table in front of you.
 
 --------------------------------------------------------------------------------
 id: 1781460447846

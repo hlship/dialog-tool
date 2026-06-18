@@ -42,9 +42,13 @@
   (stop!)
 
   (start! "../sanddancer-dialog" nil)
+  (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)
+
   
   (start! "test-fixtures/keyinput" nil)
+  (start! "test-fixtures/keyinput" "frotz.skein" {:engine :frotz})
 
+  
   (start! "../futurama" nil)
 
   (start! "../sanddancer-dialog" (str "/tmp/" (random-uuid) ".skein") nil)
