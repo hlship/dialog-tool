@@ -16,7 +16,7 @@ including what individual source files to use, and then provides commands to:
 - package your project for release
 
 > [!WARNING]
-> `dgt` can be sensitive to the exact version of Dialog you have installed; this release is based on Dialog `1c/01`. 
+> `dgt` can be sensitive to the exact version of Dialog you have installed; this release is based on Dialog `1c/02`. 
 > If you have a different version of Dialog installed, you may encounter problems.
 
 ## Installing
