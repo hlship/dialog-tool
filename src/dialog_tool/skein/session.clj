@@ -52,7 +52,7 @@
   [session]
   (let [{:keys [process-knot-id debug-enabled? process]} session
         {:keys [content]} (when debug-enabled?
-                             (sk.process/send-command! process "@dynamic"))]
+                            (sk.process/send-command! process "@dynamic"))]
     (cond-> session
       content (update :tree tree/update-dynamic process-knot-id content))))
 
@@ -71,7 +71,7 @@
           active-prompt (-> tree
                             (tree/get-knot process-knot-id)
                             :prompt)
-          keystroke?     (= active-prompt :keystroke)
+          keystroke?    (= active-prompt :keystroke)
           child-knot-id (tree/find-child-id tree process-knot-id command)
           command'      (if-not keystroke?
                           command
@@ -125,9 +125,9 @@
 
 (defn- run-commands!
   [session commands]
-  (loop [session  (do-restart! session)
-         commands (seq commands)]
-    (reduce run-command! (do-restart! session) commands)))
+  (let [session' (do-restart! session)
+        commands (seq commands)]
+    (reduce run-command! (do-restart! session') commands)))
 
 (defn do-replay-to!
   "Replays to a knot without capturing undo. Used internally by replay-to!"
@@ -162,7 +162,7 @@
                         ;; differs from the blessed :response.  We want the actual new
                         ;; response, so prefer :unblessed, falling back to :response.
                         [id [{:response (or unblessed response)
-                              :prompt prompt}
+                              :prompt   prompt}
                              prompt
                              (get-in worker' [:tree :dynamic id :response])]])))
                (into {})))))))
@@ -208,7 +208,7 @@
         replayed-session (if (= process-knot-id parent-knot-id)
                            session
                            (do-replay-to! session parent-knot-id))
-        final-session    (run-command! replayed-session command )]
+        final-session    (run-command! replayed-session command)]
     ;; Make the newly added/updated child knot the active (highlighted) knot
     (set-active-knot-id final-session (:process-knot-id final-session))))
 

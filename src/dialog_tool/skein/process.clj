@@ -36,7 +36,7 @@
             input-prompt?     (string/ends-with? response line-input)
             keystroke-prompt? (and (not input-prompt?)
                                    ;; This is overkill for dgdebug (which outputs a newline before its
-                                   ;; keystroke input prompt) but necessaryf or dfrotz.
+                                   ;; keystroke input prompt) but necessary for dfrotz.
                                    (-> response
                                        string/split-lines
                                        last

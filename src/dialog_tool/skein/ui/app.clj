@@ -503,7 +503,7 @@
   [_req]
   (let [*session (session-cursor)
         session  @*session
-        {:keys [tree debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
+        {:keys [debug-enabled? show-dynamic? fixed-width? closing? replay-on-launch? loading?]} session]
     ;; This is done early to avoid a possible (?) race condition when the SSE stream
     ;; is initialized.
     (when replay-on-launch?
