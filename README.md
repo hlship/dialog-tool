@@ -158,21 +158,21 @@ are included.
 * :debug - used by the commands `skein test`, `debug`, `skein run`, etc.
 * :library - additional libraries, including the Dialog standard library
 
+In addition to specifying directories, a source may be a single file, which is simply added to the list of source files.
+If you are coming to `dgt` from a different approach, it may be easier to just list all the files, in order,
+in your `dialog.edn`, but if you are starting from scratch, the directory-based approach is easier.
+
 > [!WARNING]
-> The order in which files in a source directory are loaded is unspecified. If it ever makes a difference,
+> The order in which files in any _single_ source directory are loaded is unspecified. If it ever makes a difference,
 > don't rely on ordering; split files across directories and use the load order of directories, which is
 > under your control, or list the individual files in the directory in the appropriate order.
 
 Generally, source code that is specific to your project goes in :main; reusable code goes in :library and :debug; 
-this may include code obtained from others, including the standard library.
+this may include code obtained from others, including the standard library.  Unit tests go in the :test category.
 
 It is a common practice to modify libraries as necessary, even the standard library!  Another
 good practice is to try and split out reusable code (code that could reasonably be used in an entirely different
 project) under :library (and :debug).
-
-In addition to specifying directories, a source may be a single file, which is simply added to the list of source files.
-If you are coming to `dgt` from a different approach, it may be easier to just list all the files, in order,
-in your `dialog.edn`, but if you are starting from scratch, the directory-based approach is easier.
 
 ### Target
 
