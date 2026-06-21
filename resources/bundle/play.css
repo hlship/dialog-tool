@@ -1,18 +1,94 @@
-/* This is the style used when playing the project online.
-   This file is copied to out/web/resources/style.css */
+/* If using Google web fonts, import them here, before anything else */
+
 html {
+	/* These seven basic colors are used for most of the interface */
+	/* See below for how they're applied */
+	--theme-darkest: #000000;
+	--theme-dark: #222222;
+	--theme-medium: #888888;
+	--theme-light: #cccccc;
+	--theme-lightest: #eeeeee;
+	--accent-dark: #c95c03; /* An orange color chosen by forum poll */
+	--accent-light: #fc8f36; /* Will it work? Only real-world testing can say! */
 }
 
-body {
-	background-color: #eeeeee;
-	color: #000000;
+#aadefaults {
+	--night-page: var(--theme-darkest); /* Night mode outside gameport */
+	--night-bg: inherit; /* Night mode background */
+	--night-fg: var(--theme-light); /* Night mode text */
+	--day-page: var(--theme-lightest); /* Day mode outside gameport */
+	--day-bg: inherit; /* Day mode background */
+	--day-fg: var(--theme-darkest); /* Day mode text */
+	--ui: var(--theme-medium); /* UI elements like menu lines and buttons */
+	--ui-hover: var(--theme-light); /* UI elements when hovered */
+	--menu-bg: var(--theme-light); /* Menu backgrounds */
+	--menu-fg: var(--theme-darkest); /* Menu text */
+	--menu-hover: var(--theme-lightest); /* Menu text when hovered (for options) */
+	--panel-dark: var(--theme-dark); /* Transcript panel bg/fg depending on mode */
+	--panel-light: var(--theme-light); /* Transcript panel fg/bg depending on mode */
+
+	--progress-bg: var(--theme-light); /* Background of progress bar */
+	--progress-top: var(--accent-light); /* Top half of progress bar */
+	--progress-bottom: var(--accent-dark); /* Bottom half of progress bar */
+
+	--night-link: var(--accent-dark); /* Night mode link */
+	--night-link-hover: var(--accent-light); /* Night mode link, hovered */
+	--day-link: var(--accent-dark); /* Day mode link */
+	--day-link-hover: var(--accent-light); /* Day mode link, hovered */
+
+	--font-status: Geneva, sans-serif; /* Status bar and menus */
+	--font-body: Georgia, serif; /* Main body text */
+
+	--night-scroll-fg: var(--theme-medium);
+	--night-scroll-bg: var(--theme-dark);
+	--day-scroll-fg: var(--theme-medium);
+	--day-scroll-bg: var(--theme-light);
+}
+
+#aadefaults2 {
+	--bg: var(--day-bg);
+	--text: var(--day-fg);
+	--link: var(--day-link);
+	--link-hover: var(--day-link-hover);
+	background-color: var(--day-page);
+	color: var(--text);
+	scrollbar-color: var(--day-scroll-fg) var(--day-scroll-bg);
+}
+
+.night #aadefaults2 {
+	--bg: var(--night-bg);
+	--text: var(--night-fg);
+	--link: var(--night-link);
+	--link-hover: var(--night-link-hover);
+	background-color: var(--night-page);
+	scrollbar-color: var(--night-scroll-fg) var(--night-scroll-bg);
+}
+
+html, body, #aabody1, #aabody2, #aabody3, #aadefaults, #aadefaults2 {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+}
+
+body.enlarge {
+	font-size: 2em;
+}
+
+/* This undoes the normal h2 styling from https://searchfox.org/mozilla-central/source/layout/style/res/html.css */
+/* We're using h2 elements for each past player input, so that screen readers can easily jump to them */
+/* But that means we don't want them to be styled like h2s, we want them to be styled like normal text */
+h2 {
+	display: inline;
+	font-size: 1em;
+	font-weight: normal;
 }
 
 #aacontainer {
-	max-width: 180ch;
+	max-width: 200ch;
 	margin: auto;
 	position: relative;
 	line-height: 1.35em;
+	background-color: var(--bg);
 }
 
 #aaouterstatus {
@@ -23,15 +99,15 @@ body {
 
 #aastatusborder {
 	height: .1em;
-	background-color: #000;
-	opacity: 0;
+	background-color: var(--text);
+	opacity: 0; /* Fades in over one second when a status bar is created */
 	animation-fill-mode: both;
 }
 
 #aastatus {
 	padding-left: .3em;
 	padding-right: .3em;
-	font-family: Geneva, sans-serif;
+	font-family: var(--font-status);
 	min-height: 1.2em;
 	overflow: hidden;
 	display: none;
@@ -41,15 +117,19 @@ body {
 	animation-fill-mode: both;
 }
 
+.nofont #aastatus {
+	font-family: sans-serif;
+}
+
 .aaprogress {
-	background-color: #c4c4c4;
+	background-color: var(--progress-bottom);
 	height: .31em;
-	border-top: .19em solid #d3d3d3;
+	border-top: .19em solid var(--progress-top);
 }
 
 .aaouterprogress {
 	border-radius: .3em;
-	border: .1em solid #ccc;
+	border: .1em solid var(--progress-bg);
 	margin-top: .2em;
 	text-align: left;
 	overflow: hidden;
@@ -68,14 +148,14 @@ body {
 	margin-top: .3em;
 	width: 1.0em;
 	height: .125em;
-	border-top: .375em double #888;
-	border-bottom: .125em solid #888;
+	border-top: .375em double var(--ui);
+	border-bottom: .125em solid var(--ui);
 	cursor: pointer;
 	float: right;
 }
 
 #aamenulines:hover {
-	border-color: #ddd;
+	border-color: var(--ui-hover);
 }
 
 .aacb {
@@ -89,27 +169,34 @@ body {
 	display: none;
 	position: relative;
 	top: .5em;
-	left: -18.6ch;
-	width: 19.7ch;
+	left: -18.6ch; /* I don't love these two being hardcoded */
+	width: 19.7ch; /* Maybe there's a better way to compute them */
 	overflow: hidden;
 	font-size: .8em;
 }
 
 #aamenulist {
-	background-color: #cccccc;
-	border: 2px solid #eee;
+	background-color: var(--menu-bg);
+	color: var(--menu-fg);
+	border: 2px solid var(--menu-hover);
 	border-radius: .3em;
 	padding: .2em;
 	z-index: 1;
 }
 
-#aamenulist div {
+.aamenuoption {
 	margin: 1px;
 	overflow: hidden;
+	cursor: pointer;
 }
 
-#aamenulist div:hover {
-	color: #eee;
+.aamenuoption:hover {
+	color: var(--menu-hover);
+}
+
+.aahastooltip {
+	text-decoration: underline;
+	text-decoration-style: dotted;
 }
 
 #aaform {
@@ -118,11 +205,15 @@ body {
 
 #aamain {
 	overflow-y: auto;
-	font-family: Georgia, serif;
+	font-family: var(--font-body);
 	height: 80%;
 	margin: .3em;
 	padding-right: 1.3em;
 	clear: right;
+}
+
+.nofont #aamain {
+	font-family: serif;
 }
 
 #aascriptouter {
@@ -137,33 +228,46 @@ body {
 	width: 100%;
 	border: 0px;
 	padding: .2em;
+	background-color: var(--panel-light);
+	color: var(--panel-dark);
+}
+
+.night #aascriptinner { /* Invert dark and light at night */
+	background-color: var(--panel-dark);
+	color: var(--panel-light);
 }
 
 #aascriptclose {
-	border: .1em solid black;
+	border: .1em solid var(--menu-fg);
 	border-radius: .3em;
 	width: 20ch;
 	text-align: center;
 	margin: auto;
 	padding: .1em;
-	background-color: #bbb;
+	background-color: var(--ui);
+	color: var(--menu-fg);
 }
 
 #aascriptclose:hover {
-	background-color: #ddd;
+	background-color: var(--ui-hover);
 }
 
 #aainput {
 	width: 100%;
 	border: none;
 	outline: none;
-	font-family: Georgia, serif;
+	font-family: var(--font-body);
 	font-size: 1em;
 	display: none;
 	background-color: transparent;
-	color: #000;
+	color: inherit; /* Necessary because some browsers have built-in CSS rules that apply to `form input`, and we want it to inherit from `body` */
 	padding: 0;
+	padding-bottom: 0.1em; /* Compensate for the height to ensure the bottom isn't cut off */
 	height: 1.1em;
+}
+
+.nofont #aainput {
+	font-family: serif;
 }
 
 @keyframes fadein {
@@ -181,7 +285,6 @@ p {
 	animation-duration: .9s;
 	animation-delay: .1s;
 	animation-fill-mode: both;
-	color: #000;
 	width: 100%;
 }
 
@@ -196,24 +299,27 @@ a {
 }
 
 .aalink {
-	color: #875;
+	color: var(--link);
+	cursor: pointer;
 }
 
 .aalink:hover {
-	color: #aa8;
+	color: var(--link-hover);
+	text-decoration: underline;
 }
 
 .aailink {
-	color: #875;
+	color: var(--link);
 }
 
 .aailink:hover {
-	color: #aa8;
+	color: var(--link-hover);
+	text-decoration: underline;
 }
 
 @keyframes fadelink {
 	0% {
-		color: #875;
+		color: var(--link);
 	}
 	to {
 		color: inherit;
@@ -225,16 +331,18 @@ a {
 	animation-duration: .9s;
 	animation-delay: .1s;
 	animation-fill-mode: both;
+	cursor: text;
 }
 
 .aahidelink {
 	color: inherit;
+	cursor: text; /* Since now they're <a>s, they default to a pointer */
 }
 
 .aareveal {
 	margin-top: .8em;
 	margin-bottom: .8em;
-	color: #875;
+	color: var(--link);
 	animation-name: fadein;
 	animation-duration: .9s;
 	animation-delay: .1s;
@@ -244,7 +352,8 @@ a {
 }
 
 .aareveal:hover {
-	color: #aa8;
+	color: var(--link-hover);
+	text-decoration: underline;
 }
 
 #aaaboutouter {
@@ -263,9 +372,9 @@ a {
 	display: none;
 }
 
-#aaaboutinner {
-	background-color: #bbb;
-	border: .1em solid black;
+#aaaboutinner, #aaerrorinner {
+	background-color: var(--ui);
+	border: .1em solid var(--menu-fg);
 	border-radius: .3em;
 	width: 20em;
 	margin: auto;
@@ -302,7 +411,7 @@ img {
 }
 
 .aaspanf {
-	font-family: webkit-workaround, monospace;
+	font-family: monospace, monospace;
 	font-size: 1em;
 }
 
@@ -315,5 +424,9 @@ img {
 }
 
 .aaspanunf {
-	font-family: Georgia, serif;
+	font-family: var(--font-body);
+}
+
+.nofont .aaspanunf {
+	font-family: serif;
 }
