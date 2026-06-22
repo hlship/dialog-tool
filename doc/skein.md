@@ -86,6 +86,9 @@ From top to bottom / left to right:
 
 The two panels are separated by a drag handle; pull it left or right to resize.
 
+Since this is the start of a new skein, the nav graph is just the initial start node of the skein.
+Likewise, we'll discuss shortly why the text is colored and formatted the way it is.
+
 You can mouse over the toolbar buttons for a reminder of what they do and what accelerator keys can be used instead.
 
 The Skein is designed to work very efficiently with just keyboard, no mouse.
@@ -95,10 +98,43 @@ The Skein is designed to work very efficiently with just keyboard, no mouse.
 The Transcript is broken into knots - each showing a player command and the project's response - forming a series 
 of interactions from the START knot to the end.
 
-![](skein-knot.png)
 
 One knot is the _active_ knot; it gets a blue left border (instead of grey, yellow, or red) and an arrow.
 The other colors indicate that the knot's response is new (yellow), or doesn't match the recorded response (red).
+
+When you enter a command at the prompt, that forms a new knot, which becomes active.
+
+![](skein-knot.png)
+
+Here we've entered a two commands after the start of the game.
+
+The knot with the arrow and the blue left margin is the actiev knot.  The warning icons indicate that these
+knots are _unblessed_: they are new content (because the entire skein is new).  The nav graph shows
+the three knots.
+
+Also notice the three numbers at the top that form the knot summary:
+
+![](skein-knot-summary.png)
+
+This indicates that none of the knots are in a correct state; three are new and unblessed, and zero
+are in error.  In error means that the previously recorded text of the knot doesn't match the most recent
+execution.
+
+When a knot is displayed in error, or as new, it is formatted in fixed width, white space is made visible,
+and certain formatting of the text (such as bold) is represented in bracket, such as `[B]Middle of Nowhere[/B]`.
+
+
+Since this is a fine start to our skein, we'll bless the knots.  You can bless just the active knot,
+but we'll instead bless all the knots in the transcript.
+
+![](skein-bless-changes-button.png)
+
+Clicking the button (or using the accelerator) will convert all those knots from new to blessed.
+
+![](skein-blessed.png)
+
+Now the knots are formatted naturally, the margins are grey in the transcript, and the colors in the nav graph are blue.
+
 
 In the overview image, the knot is a _new_ knot, because it is a fresh skein.  The text is output in a fixed width
 font, with visible whitespace. The right border is in yellow, to mark it as new.  Later we'll see what a knot looks
@@ -111,24 +147,20 @@ Most of the time, each knot has just one child knot; in some cases, a knot may b
 children. The child navigation button identifies the number of children.  Clicking on the button raises a popup
 to select between those children:
 
-![](skein-knot-nav.png)
-
-Later we'll see how to give knots labels, and lock them against accidental deletion; this appears next to the
-navigation button:
-
-![](skein-knot-label.png)
-
 ## Nav Graph
 
 The nav graph on the left shows the full tree of all knots, arranged as a top-down tree with arrows connecting each knot to its children.
 
-> **Screenshot needed:** skein-nav-graph.png — the nav graph pane showing a tree with several branches, the active spine highlighted, and some error/new tinting on ancestors.
+The _spine_ is the set of nodes in the nav graph that correspond to what is currently shown in the transcript — the path from root down to the active knot, and beyond.  The spine is one possible path through the story; each knot
+may have any number of unique children, each representing one particular choice made.
 
-The _spine_ is the set of nodes in the nav graph that correspond to what is currently shown in the transcript — the path from root down to the active knot.
+One you've worked on your project a while, you'll see the nav graph fill up:
 
-### Node colours
+![](skein-nav-graph.png)
 
-Each node pill is colour-coded to communicate status at a glance:
+### Knot colors
+
+Each node pill is color-coded to communicate status at a glance:
 
 | Colour | Meaning |
 |--------|---------|
@@ -147,6 +179,10 @@ The faded ancestor tinting makes it easy to spot, at a glance, which branches co
 Clicking a node in the nav graph makes it the active knot and updates the transcript to show the path through that node.  When navigating to a node with a single chain of descendants, the Skein automatically selects down through the chain until it reaches a leaf or a branching point.
 
 Siblings are displayed in alphabetical order by command.
+
+You can also click in the background a drag to scroll the nav graph.
+
+The nav graph and the transcript are always synchronized; if you click on a knot's text in the transcript, that will select the knot as active, and the nav graph will scroll to the knot and update its decorations.
 
 ### Expand and collapse
 
@@ -252,28 +288,6 @@ when there is no blessed response yet, the knot is new.
 Unblessed text is always shown in a fixed width font; certain styling (such as color and font weight) is identified with bracket delimiters (the `[CYAN]` and `[B]` markers). Further, in changed text,
 whitespace is made visible.
 
-If we click the _Bless_ action the Skein will update:
-
-![](skein-root-blessed.png)
-
-Now the special markers for fonts are gone.
-
-Notice that the knot counts in the toolbar have changed to 1/0/0 ... one single knot whose response matches the expected response, no new knots, no knots in error.  The knot's text is now  in a plain font, not bold blue, and the knot's right border is gray.
-
-The font, by default, reverts to proportional, which is appropriate for most projects.
-
-## Entering New Commands
-
-You can enter a command, such as `x lizard` in the text field at the bottom to add a new child knot.
-
-In some cases, a game may prompt for single character input, in which case you get a slightly different
-input, with just room for a single character, and extra buttons for easy entry of supported non-visible characters.
-
-![](skein-new-command.png)
-
-You can enter a series of commands, and if the responses are to your liking, bless them as a single operation with ⌥⇧B
-(or by clicking the Bless Changes icon), or bless just the active knot with ⌥B.
-
 ## Searching
 
 Use ⌘F to enter the search field; this is a fast search of all the content in the skein.
@@ -310,9 +324,6 @@ the changed text:  red text for deleted,
 blue text for added, and white space in changed
 sections is made visible.
 
-Further, all the navigation buttons of prior knots leading up to this knot have changed color to indicate the path from
-the START knot to the error.
-
 Remember that you can also click the error count in the knot status at the top of the page to cycle through knots that are
 in error.
 
@@ -324,7 +335,7 @@ Now that you can identify the changes, you can decide whether to bless them, or 
 Another option is the _Replay All_ command in the top navigation bar.
 _Replay All_ will find every leaf knot in the Skein and replay it.
 
-This is perhaps the Skein's greatest feature because it doesn't test just one path through the project, it tests _all_ paths. This is how you _really_ know that a change to your project's logic works, and hasn't had any unforseen consequences.
+This is perhaps the Skein's greatest feature because it doesn't test just one path through the project, it tests _all_ paths. This is how you _really_ know that a change to your project's logic works, and hasn't had any unforeseen consequences.
 
 For large skeins, this replay process can take a few seconds, so there's a progress dialog:
 
@@ -332,7 +343,8 @@ For large skeins, this replay process can take a few seconds, so there's a progr
 
 The above is from the Skein for Sand-dancer.
 
-Don't worry, with modern hardware, even replays of large projects are ludicrously fast. Replay All runs all leaf knots in parallel, so wall-clock time is limited by the longest single path rather than the total number of knots.  On a laptop, replaying all 50 leaf knots in the Sand-dancer Skein takes well under six seconds, and many of those knots are dozens of player commands deep in the tree.
+Don't worry, with modern hardware, even replays of large projects are ludicrously fast; all 50 paths through
+Sand-dancer, hundreds of commands, executes on a reasonable laptop in a second or two.
 
 ## Understanding Randomness
 
@@ -356,7 +368,7 @@ Likewise, there are Skein actions that move or delete knots in the Skein; those 
 
 ## Undo/Redo
 
-Be fearless.  The Skein supports unlimited _Undo_ and _Redo_ (in the top navigation bar).  These commands only juggle things in memory, _Undo_ and _Redo_ don't run commands or affect files.  You can undo even after saving to a file or reloading from a file.
+Be fearless.  The Skein supports unlimited _Undo_ and _Redo_ (in the top navigation bar).  These commands only juggle things in memory, _Undo_ and _Redo_ don't run commands or affect files.  You can undo even after saving to a fil  e or reloading from a file.
 
 For example, sometimes its easier to verify textual changes by using undo (to see how it used to look) then redo (to see how it now looks) before blessing the changes; this
 is particularly useful when there's some subtle whitespace changes in the output.
@@ -539,7 +551,7 @@ understand the player's command before an action is identified.
 
 To time-travel, click a knot to make it the active knot, then click the _New Child_ button (⌥A) in the operations toolbar.  This will deselect any children of the knot and move focus to the player command text field at the bottom.
 
-For example, in the below screenshot, the player opened the wallet and was hinted by the project to brood about their job.  Clicking on the "open wallet" knot and then _New Child_ is how we time travel:
+For example, in the below screenshot, the player opened the wallet and was hinted by the project to brood about their job.  Clicking on the "open wallet" knot and then _New Child_ is how we time travel.
 
 ![](skein-before-time-travel.png)
 
@@ -547,29 +559,7 @@ This will clear out the "brood job" command (it's still tracked by the Skein, ju
 
 ![](skein-new-child.png)
 
-The new knot is marked as new (in yellow).  You will notice 
-that the navigation menu button of
-its parent knot ("open wallet") is now colored yellow, because
-there is a new knot somewhere below it.  It also gets an indicator 
-of the count of immediate
-children of the parent; this indicator is only
-displayed when there are two or more children.
 
-Those yellow navigation buttons will extend all the way up to the root knot.
-
-This background color choice might be trumped by an invalid knot, resulting in navigation buttons being marked with a red background.
-
-When the navigation button is clicked, the menu items
-identify the state of the sub-tree as well:
-
-![](skein-child-nav-menu.png)
-
-The menu item for the new knot is in yellow, because the indicated knot is new.  If you check out other navigation menus higher
-in the Skein tree, you'll see that children are highlighted
-if they are new (or in error) _or_ if some child or descendent
-of the knot is new (or in error).
-
-This menu item coloration is to assist you in navigating from the root down to the knot, or knots, that are new or in error.
 
 ## Reloading
 
@@ -615,9 +605,7 @@ players do.  Remember that the `dgt skein test`  command will run _all_ the
 
 The Skein automatically follows your operating system's light/dark mode preference.  All UI elements — knot backgrounds, toolbars, modals, tooltips, and status badges — adapt to the active theme.
 
-![](skein-dark-mode.png)
-
-> **Screenshot needed:** skein-dark-mode.png — the Skein in dark mode, showing the toolbar, a mix of knot statuses, and the active knot highlighted.
+![](skein-dark.png)
 
 A few elements are intentionally kept light regardless of theme for legibility:
 
