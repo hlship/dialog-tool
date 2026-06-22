@@ -344,7 +344,7 @@ For large skeins, this replay process can take a few seconds, so there's a progr
 The above is from the Skein for Sand-dancer.
 
 Don't worry, with modern hardware, even replays of large projects are ludicrously fast; all 50 paths through
-Sand-dancer, hundreds of commands, executes on a reasonable laptop in a second or two.
+Sand-dancer, totalling hundreds of individual commands, executes on a reasonable laptop in a second or two.
 
 ## Understanding Randomness
 
@@ -368,7 +368,7 @@ Likewise, there are Skein actions that move or delete knots in the Skein; those 
 
 ## Undo/Redo
 
-Be fearless.  The Skein supports unlimited _Undo_ and _Redo_ (in the top navigation bar).  These commands only juggle things in memory, _Undo_ and _Redo_ don't run commands or affect files.  You can undo even after saving to a fil  e or reloading from a file.
+Be fearless.  The Skein supports unlimited _Undo_ and _Redo_ (in the top navigation bar).  These commands only juggle things in memory, _Undo_ and _Redo_ don't run commands or affect files.  You can undo even after saving to a file or reloading from a file.
 
 For example, sometimes its easier to verify textual changes by using undo (to see how it used to look) then redo (to see how it now looks) before blessing the changes; this
 is particularly useful when there's some subtle whitespace changes in the output.
@@ -574,7 +574,7 @@ directories and the Skein will just keep up.  But don't forget to `Replay All` a
 
 ## Source Errors
 
-You may occasionally enter a source error while you are in your code/test/replay loop.
+You may occasionally encounter a source error while you are in your code/test/replay loop.
 
 This will be noticed by the Skein:
 
