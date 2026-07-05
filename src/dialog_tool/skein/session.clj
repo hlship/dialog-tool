@@ -140,9 +140,13 @@
 
 (defn collect-replay-to
   "Replays to knot-id using a freshly spawned process, without touching the
-  session's own process. Returns a map of knot-id -> [response prompt dynamic] for every
+  session's own process. Returns a map of knot-id -> response map for every
   knot along the path from root to knot-id. dynamic is the raw @dynamic string,
   or nil if debug-enabled? is false.
+
+  Each response map has keys :prompt (:line or :keypress), :content
+  (the actual response content), and :dynamic (the raw @dynamic output).
+
   On process startup failure, returns {:error <message>}."
   [session knot-id]
   (let [knots  (tree/knots-from-root (:tree session) knot-id)
@@ -155,26 +159,26 @@
         (sk.process/kill! (:process worker'))
         (if (:error worker')
           {:error (:error worker')}
-          (->> knots
-               (map (fn [{:keys [id]}]
-                      (let [{:keys [prompt unblessed response]} (get-in worker' [:tree :knots id])]
-                        ;; run-command! stores the fresh response in :unblessed when it
-                        ;; differs from the blessed :response.  We want the actual new
-                        ;; response, so prefer :unblessed, falling back to :response.
-                        [id [{:response (or unblessed response)
-                              :prompt   prompt}
-                             prompt
-                             (get-in worker' [:tree :dynamic id :response])]])))
-               (into {})))))))
+          (reduce (fn [result {:keys [id]}]
+                    (let [{:keys [prompt unblessed response]} (get-in worker' [:tree :knots id])
+                          dynamic (get-in worker' [:tree :dynamic id :response])]
+                      ;; run-command! stores the fresh response in :unblessed when it
+                      ;; differs from the blessed :response.  We want the actual new
+                      ;; response, so prefer :unblessed, falling back to :response.
+                      (assoc result id {:prompt  prompt
+                                        :content (or unblessed response)
+                                        :dynamic dynamic})))
+                  {}
+                  knots))))))
 
 (defn apply-responses
   "Applies a collected result map (from collect-replay-to) to the session's tree.
-  Each entry is knot-id -> [response prompt dynamic]. Updates :response/:unblessed/:status/
+  Each entry is knot-id -> response map. Updates :response/:unblessed/:status/
   :descendant-status for each knot, and restores dynamic state when present."
   [session collected]
   (update session :tree
           (fn [tree]
-            (reduce (fn [t [knot-id [response _prompt dynamic]]]
+            (reduce (fn [t [knot-id {:keys [dynamic] :as response}]]
                       (-> t
                           (tree/update-response knot-id response)
                           (cond-> dynamic (tree/update-dynamic knot-id dynamic))))
