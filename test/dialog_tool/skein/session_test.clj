@@ -18,7 +18,7 @@
     (let [tree     (-> (make-tree)
                        (tree/add-child 0 1 "look" (response "Old response.")))
           session  (make-session tree)
-          result   (session/apply-responses session {1 [(response "New response.") nil]})
+          result   (session/apply-responses session {1 (response "New response.")})
           new-knot (get-in result [:tree :knots 1])]
       (is (= "New response." (:unblessed new-knot)))))
 
