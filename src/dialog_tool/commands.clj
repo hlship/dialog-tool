@@ -151,8 +151,14 @@
         paths   (pf/expand-sources project {:debug? debug?
                                             :test?  test?
                                             :target target})]
-    (if one?
+    (cond
+      (empty? paths)
+      (perr [:yellow "No matching source files"])
+
+      one?
       (println (string/join ":" paths))
+
+      :else
       (let [longest (apply max (map count paths))]
         (doseq [path paths]
           (pout [{:font  :cyan
