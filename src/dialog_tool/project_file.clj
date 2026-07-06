@@ -1,5 +1,6 @@
 (ns dialog-tool.project-file
   (:require [clojure.edn :as edn]
+            [clj-commons.ansi :refer [perr]]
             [net.lewisship.cli-tools :refer [abort]]
             [babashka.fs :as fs])
   (:import (java.nio ByteBuffer)
@@ -53,7 +54,11 @@
         [path]
 
         :else
-        nil))))
+        (do
+          (perr [:yellow "No match for " [:bold source]])
+
+
+          nil)))))
 
 (defn- filter-by-target
   [target source-paths]
