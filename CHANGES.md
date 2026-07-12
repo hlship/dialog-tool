@@ -1,13 +1,13 @@
-# 2.0 -- UNRELEASED
+# 2.0 -- 12 July 2026
 
 This is a big release, nearly two years in the making. The project has been rewritten in
 Clojure, and can now run on OS X, Linux, or Windows.
 
 The major new component is the Skein; a visual (web-based) tool for
 authoring, debugging, and maintaining your project. The Skein is inspired by the tool
-of the same name built into Inform 7 and functions similarly -- it maintains a transcript 
-of all your different paths through your project, allowing you to test new behavior as you
-write it, and verify that old behaviors don't change unexpectedly.
+of the same name built into Inform 7, and functions similarly -- it maintains a transcript 
+of all the different paths through your project, allowing you to test new behavior as you
+write it, and verify that old behaviors don't unexpectedly change.
 
 Further, the Skein vastly extends the abilities of Dialog's built-in debugger; it provides a way
 to visually see how the dynamic state of the world changes after each command, as well as
