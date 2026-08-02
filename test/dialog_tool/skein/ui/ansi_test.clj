@@ -166,8 +166,43 @@
     (is (= "[B][RED]bold-red[/RED]still-bold[/B]"
            (ansi->markers (str BOLD RED "bold-red" DEFAULT-FG "still-bold" RESET))))))
 
+;; --- empty string edge case ---
+
+(deftest hiccup-empty-string
+  (is (= "" (ansi->hiccup ""))))
+
+(deftest markers-empty-string
+  (is (= "" (ansi->markers ""))))
+
+(deftest strip-ansi-empty-string
+  (is (= "" (strip-ansi ""))))
+
+;; --- RGB + named color interleaving ---
+
+(deftest hiccup-rgb-interleaved-with-named-color
+  (testing "RGB color followed by reset and named color produces separate spans"
+    (is (= [[:span {:style "color:#aabbcc"} "pink"] [:span {:class "ansi-red"} "red"]]
+           (ansi->hiccup (str RGB-UNKNOWN "pink" RESET RED "red"))))))
+
+(deftest markers-rgb-interleaved-with-named-color
+  (testing "RGB color followed by reset and named color closes both effects independently"
+    (is (= "[#AABBCC]pink[/#AABBCC][RED]red[/RED]"
+           (ansi->markers (str RGB-UNKNOWN "pink" RESET RED "red"))))))
+
+(deftest markers-unrecognized-sgr-with-closing-reset
+  (testing "unrecognized SGR codes need explicit reset to close properly"
+    (is (= "[123]text[/123]"
+           (ansi->markers (str (sgr 123) "text"))))))
+
+(deftest markers-empty-string-no-effects
+  (testing "empty string produces no effect tags"
+    (is (= "" (ansi->markers "")))))
+
 ;; --- strip-ansi ---
 
 (deftest strip-ansi-removes-sgr
   (is (= "hello world"
          (strip-ansi (str BOLD "hello" RESET " " REVERSE "world" RESET)))))
+
+(deftest strip-ansi-empty-string
+  (is (= "" (strip-ansi ""))))
