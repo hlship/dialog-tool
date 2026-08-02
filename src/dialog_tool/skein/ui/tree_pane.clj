@@ -17,7 +17,7 @@
 ;; ---------------------------------------------------------------------------
 ;; Helpers
 
-(defn- node-color-class
+(defn node-color-class
   "Returns bg+text classes for a node pill.
   Own status takes priority; when own status is :ok, a faded tint is applied
   based on descendant-status so problem knots are visible from their ancestors."

@@ -148,15 +148,21 @@
 (defn- do-insert-parent
   [id raw-command]
   (env/log-action "insert-parent:submit" id)
-  (let [*session (session-cursor)
+  (let [*modal   (modal-cursor)
+        *session (session-cursor)
         command  (common/normalize-input raw-command)]
-    ;; Navigation to the new parent is included in the insert-parent! result,
-    ;; under the same undo entry as the insert itself.
-    (-> @*session
-        session/capture-undo
-        session/check-for-changed-sources
-        (session/insert-parent! id command)
-        handle-operation-error)))
+    ;; Guard against blank commands before touching session state;
+    ;; silently returning [nil session] causes the modal to dismiss
+    ;; with no visible feedback, which is what users report seeing.
+    (if (string/blank? command)
+      (swap! *modal assoc :error "Command cannot be blank.")
+      ;; Navigation to the new parent is included in the insert-parent! result,
+      ;; under the same undo entry as the insert itself.
+      (-> @*session
+          session/capture-undo
+          session/check-for-changed-sources
+          (session/insert-parent! id command)
+          handle-operation-error))))
 
 (defn insert-parent
   "Renders the insert parent modal."
@@ -169,6 +175,8 @@
       [:form {:data-on:submit__prevent
               (h/action {:as "insert-parent:submit"}
                         (do-insert-parent id (get $form-data "command")))}
+       (when error
+         [:div.alert.alert-error.text-sm.mb-4 "Command cannot be blank."])
        [:div.mb-4
         [:label.block.text-sm.font-medium.text-base-content.mb-2 {:for "insert-parent-input"}
          "Command:"]
