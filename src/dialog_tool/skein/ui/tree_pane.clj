@@ -41,12 +41,6 @@
             on-spine? "bg-primary-content text-primary"
             :else "bg-neutral-content text-neutral"))))
 
-(defn- truncate
-  "Truncates s to at most n chars, appending … if longer."
-  [s n]
-  (if (and s (> (count s) n))
-    (str (subs s 0 n) "\u2026")
-    (or s "")))
 
 ;; ---------------------------------------------------------------------------
 ;; Node rendering
@@ -83,7 +77,7 @@
         [:div.icon.icon-lock.w-3.h-3.shrink-0 {:aria-hidden "true"}])
       (when label
         [:span.text-xs.font-bold.bg-neutral.text-neutral-content.px-1.rounded.shrink-0 label])
-      [:span.truncate.font-mono.text-xs (truncate command 22)]]
+      [:span.truncate.font-mono.text-xs command]]
      (when has-kids?
        [:button
         {:class         "btn btn-xs btn-ghost py-0 px-1 min-h-0 h-5 leading-none"
