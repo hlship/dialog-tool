@@ -16,14 +16,6 @@
 ;; The Skein session is stored in hyper's app-state atom under the :session key.
 ;; Handlers access it via (session-cursor).
 
-;; TODO: Revisit this; does not appear to be available during action requests.
-#_(defn log-action-wrapper
-    [handler]
-    (fn [req]
-      (when-let [action-name context/*action-name*]
-        (perr "request action: " action-name))
-      (handler req)))
-
 (def ^:private routes
   [["/" {:name  :skein
          :title "Dialog Skein"

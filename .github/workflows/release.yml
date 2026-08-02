@@ -64,8 +64,7 @@ jobs:
           TAG="${{ github.ref_name }}"
           VERSION=$(echo "$TAG" \
             | sed 's/^v//' \
-            | sed 's/-alpha-/./g' \
-            | sed 's/-beta-/./g' \
+            | sed 's/-(alpha|beta|rc)-/./g' \
             | sed 's/[^0-9.]//g')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
