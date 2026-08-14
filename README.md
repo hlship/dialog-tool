@@ -1,5 +1,9 @@
 # dgt - Dialog Tool
 
+> [!CAUTION]
+> This repository has been archived.
+> See [Dialog IDE](https://github.com/hlship/dialog-ide) for the updated and improved version.
+
 `dgt` is a command line tool to assist in the development of interactive fiction
 written in the [Dialog](https://github.com/dialog-if/dialog) language. 
 
