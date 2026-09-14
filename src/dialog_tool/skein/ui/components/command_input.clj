@@ -1,6 +1,7 @@
 (ns dialog-tool.skein.ui.components.command-input
   "Component for entering a new command to add as a child node."
-  (:require [dialog-tool.env :as env]
+  (:require [clojure.string :as string]
+            [dialog-tool.env :as env]
             [dialog-tool.skein.ui.common :as common]
             [dialog-tool.skein.session :as session]
             [dialog-tool.skein.ui.js :as js]
@@ -27,7 +28,10 @@
 (defn- process-new-command
   [*session parent-knot-id command-text]
   (let [normalized (some-> command-text common/normalize-input)]
-    (when normalized
+    ;; Guard: empty/blank input after normalization is meaningless and wastes
+    ;; a process restart. Also guard against $value being nil in edge cases
+    ;; where Hyper doesn't populate it (observed on Linux browsers).
+    (when (and normalized (not (string/blank? normalized)))
       (env/log-action "command" parent-knot-id " " (pr-str normalized))
       (apply-new-command *session parent-knot-id normalized))))
 
@@ -83,5 +87,9 @@
         :class          "flex-1 rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
         :data-bind      (:name command-signal)
         :data-on:change (h/action
-                          {:as "new-command"}
-                          (process-new-command *session parent-knot-id $value))}]]]))
+                         {:as "new-command"}
+                         (process-new-command *session parent-knot-id $value))
+        :data-on:keydown (h/action
+                          {:as "new-command-enter"}
+                          (when (= $key "Enter")
+                            (process-new-command *session parent-knot-id $value)))}]]]))
